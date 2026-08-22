@@ -1,0 +1,140 @@
+# generated: 2026-08-21T22:44:03
+# last_updated: 2026-08-21T23:35:36
+# project: astrochills-gd-3d
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: {project-root}/_bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+# ORDINE DELLE EPICHE — NON NEGOZIABILE IN UN PUNTO:
+# ==================================================
+# L'epica 1 va per prima perché il seam di ADR-001 si prova a buon mercato SOLO
+# finché esiste una fase sola. La prima storia è la 1.1: fase 3 polare
+# + iniettore di bugia F9 INSIEME, non dopo.
+#
+# BANCO DI COLLAUDO (NFR19):
+# ==========================
+# tests/test_bench.tscn, nessun framework di test. Non installare GUT né
+# gdUnit4. Il banco lo costruisce già la storia 1.1.
+#
+# RILIEVI DELLA VERIFICA DI PRONTEZZA (implementation-readiness-report-2026-08-21.md):
+# ===================================================================================
+# Sono DECISIONI DI DESIGN APERTE, non lavoro di sprint. Non hanno una voce in
+# development_status perché non sono storie: si chiudono nei documenti, prima
+# che parta la storia che le tocca.
+#
+#   C1 — APERTO — blocca la storia 2.7 (2-7-il-portafoglio-e-ancora-li-la-notte-dopo)
+#        Non esiste un contenitore per lo stato che attraversa le notti, e
+#        Game.start_night() azzera il portafoglio. Da chiudere PRIMA della 2.7.
+#
+#   C3 — APERTO — blocca la storia 3.6 (3-6-la-telemetria-trasformare-limpressione-in-prova)
+#        La telemetria ha tre collocazioni contraddittorie e nessun proprietario.
+#        Da chiudere PRIMA della 3.6.
+#
+#   C2 — CHIUSO il 2026-08-21 — la fase 6 era senza sorgente di verità: la storia
+#        2.2 ha ora il suo blocco su honest_catalog; FR16 dichiarato cross-cutting
+#        e mappato a 1.1, 2.2, 2.3. (epics.md, § Revisione del 2026-08-21)
+#
+#   C4 — CHIUSO il 2026-08-21 — il condotto della misura: wait_activity(what) è
+#        diventato wait_activity_started/ended in coppia; aggiornate FR27, le
+#        storie 3.3/3.4/3.5/3.6 e lo schema di telemetria.
+#        (epics.md, § Revisione del 2026-08-21)
+#
+# DECISIONE NON PRESA, DA NON PRENDERE DI SLANCIO:
+# ================================================
+# Se estrarre dalla 1.1 una storia 1.0 per la sostituzione del punto d'ingresso
+# (cancellazione di spike/, migrazione dei comandi di taratura sotto debug/).
+# Questo tracking pianifica sulle 16 storie che esistono in epics.md.
+
+generated: 2026-08-21T22:44:03
+last_updated: 2026-08-21T23:35:36
+project: astrochills-gd-3d
+project_key: NOKEY
+tracking_system: file-system
+story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+development_status:
+  # ---------------------------------------------------------------------------
+  # Epic 1: Il primo pezzo di mestiere — l'allineamento polare, e il seam che regge
+  # Domanda: il vincolo di ADR-001 regge?
+  # ---------------------------------------------------------------------------
+  epic-1: in-progress
+  # Story 1.1: L'allineamento polare, e la prova che il seam regge  ← PRIMA STORIA
+  1-1-lallineamento-polare-e-la-prova-che-il-seam-regge: review
+  # Story 1.2: L'osservatorio esiste, e ci sei dentro
+  1-2-losservatorio-esiste-e-ci-sei-dentro: backlog
+  # Story 1.3: Sedersi al monitor e lavorare sullo schermo
+  1-3-sedersi-al-monitor-e-lavorare-sullo-schermo: backlog
+  epic-1-retrospective: optional
+
+  # ---------------------------------------------------------------------------
+  # Epic 2: Una notte di lavoro, dall'arrivo all'alba
+  # Domanda: il ciclo di una notte funziona?
+  # ---------------------------------------------------------------------------
+  epic-2: backlog
+  # Story 2.1: Un turno che comincia alle 21:00 e finisce da solo all'alba
+  2-1-un-turno-che-comincia-alle-21-00-e-finisce-da-solo-allalba: backlog
+  # Story 2.2: Scegliere cosa fotografare stanotte
+  2-2-scegliere-cosa-fotografare-stanotte: backlog
+  # Story 2.3: La posa — configurare la sequenza e lasciarla lavorare
+  2-3-la-posa-configurare-la-sequenza-e-lasciarla-lavorare: backlog
+  # Story 2.4: Lo stack — vedere per la prima volta cosa hai preso
+  2-4-lo-stack-vedere-per-la-prima-volta-cosa-hai-preso: backlog
+  # Story 2.5: Qualcuno la compra, e paga subito
+  2-5-qualcuno-la-compra-e-paga-subito: backlog
+  # Story 2.6: Decidere quanto rifare
+  2-6-decidere-quanto-rifare: backlog
+  # Story 2.7: Il portafoglio è ancora lì la notte dopo
+  # >>> BLOCCATA DA C1 (aperto): serve un contenitore per lo stato che
+  # >>> attraversa le notti; Game.start_night() azzera il portafoglio.
+  2-7-il-portafoglio-e-ancora-li-la-notte-dopo: backlog
+  epic-2-retrospective: optional
+
+  # ---------------------------------------------------------------------------
+  # Epic 3: L'attesa — l'osservatorio mentre la posa gira
+  # Domanda: l'attesa è piacevole?  ← è l'ipotesi per cui l'MVP esiste
+  # ---------------------------------------------------------------------------
+  epic-3: backlog
+  # Story 3.1: L'osservatorio si allarga — la cucina e la cupola
+  3-1-losservatorio-si-allarga-la-cucina-e-la-cupola: backlog
+  # Story 3.2: Il terminale — spendere quello che hai guadagnato
+  3-2-il-terminale-spendere-quello-che-hai-guadagnato: backlog
+  # Story 3.3: Il caffè — l'attesa piccola dentro l'attesa grande
+  3-3-il-caffe-lattesa-piccola-dentro-lattesa-grande: backlog
+  # Story 3.4: La lampada che smette di lampeggiare
+  3-4-la-lampada-che-smette-di-lampeggiare: backlog
+  # Story 3.5: La cupola — stare a guardare
+  3-5-la-cupola-stare-a-guardare: backlog
+  # Story 3.6: La telemetria — trasformare l'impressione in prova
+  # >>> BLOCCATA DA C3 (aperto): la telemetria ha tre collocazioni
+  # >>> contraddittorie e nessun proprietario.
+  3-6-la-telemetria-trasformare-limpressione-in-prova: backlog
+  epic-3-retrospective: optional

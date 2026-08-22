@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://phases/polar/phase_polar.gd" id="1_phase"]
+[ext_resource type="Script" path="res://phases/polar/polar_screen.gd" id="2_screen"]
+[ext_resource type="Resource" path="res://phases/polar/sources/honest_drift.tres" id="3_truth"]
+
+[node name="PhasePolar" type="Node"]
+script = ExtResource("1_phase")
+truth = ExtResource("3_truth")
+start_azimuth = 1.4
+start_altitude = -0.9
+screw_speed = 0.6
+
+[node name="PolarScreen" type="Control" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_screen")

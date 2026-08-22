@@ -1,0 +1,37 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://crt/crt_screen.gd" id="1_crt"]
+[ext_resource type="Shader" path="res://crt/shaders/crt.gdshader" id="2_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_crt"]
+shader = ExtResource("2_shader")
+shader_parameter/curvature = 9.0
+shader_parameter/scanline_strength = 0.16
+shader_parameter/scanline_count = 96.0
+shader_parameter/aberration = 0.0012
+shader_parameter/vignette = 0.25
+shader_parameter/brightness = 1.15
+shader_parameter/tint = Color(0.86, 1, 0.92, 1)
+
+[sub_resource type="QuadMesh" id="QuadMesh_crt"]
+size = Vector2(0.32, 0.24)
+
+[node name="CrtScreen" type="Node3D"]
+script = ExtResource("1_crt")
+
+[node name="Viewport" type="SubViewport" parent="."]
+unique_name_in_owner = true
+disable_3d = true
+transparent_bg = false
+handle_input_locally = false
+size = Vector2i(256, 192)
+render_target_update_mode = 4
+
+[node name="ScreenMesh" type="MeshInstance3D" parent="."]
+unique_name_in_owner = true
+mesh = SubResource("QuadMesh_crt")
+surface_material_override/0 = SubResource("ShaderMaterial_crt")
+
+[node name="Seat" type="Marker3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 0.9799, -0.1994, 0, 0.1994, 0.9799, 0, 0.09, 0.44)

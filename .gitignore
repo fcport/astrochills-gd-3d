@@ -1,0 +1,28 @@
+.bmad-loop/runs/
+.bmad-loop/cache/
+.bmad-loop/policy.toml
+_bmad/render/
+./Godot*
+Godot_v4.7.2-stable_win64.exe
+
+# --- Aggiunto dalla code review del 2026-08-22 ---
+
+# Cache e file importati da Godot. Si rigenerano da soli aprendo il progetto,
+# e mancavano: senza questa riga il primo commit si porta dentro .godot/ intero.
+.godot/
+*.translation
+
+# `./Godot*` qui sopra non filtra niente — git ignora il prefisso `./` in un
+# pattern — ed è il motivo per cui accanto c'era già il nome per esteso. Questo
+# invece funziona, e regge anche quando la versione del motore cambierà.
+/Godot_v*.exe
+/Godot_v*.zip
+
+# Export
+build/
+*.pdb
+
+# Override di taratura locale: vive in user://, ma se finisse copiato qui dentro
+# per comodità non deve entrare nel repository — sono i numeri di una serata di
+# prove, non del progetto.
+tuning_override.cfg

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TuningProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/tuning_profile.gd" id="1_tuning"]
+
+[resource]
+script = ExtResource("1_tuning")
+night_length_min = 540.0
+game_min_per_sec = 0.6
+min_per_frame = 5.0
+polar_score_window_sec = 8.0
+polar_max_drift_rate = 0.2

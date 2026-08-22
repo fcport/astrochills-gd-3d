@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="WanderingDrift" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://phases/polar/sources/wandering_drift.gd" id="1_wandering"]
+
+[resource]
+resource_local_to_scene = true
+script = ExtResource("1_wandering")
+amplitude = 0.3
+speed_x = 0.3
+speed_y = 0.17

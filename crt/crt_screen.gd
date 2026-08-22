@@ -30,9 +30,10 @@ func _ready() -> void:
 ## Mostra un Control sullo schermo.
 ##
 ## REGOLA: il CRT non libera MAI ciò che mostra. Dopo reparent() il Control non
-## è più figlio della fase, ma la proprietà resta sua — è la fase a liberarlo in
-## _exit_tree(). Un queue_free() qui distruggerebbe l'interfaccia di una fase
-## che sta ancora girando in background.
+## è più figlio della fase, ma la proprietà resta sua — è la fase a liberarlo
+## quando viene distrutta (NOTIFICATION_PREDELETE, vedi core/phase.gd). Un
+## queue_free() qui distruggerebbe l'interfaccia di una fase che sta ancora
+## girando in background.
 func show_control(c: Control) -> void:
 	for child in _viewport.get_children():
 		_viewport.remove_child(child)

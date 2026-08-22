@@ -959,9 +959,15 @@ func score() -> int: return 100
 func runs_in_background() -> bool: return false
 
 ## Il Control mostrato sul CRT appartiene alla fase, anche dopo il reparent.
-func _exit_tree() -> void:
+##
+## PREDELETE e non _exit_tree(): _exit_tree() scatta anche su un'uscita
+## TEMPORANEA dall'albero, e libererebbe l'interfaccia di una fase ancora viva.
+## Corretto il 2026-08-22 in code review della storia 1.1.
+func _notification(what: int) -> void:
+    if what != NOTIFICATION_PREDELETE:
+        return
     var s := screen()
-    if s != null and not is_ancestor_of(s):
+    if s != null and is_instance_valid(s) and not is_ancestor_of(s):
         s.queue_free()
 ```
 
@@ -1017,8 +1023,9 @@ non è più figlio della fase: liberare la fase non lo libera, e resterebbe a sc
 appartenendo a qualcosa che non esiste più. La proprietà resta della fase e si esercita in
 due punti:
 
-- la fase libera il proprio `Control` in `_exit_tree()` se lo ha dato via (vedi
-  `core/phase.gd`);
+- la fase libera il proprio `Control` alla propria distruzione — `NOTIFICATION_PREDELETE`,
+  **non** `_exit_tree()`, che scatterebbe anche su un'uscita temporanea dall'albero e
+  ucciderebbe l'interfaccia di una fase ancora viva (vedi `core/phase.gd`);
 - l'orchestratore chiama `_crt.show_control(null)` **prima** di liberare la fase.
 
 ---
@@ -1198,8 +1205,9 @@ Come scritto, nessuno poteva farlo.
 **2. Il `Control` di una fase liberata restava orfano.** Dopo `reparent()` nel
 `SubViewport`, il `Control` non è più figlio della fase: `phase.queue_free()` non lo
 liberava, e restava a schermo appartenendo a qualcosa che non esisteva più.
-→ Risolto: la fase lo libera in `_exit_tree()`; l'orchestratore chiama
-`_crt.show_control(null)` prima di liberare.
+→ Risolto: la fase lo libera alla propria distruzione (`NOTIFICATION_PREDELETE`);
+l'orchestratore chiama `_crt.show_control(null)` prima di liberare. La prima stesura usava
+`_exit_tree()`, che scattava anche su un'uscita temporanea: corretto il 2026-08-22.
 
 **3. I punteggi usavano `phase.name` come chiave.** Godot rinomina in `@PhasePolar@2`
 quando due nodi omonimi finiscono sotto lo stesso padre — e con «rifai setup»

@@ -100,7 +100,8 @@ func _enter_phase(scene: PackedScene) -> void:
 
 ## Mima `crt/crt_screen.gd::show_control()`, e ne eredita la regola:
 ## NON LIBERA MAI ciò che mostra. Dopo reparent() il Control non è più figlio
-## della fase, ma la proprietà resta sua — è `Phase._exit_tree()` a liberarlo.
+## della fase, ma la proprietà resta sua — è `Phase` a liberarlo quando viene
+## distrutta (`NOTIFICATION_PREDELETE`).
 ## Un queue_free() qui distruggerebbe l'interfaccia di una fase ancora viva.
 func _show(c: Control) -> void:
 	for child in _screen_viewport.get_children():

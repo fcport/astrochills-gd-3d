@@ -307,9 +307,14 @@ Il seam va **esercitato** (iniettore `F9`), non riempito di contenuto.
 
 ### Gotcha finali
 
-**Il CRT non libera mai ciò che mostra**, ma la fase riprende il proprio `Control` in
-`_exit_tree()` e l'orchestratore chiama `show_control(null)` prima di liberare. Le due
-regole insieme, mai una sola.
+**Il CRT non libera mai ciò che mostra**, ma la fase riprende il proprio `Control` alla
+propria distruzione (`NOTIFICATION_PREDELETE`) e l'orchestratore chiama `show_control(null)`
+prima di liberare. Le due regole insieme, mai una sola.
+
+**Non usare `_exit_tree()` per liberare ciò che si è dato via.** Scatta anche su un'uscita
+temporanea dall'albero — un `remove_child()` per parcheggiare un nodo, uno spostamento fra
+host, la distruzione del viewport che lo ospitava — e distruggerebbe l'interfaccia di una
+fase ancora viva, che il frame dopo la dereferenzia. Costava un crash, e lo faceva.
 
 **Una fase in background non assume di essere visibile.** Niente
 `get_viewport().size`, niente accesso alla camera: il suo `Control` potrebbe non essere

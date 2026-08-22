@@ -562,7 +562,7 @@ So that **il lavoro succeda dentro il mondo invece che sopra di esso**.
 **Given** la fase polare in esecuzione
 **When** il suo `Control` viene mostrato sullo schermo
 **Then** arriva lì tramite `crt.show_control(...)`, e il CRT **non lo libera mai**
-**And** la proprietà resta della fase, che lo libera in `_exit_tree()` se lo ha dato via
+**And** la proprietà resta della fase, che lo libera alla propria distruzione se lo ha dato via — `NOTIFICATION_PREDELETE`, **mai** `_exit_tree()`, che scatta anche su un'uscita temporanea dall'albero e ucciderebbe l'interfaccia di una fase ancora viva (corretto il 2026-08-22 in code review della 1.1)
 **And** l'orchestratore — quando esisterà — chiama `show_control(null)` **prima** di liberare la fase
 
 **Given** lo schermo a `256×192`

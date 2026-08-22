@@ -28,6 +28,17 @@
 class_name Interactable
 extends StaticBody3D
 
+## I layer di collisione del progetto, nominati qui e in `project.godot` sotto
+## `layer_names/3d_physics/`. I numeri nudi nelle scene sono illeggibili: questi
+## sono l'unica definizione, e chi ne aggiunge uno la aggiorna in entrambi i posti.
+##
+## 1 — MONDO: tutto ciò che ferma il giocatore, e tutto ciò che gli sta davanti.
+## 2 — GIOCATORE: il suo corpo, che nessun raggio di interazione deve trovare.
+## 3 — INTERAGIBILI: ciò che il raggio cerca.
+const LAYER_WORLD := 1 << 0
+const LAYER_PLAYER := 1 << 1
+const LAYER_INTERACTABLE := 1 << 2
+
 ## Emesso quando l'interazione avviene. `by` è chi l'ha eseguita.
 signal interacted(by: Node3D)
 
@@ -40,12 +51,22 @@ signal interacted(by: Node3D)
 @export var enabled: bool = true
 
 
-func _ready() -> void:
-	# Layer 1 (mondo) perché fermi il giocatore, layer 3 (interagibili) perché il
-	# raggio lo trovi. La maschera resta a zero: un interagibile non ha bisogno
-	# di accorgersi di nulla.
-	collision_layer = 1 | 4
-	collision_mask = 0
+## I layer si aggiungono in `_enter_tree`, e in OR, per due ragioni precise.
+##
+## IN `_enter_tree` E NON IN `_ready`: così una sottoclasse che definisce il
+## proprio `_ready()` non deve ricordarsi di chiamare `super()`. Chi lo
+## dimenticasse otterrebbe un oggetto che il raggio non trova mai — nessun
+## prompt, nessun errore, e un sintomo che non punta in nessun modo alla causa.
+## È la stessa trappola che `interact()` qui sotto dichiara di voler evitare, e
+## non ha senso evitarla in un punto e ricrearla nell'altro.
+##
+## IN OR E NON IN ASSEGNAZIONE: un'assegnazione cieca cancellerebbe qualunque
+## layer scelto nell'ispettore. La moka, la lampada e la cupola potrebbero avere
+## bisogno di una maschera propria — di accorgersi di qualcosa — e la
+## perderebbero all'ingresso in albero senza un log.
+func _enter_tree() -> void:
+	# Layer 1 perché fermi il giocatore, layer 3 perché il raggio lo trovi.
+	collision_layer |= LAYER_WORLD | LAYER_INTERACTABLE
 
 
 ## Se adesso ci si può interagire. Le sottoclassi possono stringere la

@@ -1,3 +1,22 @@
+; L'osservatorio: la scena contenitore del mondo di gioco.
+;
+; Con una stanza sola sembra sovrastruttura, e non lo è: la storia 3.1 ci appende
+; cucina e cupola, e senza questo nodo dovrebbe anche riorganizzare.
+;
+; LA QUOTA DEL MONITOR NON È LIBERA, ed è la catena di misure che vincola la
+; storia 1.3:
+;
+;   piano della scrivania         0,75 m   ← il monitor ci si appoggia sopra
+;   + centro del vetro nel CRT    0,35 m
+;   = centro dello schermo        1,10 m
+;   + Marker3D `Seat` del CRT     0,09 m
+;   = occhio da seduto            1,19 m
+;
+; La z è scelta perché il `Seat` cada FUORI dal volume della scrivania. Il Seat
+; sta 44 cm davanti al vetro: con il monitor a z = -2,05 il vetro è a -1,859 e il
+; Seat a -1,419, mentre la scrivania finisce a -1,75. La capsula del giocatore ha
+; raggio 0,3, quindi da seduto il suo bordo arriva a -1,719 — 3 cm di gioco. Con
+; il monitor più indietro il corpo compenetrerebbe la scrivania.
 [gd_scene load_steps=6 format=3]
 
 [ext_resource type="PackedScene" path="res://world/rooms/computer_room.tscn" id="1_room"]
@@ -19,7 +38,7 @@ environment = SubResource("Environment_obs")
 [node name="ComputerRoom" parent="." instance=ExtResource("1_room")]
 
 [node name="CrtMonitor" parent="." instance=ExtResource("2_monitor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, -2.1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, -2.05)
 
 [node name="Player" parent="." instance=ExtResource("3_player")]
 unique_name_in_owner = true

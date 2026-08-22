@@ -14,9 +14,11 @@
 ##   Shift+F5 / Shift+F6   jitter dei vertici (snap_resolution)
 ##   Shift+F7              jitter di fatto spento
 ##
-## Il comando del jitter oggi non ha bersaglio: senza `spike/` non esiste
-## geometria 3D nel viewport, e la stanza vera arriva con la storia 1.2. Non è un
-## errore ed è meglio non trattarlo come tale — degrada in silenzio e aspetta.
+## Il comando del jitter ha un bersaglio dalla storia 1.2: la stanza computer, i
+## suoi arredi e la scocca del monitor usano tutti `material_override` su
+## `ps1.gdshader`, che è la sola forma che `_collect_materials()` sa raccogliere.
+## Se un giorno il log dicesse «0 materiali», la causa da guardare per prima è una
+## mesh nuova finita su `surface_material_override/0`.
 extends Node
 
 const SNAP_STEP := 1.25
@@ -95,9 +97,10 @@ func _toggle_filter() -> void:
 	Log.debug("debug", "filtro upscale = %s" % filter_name())
 
 
-## Cerca i materiali PS1 nel viewport del mondo e ci scrive dentro. Se non ne
-## trova — ed è il caso di questa storia — non è un errore: la stanza non c'è
-## ancora.
+## Cerca i materiali PS1 nel viewport del mondo e ci scrive dentro. Il conteggio
+## nel log è per MeshInstance3D, non per materiale distinto: la stanza condivide
+## un materiale fra più pareti, e quello stesso materiale viene scritto — e
+## contato — una volta per ogni mesh che lo usa.
 func _set_snap(v: float) -> void:
 	snap_resolution = clampf(v, SNAP_MIN, SNAP_OFF)
 	var touched := 0

@@ -90,3 +90,9 @@ ui_release_mouse={
 textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+
+[layer_names]
+
+3d_physics/layer_1="mondo"
+3d_physics/layer_2="giocatore"
+3d_physics/layer_3="interagibili"

@@ -1,3 +1,21 @@
+; LA SCOCCA AVVOLGE IL VETRO, e le misure non sono libere.
+;
+; Il QuadMesh di crt/crt_screen.tscn è 0,32 x 0,24 m — la misura reale del vetro,
+; e non si tocca. La scocca deve contenerlo per intero: 0,42 x 0,50 x 0,38 con
+; origine a y = 0,25 occupa y locale 0,00–0,50, mentre il vetro montato a
+; y = 0,35 occupa 0,23–0,47. Restano 3 cm di cornice sopra e sotto, e 5 cm per
+; lato.
+;
+; Il collider ha la stessa forma e la stessa quota della scocca, e questo È il
+; requisito: il RayCast3D dell'interazione colpisce il collider, non la mesh.
+; Una scocca più bassa del vetro significa che la metà superiore dello schermo
+; non è mirabile — si guarda il monitor in pieno e il prompt non compare.
+;
+; Il vetro sta 1 mm davanti alla faccia frontale della scocca (z = 0,191 contro
+; 0,19), che è il gioco minimo per non avere z-fighting.
+;
+; L'origine della scena è alla BASE della scocca: si appoggia sul piano della
+; scrivania mettendola alla quota del piano, senza aritmetica in testa.
 [gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://world/interactables/crt_monitor.gd" id="1_monitor"]
@@ -10,25 +28,25 @@ shader_parameter/albedo = Color(0.62, 0.6, 0.53, 1)
 shader_parameter/snap_resolution = 665.0
 
 [sub_resource type="BoxMesh" id="BoxMesh_case"]
-size = Vector3(0.4, 0.36, 0.38)
+size = Vector3(0.42, 0.5, 0.38)
 subdivide_width = 1
-subdivide_height = 1
+subdivide_height = 2
 subdivide_depth = 1
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_case"]
-size = Vector3(0.4, 0.36, 0.38)
+size = Vector3(0.42, 0.5, 0.38)
 
 [node name="CrtMonitor" type="StaticBody3D"]
 script = ExtResource("1_monitor")
 prompt_text = "Usa il monitor"
 
 [node name="Case" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.18, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
 mesh = SubResource("BoxMesh_case")
 material_override = SubResource("ShaderMaterial_case")
 
 [node name="Collision" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.18, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
 shape = SubResource("BoxShape3D_case")
 
 [node name="CrtScreen" parent="." instance=ExtResource("3_screen")]

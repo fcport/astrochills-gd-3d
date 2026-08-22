@@ -12,13 +12,26 @@
 ## un'interfaccia che sta comoda a 640x360 e non ci sta a 256x192 sembrerebbe
 ## finita e non lo sarebbe.
 ##
-## FASE E GIOCATORE SONO MUTUAMENTE ESCLUSIVI, e non è una scelta di comodo.
+## IL CONTROLLO È DI UNO SOLO ALLA VOLTA, e non è una scelta di comodo.
 ## `W`, `A`, `S`, `D` e `ENTER` sono legati sia al movimento sia alle due viti
 ## della fase polare: con entrambi attivi, camminare girerebbe le viti. Le azioni
 ## polari non si possono rinominare, perché `phases/polar/phase_polar.gd` le
 ## nomina e la prova dell'AC2 della storia 1.1 richiede che quel file non cambi.
 ## Quindi comanda uno solo alla volta: si entra nella fase interagendo col
 ## monitor, e il controller del giocatore si spegne.
+##
+## Quello che si spegne è il CONTROLLO, non il mondo: l'osservatorio resta in
+## scena e continua a essere renderizzato dietro il pannello della fase. È voluto
+## — alla 1.3 il giocatore sarà seduto davanti al CRT e dovrà vedersi intorno la
+## stanza — e il costo di quel render pass è il rilievo M4, dichiarato e non
+## aperto qui.
+##
+## LO STATO DEI TASTI NON SEGUE IL CONTROLLO. `Input.get_axis` e
+## `Input.get_vector` leggono lo stato fisico della tastiera, che non sa nulla di
+## chi sia abilitato: chi entra nella fase tenendo premuto `W` per camminare si
+## troverebbe la vite di altitudine che gira da sola, e chi esce tenendo premuto
+## `W` per girare la vite si troverebbe il giocatore che parte in avanti. Per
+## questo ogni scambio rilascia le azioni: vedi `_release_all_actions()`.
 ##
 ## Spegnere il controller non è lavoro che la 1.3 butterà: ADR-003 comincia
 ## esattamente con «il controller del giocatore si disabilita». Qui c'è il primo
@@ -53,7 +66,6 @@ const LIE_INJECTOR_PATH := "res://debug/lie_injector.gd"
 @onready var _screen_viewport: SubViewport = %ScreenViewport
 @onready var _screen_host: SubViewportContainer = %ScreenHost
 @onready var _phase_host: Node = %PhaseHost
-@onready var _observatory: Node3D = %Observatory
 
 var _phase: Phase
 
@@ -61,6 +73,13 @@ var _phase: Phase
 func _ready() -> void:
 	Game.start_night(1)
 	Log.info("main", "avvio — renderer %s" % RenderingServer.get_video_adapter_api_version())
+	# LO STATO INIZIALE SI DICHIARA, non si eredita. Prima stava in tre posti
+	# scollegati — `visible = false` nella scena, `_enabled = true` nello script
+	# del giocatore, la cattura del mouse nel suo `_ready` — e bastava aprire
+	# `main.tscn`, rimettere visibile lo `ScreenHost` e salvare per consegnare
+	# una build che parte con l'interfaccia della fase a schermo e il giocatore
+	# che cammina sotto.
+	_set_world_active(true)
 	_connect_monitor()
 	if OS.is_debug_build():
 		_install_debug_tools()
@@ -70,7 +89,7 @@ func _ready() -> void:
 ## romperebbe al primo spostamento, ed è precisamente ciò che l'AC3 della storia
 ## 1.2 vieta. Il gruppo sopravvive a spostamenti, rinomine e annidamenti diversi.
 func _connect_monitor() -> void:
-	var monitor := get_tree().get_first_node_in_group(CrtMonitor.GROUP) as CrtMonitor
+	var monitor := CrtMonitor.find_in(get_tree())
 	if monitor == null:
 		# Canale 1: è un errore di programma. Senza monitor la fase è
 		# irraggiungibile, e il giocatore girerebbe per la stanza senza capire.
@@ -85,14 +104,34 @@ func _on_monitor_interacted(_by: Node3D) -> void:
 	_enter_phase(PHASE_POLAR)
 
 
-## Accende il mondo o la fase, mai tutti e due.
+## Dà o toglie il controllo al giocatore, e mostra o nasconde il pannello della
+## fase. Il mondo resta renderizzato in entrambi i casi: vedi l'intestazione.
+##
+## Il giocatore si risolve PRIMA di toccare qualunque cosa. Mutare la visibilità
+## e accorgersi solo dopo che il giocatore non c'è lascerebbe l'interfaccia della
+## fase a schermo con il controller ancora acceso sotto — cioè esattamente il
+## doppio comando che tutto questo esiste per impedire.
 func _set_world_active(active: bool) -> void:
-	_screen_host.visible = not active
-	var player := _observatory.get_node_or_null("%Player") as Player
+	var player := Player.find_in(get_tree())
 	if player == null:
-		push_error("[main] nessun Player dentro l'osservatorio")
+		push_error("[main] nessun Player nel gruppo '%s'" % Player.GROUP)
 		return
+	_release_all_actions()
+	_screen_host.visible = not active
 	player.set_enabled(active)
+
+
+## Rilascia ogni azione dell'`InputMap` al momento dello scambio.
+##
+## Si itera l'`InputMap` invece di elencare i nomi: elencarli qui significherebbe
+## ricopiare in questo file le azioni della fase polare, che vivono in
+## `phases/polar/phase_polar.gd` e che nessuno deve duplicare. Un'azione
+## rilasciata resta tale finché il tasto non viene alzato e ripremuto, che è
+## esattamente il comportamento voluto — chi teneva il dito giù deve rialzarlo
+## per ricominciare.
+func _release_all_actions() -> void:
+	for action in InputMap.get_actions():
+		Input.action_release(action)
 
 
 ## Gli strumenti di debug non esistono in release: `OS.is_debug_build()` è falso e
@@ -129,18 +168,48 @@ func _enter_phase(scene: PackedScene) -> void:
 		var stale := _phase
 		_phase = null
 		_show(null)
-		stale.queue_free()
+		_dispose(stale)
 
 	var p := scene.instantiate() as Phase
 	# setup() prima di entrare nell'albero, come previsto dal contratto.
 	p.setup(Game.run, {})
 	p.finished.connect(_on_phase_finished.bind(p))
 	_phase_host.add_child(p)
+
+	# LA GUARDIA CHE IMPEDISCE UN BLOCCO SENZA RITORNO, e va PRIMA di togliere il
+	# controllo al giocatore. Una fase mal configurata non emetterà mai
+	# `finished`: nessuno riaccenderebbe il controller, il cursore resterebbe
+	# libero su un gioco che non risponde, e non esiste un tasto per annullare.
+	# In debug l'`assert` della fase lo rende evidente; in release gli assert
+	# spariscono e il giocatore resterebbe fermo davanti a uno schermo muto,
+	# senza un solo messaggio.
+	if not _phase_can_run(p):
+		push_error("[main] fase %s non configurata: non le si cede il controllo" % p.key())
+		p.queue_free()
+		return
+
 	_phase = p
 	# screen() dopo: il Control si risolve in _ready della fase.
 	_show(p.screen())
 	_set_world_active(false)
 	Events.phase_started.emit(p.key())
+
+
+## Se una fase è in condizione di girare davvero.
+##
+## La proprietà si interroga per nome, e non con un metodo del contratto `Phase`,
+## perché aggiungerlo vorrebbe dire farlo implementare da
+## `phases/polar/phase_polar.gd` — e quel file non deve cambiare di una riga: è
+## la prova dell'AC2 della storia 1.1, rieseguibile con `git diff` da quando
+## esiste il repository. Nessuna comodità di struttura vale distruggerla.
+##
+## `&"truth" in p` distingue «la fase non ha una sorgente di verità» da «ce l'ha
+## e non l'ha ricevuta»: senza quel controllo, ogni fase futura senza `truth`
+## risulterebbe inoperabile.
+func _phase_can_run(p: Phase) -> bool:
+	if &"truth" in p and p.get(&"truth") == null:
+		return false
+	return true
 
 
 ## Mima `crt/crt_screen.gd::show_control()`, e ne eredita la regola:
@@ -193,11 +262,35 @@ func _advance(phase: Phase) -> void:
 	# resterebbe orfano a schermo. Ma solo se la fase è ancora quella corrente:
 	# svuotare il viewport per conto di una fase già sostituita lascerebbe nera
 	# la fase viva.
-	if _phase == phase:
+	var was_current := _phase == phase
+	if was_current:
 		_show(null)
 		_phase = null
+
+	# LA FASE ESCE DI SCENA PRIMA CHE IL CONTROLLO TORNI: vedi `_dispose()`.
+	_dispose(phase)
+
+	if was_current:
 		# Il giocatore riprende il controllo, e torna in piedi nella stanza.
 		_set_world_active(true)
-	phase.queue_free()
 	# Qui finisce il ponte: senza orchestratore non c'è una fase successiva.
 	# L'epica 2 mette `night_session` a questo posto.
+
+
+## Toglie una fase di scena e la libera.
+##
+## `remove_child()` PRIMA di `queue_free()`, e non è pignoleria: `queue_free()` è
+## differita a fine frame, quindi da sola lascerebbe la fase nell'albero — ancora
+## in `_process`, ancora in ascolto — per tutto il resto del frame in cui il
+## giocatore ha già ripreso il controllo. È la finestra in cui camminare
+## girerebbe le viti, cioè la cosa che questo file esiste per rendere
+## impossibile.
+##
+## Uscire dall'albero è sicuro: `Phase` libera il proprio `Control` su
+## `NOTIFICATION_PREDELETE` e non su `_exit_tree()`, proprio perché un'uscita
+## temporanea non deve uccidere l'interfaccia di una fase viva. È la lezione
+## della review della 1.1, e qui torna utile.
+func _dispose(phase: Phase) -> void:
+	if phase.get_parent() != null:
+		phase.get_parent().remove_child(phase)
+	phase.queue_free()

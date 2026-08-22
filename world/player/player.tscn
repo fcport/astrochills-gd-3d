@@ -1,3 +1,16 @@
+; L'ALTEZZA DELL'OCCHIO sta qui, e la costante `Player.EYE_HEIGHT` la verifica
+; in `_ready()` con un push_error se divergono. Non la riscrive: l'AC1 chiede che
+; nel progetto non esista una riga che sposti la camera, e «la sposto solo
+; all'avvio» resta una riga che la sposta. Due posti, ma nessuno dei due può
+; cambiare in silenzio — che era il problema vero.
+;
+; LA PORTATA DELL'INTERAZIONE invece non sta qui: `INTERACT_RANGE` la scrive nel
+; raggio, e il raggio non ha vincoli da rispettare.
+;
+; `collision_layer = 2` è il layer GIOCATORE (vedi `Interactable.LAYER_PLAYER` e
+; `project.godot`, sezione `layer_names/3d_physics`): il corpo sta su un layer
+; suo perché il raggio dell'interazione, che cerca mondo e interagibili, non
+; possa mai colpire il giocatore stesso.
 [gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://world/player/player.gd" id="1_player"]
@@ -22,8 +35,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.65, 0)
 
 [node name="InteractRay" type="RayCast3D" parent="Camera"]
 unique_name_in_owner = true
-target_position = Vector3(0, 0, -1.2)
-collision_mask = 4
 
 [node name="InteractionPrompt" parent="." instance=ExtResource("2_prompt")]
 unique_name_in_owner = true

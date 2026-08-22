@@ -20,6 +20,14 @@
 ## dello schermo — e perché così `world/` non ha bisogno di conoscere il tipo
 ## `CrtScreen` per annunciarlo. L'AC3 resta soddisfatto: il monitor entra in
 ## scena, e la registrazione parte.
+##
+## MA IL SIGNAL DA SOLO NON BASTA, e chi arriva dopo deve saperlo. `CrtScreen`
+## emette nel proprio `_ready()`, e l'ordine di costruzione dell'albero è
+## profondità-prima: quando il mondo è istanziato dentro `main.tscn`,
+## l'emissione avviene PRIMA di `Main._ready()`. Chiunque nasca lì dentro — la
+## `night_session` dell'epica 2 — si collegherebbe a segnale già passato e non
+## riceverebbe mai niente. Il ripiego è `find_in()`: chi arriva tardi non aspetta
+## un annuncio, va a cercare. Il gruppo è la via, mai un percorso di nodo.
 class_name CrtMonitor
 extends Interactable
 
@@ -34,8 +42,17 @@ const GROUP := &"crt_monitor"
 
 
 func _ready() -> void:
-	super()
 	add_to_group(GROUP)
+
+
+## Il monitor della scena, o `null` se non ce n'è. È il ripiego per chi si è
+## perso `Events.screen_registered` perché è nato dopo l'emissione.
+##
+## Se un giorno l'osservatorio avrà più di un CRT questa funzione non basterà
+## più, e sarà giusto che smetta di bastare: il chiamante dovrà dire QUALE
+## monitor vuole, invece di prendere il primo che passa.
+static func find_in(tree: SceneTree) -> CrtMonitor:
+	return tree.get_first_node_in_group(GROUP) as CrtMonitor
 
 
 ## Lo schermo di questo monitor, per chi lo ha trovato tramite il gruppo.

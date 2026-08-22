@@ -12,6 +12,16 @@
 ##
 ## Non vive in `ui/`: `ui/` è riservato alla UI non diegetica, cioè pausa e
 ## impostazioni (UX-DR1). Questo è arredo del mondo.
+##
+## MA NON CHIAMIAMOLO DIEGETICO, perché non lo è: un `CanvasLayer` disegnato
+## sopra la scena sta nello spazio dello schermo, non dentro la finzione. Quello
+## che condivide con la stanza è la RESA — risoluzione, filtro, grana — non
+## l'appartenenza al mondo. UX-DR9 chiede un prompt diegetico e questa è una
+## lettura minima di quella richiesta, presa consapevolmente: a 640x360, con
+## vertex snapping e filtro nearest, un testo montato nel mondo rischia di essere
+## illeggibile alla distanza di interazione, e su questo progetto le cose di resa
+## si decidono guardando e non stimando. La verifica va fatta nell'epica 3, con
+## moka, lampada e cupola davanti, quando ci sarà qualcosa da confrontare.
 class_name InteractionPrompt
 extends CanvasLayer
 

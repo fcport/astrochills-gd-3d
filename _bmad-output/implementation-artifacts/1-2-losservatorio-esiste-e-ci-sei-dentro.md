@@ -4,7 +4,7 @@ baseline_commit: 624b202
 
 # Story 1.2: L'osservatorio esiste, e ci sei dentro
 
-Status: review
+Status: done
 
 Story key: `1-2-losservatorio-esiste-e-ci-sei-dentro`
 Epic: 1 — Il primo pezzo di mestiere — l'allineamento polare, e il seam che regge
@@ -303,6 +303,68 @@ stessi quattro tasti muoveranno il giocatore e gireranno le viti nello stesso fr
 - [x] `tests/test_bench.tscn` continua a girare pulito. **Non aggiungerci niente:** il
       banco accetta solo logica pura, e movimento, shader, prompt e viewport sono tutte
       cose di scena. Non introdurre GUT o gdUnit4.
+
+### Review Findings
+
+Code review del 2026-08-22, tre layer paralleli (Blind Hunter, Edge Case Hunter,
+Acceptance Auditor) sul diff `624b202..9191a2b`. 33 rilievi grezzi, 2 scartati come rumore.
+**Tutte le decisioni sono state prese e tutte le patch applicate nella stessa sessione**;
+6 voci restano rinviate con una ragione, e vivono in `deferred-work.md`.
+
+**Decisioni prese**
+
+- [x] [Review][Decision] **La catena delle misure non chiudeva: sedersi avrebbe affondato il corpo 46 cm sotto il pavimento** — Il `Seat` sta a global y = 1,19 e l'occhio a 1,65 sopra l'origine del corpo, quindi `desk_camera.gd:57` porterà l'origine del `CharacterBody3D` a y = −0,46. **Deciso: è corretto che ci vada** — la camera atterra dove deve — e ciò che mancava era la garanzia che la fisica non lo risputasse fuori. `Player._physics_process()` adesso esce subito da spento: niente gravità, niente `move_and_slide()`, niente depenetrazione. La catena è scritta per esteso nell'intestazione di `player.gd` e in `observatory.tscn`, dove qualcuno la cercherà. Chiusa anche la compenetrazione del `Seat` nella scrivania: il monitor è passato da z = −2,10 a z = −2,05, e il corpo seduto ha adesso 3 cm di gioco invece di 1,9 cm di sovrapposizione.
+- [x] [Review][Decision] **Il vetro del CRT sporgeva 11 cm sopra la scocca, e la metà superiore dello schermo non era mirabile** — La scocca era 0,40 × 0,36 × 0,38 e il vetro, alto 0,24 e montato a y = 0,35, ne usciva. **Deciso: si allarga la scocca, non si sposta il vetro**, così il centro dello schermo resta a 1,10 m e tutta la catena delle misure sopravvive. Scocca ora 0,42 × 0,50 × 0,38 con origine a y = 0,25: il vetro (0,23–0,47) sta dentro con 3 cm di cornice sopra e sotto e 5 cm per lato, e il collider — che è quello che il raggio colpisce — copre tutto lo schermo. Verificato dal vivo: mirando 8° più in alto del centro dello schermo il raggio trova ancora il monitor, dove prima usciva nel vuoto.
+- [x] [Review][Decision] **Non esisteva una via d'uscita dalla fase, e in release poteva diventare un blocco totale** — **Deciso: guardia in `main.gd`, nessun comando nuovo.** `_phase_can_run()` interroga la fase PRIMA di toglierle il controllo del giocatore: una fase che dichiara una sorgente di verità e non l'ha ricevuta non riceverà mai l'input che la chiude, quindi non le si cede niente e il controllo resta al giocatore. La proprietà si interroga per nome — `&"truth" in p` — perché `phases/polar/phase_polar.gd` non si può toccare: è la prova dell'AC2 della storia 1.1. Verificato che il test distingua davvero: una proprietà inventata dà `false`.
+- [x] [Review][Decision] **`Events.screen_registered` viene emesso durante la costruzione dell'albero e nessuno lo ascolta** — L'ordine profondità-prima fa emettere `CrtScreen` prima di `Main._ready()`, quindi chi nasce lì dentro si collega a segnale già passato. **Deciso: ripiego per gruppo**, cioè il meccanismo che questa storia ha già stabilito per il monitor. `CrtMonitor.find_in(tree)` è il modo in cui chi arriva tardi va a cercare invece di aspettare un annuncio; `crt/` non è stato toccato e il rilievo M5 resta chiuso com'era. Il perché è scritto nell'intestazione di `crt_monitor.gd`, dove chi si troverà senza registrazione lo cercherà.
+- [x] [Review][Decision] **Il prompt è un HUD in screen space, non un prompt diegetico** — **Deciso: si tiene l'HUD e si corregge il commento**, che rivendicava una diegeticità che il codice non ha. A 640×360, con vertex snapping e filtro nearest, un testo montato nel mondo rischia di essere illeggibile alla distanza di interazione, e su questo progetto le cose di resa si decidono guardando e non stimando — con un interagibile solo non c'è niente da guardare. La verifica è rinviata all'epica 3, quando moka, lampada e cupola daranno un confronto vero.
+- [x] [Review][Decision] **La stanza non conteneva il PC né il modem 56k che il Task 3 dichiara** — **Deciso: si aggiungono, e con loro la sedia.** `Pc` (tower a terra, con collisione), `Modem` (sulla scrivania, senza), `Chair` (seduta e schienale). La sedia **non ha collisione** deliberatamente: sta dove la 1.3 farà sedere il giocatore, e un corpo solido lì davanti impedirebbe di avvicinarsi al monitor a piedi — il prompt non comparirebbe mai.
+- [x] [Review][Decision] **Il kit-bashing modulare dichiarato non c'era** — **Deciso: materiali e mesh condivisi**, l'opzione piena, perché la 3.1 duplica quello che trova: con 10 materiali distinti ne farebbe 30. I sei materiali identici delle pareti sono diventati un `MatWall` solo; pavimento e soffitto condividono `BoxSlab`, parete di fondo e di fronte `BoxWallLong`. Il colore delle pareti si cambia adesso in un punto.
+
+**Patch applicate**
+
+- [x] [Review][Patch] Entrando nella fase con W/A/S/D già premuti la vite girava da sola: ogni scambio adesso rilascia le azioni con `_release_all_actions()`, che itera l'`InputMap` invece di ricopiare i nomi delle azioni polari [main.gd]
+- [x] [Review][Patch] Uscendo dalla fase con i tasti ancora premuti il giocatore partiva da solo; e `_advance` riabilitava il controller prima di liberare la fase. Adesso `_dispose()` toglie la fase dall'albero con `remove_child()` PRIMA di `queue_free()`, e il controllo torna dopo [main.gd]
+- [x] [Review][Patch] `_set_world_active` risolve il giocatore prima di toccare qualunque cosa: sul percorso d'errore non resta più l'interfaccia della fase a schermo con il controller acceso sotto [main.gd]
+- [x] [Review][Patch] `EYE_HEIGHT` e `INTERACT_RANGE` sono adesso le sorgenti di verità: `_ready()` le scrive nella camera e nel raggio, e la scena non le ripete più [world/player/player.gd, world/player/player.tscn]
+- [x] [Review][Patch] `set_enabled(true)` non ricattura più il mouse se era stato il giocatore a liberarlo: `_mouse_free` ricorda la sua scelta e la distingue dal rilascio automatico all'ingresso in fase [world/player/player.gd]
+- [x] [Review][Patch] Con il cursore libero il controllo è sospeso — niente passi, niente prompt, niente interazione: `_is_controlling()` è la condizione unica, perché camminare senza poter girare la testa è peggio che stare fermi [world/player/player.gd]
+- [x] [Review][Patch] Solo la pressione del tasto sinistro ricattura il cursore: rotelle e rilasci non lo fanno più [world/player/player.gd]
+- [x] [Review][Patch] `_look_at_interactable()` chiama `force_raycast_update()` prima di leggere, e la mira si riconferma al momento della pressione di `E`: non si interagisce più col monitor guardando la parete [world/player/player.gd]
+- [x] [Review][Patch] Il raggio dell'interazione vede anche il mondo (`LAYER_WORLD | LAYER_INTERACTABLE`): ciò che colpisce e non è un `Interactable` fa da occlusore, quindi il primo oggetto appoggiato a un muro non sarà usabile dalla stanza accanto [world/player/player.gd]
+- [x] [Review][Patch] I layer si aggiungono in `_enter_tree()` e in OR: nessuna sottoclasse deve più ricordarsi `super()`, e i valori scelti nell'ispettore non vengono più cancellati all'ingresso in albero [world/interactables/interactable.gd]
+- [x] [Review][Patch] Lo stato iniziale si dichiara in `_ready()` con `_set_world_active(true)`, invece di dipendere da tre posti scollegati [main.gd]
+- [x] [Review][Patch] Il commento di `_set_world_active` dice adesso la verità: si spegne il controllo, non il mondo, e il perché — alla 1.3 il giocatore seduto deve vedersi intorno la stanza [main.gd]
+- [x] [Review][Patch] Il giocatore si trova per gruppo (`Player.GROUP`, `Player.find_in()`) come il monitor: la regola dell'AC3 vale per entrambi [main.gd, world/player/player.gd]
+- [x] [Review][Patch] I layer di collisione hanno un nome: `layer_names/3d_physics` in `project.godot` («mondo», «giocatore», «interagibili») e le costanti `Interactable.LAYER_*` che il codice usa al posto dei numeri nudi [project.godot, world/interactables/interactable.gd]
+- [x] [Review][Patch] I commenti di `debug/render_tuning.gd` non dicono più che la stanza non esiste, e spiegano che il conteggio nel log è per mesh e non per materiale distinto [debug/render_tuning.gd]
+- [x] [Review][Patch] La voce di `deferred-work.md` su `_collect_materials` è aggiornata: sbloccata dalla 1.2, il salto dei materiali per-superficie non è più un difetto (il CRT lo sfrutta di proposito), resta aperta la sola mancata deduplicazione [deferred-work.md]
+- [x] [Review][Patch] Il conteggio delle mesh è corretto in Completion Notes e Change Log [1-2-losservatorio-esiste-e-ci-sei-dentro.md]
+- [x] [Review][Patch] La File List include `deferred-work.md` fra i modificati [1-2-losservatorio-esiste-e-ci-sei-dentro.md]
+
+**Rinviati — reali, non azionabili adesso**
+
+- [x] [Review][Defer] Un secondo `CrtMonitor` sarebbe inerte in silenzio: `_connect_monitor` collega solo il primo del gruppo, ma il prompt promette comunque l'azione [main.gd] — deferred, non raggiungibile oggi (un solo membro), morde nell'epica 3
+- [x] [Review][Defer] Re-interagire col monitor dopo aver completato la fase la riavvia e sovrascrive `phase_scores` con il risultato nuovo [main.gd] — deferred, il save non esiste ancora
+- [x] [Review][Defer] `ESC` non consuma l'evento e coincide con `ui_cancel`: quando arriverà la UI di pausa, un `ESC` libererà il cursore **e** aprirà la pausa nello stesso frame [world/player/player.gd] — deferred, morde quando esiste la pausa
+- [x] [Review][Defer] Il tasto «[E]» è scritto a mano e slegato dall'`InputMap` [world/interactables/interaction_prompt.gd] — deferred, non esiste rebinding
+- [x] [Review][Defer] `.normalized()` su `Input.get_vector` annulla il `deadzone: 0.2` dichiarato sulle sei azioni nuove [world/player/player.gd] — deferred, nessun asse analogico oggi
+- [x] [Review][Defer] Le scene sono state editate a mano e il formato non è quello che l'editor riscriverebbe [world/rooms/computer_room.tscn, world/observatory.tscn] — deferred, nessuna conseguenza a runtime
+- [x] [Review][Defer] Il prompt di interazione è un HUD e non un elemento del mondo: verificare a schermo nell'epica 3, con moka, lampada e cupola davanti [world/interactables/interaction_prompt.gd] — deferred per decisione presa in questa review
+
+**Scartati come rumore (2)**
+
+- «La sensibilità del mouse dipende dalla dimensione della finestra» — falso: `SubViewportContainer` riscala `relative` di `stretch_shrink`, che è fisso a 2. La sensibilità è costante, e il valore è stato tarato guardando. Il commento di `MOUSE_SENSITIVITY` è stato comunque reso preciso: sono radianti per pixel del **viewport**, non della finestra.
+- «`CrtMonitor.screen()` e `Player.camera()` non sono chiamate da nessuno» — impalcatura per la 1.3, dichiarata tale nei commenti di entrambe.
+
+**Verifiche eseguite dopo le patch**
+
+- Gioco a zero errori e zero warning: `--headless --path . --quit-after 300`.
+- Banco di collaudo `tests/test_bench.tscn` pulito, nessun framework di test aggiunto.
+- Ciclo della stanza provato dal vivo con una sonda temporanea, poi rimossa: il raggio trova il monitor (maschera 5, layer del monitor 5), il prompt compare, mirando 8° più in alto il raggio tiene ancora il bersaglio, l'interazione entra nella fase e spegne il giocatore, uscendo dalla fase il controllo torna e la fase è liberata.
+- La guardia `_phase_can_run()` distingue davvero: `&"truth" in p` è vero sulla fase polare, e una proprietà inventata dà falso.
+
+**Da guardare a schermo, perché non si decide leggendo:** le misure della stanza, la scocca nuova del monitor (più alta di 14 cm) e l'arredo aggiunto sono verificati per aritmetica e per sonda, non per occhio. È esattamente il genere di cosa che i documenti di questo progetto dicono di verificare guardando.
 
 ---
 
@@ -612,9 +674,19 @@ che è il pezzo che sa di essere pronto.
 **Il monitor si trova per gruppo**, `&"crt_monitor"`, mai per percorso di nodo. Un gruppo
 sopravvive a spostamenti e rinomine, che è ciò che l'AC3 chiede davvero.
 
-**I 9 pezzi della stanza usano tutti `material_override`**, verificato contando: 9 su 9.
+**Ogni pezzo della stanza usa `material_override`** — 14 mesh, 14 `material_override` — e
+nessuno usa `surface_material_override/0`: in tutto `world/` quella forma compare solo
+dentro un commento, che spiega perché non va usata.
 Così `Shift+F5`/`F6`/`F7` di `debug/render_tuning.gd` ha finalmente un bersaglio, e la voce
-di `deferred-work.md` che aspettava questa storia si può chiudere.
+di `deferred-work.md` che aspettava questa storia è stata aggiornata.
+
+> **Corretto dalla code review del 2026-08-22.** Qui c'era scritto «i 9 pezzi della stanza
+> […] verificato contando: 9 su 9», e il numero era sbagliato già quando è stato scritto:
+> le `MeshInstance3D` erano 10, perché la porta chiusa nella stessa sessione non era stata
+> ricontata. Dopo la review sono 14 — si sono aggiunti PC, modem e i due pezzi della sedia —
+> e `_collect_materials()` ne conta 15 con la scocca del monitor. Il conteggio nel log è per
+> mesh e non per materiale distinto, ed è ora documentato in `render_tuning.gd`: la stanza
+> condivide un solo `MatWall` fra sei pareti.
 
 **Le misure scelte, e la catena che le lega.** Altezza occhi 1,65 m · piano della scrivania
 0,75 m · centro dello schermo CRT 1,10 m · `Seat` che ne risulta a 1,19 m, che è un'altezza
@@ -663,6 +735,7 @@ pass è un costo reale, perché il CRT è dentro il mondo.
 
 | Data | Cosa |
 |---|---|
+| 2026-08-22 | **Code review a tre layer, 33 rilievi: 7 decisioni prese, 18 patch applicate, 6 rinviate, 2 scartate.** Le tre cose che pesavano: la mutua esclusione WASD aveva un buco — `set_enabled(false)` spegne il lettore del giocatore, non lo stato fisico dei tasti, e chi entrava nella fase tenendo `W` si trovava la vite che girava da sola; **adesso ogni scambio rilascia le azioni**, e la fase esce dall'albero prima che il controllo torni. Il vetro del CRT sporgeva 11 cm sopra la scocca e la metà superiore dello schermo non era mirabile: **la scocca è stata allargata a 0,42 × 0,50 × 0,38**, il centro dello schermo resta a 1,10 m e la catena delle misure sopravvive. La catena non chiudeva per la 1.3 — `desk_camera` porterà l'origine del corpo a −0,46 m — ed è corretto che lo faccia, ma solo perché **da spento il controller non simula più fisica**. Aggiunti PC, modem 56k e sedia (senza collisione: sta dove la 1.3 farà sedere il giocatore). Materiali e mesh condivisi, come `idea.md §14` chiede. Layer di collisione nominati in `project.godot`. Guardia `_phase_can_run()`: una fase mal configurata non riceve più il controllo, che in release sarebbe stato un blocco senza ritorno. Gioco e banco di collaudo a zero errori e zero warning; ciclo della stanza riprovato dal vivo. |
 | 2026-08-22 | Storia implementata per intero. Stanza computer, giocatore in prima persona con imbardata sul corpo e beccheggio sulla camera, contratto di interazione con prompt diegetico a un tasto, monitor CRT come oggetto del mondo, osservatorio innestato nel `SubViewport` a bassa risoluzione. **La collisione WASD fra movimento e viti della fase polare — che nessun documento di pianificazione aveva notato — è stata risolta senza toccare `phase_polar.gd`:** azioni nuove sulle stesse lettere, e fase e giocatore mutuamente esclusivi con lo scambio in `main.gd`. **Rilievo M5 chiuso:** `screen_registered` lo emette solo `CrtScreen`, verificato con una emissione sola. Tutti e 9 i pezzi della stanza usano `material_override`, quindi i comandi di taratura PS1 hanno per la prima volta un bersaglio. Gioco e banco di collaudo a zero errori e zero warning. |
 
 ### File List
@@ -690,10 +763,37 @@ loro.
 - `project.godot` — sei azioni nuove nell'`InputMap`: `move_forward`, `move_back`,
   `move_left`, `move_right`, `interact`, `ui_release_mouse`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml` — stato della storia
+- `_bmad-output/implementation-artifacts/deferred-work.md` — le voci rinviate di questa
+  storia, e l'aggiornamento della voce su `_collect_materials` che la 1.2 sblocca
 - `_bmad-output/implementation-artifacts/1-2-losservatorio-esiste-e-ci-sei-dentro.md`
+
+**Modificati dalla code review del 2026-08-22**
+
+- `world/interactables/interactable.gd` — layer nominati (`LAYER_WORLD`, `LAYER_PLAYER`,
+  `LAYER_INTERACTABLE`) e assegnati in `_enter_tree()` in OR: niente `super()` obbligatorio,
+  niente valori di scena cancellati
+- `world/interactables/crt_monitor.gd` — `find_in()`, il ripiego per chi si è perso
+  `Events.screen_registered`; niente `super()` in `_ready()`
+- `world/interactables/crt_monitor.tscn` — scocca 0,42 × 0,50 × 0,38 che avvolge davvero il
+  vetro, collider che copre tutto lo schermo
+- `world/interactables/interaction_prompt.gd` — il commento non rivendica più una
+  diegeticità che il codice non ha
+- `world/player/player.gd` — misure come sorgente di verità, memoria del cursore libero,
+  fisica ferma da spento, `force_raycast_update()`, mira riconfermata alla pressione,
+  occlusori nel raggio, gruppo `player`
+- `world/player/player.tscn` — le misure non sono più duplicate nella scena
+- `world/rooms/computer_room.tscn` — materiali e mesh condivisi, PC, modem e sedia
+- `world/observatory.tscn` — monitor a z = −2,05 perché il `Seat` esca dal volume della
+  scrivania; la catena delle misure scritta dove qualcuno la cercherà
+- `main.gd` — guardia `_phase_can_run()`, `_dispose()`, rilascio delle azioni allo scambio,
+  stato iniziale dichiarato, giocatore per gruppo
+- `project.godot` — `layer_names/3d_physics`: «mondo», «giocatore», «interagibili»
+- `debug/render_tuning.gd` — i due commenti che dicevano che la stanza non esiste
 
 **Temporanei, creati e rimossi nella stessa sessione**
 
+- `_probe.gd` / `_probe.tscn` — sonda del ciclo della stanza dopo la code review: raggio,
+  prompt, ingresso e uscita dalla fase, e la guardia `_phase_can_run()`
 - `_input_setup.gd` — generatore delle azioni `InputMap`, stesso metodo della 1.1
 - `_build_room.gd` — costruttore di `computer_room.tscn`: la stanza è fatta di pezzi
   ripetibili, e disporli da codice è il kit-bashing che `idea.md §14` chiede

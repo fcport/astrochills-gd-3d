@@ -13,3 +13,19 @@ Lavoro reale, rinviato con una ragione. Ogni voce dice da dove viene e cosa la s
 - **`set_anchors_preset(PRESET_FULL_RECT)` funziona per coincidenza.** Il default `keep_offsets = true` sposta solo le ancore e ricalcola gli offset per **preservare** il rect che il Control ha già: regge oggi soltanto perché `polar_screen._ready()` ha impostato `256×192` a (0,0), che combacia con il viewport. La chiamata che fa ciò che il commento intende è `set_anchors_and_offsets_preset`. *Rinviato: verificato funzionante oggi (256×192, offset zero); è fragilità latente che morde quando la 1.3 porta il Control sul CRT diegetico e le misure smettono di combaciare per caso.* [main.gd]
 
 - **Dopo ENTER il ponte finisce nel vuoto.** `_advance()` svuota il viewport, libera la fase e si ferma: schermo nero, nessun riscontro che qualcosa si sia concluso, e il `reason` non lo legge nessuno. *Rinviato: limite dichiarato del ponte temporaneo, coperto dalla quarta clausola di AC6 — si chiude con la storia 1.3, quando il giocatore si siede al monitor. Registrato qui perché non venga scambiato per una regressione.* [main.gd]
+
+## Deferred from: verifica a schermo della storia 1.2 (2026-08-22)
+
+- **La sensazione del movimento si tara giocando, non adesso.** `WALK_SPEED = 2.6`,
+  `MOUSE_SENSITIVITY = 0.0022` e `ACCELERATION = 12.0` in `world/player/player.gd` sono
+  valori di partenza plausibili, provati e giudicati accettabili da Federico il 2026-08-22
+  aprendo il gioco. *Rinviato per decisione esplicita: «è fatica dire da così» — si
+  correggono man mano che si gioca, quando ci sarà abbastanza stanza e abbastanza tempo di
+  gioco per accorgersi di cosa non va. Non sono numeri da difendere in review: sono numeri
+  in attesa di essere smentiti dall'uso.* [world/player/player.gd]
+
+- **Le dimensioni della stanza computer restano indicative.** 4 × 5 m, soffitto 2,8.
+  Verificate a schermo il 2026-08-22 e giudicate ragionevoli. *Rinviato: non è il momento di
+  affinarle — la stanza è vuota, e la scala vera si giudica quando ci sarà dentro l'arredo
+  che l'epica 3 porta (terminale, moka, lampada) e quando esisteranno le stanze accanto per
+  fare da metro di paragone.* [world/rooms/computer_room.tscn]

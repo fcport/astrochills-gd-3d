@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="TargetData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/targets/target_data.gd" id="1_target"]
+
+[resource]
+script = ExtResource("1_target")
+id = &"m8"
+short = "M8"
+full = "Nebulosa Laguna"
+type = &"NEB"
+diff = 1
+min_exp = 40
+vis_from = "21:00"
+vis_to = "00:00"
+desc = "Vasta nube di formazione stellare nel Sagittario, a 4.100 anni-luce. Visibile a occhio nudo dai cieli bui come una macchia luminosa. Al telescopio rivela la \"laguna\" scura di polvere che la attraversa."

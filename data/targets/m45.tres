@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="TargetData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/targets/target_data.gd" id="1_target"]
+
+[resource]
+script = ExtResource("1_target")
+id = &"m45"
+short = "M45"
+full = "Pleiadi"
+type = &"OPEN"
+diff = 1
+min_exp = 15
+vis_from = "21:00"
+vis_to = "02:00"
+desc = "Le \"Sette Sorelle\", giovane ammasso aperto a soli 444 anni-luce. Le stelle più brillanti sono avvolte in nebulose di riflessione blu. Visibili a occhio nudo, sono citate da Omero, Esiodo, nella Bibbia e nel Corano."

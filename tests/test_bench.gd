@@ -26,6 +26,7 @@ extends Node
 
 const HONEST_PATH := "res://phases/polar/sources/honest_drift.tres"
 const WANDERING_PATH := "res://phases/polar/sources/wandering_drift.tres"
+const CATALOG_PATH := "res://phases/targeting/sources/honest_catalog.tres"
 ## La costante dell'orologio vero, non una copia: il banco confronta la propria
 ## aritmetica con quella del gioco, e per farlo deve leggere la stessa costante.
 const CLOCK := preload("res://night/night_clock.gd")
@@ -54,6 +55,8 @@ func _ready() -> void:
 	_check_wandering_drift()
 	print("")
 	_check_local_to_scene()
+	print("")
+	_check_honest_catalog()
 	print("")
 	_check_night_clock()
 	print("")
@@ -159,6 +162,125 @@ func _check_local_to_scene() -> void:
 		var ok := r.resource_local_to_scene
 		print("   %-22s resource_local_to_scene = %s%s" % [
 			path.get_file(), ok, "" if ok else "   <-- ATTESO: true"])
+
+
+## Il catalogo onesto del targeting: disponibilità corretta all'ora corrente,
+## determinismo, e `resource_local_to_scene`. Si collauda il `.tres` che il gioco
+## carica davvero, non i default dello script.
+##
+## LE ORE SI DANNO IN MINUTI NOTTE-RELATIVI, come `run.elapsed_min`: le 21:30
+## sono 30, le 05:00 sono 480. È lo stesso conto che la sorgente fa sulle finestre
+## dei target, e collaudarlo qui è collaudare che il wrap di mezzanotte regga.
+func _check_honest_catalog() -> void:
+	print("-- HonestCatalog: disponibilità all'ora corrente, DETERMINISTICA")
+
+	# Prima di collaudare la disponibilità, si collauda che l'inizio notte sia LO
+	# STESSO dell'orologio: una copia divergente calcolerebbe finestre che il gioco
+	# non usa. Stessa disciplina della 2.1 per l'aritmetica della notte.
+	if NIGHT_START_HOUR != HonestCatalog.NIGHT_START_HOUR:
+		print("   NIGHT_START_HOUR: banco %d, sorgente %d  <-- ATTESO: uguali" % [
+			NIGHT_START_HOUR, HonestCatalog.NIGHT_START_HOUR])
+	if HonestCatalog.NIGHT_START_HOUR != CLOCK.NIGHT_START_HOUR:
+		print("   NIGHT_START_HOUR: sorgente %d, orologio %d  <-- ATTESO: uguali" % [
+			HonestCatalog.NIGHT_START_HOUR, CLOCK.NIGHT_START_HOUR])
+
+	var src := _load_source(CATALOG_PATH) as HonestCatalog
+	if src == null:
+		return
+	print("   dal .tres: %d target, resource_local_to_scene = %s%s" % [
+		src.targets.size(), src.resource_local_to_scene,
+		"" if src.resource_local_to_scene else "   <-- ATTESO: true"])
+	if src.targets.size() != 6:
+		print("   <-- ATTESO: 6 target di base")
+
+	# I set attesi sono PINNATI: il banco non si limita a stampare la
+	# disponibilità, la confronta con ciò che deve essere. Senza il confronto una
+	# regressione sul wrap di mezzanotte o sul confine `<=` scorrerebbe via anche
+	# sotto gli occhi di chi legge.
+	#
+	# 21:30 = 30 min: disponibili esattamente {M42, M45, M31, M8}.
+	_assert_availability(src, 30.0, "21:30", PackedStringArray(["M42", "M45", "M31", "M8"]))
+	# 05:00 = 480 min: disponibili esattamente {M13, M57, M31}. M31 ha finestra
+	# fino alle 05:00 = 480, ed è il confine `480<=480` inclusivo — il punto più
+	# facile da rompere.
+	_assert_availability(src, 480.0, "05:00", PackedStringArray(["M13", "M57", "M31"]))
+	# Il confine del wrap di mezzanotte per M8 (`vis_to = "00:00"` -> 180 min): a
+	# 180 deve essere disponibile (confine inclusivo), a 181 no. È la coppia che
+	# distingue `<=` da `<` proprio sul minuto che attraversa le 00:00.
+	_assert_available_contains(src, 180.0, "00:00", &"M8", true)
+	_assert_available_contains(src, 181.0, "00:01", &"M8", false)
+
+	# Determinismo: stesso `now_min`, due chiamate, stessa lista/disponibilità.
+	var i := TargetingInput.new()
+	i.now_min = 30.0
+	var a := src.sample(i)
+	var b := src.sample(i)
+	print("   determinismo a 21:30: %s" % (
+		"DETERMINISTICA" if _same_availability(a, b) else "NON deterministica  <-- ATTESO: deterministica"))
+
+
+## Stampa la disponibilità a `now_min` e la confronta con il set atteso di sigle
+## disponibili. Un `<-- ATTESO {...}` compare solo quando il set effettivo diverge
+## da quello pinnato — coerente con gli altri check del banco: si stampa sempre,
+## si segnala solo lo scostamento.
+func _assert_availability(
+	src: HonestCatalog, now_min: float, label: String, expected: PackedStringArray
+) -> void:
+	var i := TargetingInput.new()
+	i.now_min = now_min
+	var rows := PackedStringArray()
+	var actual := PackedStringArray()
+	for entry in src.sample(i):
+		var short: String = entry.get(&"short", "?")
+		var avail: bool = entry.get(&"available", false)
+		rows.append("%s=%s" % [short, "sì" if avail else "no"])
+		if avail:
+			actual.append(short)
+	var note := ""
+	if not _same_set(actual, expected):
+		note = "   <-- ATTESO disponibili: {%s}" % ", ".join(expected)
+	print("   alle %s (now_min %.0f): %s%s" % [label, now_min, ", ".join(rows), note])
+
+
+## Confine puntuale: una sola sigla, disponibile o no a un preciso `now_min`.
+## Serve per i minuti di frontiera (il wrap di mezzanotte), dove conta il singolo
+## target e non l'intero set.
+func _assert_available_contains(
+	src: HonestCatalog, now_min: float, label: String, short: StringName, expected: bool
+) -> void:
+	var i := TargetingInput.new()
+	i.now_min = now_min
+	var found := false
+	for entry in src.sample(i):
+		if StringName(entry.get(&"short", "")) == short:
+			found = entry.get(&"available", false)
+			break
+	var note := ""
+	if found != expected:
+		note = "   <-- ATTESO: %s = %s" % [short, "disponibile" if expected else "non disponibile"]
+	print("   confine %s (now_min %.0f): %s = %s%s" % [
+		label, now_min, short, "disponibile" if found else "non disponibile", note])
+
+
+## Uguaglianza fra set di sigle, ordine irrilevante.
+func _same_set(a: PackedStringArray, b: PackedStringArray) -> bool:
+	if a.size() != b.size():
+		return false
+	for s in a:
+		if not b.has(s):
+			return false
+	return true
+
+
+func _same_availability(a: Array[Dictionary], b: Array[Dictionary]) -> bool:
+	if a.size() != b.size():
+		return false
+	for k in a.size():
+		if a[k].get(&"id") != b[k].get(&"id"):
+			return false
+		if a[k].get(&"available") != b[k].get(&"available"):
+			return false
+	return true
 
 
 ## L'aritmetica della notte, senza aprire una finestra.

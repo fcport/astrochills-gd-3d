@@ -103,7 +103,7 @@ development_status:
   # Story 2.1: Un turno che comincia alle 21:00 e finisce da solo all'alba
   2-1-un-turno-che-comincia-alle-21-00-e-finisce-da-solo-allalba: done
   # Story 2.2: Scegliere cosa fotografare stanotte
-  2-2-scegliere-cosa-fotografare-stanotte: backlog
+  2-2-scegliere-cosa-fotografare-stanotte: done
   # Story 2.3: La posa — configurare la sequenza e lasciarla lavorare
   2-3-la-posa-configurare-la-sequenza-e-lasciarla-lavorare: backlog
   # Story 2.4: Lo stack — vedere per la prima volta cosa hai preso

@@ -249,3 +249,11 @@ Lavoro reale, rinviato con una ragione. Ogni voce dice da dove viene e cosa la s
 - **`_photo_index` non si riazzera: il ciclo delle foto non riapre.** `_next_scene()` percorre `photo_phases` una volta sola e non torna mai indietro, quindi «le fasi di **foto** a ogni scatto» dell'AC3 è implementato a metà. *Rinviato di proposito, e dichiarato in loco a `night/night_session.gd:193-198`: ciò che riapre il ciclo è il menu post-foto della storia 2.6, e con `photo_phases` vuoto la cosa è oggi inosservabile. La voce esiste perché il Change Log della 2.1 dichiara AC3 soddisfatto senza citare il rinvio.* [night/night_session.gd]
 
 - **AC2, clausola «si chiude anche se è aperto un menu»: non verificabile in questa storia.** `night/night_clock.gd` è un `Node` lasciato a `PROCESS_MODE_INHERIT`, deliberatamente: è ciò che rende vera l'altra metà dell'AC1, «la pausa ferma il tempo davvero». Ma con l'albero in pausa `_process` non gira, quindi `dawn` non può arrivare: un menu che mette in pausa **impedisce** all'alba di chiudere la notte. Le due clausole sono in tensione per costruzione, e la domanda aperta 5 dello spec lo sapeva. *Rinviata per decisione di Federico del 2026-08-23: `ui/` è vuoto e nessuna storia prima della 2.6 crea un menu, quindi oggi non esiste niente da mettere in pausa e la clausola non è osservabile. La prova si sposta alla 2.6, insieme al menu post-foto — che è anche la storia in cui si dovrà decidere se quel menu mette davvero in pausa l'albero o si limita a coprire lo schermo.* [night/night_clock.gd, night/night_session.gd]
+
+### DW-1: La striscia indice del targeting assume al massimo sei target (passo fisso di 40px): con l'arrivo dei cataloghi (riviste, epica 3+) le sigle oltre la sesta si disegnerebbero fuori dai 256px.
+origin: spec-deferred 61f31966e59b
+location: phases/targeting/targeting_screen.gd:607
+source_spec: `spec-2-2-scegliere-cosa-fotografare-stanotte.md`
+severity: low
+reason: targeting_screen.gd::_draw_index_strip avanza `x += 40` per ogni voce da x=8; la settima cadrebbe a x=248 e le successive fuori schermo. Nessun clamp o wrap sul numero di voci. Non si innesca nell'MVP (catalogo fisso a 6 target), ma diventa reale quando il catalogo cresce.
+status: open

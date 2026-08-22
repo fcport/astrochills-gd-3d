@@ -628,6 +628,13 @@ candidati sono la portata dell'interazione (oggi 1,2 m), l'altezza della scrivan
 collisore del monitor più generoso della sua scocca. È esattamente il genere di cosa che i
 documenti dicono di verificare guardando e non stimando.
 
+**Trovato e chiuso durante la verifica: oltre la porta si cadeva nel vuoto.** Il vano
+c'era, ma il pavimento finisce 7 cm dopo la soglia e il giocatore precipitava senza fondo. Il
+corridoio è fuori scopo — arriva con la 3.1 — quindi la porta è stata **chiusa**: un pannello
+pieno nel vano, che è anche la lettura diegetica giusta. Si aprirà quando ci sarà qualcosa
+dietro. Verificato spingendo il giocatore contro la porta per 40 frame: si ferma e resta a
+terra.
+
 **Il ciclo della stanza è stato provato dal vivo**, non dedotto: il raggio trova il monitor,
 il prompt legge «Usa il monitor», premere interagisce, la fase entra e il giocatore si
 spegne. Uscendo dalla fase il controllo torna al giocatore.

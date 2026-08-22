@@ -24,6 +24,19 @@ Lavoro reale, rinviato con una ragione. Ogni voce dice da dove viene e cosa la s
   gioco per accorgersi di cosa non va. Non sono numeri da difendere in review: sono numeri
   in attesa di essere smentiti dall'uso.* [world/player/player.gd]
 
+- **Uscire dalla fase la conclude, e rientrando l'allineamento riparte da capo.** Verificato
+  da Federico a schermo il 2026-08-22. Nel ponte della 1.2 l'unica uscita dalla fase è
+  `ENTER` = `polar_finish`, che per contratto **conclude** l'allineamento ed emette il
+  punteggio; `main.gd` libera la fase, e la prossima interazione col monitor ne istanzia una
+  nuova dal disallineamento iniziale. Non esiste un gesto per alzarsi senza finire.
+  *Rinviato: è il contenuto della storia 1.3, il cui AC lo richiede alla lettera — «il
+  giocatore si alza… la fase non viene interrotta e non viene liberata… al ritorno mostra lo
+  stato vero, non uno stato ricostruito». Non si può anticipare a metà: tenere viva la fase
+  mentre il giocatore cammina la lascerebbe in `_process`, dove `_turn_screws` legge WASD a
+  ogni frame — cioè riaprirebbe la collisione che il Task 0 ha appena chiuso. Separare
+  «seduto» da «finito» richiede la sequenza di ADR-003, che è precisamente la 1.3.*
+  **Registrato perché non venga scambiato per una regressione.* [main.gd]
+
 - **Le dimensioni della stanza computer restano indicative.** 4 × 5 m, soffitto 2,8.
   Verificate a schermo il 2026-08-22 e giudicate ragionevoli. *Rinviato: non è il momento di
   affinarle — la stanza è vuota, e la scala vera si giudica quando ci sarà dentro l'arredo

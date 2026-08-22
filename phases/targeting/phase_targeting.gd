@@ -70,12 +70,30 @@ func _process(_delta: float) -> void:
 	if _done or truth == null or not is_instance_valid(_screen):
 		return
 
-	_input.now_min = _run.elapsed_min if _run != null else 0.0
+	# `_run` NON PUO' DEGRADARE. Assumere `now_min = 0` significherebbe dire «sono
+	# le 21:00» a una fase che non sa che ora e': una schermata perfettamente
+	# plausibile e interamente sbagliata, con M13 e M57 dichiarati non visibili
+	# per una ragione inventata. E' lo stesso motivo per cui `NightClock.begin()`
+	# restituisce `false` invece di partire da un'ora qualsiasi.
+	if _run == null:
+		push_error("[targeting] setup() non chiamato: nessuna notte da cui leggere l'ora")
+		assert(false, "phase senza run")
+		return
+
+	_input.now_min = _run.elapsed_min
 
 	_catalog = truth.sample(_input)  # UNICA assegnazione di _catalog — ADR-001
 
+	# UN CATALOGO VUOTO E' UNA FINE, NON UN'ATTESA. Restando muta la fase non
+	# emetterebbe mai `finished`: ENTER inerte, `_advance()` mai chiamato, e la
+	# notte ferma su uno schermo morto fino all'alba — la «notte muta» che
+	# `night_session` si da' la pena di prevenire quando una fase e' mal
+	# configurata. La sua guardia pero' scatta su `truth == null`, e un catalogo
+	# svuotato a fase avviata le passa sotto.
 	if _catalog.is_empty():
+		_finish_empty()
 		return
+
 	_cursor = clampi(_cursor, 0, _catalog.size() - 1)
 	_screen.set_readout(_catalog, _cursor)
 
@@ -85,19 +103,28 @@ func _unhandled_input(event: InputEvent) -> void:
 	# `_process` esce subito, ma senza questa riga ENTER emetterebbe comunque
 	# `finished`, e un errore di configurazione diventerebbe un esito diegetico
 	# plausibile, registrato nel save come se la fase fosse stata giocata.
-	if _done or truth == null or _catalog.is_empty():
+	# `is_instance_valid(_screen)` vale qui esattamente per la ragione che
+	# `_process` scrive due funzioni piu' su: se l'host libera il Control, i rami
+	# su/giu' chiamerebbero `set_readout()` su un'istanza morta. Una guardia che
+	# vale in una funzione e non nell'altra e' una guardia dimenticata.
+	if _done or truth == null or _catalog.is_empty() or not is_instance_valid(_screen):
 		return
 
-	# Scorrimento del carosello, con wrap agli estremi.
-	if event.is_action_pressed(&"ui_up"):
+	# AZIONI PROPRIE, non le `ui_*`. La polare fa lo stesso con `polar_finish`, e
+	# non per gusto: `ui_accept` include ENTER, l'ENTER del tastierino E LA BARRA
+	# SPAZIATRICE, mentre il piede dello schermo promette «ENTER CONFIRM». Peggio,
+	# `ui_accept` e' il tasto con cui ci si siede alla postazione: ereditarlo
+	# significa che l'ENTER premuto per sedersi puo' confermare il primo bersaglio
+	# prima che il catalogo sia stato letto.
+	if event.is_action_pressed(&"targeting_up"):
 		_cursor = (_cursor - 1 + _catalog.size()) % _catalog.size()
 		_screen.set_readout(_catalog, _cursor)
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(&"ui_down"):
+	elif event.is_action_pressed(&"targeting_down"):
 		_cursor = (_cursor + 1) % _catalog.size()
 		_screen.set_readout(_catalog, _cursor)
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(&"ui_accept"):
+	elif event.is_action_pressed(&"targeting_confirm"):
 		_finish()
 		get_viewport().set_input_as_handled()
 
@@ -110,9 +137,27 @@ func score() -> int:
 	return NEUTRAL_SCORE
 
 
+## La chiusura per catalogo vuoto. CANALE 2: il giocatore legge sul vetro perche'
+## la fase e' finita subito, invece di restare davanti a uno schermo inerte.
+## `ok` e' false — non c'e' stata nessuna scelta — e il punteggio e' zero.
+func _finish_empty() -> void:
+	_done = true
+	push_error("[targeting] catalogo vuoto: la fase si chiude senza scelta")
+	finished.emit(PhaseResult.new(false, "No targets in tonight's catalog.", 0, {}))
+
+
 func _finish() -> void:
 	_done = true
+	# La sorgente esclude gia' i target senza id (`_validate`), quindi qui il
+	# ripiego non dovrebbe mai scattare. Resta perche' `truth` e' sostituibile:
+	# una sorgente futura non e' tenuta a validare come questa.
 	var target_id: StringName = _catalog[_cursor].get(&"id", &"")
+	if target_id.is_empty():
+		# NON un `return`: uscire di qui con `_done = true` e senza emettere
+		# `finished` lascerebbe la notte ferma esattamente come il catalogo vuoto.
+		push_error("[targeting] la sorgente ha restituito un target senza id")
+		finished.emit(PhaseResult.new(false, "The catalog entry is unreadable.", 0, {}))
+		return
 
 	# La scelta sopravvive a save/riapertura senza che `night_session` conosca la
 	# chiave del payload: la casa persistente è un campo già in `NightRun`.

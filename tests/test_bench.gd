@@ -149,12 +149,22 @@ func _check_wandering_drift() -> void:
 ## scena riceverebbero la stessa istanza e la seconda erediterebbe la deriva
 ## accumulata dalla prima. È un bug che costa un pomeriggio e non si manifesta
 ## finché non ci sono due fasi insieme.
+## L'ELENCO E' UNO SOLO, e sta qui. Il targeting era finito in un controllo
+## inline dentro `_check_honest_catalog`, e il risultato erano due liste che
+## potevano divergere: chi aggiungeva la settima sorgente guardava questa, non ci
+## trovava il catalogo, e concludeva che non era la sede giusta. Ogni sorgente
+## nuova si aggiunge QUI dentro e in nessun altro posto.
+const SOURCE_PATHS := [
+	"res://phases/polar/sources/honest_drift.tres",
+	"res://phases/polar/sources/wandering_drift.tres",
+	"res://phases/targeting/sources/honest_catalog.tres",
+	"res://phases/targeting/sources/wandering_catalog.tres",
+]
+
+
 func _check_local_to_scene() -> void:
 	print("-- .tres delle sorgenti: resource_local_to_scene deve essere true")
-	for path in [
-		"res://phases/polar/sources/honest_drift.tres",
-		"res://phases/polar/sources/wandering_drift.tres",
-	]:
+	for path in SOURCE_PATHS:
 		var r := load(path) as Resource
 		if r == null:
 			print("   %-22s NON CARICABILE" % path.get_file())
@@ -187,9 +197,9 @@ func _check_honest_catalog() -> void:
 	var src := _load_source(CATALOG_PATH) as HonestCatalog
 	if src == null:
 		return
-	print("   dal .tres: %d target, resource_local_to_scene = %s%s" % [
-		src.targets.size(), src.resource_local_to_scene,
-		"" if src.resource_local_to_scene else "   <-- ATTESO: true"])
+	# `resource_local_to_scene` NON si verifica qui: la verifica una sola funzione,
+	# su un solo elenco (`SOURCE_PATHS`). Vedi `_check_local_to_scene`.
+	print("   dal .tres: %d target" % src.targets.size())
 	if src.targets.size() != 6:
 		print("   <-- ATTESO: 6 target di base")
 

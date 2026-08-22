@@ -25,8 +25,13 @@ extends Node
 ##
 ## Percorsi e non preload: un `const ... preload` risolve al caricamento dello
 ## script e si porterebbe `wandering_drift.tres` dentro l'export di release.
+## LA REGOLA, decisa in code review il 2026-08-23: ogni fase porta la sua bugia.
+## Il seam di ADR-001 e' provato solo dove `F9` ha qualcosa da iniettare, e una
+## fase senza voce qui dentro e' una fase su cui il vincolo non e' mai stato
+## messo alla prova. Vale da qui in avanti, epica 3 compresa.
 const LIE_PATHS := {
 	&"polar": "res://phases/polar/sources/wandering_drift.tres",
+	&"targeting": "res://phases/targeting/sources/wandering_catalog.tres",
 }
 
 var _main: Node

@@ -4,9 +4,10 @@
 ## la firma che le serve, e un nome sbagliato non compila invece di fallire in
 ## silenzio a runtime. Modello: il sotto-contratto della fase polare.
 ##
-## Chi eredita: `HonestCatalog` (MVP, dice sempre la verità). La bugia — un
-## catalogo che nasconde o falsa la disponibilità — sta fuori dall'MVP: il seam
-## esiste, il contenuto no.
+## Chi eredita: `HonestCatalog` (MVP, dice sempre la verità) e `WanderingCatalog`,
+## che falsa la disponibilità. La seconda NON è contenuto: esiste solo per essere
+## iniettata da `F9` e provare che il vincolo regge anche qui, come
+## `WanderingDrift` fa per la polare. Il seam esiste, le rotture giocabili no.
 class_name TargetingTruthSource
 extends PhaseTruthSource
 

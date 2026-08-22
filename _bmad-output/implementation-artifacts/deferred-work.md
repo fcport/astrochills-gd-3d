@@ -252,8 +252,60 @@ Lavoro reale, rinviato con una ragione. Ogni voce dice da dove viene e cosa la s
 
 ### DW-1: La striscia indice del targeting assume al massimo sei target (passo fisso di 40px): con l'arrivo dei cataloghi (riviste, epica 3+) le sigle oltre la sesta si disegnerebbero fuori dai 256px.
 origin: spec-deferred 61f31966e59b
-location: phases/targeting/targeting_screen.gd:607
+location: phases/targeting/targeting_screen.gd:113
 source_spec: `spec-2-2-scegliere-cosa-fotografare-stanotte.md`
 severity: low
 reason: targeting_screen.gd::_draw_index_strip avanza `x += 40` per ogni voce da x=8; la settima cadrebbe a x=248 e le successive fuori schermo. Nessun clamp o wrap sul numero di voci. Non si innesca nell'MVP (catalogo fisso a 6 target), ma diventa reale quando il catalogo cresce.
 status: open
+
+
+## Deferred from: code review of spec-2-2-scegliere-cosa-fotografare-stanotte (2026-08-23)
+
+- **Il catalogo viene ricampionato e ridisegnato a ogni frame, per uno stato che cambia
+  solo sui tasti.** `_process` chiama `truth.sample(_input)` — sei Dictionary di nove
+  chiavi allocati ex novo, piu' dodici `String.split()` dentro `_visible_at` — e poi
+  `set_readout()`, che chiama sempre `queue_redraw()`. Su una schermata ferma per un
+  minuto sono ~3.600 ridisegni completi di un Control che non e' cambiato di un pixel.
+  Nella polare il campionamento per frame ha una ragione: la deriva e' una quantita'
+  continua da integrare. Qui il catalogo cambia solo al movimento del cursore o al
+  varcare di una finestra. *Rinviato perche' non rompe niente oggi e la fase e' corta;
+  ma il project-context dice che una fase non fa lavoro pesante per frame, e nessuno ne
+  ha discusso.* [phases/targeting/phase_targeting.gd:66-80, targeting_screen.gd:45-48]
+
+- **Un solo `.tres` di target mancante spegne l'intera notte, e il messaggio accusa il
+  posto sbagliato.** La catena e' di `ext_resource` duri risolti al caricamento:
+  `night_plan.tres` carica la scena della fase, che carica `honest_catalog.tres`, che
+  carica i sei target. Prima della 2.2 il piano dipendeva solo da `phase_polar.tscn`;
+  adesso sei file-foglia di dati sono dipendenze di caricamento dell'orchestrazione
+  intera. Se si rinomina `data/targets/m8.tres` (gli `ext_resource` usano `path=`, non
+  `uid://`), `main.gd` vede `plan == null`, stampa «piano della notte assente o
+  illeggibile» e la notte non comincia mai — niente polare, niente alba, monitor
+  disabilitato. La causa vera non compare da nessuna parte. *Rinviato: la degradazione
+  garbata che il codice ha gia' (`_phase_can_run` che salta una fase senza `truth`,
+  `_next_scene` che salta una casella vuota) non copre questo, perche' il fallimento
+  avviene a MONTE del piano.* [data/night_plan.tres, phases/targeting/phase_targeting.tscn]
+
+- **Il cursore e' un indice posizionale su una lista che puo' cambiare sotto le dita.**
+  `_cursor` non e' mai riconciliato con l'IDENTITA' del target: viene solo riclampato
+  alla dimensione. Se una sorgente futura nascondesse i target non disponibili — che e'
+  esattamente la bugia che ADR-001 rende sostituibile senza toccare la fase — il
+  giocatore col cursore su M31 in posizione 3 vedrebbe M45 uscire dalla lista, tutto
+  scalare di uno, e premendo ENTER confermerebbe M57. Nessun errore, nessun log, e la
+  scelta sbagliata finisce nel save. *Rinviato: irraggiungibile con la sorgente onesta,
+  che restituisce sempre tutti e sei i target nello stesso ordine.*
+  [phases/targeting/phase_targeting.gd:79, :93, :115]
+
+## Decisione aperta dalla code review della 2.2 (2026-08-23) — DA CHIUDERE PRIMA DELLA 2.3
+
+- **Cosa fa l'imaging di un bersaglio sotto l'orizzonte.** Deciso in code review che la
+  scelta resta LIBERA: il targeting segnala «not visible now» ma non impedisce di
+  confermare, come dice `epics.md:663` e come vuole un gioco che non tratta il giocatore
+  da incapace. Resta però senza risposta la seconda metà della domanda, e non è teorica:
+  il targeting gira presto nella notte, quindi `elapsed_min` vale poche decine di minuti
+  e M13 (`from` 120) e M57 (`from` 150) risultano **sempre** non disponibili nell'istante
+  in cui si sceglie. Sceglierli è quindi un caso normale, non un caso limite.
+  *La 2.3 deve dichiarare cosa succede: la posa parte lo stesso e produce una foto
+  peggiore? Aspetta che il bersaglio sorga, consumando la notte? Rifiuta e rimanda alla
+  scelta? Oggi nessun criterio di accettazione lo dice, in nessuna storia — e la 2.2 ha
+  già scritto `run.selected_target_id`, quindi la 2.3 lo riceverà comunque.*
+  [phases/targeting/phase_targeting.gd, data/targets/*.tres]

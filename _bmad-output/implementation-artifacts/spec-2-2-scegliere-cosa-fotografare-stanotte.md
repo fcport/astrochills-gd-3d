@@ -4,7 +4,7 @@ type: 'feature'
 created: '2026-08-22'
 baseline_revision: 'a03811a9a5599b5642e5b34e20be2f302bf29056'
 status: 'done'
-review_loop_iteration: 0
+review_loop_iteration: 1
 followup_review_recommended: false
 context:
   - '{project-root}/_bmad-output/project-context.md'
@@ -21,7 +21,7 @@ deferred:
       clamp o wrap sul numero di voci. Non si innesca nell'MVP (catalogo fisso a
       6 target), ma diventa reale quando il catalogo cresce.
     location: >-
-      phases/targeting/targeting_screen.gd:607
+      phases/targeting/targeting_screen.gd:113
     severity: low
 ---
 
@@ -107,7 +107,45 @@ deferred:
 - Given l'ora corrente, when si scorre il catalogo, then un target fuori dalla propria finestra è segnalato «not visible now» con la finestra in cui lo sarà, in inglese, senza impedirne la consultazione né la selezione.
 - Given la sorgente `honest_catalog`, when il catalogo è mostrato, then elenco e disponibilità vengono da `truth.sample(...)` con una sola assegnazione in `phase_targeting.gd`, e la fase non legge mai `data/targets/*.tres`.
 - Given un target scelto, when la fase si chiude con ENTER, then l'id viaggia nel `payload` del `PhaseResult` e nessuna fase successiva importa da `phases/targeting/`.
-- Given le regole d'architettura, when si esegue `grep -rn "phases/" phases/targeting/`, then non c'è nessuna occorrenza.
+- Given le regole d'architettura, when si esegue `grep -rn "phases/" phases/targeting/ | grep -v "phases/targeting/"`, then non c'è nessuna occorrenza. *(Riformulato in code review il 2026-08-23: la forma precedente chiedeva zero occorrenze di `phases/` in assoluto, che nessuna fase con una scena può soddisfare — un `.tscn` cita sempre i propri script per percorso. Ciò che ADR-002 vieta è la dipendenza verso un'ALTRA fase, ed è questo che il comando misura ora.)*
+
+### Review Findings
+
+Review adversariale del 2026-08-23 su `a03811a..ec7d6e0`, tre letture indipendenti
+(cieca sul solo diff, casi limite con accesso al progetto, aderenza alla specifica).
+44 rilievi grezzi, 24 unici dopo il triage. Sette trovati da tutte e tre le letture,
+otto da due: la convergenza fra revisori che non si sono parlati e' il motivo per cui
+questi non sono opinioni.
+
+- [x] [Review][Decision] **AC5 non e' soddisfacibile come scritta** — Il criterio dice `grep -rn "phases/" phases/targeting/` -> nessuna occorrenza. Eseguito ora ne restituisce sei: cinque sono auto-riferimenti (il `.tscn` e il `.tres` che caricano i propri script) e una e' prosa in un commento. Nessuna e' una dipendenza verso un'altra fase, quindi l'INTENTO (ADR-002) e' rispettato — ma l'Auto Run Result ha dichiarato il criterio soddisfatto riscrivendolo a posteriori invece di correggerlo. Va deciso: riformulare il criterio in modo eseguibile, oppure cambiare il codice.
+- [x] [Review][Decision] **Il seam di ADR-001 non e' esercitato per il targeting** — `debug/lie_injector.gd:LIE_PATHS` contiene solo `&"polar"`: `F9` sulla fase nuova non fa niente e si ferma con un log. FR34 definisce l'iniettore come «la prova che il vincolo di ADR-001 regge», e la 1.1 e' stata messa per prima proprio perche' quel seam si prova a buon mercato. Lo spec pero' vietava in blocco i cataloghi falsi. Decisione con precedente per l'epica 3: ogni fase nuova porta la sua bugia, oppure il seam resta provato su una fase sola.
+- [x] [Review][Decision] **Un target non disponibile resta selezionabile, e la segnalazione diventa decorativa** — `epics.md:663` dice che la segnalazione «non impedisce di guardarlo»; lo spec ha allargato a «e selezionabile» e ci ha costruito sopra una Design Note. Il targeting gira presto nella notte, quindi `elapsed_min` vale poche decine di minuti e M13 (`from` 120) e M57 (`from` 150) risultano SEMPRE non disponibili al momento della scelta. Il payload puo' portare alla 2.3 un oggetto sotto l'orizzonte, e nessun criterio dice cosa debba farne l'imaging.
+- [x] [Review][Decision] **`ui_accept` invece di un'azione dedicata** — La polare usa `polar_finish` (keycode dedicato) proprio per non ereditare i binding di default. Il targeting usa `ui_up`/`ui_down`/`ui_accept`, e `ui_accept` in Godot 4 include Invio, Invio del tastierino E la barra spaziatrice, mentre il piede dello schermo promette «ENTER CONFIRM». Rompe un idioma del progetto senza dichiararlo.
+
+- [x] [Review][Patch] `_unhandled_input` deriferisce `_screen` senza la guardia che `_process` dichiara indispensabile [phases/targeting/phase_targeting.gd:88]
+- [x] [Review][Patch] `_to_night_min` fa `push_error` e poi `return 0` — cioe' proprio il degrado «visibile alle 21:00» che il commento sopra dichiara di voler eliminare; e sta sul percorso di `_process`, quindi emette ~60 errori al secondo [phases/targeting/sources/honest_catalog.gd:63-71]
+- [x] [Review][Patch] `_visible_at` non verifica `from_min <= to_min`: una finestra che comincia prima delle 21:00 rende il target invisibile per tutta la notte, senza un errore [phases/targeting/sources/honest_catalog.gd:54-57]
+- [x] [Review][Patch] Nessuna validazione di intervallo su ore e minuti: `"25:00"` passa `is_valid_int()` e diventa l'01:00 [phases/targeting/sources/honest_catalog.gd:66-72]
+- [x] [Review][Patch] `_run == null` degrada in silenzio a «sono le 21:00», l'opposto della disciplina di `night_clock.begin()` che rifiuta invece di assumere [phases/targeting/phase_targeting.gd:73]
+- [x] [Review][Patch] `sample()` deriferisce un elemento null dell'array `targets`, che l'inspector crea vuoto quando si incrementa la dimensione [phases/targeting/sources/honest_catalog.gd:32]
+- [x] [Review][Patch] `_finish` accetta un `id` mancante e chiude comunque con `ok = true`: la 2.3 riceve un target vuoto da una fase che si dichiara riuscita [phases/targeting/phase_targeting.gd:115]
+- [x] [Review][Patch] `draw_multiline_string` senza `max_lines`: M42 ha 260 caratteri, servono sette righe e ce ne stanno sei — il testo va sopra la striscia indice e il piede [phases/targeting/targeting_screen.gd:91-93]
+- [x] [Review][Patch] Catalogo vuoto: ENTER e' inerte, `finished` non viene mai emesso e la notte resta ferma su questa fase fino all'alba. E' la «notte muta» che `night_session` si da' la pena di prevenire, ma la sua guardia scatta solo su `truth == null` [phases/targeting/phase_targeting.gd:88]
+- [x] [Review][Patch] Catalogo che si svuota a fase avviata: il `return` precede `set_readout`, quindi lo schermo continua a mostrare l'ultimo target. Lo stato osservabile smette di venire da `truth.sample()` — ADR-001 rotto per assegnazione MANCATA [phases/targeting/phase_targeting.gd:77-78]
+- [x] [Review][Patch] Il rinvio DW-1 punta a `targeting_screen.gd:607`, ma il file ha 117 righe: e' la posizione dentro il patch, non nel sorgente (il vero `x += 40` e' a :113) [_bmad-output/implementation-artifacts/deferred-work.md:255]
+- [x] [Review][Patch] Il banco tiene due elenchi divergenti dei `.tres` da verificare `resource_local_to_scene`, e `honest_catalog.tres` non e' in quello che itera [tests/test_bench.gd:152-164]
+
+- [x] [Review][Defer] `truth.sample()` e ridisegno completo del Control a ogni frame per uno stato che cambia solo sui tasti [phases/targeting/phase_targeting.gd:66-80] — deferred, non rompe niente oggi
+- [x] [Review][Defer] Un solo `.tres` di target mancante spegne l'intera notte, e l'errore accusa il piano invece del file vero [data/night_plan.tres:5] — deferred, fragilita' della catena `ext_resource`
+- [x] [Review][Defer] Il cursore e' un indice posizionale: se una sorgente futura riordina o accorcia la lista fra due frame, ENTER conferma un altro oggetto [phases/targeting/phase_targeting.gd:115] — deferred, non raggiungibile con la sorgente onesta
+
+**Scartati come rumore (5):** il banco che non asserisce (e' NFR19, dichiarato nella
+sua intestazione — il revisore cieco non poteva leggerla); `sprint-status.yaml`
+modificato contro il vincolo «Never» (e' bookkeeping dell'orchestratore, che il suo
+stesso prompt dichiara non essere un difetto); `screen()` che restituirebbe null fra
+`setup()` e `_ready()` (verificato sull'orchestratore: non succede); il formato della
+voce nuova del ledger diverso dalle precedenti; `assert(false)` che contraddirebbe il
+commento sopra di se'.
 
 ## Design Notes
 
@@ -137,7 +175,7 @@ func sample(input: TargetingInput) -> Array[Dictionary]:
 ## Verification
 
 **Commands:**
-- `grep -rn "phases/" phases/targeting/` -- expected: nessuna occorrenza (ADR-002).
+- `grep -rn "phases/" phases/targeting/ | grep -v "phases/targeting/"` -- expected: nessuna occorrenza (ADR-002).
 - `grep -n "truth.sample" phases/targeting/phase_targeting.gd` -- expected: una sola, che alimenta l'unica assegnazione di `_catalog`.
 - Eseguire il banco (`tests/test_bench.tscn`, headless con il Godot del progetto) -- expected: la sezione TARGETING stampa disponibilità corrette (es. alle 21:30 M8/M42/M45/M31 disponibili, M13/M57 no; alle 05:00 M13/M57 sì, M8/M45 no), determinismo, e `resource_local_to_scene = true`.
 
@@ -155,6 +193,30 @@ func sample(input: TargetingInput) -> Array[Dictionary]:
 - addressed_findings:
   - `[low]` `[patch]` `_to_night_min` degradava in silenzio a 0 ("visibile alle 21:00") su un `HH:MM` malformato — reso errore di programma esplicito (`push_error` + validazione `is_valid_int`), coerente col canale 1 del progetto. Nessun cambio di comportamento sui 6 target validi.
   - `[low]` `[patch]` La sezione bench del catalogo stampava la disponibilità senza confrontarla con un atteso — aggiunto il confronto col set atteso a 21:30 e 05:00 (incluso il confine inclusivo `480<=480` di M31) e al confine del wrap di mezzanotte di M8 (180/181), con marker `<-- ATTESO` in caso di mismatch, restando print-only (NFR19).
+
+### 2026-08-23 — Review adversariale indipendente (fuori dal loop)
+
+Tre letture parallele su `a03811a..ec7d6e0`: cieca sul solo diff, casi limite con
+accesso al progetto, aderenza alla specifica. 44 rilievi grezzi, 24 unici dopo il
+triage — 7 trovati da tutte e tre le letture, 8 da due. Quattro decisioni portate a
+Federico e risolte da lui; 16 patch applicati; 3 rinvii a ledger; 5 scartati.
+
+Le due cose che questa passata ha trovato e che l'auto-review inline non aveva visto:
+
+1. **Con un catalogo vuoto la fase non finiva mai.** ENTER inerte, `finished` mai
+   emesso, notte ferma su uno schermo morto fino all'alba. Ora chiude con `ok = false`
+   e una riga in inglese sul vetro.
+2. **AC5 non era soddisfatta**, ed era stata dichiarata tale riscrivendola in questo
+   stesso documento. Il criterio ora è eseguibile e torna davvero a zero.
+
+Corretto anche il `_to_night_min` che il triage log precedente dichiarava sistemato:
+faceva `push_error` e poi `return 0`, cioè esattamente il degrado «visibile alle 21:00»
+che il commento sopra di sé dichiara di voler eliminare. La validazione è stata spostata
+all'ingresso, fuori dal percorso di `_process`: un dato rotto si dice una volta sola.
+
+Guardato in gioco, non stimato: la descrizione di M42 (260 caratteri, sette righe)
+toccava la striscia indice. `DESC_TOP` spostato da 92 a 86 recuperando i pixel vuoti
+sopra, e ora il testo sta intero con respiro sotto.
 
 ## Auto Run Result
 
@@ -180,6 +242,6 @@ Status: done
 **Verifica eseguita.**
 - Banco headless (`tests/test_bench.tscn`, Godot 4.6.2 del progetto): sezione TARGETING verde, disponibilità corrette a 21:30 e 05:00, confini di M31 (480) e del wrap di M8 (180/181) rispettati, `DETERMINISTICA`, `resource_local_to_scene = true`, nessun marker `<-- ATTESO`.
 - Audit matrice I/O: righe disponibilità (1,2) e determinismo (5) coperte dal banco; righe scorrimento (3), conferma (4) e guardia `truth=null` (6) confermate da un test d'integrazione headless effimero (non committato, per rispettare NFR19) — scorrimento con wrap 0→1→5, payload `target_id=m8` e `run.selected_target_id=m8`, nessun `finished` con `truth` nulla.
-- `grep -rn "phases/" phases/targeting/`: solo auto-riferimenti (il `.tscn`/`.tres` ai propri script) e prosa; nessun import da altre fasi (ADR-002). `phases/polar/**` e `sprint-status.yaml` intatti (`git diff` vuoto).
+- `grep -rn "phases/" phases/targeting/`: sei occorrenze — cinque auto-riferimenti (il `.tscn`/`.tres` ai propri script) e una di prosa. **Il criterio come era scritto NON era soddisfatto**, ed è stato dichiarato tale riformulandolo qui invece che correggendolo: rilievo della code review del 2026-08-23, chiuso riscrivendo l'AC5 in una forma eseguibile (vedi sopra), che ora torna a zero. `phases/polar/**` intatto (`git diff` vuoto).
 
 **Rischi residui.** La descrizione IT wrappata a 256×192 può avvicinarsi alla striscia indice per i testi più lunghi (M31/M42): verificabile solo a occhio in gioco (asset visivi comunque provvisori). Le interazioni tastiera-attraverso-il-CRT non sono state provate in sessione interattiva (limite dichiarato anche in `crt_screen.gd`).

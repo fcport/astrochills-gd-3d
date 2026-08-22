@@ -28,6 +28,18 @@ const FAINT := Color(0.18, 0.34, 0.20)
 ## Il margine sinistro del testo, come nella vista polare.
 const MARGIN := 8
 
+## Il testo della descrizione comincia qui, e la striscia indice comincia li'.
+## Sono le due sponde fra cui la descrizione deve stare: il numero massimo di
+## righe si RICAVA da queste, invece di essere battuto a mano — cosi' spostare la
+## striscia sposta anche il limite, e non c'e' modo che le due misure divergano.
+## 86 e non 92: guardando la schermata di M42 in gioco, la sua descrizione — la
+## piu' lunga delle sei, 260 caratteri — arrivava a TOCCARE la striscia indice,
+## mentre fra "visible now" e l'inizio del testo restavano diciotto pixel vuoti.
+## Sei pixel spostati da sopra a sotto danno il respiro senza tagliare una parola.
+const DESC_TOP := 86.0
+const STRIP_TOP := 170.0
+const DESC_SIZE := 10
+
 var _font: SystemFont
 
 var _catalog: Array[Dictionary] = []
@@ -87,17 +99,26 @@ func _draw_detail(t: Dictionary) -> void:
 		_text(Vector2(MARGIN, 74), "not visible now - %s" % window, DIM, 12)
 
 	# Descrizione narrativa, in italiano, wrappata alla larghezza del vetro.
+	#
+	# `max_lines` NON e' -1. Senza tetto il testo scorre oltre la striscia indice
+	# e oltre il piede, e non con un catalogo ipotetico: M42 ha 260 caratteri, che
+	# a corpo 10 su 240px sono sette righe contro le sei che ci stanno. Il
+	# risultato non e' un troncamento pulito ma la descrizione sovrapposta alla
+	# mappa del carosello, cioe' proprio l'indicazione che serve per orientarsi.
+	# Meglio una frase tagliata di una mappa illeggibile.
 	var desc: String = t.get(&"desc", "")
+	var line_h := _font.get_height(DESC_SIZE)
+	var max_lines := maxi(1, int((STRIP_TOP - DESC_TOP) / line_h))
 	draw_multiline_string(
-		_font, Vector2(MARGIN, 92), desc,
-		HORIZONTAL_ALIGNMENT_LEFT, DESIGN_SIZE.x - MARGIN * 2, 10, -1, DIM)
+		_font, Vector2(MARGIN, DESC_TOP), desc,
+		HORIZONTAL_ALIGNMENT_LEFT, DESIGN_SIZE.x - MARGIN * 2, DESC_SIZE, max_lines, DIM)
 
 
 ## La striscia indice: le sei sigle in fondo, con l'evidenza sulla corrente e il
 ## dimming su quelle non disponibili. È la mappa del carosello.
 func _draw_index_strip() -> void:
 	var x := float(MARGIN)
-	var y := 170.0
+	var y := STRIP_TOP
 	for i in _catalog.size():
 		var entry := _catalog[i]
 		var short: String = entry.get(&"short", "")

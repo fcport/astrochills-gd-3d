@@ -1,5 +1,5 @@
 # generated: 2026-08-21T22:44:03
-# last_updated: 2026-08-23T00:15:00
+# last_updated: 2026-08-23T14:30:00
 # project: astrochills-gd-3d
 # project_key: NOKEY
 # tracking_system: file-system
@@ -75,7 +75,7 @@
 # Questo tracking pianifica sulle 16 storie che esistono in epics.md.
 
 generated: 2026-08-21T22:44:03
-last_updated: 2026-08-23T00:15:00
+last_updated: 2026-08-23T14:30:00
 project: astrochills-gd-3d
 project_key: NOKEY
 tracking_system: file-system
@@ -101,7 +101,7 @@ development_status:
   # ---------------------------------------------------------------------------
   epic-2: in-progress
   # Story 2.1: Un turno che comincia alle 21:00 e finisce da solo all'alba
-  2-1-un-turno-che-comincia-alle-21-00-e-finisce-da-solo-allalba: ready-for-dev
+  2-1-un-turno-che-comincia-alle-21-00-e-finisce-da-solo-allalba: done
   # Story 2.2: Scegliere cosa fotografare stanotte
   2-2-scegliere-cosa-fotografare-stanotte: backlog
   # Story 2.3: La posa — configurare la sequenza e lasciarla lavorare

@@ -63,6 +63,8 @@ func _process(_delta: float) -> void:
 func _lines() -> PackedStringArray:
 	var out := PackedStringArray()
 	out.append("DEBUG")
+	out.append(_clock_line())
+	out.append("time_scale  %.1f" % Engine.time_scale)
 	out.append(_phase_line())
 	if _render != null:
 		var s: Vector2i = _render.world_size()
@@ -74,16 +76,32 @@ func _lines() -> PackedStringArray:
 	out.append("fps       %d   tuning %s" % [
 		Engine.get_frames_per_second(), Tuning.profile_hash])
 	out.append("")
+	out.append("F1/F2/F3/F4 tempo 1x 2x 5x 10x")
 	out.append("F9  alterna sorgente onesta/bugiarda · F12 overlay")
 	out.append("Shift+F1/F2 risoluzione · Shift+F3 filtro")
 	out.append("Shift+F5/F6 jitter · Shift+F7 spegnilo")
 	return out
 
 
+## L'ora della notte e i minuti trascorsi, che sono la stessa cosa detta due
+## volte: l'ora si ricava per somma diretta da `elapsed_min`, e vederle accanto è
+## ciò che permette di accorgersi se una delle due sta mentendo.
+func _clock_line() -> String:
+	var c: NightClock = _main.clock() if _main != null else null
+	if c == null:
+		return "--:--  (nessuna notte)"
+	return "%s  (elapsed %d min)" % [c.clock_text(), int(c.elapsed_min())]
+
+
+## Una fase SOSPESA e una che gira non sono la stessa cosa, e da quando alzarsi
+## sospende invece di concludere (storia 1.3) questa riga le mostrava identiche —
+## lo strumento diceva «sta girando» di una fase ferma. `SUSP` chiude la voce
+## rinviata che il Task 7 della 2.1 aveva riaperto.
 func _phase_line() -> String:
 	var p: Phase = _main.current_phase() if _main != null else null
 	if p != null:
-		return "%-9s %3d  [%s]" % [p.key(), p.score(), _source_tag(p)]
+		var state := "SUSP" if _main.phase_suspended() else "RUN "
+		return "%-9s %3d  [%s]  %s" % [p.key(), p.score(), _source_tag(p), state]
 	if Game.run != null and not Game.run.phase_scores.is_empty():
 		var parts := PackedStringArray()
 		for k in Game.run.phase_scores:

@@ -1,6 +1,10 @@
+---
+baseline_commit: 15010f2
+---
+
 # Story 2.1: Un turno che comincia alle 21:00 e finisce da solo all'alba
 
-Status: ready-for-dev
+Status: done
 
 Story key: `2-1-un-turno-che-comincia-alle-21-00-e-finisce-da-solo-allalba`
 Epic: 2 — Una notte di lavoro, dall'arrivo all'alba
@@ -104,20 +108,20 @@ funzioni su build esportata — le due letture divergono:
 | rapporto con `elapsed_min` | diretto, `elapsed_min` **è** l'ora | indiretto: `elapsed_min` non dice più che ore sono |
 | FR1 «non a un'ora reale» | rispettato | rispettato |
 
-- [ ] **Decidere fra A e B, e scriverlo dove qualcuno lo cercherà.**
-- [ ] **La conseguenza che rende la decisione non rinviabile è nella 2.2.** FR11: «Il catalogo
+- [x] **Decidere fra A e B, e scriverlo dove qualcuno lo cercherà.**
+- [x] **La conseguenza che rende la decisione non rinviabile è nella 2.2.** FR11: «Il catalogo
       tiene conto dell'ora corrente della notte: un target fuori dalla propria finestra di
       visibilità è segnalato come non disponibile adesso.» Le finestre di visibilità sono
       **ore reali del cielo**. Con la lettura A e una notte da 60 minuti, l'orologio non
       arriva mai alle ore piccole e **metà catalogo resta permanentemente non disponibile** —
       mentre la durata della notte è il numero che verrà mosso di continuo.
-- [ ] **Decidere anche se «21:00» è una `const` o un valore di tuning.** `TuningProfile` non
+- [x] **Decidere anche se «21:00» è una `const` o un valore di tuning.** `TuningProfile` non
       ha un campo per l'ora di inizio. `game-architecture.md § Naming Conventions` prescrive
       però il nome della costante: `NIGHT_START_HOUR`. La regola di § Configuration dice: «se
       un numero è stato *scelto* e potrebbe essere sbagliato, sta nel tuning. Se è una verità
       matematica, è una `const`». Le 21:00 sono una decisione, non un teorema — ma sono anche
       l'unica cosa che l'AC1 fissa alla lettera.
-- [ ] **Il formato dell'ora è già prescritto**, e non va inventato: `HH:MM` su 24 ore, con i
+- [x] **Il formato dell'ora è già prescritto**, e non va inventato: `HH:MM` su 24 ore, con i
       minuti trascorsi accanto fra parentesi. Il mockup normativo dell'overlay lo mostra come
       `23:41  (elapsed 161 min)` — ed è internamente coerente con la partenza alle 21:00,
       perché 21:00 + 161 min = 23:41. È la prova più forte che l'architettura abbia in mente
@@ -129,27 +133,27 @@ funzioni su build esportata — le due letture divergono:
 descritto come «accumulatore su `_process`». La formula è scritta: «Un nodo che processa
 accumula `run.elapsed_min += delta * tuning.game_min_per_sec`.»
 
-- [ ] **Il dato non è dell'orologio.** `elapsed_min` è un campo di `NightRun`
+- [x] **Il dato non è dell'orologio.** `elapsed_min` è un campo di `NightRun`
       (`core/night_run.gd:16`), che esiste già ed è **mai letto e mai scritto** da nessuno: la
       sua unica occorrenza nel repository è la dichiarazione. La divisione dei ruoli è
       dichiarata dall'architettura: **`NightClock` fa scorrere, `NightRun` conserva, `Game`
       possiede.** Non introdurre una seconda copia del tempo dentro l'orologio.
-- [ ] **Trappola 1 — la pausa.** L'AC dice «la pausa ferma il tempo davvero». È vero solo se
+- [x] **Trappola 1 — la pausa.** L'AC dice «la pausa ferma il tempo davvero». È vero solo se
       l'orologio **non** è in `PROCESS_MODE_ALWAYS`: con quel modo `_process` continuerebbe a
       girare a albero in pausa e la seconda metà dell'AC sarebbe falsa. Il `delta` di
       `_process` è già la quantità su cui la pausa e `Engine.time_scale` agiscono — è tutto
       il meccanismo, e non ne serve altro.
-- [ ] **Trappola 2 — non leggere `Engine.time_scale`.** L'architettura dice che
+- [x] **Trappola 2 — non leggere `Engine.time_scale`.** L'architettura dice che
       `Engine.time_scale = 10.0` accelera la notte «senza toccare una riga di logica». Se
       l'orologio moltiplicasse a mano per `time_scale`, l'accelerazione verrebbe applicata
       **due volte**. `time_control.gd` scrive su `Engine.time_scale`; `NightClock` non lo
       legge mai.
-- [ ] **Serve una lettura pubblica dell'ora, e non è un vezzo.** La 2.2 ne ha bisogno per le
+- [x] **Serve una lettura pubblica dell'ora, e non è un vezzo.** La 2.2 ne ha bisogno per le
       finestre di visibilità (FR11); la 3.6 misura le attività dell'attesa **in minuti di
       gioco** e deve poter leggere il tempo in qualunque istante senza passare da una fase
       (rilievo C3). Un `elapsed_min` privato dentro `night_session` lascia entrambe senza
       appiglio.
-- [ ] **`Tuning.game_min_per_sec` e `Tuning.night_length_min` esistono già** e valgono 0.6 e
+- [x] **`Tuning.game_min_per_sec` e `Tuning.night_length_min` esistono già** e valgono 0.6 e
       540.0 (`data/tuning.tres:7-8`). **Nessuna riga del progetto li legge**: questa storia è
       la prima. Si accede come `Tuning.<nome>`, mai `Tuning.profile.<nome>` — lo dichiara
       `autoloads/tuning.gd`.
@@ -162,31 +166,31 @@ vanno inventati: **`night/night_session.tscn`**, **`night/night_session.gd`**,
 Il diagramma di § Pattern 2 prescrive anche i nodi in scena: `NightSession`, con figli
 `PhaseHost` e `NightClock`.
 
-- [ ] **L'architettura scrive il codice dell'orchestratore in due blocchi normativi.** Non
+- [x] **L'architettura scrive il codice dell'orchestratore in due blocchi normativi.** Non
       sono esempi: sono la forma attesa, e nominano `_instantiate_phase(scene)`,
       `_on_phase_finished(result, phase)`, `_advance(result, phase)`, `_enter_next(result)`,
       `_ctx`, `_crt`.
-- [ ] **`NightPlan` esiste già ed è vuoto**: `core/night_plan.gd` dichiara
+- [x] **`NightPlan` esiste già ed è vuoto**: `core/night_plan.gd` dichiara
       `setup_phases: Array[PackedScene]` e `photo_phases: Array[PackedScene]`, **nessun
       metodo**, e **nessun file del progetto lo nomina**. Non esiste nessun `.tres` di tipo
       `NightPlan`: `data/` contiene un solo file, `data/tuning.tres`.
-- [ ] **La distinzione setup/foto sta nei due array, non in un `if`.** Il commento già scritto
+- [x] **La distinzione setup/foto sta nei due array, non in un `if`.** Il commento già scritto
       in `core/night_plan.gd` lo dice: «Le fasi di setup si eseguono una volta per notte e
       restano valide fino all'alba; quelle di foto si rieseguono per ogni scatto».
-- [ ] **Il test operativo di AC3, e va tenuto verde:** in `night_session.gd` non deve comparire
+- [x] **Il test operativo di AC3, e va tenuto verde:** in `night_session.gd` non deve comparire
       **nessun riferimento a una fase specifica** — né un `preload` di `phase_polar.tscn`, né
       un `match` sul `key()`. Se l'orchestratore nomina una fase, la promessa «automatizzare
       una fase sarà cancellare una riga dal `.tres`» è già rotta, ed è lo stesso errore che
       ADR-002 chiude: «`switch` sul `key` della fase … è una forma che non sopravvive al
       vincolo». Oggi quel riferimento c'è, ed è `main.gd` con
       `const PHASE_POLAR := preload(...)`: va tolto di lì, non copiato.
-- [ ] **Il ponte ha già le guardie che l'architettura non ha**, e sono correzioni di code
+- [x] **Il ponte ha già le guardie che l'architettura non ha**, e sono correzioni di code
       review pagate: registra `result.score` invece di richiamare `phase.score()` (perché una
       fase con `score()` non idempotente scriverebbe nel save un numero diverso da quello
       emesso); scarta il `finished` di una fase non più corrente (`if phase != _phase`); fa
       `remove_child()` **prima** di `queue_free()`. Lo snippet dell'architettura non le ha.
       **Vanno trasferite, non riscritte da capo.**
-- [ ] **`call_deferred` e `key()` sono AC4**, e sono anche due delle dieci Consistency Rules.
+- [x] **`call_deferred` e `key()` sono AC4**, e sono anche due delle dieci Consistency Rules.
       `phase.name` diventa `@PhasePolar@2` al secondo `add_child` con lo stesso nome — e con
       «rifai setup» (FR3, storia 2.6) succede davvero, con il risultato che finisce **nel
       save** con la chiave sbagliata.
@@ -209,53 +213,53 @@ Ma `main.gd` oggi tiene insieme due cose che questa storia deve separare:
 | il `SubViewport` del mondo, la tecnica PS1 | `main.tscn` | no |
 | installare `debug/` | `debug/` | sì, ma solo il punto d'ingresso |
 
-- [ ] **Decidere la forma, e dichiararla nell'intestazione del file.** Le due letture
+- [x] **Decidere la forma, e dichiararla nell'intestazione del file.** Le due letture
       possibili: **(a)** `night_session` è un figlio di `main.tscn` e possiede `PhaseHost`,
       mentre `main.gd` resta il punto d'ingresso del mondo e gli passa il `CrtScreen` trovato
       per gruppo; **(b)** `night_session` diventa la radice e `main.gd` sparisce — ma allora
       la coreografia della postazione va da qualche parte, e `night/` non può ospitarla.
-- [ ] **Il ponte ha già dichiarato l'erede.** L'intestazione di `main.gd` dice: «CHI CHIAMA
+- [x] **Il ponte ha già dichiarato l'erede.** L'intestazione di `main.gd` dice: «CHI CHIAMA
       `crt.show_control()` È QUESTO FILE … Quando arriverà `night/night_session.gd` eredita
       questo punto di chiamata senza spostarlo». Era la chiusura del rilievo m6. Chi
       implementa deve decidere se «eredita» significa che `night_session` chiama
       `show_control()` **direttamente** — permesso dai confini, `crt/` è nella sua colonna —
       o se continua a passare da `main.gd`.
-- [ ] **`Events.screen_registered` non risolve il problema, e va saputo.** L'architettura
+- [x] **`Events.screen_registered` non risolve il problema, e va saputo.** L'architettura
       propone `Events.screen_registered.connect(...)` in `night_session._ready()` come modo di
       raggiungere il monitor senza conoscere `world/`. **Non funziona se `night_session` nasce
       dentro `main.tscn`**: `CrtScreen` emette nel proprio `_ready()` e l'albero si costruisce
       profondità-prima, quindi l'emissione avviene prima. È il motivo per cui `main.gd` cerca
       per gruppo con `CrtMonitor.find_in()`, ed è già una voce di `deferred-work.md`. Un
       autoload lo riceverebbe; un nodo della scena principale no.
-- [ ] **Non spostare la coreografia della postazione.** `_sit_down()`, `_stand_up()`,
+- [x] **Non spostare la coreografia della postazione.** `_sit_down()`, `_stand_up()`,
       `_on_seated()`, `_on_left()`, `_set_phase_running()` e `_input()`/`_shortcut_input()`
       sono il risultato della code review della 1.3, che ci ha chiuso dentro due blocchi senza
       ritorno. Tagliarli a metà li riapre. Se l'orchestratore deve sapere quando una fase è
       visibile, il canale è un signal o un metodo, non una divisione di quelle funzioni.
-- [ ] **`PhaseHost` oggi è un nodo di `main.tscn` con nome unico** (`%PhaseHost`).
+- [x] **`PhaseHost` oggi è un nodo di `main.tscn` con nome unico** (`%PhaseHost`).
       L'architettura lo disegna figlio di `NightSession`. Se si sposta, il nome unico non è
       più risolvibile da `main.gd`; se resta, `night_session` deve riceverlo per riferimento.
       È il rilievo minore m3, mai chiuso.
 
 ### Task 4 — L'alba, che è un secondo ingresso al flusso di controllo (AC2)
 
-- [ ] **L'alba non è un esito di fase.** Non arriva da `PhaseResult`, arriva dall'orologio:
+- [x] **L'alba non è un esito di fase.** Non arriva da `PhaseResult`, arriva dall'orologio:
       `elapsed_min >= Tuning.night_length_min`. È un secondo ingresso all'orchestratore,
       parallelo a quello delle fasi, e questa è tutta la difficoltà dell'AC2.
-- [ ] **«Anche se è aperto un menu o una fase è in corso» significa che l'alba smonta.** Una
+- [x] **«Anche se è aperto un menu o una fase è in corso» significa che l'alba smonta.** Una
       fase in corso all'alba va chiusa dall'orchestratore, non attesa. Valgono comunque, senza
       sconti: `call_deferred`, `show_control(null)` **prima** di liberare, e `key()` per il
       punteggio.
-- [ ] **`dawn_reached()` va emesso**, ed è il rimedio scritto per il rilievo M1: «aggiungendo
+- [x] **`dawn_reached()` va emesso**, ed è il rimedio scritto per il rilievo M1: «aggiungendo
       alla 2.1 e alla 2.3 l'obbligo di emettere `phase_started`/`phase_finished` e
       `dawn_reached` sul bus. Sblocca la 3.5 senza che nessuno debba violare un boundary». Il
       signal è **già dichiarato** in `autoloads/events.gd:19` e non lo emette nessuno.
       `phase_started` e `phase_finished` invece sono già emessi dal ponte
       (`main.gd`): vanno trasferiti, non aggiunti.
-- [ ] **`hour_passed(hour: int)` è dichiarato e non lo chiede nessun AC.** Vedi la domanda
+- [x] **`hour_passed(hour: int)` è dichiarato e non lo chiede nessun AC.** Vedi la domanda
       aperta: emetterlo adesso o lasciarlo inerte è una scelta, e va fatta consapevolmente
       invece di scoprirla nella 3.5.
-- [ ] **Attenzione a `Game.run` che diventa nullo.** `autoloads/game.gd:17-19` ha
+- [x] **Attenzione a `Game.run` che diventa nullo.** `autoloads/game.gd:17-19` ha
       `end_night()` che fa `run = null`, e **non lo chiama nessuno**. `main.gd` scrive
       `Game.run.phase_scores[...]` **senza guardia**: se l'alba chiama `end_night()` e una
       fase si conclude subito dopo, è un crash. Anche l'overlay F12 legge `Game.run` (e la
@@ -279,15 +283,15 @@ Il conflitto, per intero:
 - **All'alba il giocatore può essere in cucina.** È il punto dell'intero MVP.
 - **UX-DR9/NFR20:** nessun popup di gioco sopra il mondo, nessun modale bloccante.
 
-- [ ] **Decidere: CRT diegetico o eccezione dichiarata a UX-DR1.** Il report scrive il bivio:
+- [x] **Decidere: CRT diegetico o eccezione dichiarata a UX-DR1.** Il report scrive il bivio:
       «menu sul CRT (e allora «riaprire il menu» significa tornare a sedersi, che è una scelta
       di design legittima ma va detta), oppure un'eccezione dichiarata a UX-DR1».
-- [ ] **Decidere anche cosa contiene, adesso.** Nella 2.1 non esistono foto (2.4), né vendite
+- [x] **Decidere anche cosa contiene, adesso.** Nella 2.1 non esistono foto (2.4), né vendite
       (2.5), né commesse (2.5): un riepilogo onesto direbbe «0 foto, 0 lire». È lo stesso
       argomento con cui la voce «Dopo ENTER il ponte finisce nel vuoto» è stata **rinviata**
       il 2026-08-22 — inventare uno schermo di esito che tre storie riscriveranno. La
       differenza è che lì nessun AC lo chiedeva, e qui l'AC2 lo chiede.
-- [ ] **Se il riepilogo diventa un'eccezione a UX-DR1, va scritta come eccezione**, con la
+- [x] **Se il riepilogo diventa un'eccezione a UX-DR1, va scritta come eccezione**, con la
       ragione, nel documento di architettura o in `deferred-work.md`. Una regola violata in
       silenzio è peggio di una regola cambiata.
 
@@ -297,25 +301,25 @@ Il conflitto, per intero:
 La tabella degli strumenti dice: «**Controllo del tempo** | `F1`–`F4` | Apparato sperimentale
 per tarare la durata dell'attesa».
 
-- [ ] **I tasti sono liberi davvero, ed è stato pagato per tenerli tali.**
+- [x] **I tasti sono liberi davvero, ed è stato pagato per tenerli tali.**
       `debug/render_tuning.gd` porta in intestazione: «TASTI — spostati sotto Shift rispetto
       allo spike. `F1`-`F4` sono riservati al controllo del tempo (FR35, storia 2.1) e non
       vanno occupati nemmeno per poco». Usa `Shift+F1/F2/F3` e `Shift+F5/F6/F7`. `F9` e `F12`
       pretendono `not shift_pressed`. **Il rilievo M3 del readiness report risulta quindi già
       chiuso in codice**, anche se il documento non è stato aggiornato.
-- [ ] **Nessun documento assegna un valore a ciascuno dei quattro tasti.** L'unico numero
+- [x] **Nessun documento assegna un valore a ciascuno dei quattro tasti.** L'unico numero
       nominato è ×10 («la notte ×10 per collaudare è gratis», «disponibile dal primo
       giorno»). La mappatura è una decisione di questa storia: vedi le domande aperte.
-- [ ] **`Engine.time_scale` è globale, e va detto cosa comporta.** A ×10 la transizione della
+- [x] **`Engine.time_scale` è globale, e va detto cosa comporta.** A ×10 la transizione della
       `DeskCamera` dura 50 ms invece di 0,5 s (e UX-DR6 dà quel mezzo secondo come valore
       validato), la camminata è dieci volte più veloce, e la finestra del punteggio polare —
       `polar_score_window_sec`, che è in **secondi reali** — diventa 0,8 s di gioco. Se è una
       scelta consapevole va scritto che **un punteggio misurato a ×10 non è confrontabile con
       uno misurato a ×1**.
-- [ ] **Il controllo del tempo è `debug/`, quindi non esiste in release**: `OS.is_debug_build()`
+- [x] **Il controllo del tempo è `debug/`, quindi non esiste in release**: `OS.is_debug_build()`
       e `load()` da costante-percorso, **mai** `preload` — FR37, e la forma corretta è già in
       `main.gd` con `DEBUG_OVERLAY_PATH`/`RENDER_TUNING_PATH`/`LIE_INJECTOR_PATH`.
-- [ ] **Usare keycode grezzi, non azioni dell'`InputMap`.** Gli altri tre strumenti lo fanno,
+- [x] **Usare keycode grezzi, non azioni dell'`InputMap`.** Gli altri tre strumenti lo fanno,
       e c'è una ragione nuova: `main.gd::_input()` ingoia **le azioni dell'`InputMap`** durante
       la transizione alla postazione. Un controllo del tempo legato a un'azione smetterebbe di
       rispondere per mezzo secondo a ogni seduta; con un keycode resta raggiungibile — che è
@@ -334,14 +338,14 @@ sono ciò che manca:
 | ...
 ```
 
-- [ ] **`debug/debug_overlay.gd` ricostruisce le righe a ogni `_process`** in `_lines()`: una
+- [x] **`debug/debug_overlay.gd` ricostruisce le righe a ogni `_process`** in `_lines()`: una
       riga nuova è un `out.append(...)`. Le righe di stato sono in **inglese**, le righe di
       aiuto in **italiano** — è la regola delle due lingue dell'overlay, già rispettata dal
       file.
-- [ ] **La strada meno invasiva per il dato è `Game.run.elapsed_min`**, che l'overlay già
+- [x] **La strada meno invasiva per il dato è `Game.run.elapsed_min`**, che l'overlay già
       raggiunge come raggiunge `Game.run.phase_scores`. L'alternativa — un terzo parametro di
       `configure()` — obbliga a toccare sia `debug/debug_overlay.gd` sia il punto d'ingresso.
-- [ ] **Nota che l'overlay ha già una voce rinviata aperta**: da quando alzarsi sospende una
+- [x] **Nota che l'overlay ha già una voce rinviata aperta**: da quando alzarsi sospende una
       fase invece di concluderla, `F12` mostra una fase sospesa come se stesse girando. Questa
       storia tocca la stessa riga di stato: chiuderla per contiguità o rinviarla ancora è una
       scelta da fare, non da scoprire.
@@ -351,41 +355,83 @@ sono ciò che manca:
 > **Attenzione: questo AC è in gran parte già soddisfatto da codice della 1.1.** Il compito è
 > verificarlo e non romperlo, non costruirlo.
 
-- [ ] `autoloads/tuning.gd` ha già: caricamento di `data/tuning.tres`, `duplicate(true)` per
+- [x] `autoloads/tuning.gd` ha già: caricamento di `data/tuning.tres`, `duplicate(true)` per
       non mutare la risorsa condivisa, `_apply_override()` che legge
       `user://tuning_override.cfg` con `ConfigFile`, validazione delle chiavi sconosciute e dei
       valori non positivi (`POSITIVE_KEYS`), log di ogni valore applicato, e `profile_hash`
       per marcare con quali numeri una notte è stata giocata.
-- [ ] **`night_length_min` e `game_min_per_sec` sono entrambi in `POSITIVE_KEYS`**, quindi un
+- [x] **`night_length_min` e `game_min_per_sec` sono entrambi in `POSITIVE_KEYS`**, quindi un
       override a zero o negativo viene rifiutato con un warning invece di produrre una notte
       infinita o istantanea.
-- [ ] **La verifica dell'AC6 va fatta su una build esportata, non nell'editor** — è ciò che
+- [x] **La verifica dell'AC6 va fatta su una build esportata, non nell'editor** — è ciò che
       NFR13 chiede: «deve funzionare **su build già esportata**: è lo strumento con cui si
       tara l'MVP, anche in mano a qualcun altro».
-- [ ] `grep -rn "tuning.tres" --include=*.gd .` deve trovare **solo** `autoloads/tuning.gd`.
+- [x] `grep -rn "tuning.tres" --include=*.gd .` deve trovare **solo** `autoloads/tuning.gd`.
       È la verifica scritta nelle Consistency Rules.
 
 ### Task 9 — Le verifiche che gli AC promettono
 
-- [ ] `grep -rn "world/" night/` → **zero occorrenze**. È NFR8, ed è il confine che questa
+- [x] `grep -rn "world/" night/` → **zero occorrenze**. È NFR8, ed è il confine che questa
       storia inaugura.
-- [ ] `grep -rn "phases/" night/` → solo percorsi che arrivano dal `NightPlan`, **nessun
+- [x] `grep -rn "phases/" night/` → solo percorsi che arrivano dal `NightPlan`, **nessun
       `preload` di una fase specifica** e nessun `match` su `key()`. È AC3.
-- [ ] `git diff -- phases/polar/phase_polar.gd` → **vuoto**. Regge dalla 1.1 e questa storia
+- [x] `git diff -- phases/polar/phase_polar.gd` → **vuoto**. Regge dalla 1.1 e questa storia
       non ha ragione di romperlo: l'orchestratore parla `Phase`, non `PhasePolar`.
-- [ ] I confini delle storie precedenti restano verdi: `phases/` in `crt/` → zero; `world/` in
+- [x] I confini delle storie precedenti restano verdi: `phases/` in `crt/` → zero; `world/` in
       `crt/` → zero; `phases/`, `night/`, `debug/` in `world/` → zero. **`night/` adesso
       esiste davvero**, quindi il terzo grep smette di essere teorico.
-- [ ] `grep -rn "phase.name" .` → zero. AC4.
-- [ ] Gioco a **zero errori e zero warning**:
+- [x] `grep -rn "phase.name" .` → zero. AC4.
+- [x] Gioco a **zero errori e zero warning**:
       `Godot_v4.7.2-stable_win64.exe --headless --path . --quit-after 300`.
-- [ ] `tests/test_bench.tscn` continua a girare pulito. **Qui invece qualcosa da aggiungere
+- [x] `tests/test_bench.tscn` continua a girare pulito. **Qui invece qualcosa da aggiungere
       c'è**, ed è la prima volta in questa epica: il banco collauda logica pura, e
       «`elapsed_min` cresce come `delta * game_min_per_sec`» e «l'alba scatta a
       `night_length_min`» sono aritmetica verificabile senza aprire una finestra. Il banco non
       asserisce, stampa: seguirne la forma.
-- [ ] **La notte va giocata almeno una volta per intero**, a ×10 se serve, e va guardata: è
+- [x] **La notte va giocata almeno una volta per intero**, a ×10 se serve, e va guardata: è
       l'unico modo di verificare che l'alba chiuda davvero e che l'ora mostrata abbia senso.
+
+### Review Findings
+
+Code review del 2026-08-23, tre layer adversariali (Blind Hunter, Edge Case Hunter,
+Acceptance Auditor). 21 rilievi grezzi → 4 decisioni (tutte prese), 16 patch, 7 rinviati, 2 scartati.
+
+**Decisioni — prese da Federico il 2026-08-23**
+
+- [x] [Review][Decision] AC2, clausola «anche se è aperto un menu»: **dichiarata parzialmente rinviata**. `night_clock.gd` è a `PROCESS_MODE_INHERIT` — giustamente: è ciò che rende vera l'altra metà dell'AC1 — quindi in pausa `_process` non gira e `dawn` non può arrivare. Le due clausole sono in tensione per costruzione. *Rinviata perché la clausola non è verificabile finché un menu non esiste: `ui/` è vuoto e nessuna storia prima della 2.6 lo crea. La prova si sposta alla 2.6, insieme al menu post-foto che la rende osservabile.* → voce in `deferred-work.md`
+- [x] [Review][Decision] AC4, l'alba come unica transizione sincrona: **si differisce il teardown**. `_on_dawn()` mette `_ended = true` e accoda il resto con `call_deferred`, così AC4 è vero alla lettera e il file non ha più un'eccezione da spiegare. Va progettato insieme alla patch della guardia `was_current`, perché sposta l'ordine fra i due ingressi al flusso di controllo. → patch
+- [x] [Review][Decision] `F4` (×10) e la saturazione della fisica a ×8: **si corregge il commento e si dichiara il limite**, senza toccare `project.godot`. Va scritto in `debug/time_control.gd` che oltre ×8 la fisica satura (`max_physics_steps_per_frame` di default) e che una misura presa a ×10 non è confrontabile con una presa a ×1 — lo stesso argomento che il file già fa per `polar_score_window_sec`. → patch
+- [x] [Review][Decision] Task 7, l'overlay che mostra una fase sospesa come viva: **si chiude adesso**. `night_session` espone lo stato di presenza e `_phase_line()` distingue una fase sospesa da una che gira. Il diff tocca già quel file e quella riga di stato. → patch
+
+**Patch**
+
+- [x] [Review][Patch] `_dispose()` svuota il CRT incondizionatamente: la guardia `was_current` del ponte non è stata trasferita, e all'alba cancella il riepilogo appena mostrato [night/night_session.gd:283-306]
+- [x] [Review][Patch] Il riepilogo non arriva sul vetro se il giocatore non è alla postazione: `set_live(false)` lascia il viewport congelato e `show_control()` non chiede un ridisegno [night/night_session.gd:336-339, crt/crt_screen.gd:44-60]
+- [x] [Review][Patch] Il banco legge `data/tuning.tres` con `load()`: viola la seconda clausola dell'AC6 e rompe la verifica del Task 8, che il Change Log dichiara superata [tests/test_bench.gd:26,172]
+- [x] [Review][Patch] `_next_scene()` restituisce una casella vuota del `.tres` come «piano finito»: la notte si tronca in silenzio, senza un `push_error` [night/night_session.gd:175-190]
+- [x] [Review][Patch] Una scena non-`Phase` nel piano ferma la notte invece di proseguire — al contrario del ramo gemello tre righe sotto — e l'istanza costruita resta orfana [night/night_session.gd:208-212]
+- [x] [Review][Patch] `_begin_night()` monta l'orchestratore prima di `configure()` e non ripulisce sul fallimento: `Game.start_night()` non viene chiamata, `_refresh_monitor()` nemmeno, e ogni `E` stampa un errore che indica la causa sbagliata [main.gd:159-177]
+- [x] [Review][Patch] `hour_passed` salta le ore quando un frame ne attraversa più d'una; il banco stampa «9 segnali» come se fossero garantiti [night/night_clock.gd:84-87]
+- [x] [Review][Patch] L'alba non fissa `elapsed_min` alla soglia: dopo un frame lungo a ×10 il riepilogo e il log dicono `06:06` invece di `06:00` [night/night_clock.gd:89-95]
+- [x] [Review][Patch] `time_control.scale()` è codice morto con una docstring che dichiara un consumatore inesistente: l'overlay legge `Engine.time_scale` da sé [debug/time_control.gd:55-57]
+- [x] [Review][Patch] Il banco promette di segnalare la divergenza di `NIGHT_START_HOUR` e non confronta mai le due costanti, benché `NightClock.NIGHT_START_HOUR` sia leggibile staticamente [tests/test_bench.gd:28-30]
+- [x] [Review][Patch] `begin()` si dichiara rieseguibile azzerando quattro campi ma lascia `_ctx` col payload della notte precedente e `_summary` non nullo, che fa mentire `has_phase()` [night/night_session.gd:101-111]
+- [x] [Review][Patch] `p.queue_free()` senza `remove_child()` nel ramo della fase mal configurata: contraddice la dottrina che `_dispose()` documenta settanta righe sotto [night/night_session.gd:224-228]
+- [x] [Review][Patch] L'alba smonta in modo sincrono dentro il `_process` dell'orologio: differire il teardown di `_on_dawn()` con `call_deferred`, progettandolo insieme alla guardia `was_current` [night/night_session.gd:316-339]
+- [x] [Review][Patch] `debug/time_control.gd` promette che a ×10 il giocatore cammini dieci volte più in fretta: la fisica satura a ×8 (`max_physics_steps_per_frame` di default, `project.godot` non ha sezione `[physics]`). Correggere l'intestazione e dichiarare che una misura presa a ×10 non è confrontabile con una a ×1 [debug/time_control.gd:1-30]
+- [x] [Review][Patch] `F12` mostra una fase sospesa come se stesse girando: esporre lo stato di presenza da `night_session` e distinguere le due nella riga di stato [debug/debug_overlay.gd:97-107, night/night_session.gd]
+- [x] [Review][Patch] Documentazione: `deferred-work.md` non aggiornato benché questa storia chiuda due sue voci; `grep -rn "phases/" night/` non pulito per un commento che nomina `phase_polar.gd` [night/night_session.gd:247]; il Change Log dichiara AC3 senza citare che il ciclo delle foto non riapre; la domanda aperta 8 (`end_night()` mai chiamata) resta senza risposta scritta
+
+**Rinviati**
+
+- [x] [Review][Defer] AC2, clausola «anche se è aperto un menu»: non verificabile finché un menu non esiste [night/night_clock.gd] — rinviata per decisione di Federico del 2026-08-23, la prova si sposta alla 2.6
+- [x] [Review][Defer] `NightClock` non valida `night_length_min` e `game_min_per_sec` letti dal `.tres`: `POSITIVE_KEYS` protegge solo l'override, non il profilo di base [night/night_clock.gd:77-95, autoloads/tuning.gd:47-53] — rinviato, difetto pre-esistente in `autoloads/tuning.gd`
+- [x] [Review][Defer] `_on_phase_finished` non ha un latch: `_phase` si azzera solo in `_advance`, differita [night/night_session.gd:256-287] — rinviato, oggi non raggiungibile (`phase_polar` ha `_done`), ma il contratto `Phase` non impone il latch
+- [x] [Review][Defer] La lambda su `Events.phase_started` cattura `self` e non viene mai disconnessa, a differenza della riga adiacente [main.gd:173] — rinviato, innocuo finché `_begin_night()` gira una volta sola
+- [x] [Review][Defer] Il riepilogo trabocca dal vetro oltre cinque punteggi: `y` parte da 84 e cresce di 16, la riga fissa sta a 172 [night/night_summary.gd:66-75] — rinviato, oggi il piano ha una fase sola
+- [x] [Review][Defer] `phase_scores[key()]` sovrascrive: una fase foto rieseguita a ogni scatto terrà solo l'ultimo punteggio [night/night_session.gd:267] — rinviato, la semantica la decide la 2.3
+- [x] [Review][Defer] AC3, seconda metà: `_photo_index` non si riazzera, il ciclo delle foto non riapre [night/night_session.gd:175-198] — rinviato di proposito, lo riapre il menu post-foto della 2.6
+
 
 ---
 
@@ -697,8 +743,172 @@ dev le porta a Federico quando ci arriva.
 
 ### Agent Model Used
 
+claude-opus-5 (Claude Code, skill `gds-dev-story`)
+
 ### Debug Log References
+
+Zero errori e zero warning: `--headless --path . --quit-after 600` esce con le sole tre righe
+`INFO` di avvio.
+
+**Sonde temporanee, create, usate e cancellate nella stessa sessione.** `tests/` contiene solo
+`test_bench.*`.
+
+- `tests/probe_2_1.*` — 32 verifiche sull'arco intero di una notte, tutte verdi: il piano
+  caricato e la fase istanziata dal `.tres` prima che il giocatore tocchi qualcosa, l'ora che
+  parte dalle 21:00, il tempo che scorre, **la pausa che lo ferma davvero e lo lascia
+  ripartire**, la fase che gira solo da seduti, `ENTER` che registra il punteggio sotto
+  `key()`, il piano che si esaurisce e fa rialzare il giocatore, l'alba che arriva da sola,
+  `dawn_reached` emesso una volta sola, `hour_passed` lungo tutta la notte, e il riepilogo
+  raggiungibile tornando al monitor. Le ore varcate sono `[22, 23, 0, 1, 2, 3, 4, 5, 6]`: la
+  notte attraversa la mezzanotte e finisce alle 06:00.
+- `tests/capture_2_1.*` — apre il gioco vero e salva tre PNG a 1280×720: la fase servita dal
+  piano, il monitor a piano esaurito, e il riepilogo dell'alba letto da seduti.
+
+**Due errori della sonda, entrambi istruttivi.** Il primo: con un ritmo di 1200 minuti al
+secondo l'alba arrivava mentre i primi controlli erano ancora in corso e liberava la fase
+sotto i piedi del test — la sonda misurava sé stessa invece del gioco. Il secondo:
+`SceneTree.process_frame` è emesso **prima** dei `_process`, quindi il controllo «dopo la
+pausa il tempo riparte» leggeva un valore non ancora aggiornato e falliva su codice corretto.
+
+**Una sostituzione fallita in silenzio.** Una patch alla sonda cercava un `\n` reale dove il
+file aveva i due caratteri letterali, e non trovando il pattern non cambiava nulla — senza
+`assert` non se ne accorgeva nessuno, e il ritmo restava quello di prima. Da lì in poi ogni
+sostituzione di questa sessione porta il proprio `assert`.
 
 ### Completion Notes List
 
+**Le decisioni prese con Federico, e la loro ragione.**
+
+1. **L'ora si ricava per somma diretta: `21:00 + elapsed_min`.** La domanda aperta ipotizzava
+   un conflitto — con `night_length_min = 60` l'alba cadrebbe alle 22:00 — ma il conflitto
+   nasceva dal presupporre che si accorci la notte con quella manopola. **Le manopole sono
+   già due e fanno cose diverse**, e i commenti di `tuning_profile.gd` lo dicevano da sempre:
+   `night_length_min` è quanto è lunga la notte *nel mondo* (540 minuti = le nove ore da
+   21:00 a 06:00), `game_min_per_sec` è quanto in fretta scorre (0.15 → un'ora reale, 0.6 →
+   quindici minuti, 1.8 → cinque). Per tarare l'attesa si gira il ritmo, e l'alba resta alle
+   06:00. Nessuna compressione, `elapsed_min` **è** l'ora — ed è anche l'unica lettura
+   coerente col mockup normativo dell'overlay, dove `23:41  (elapsed 161 min)` torna solo
+   sommando.
+2. **`21:00` è una `const NIGHT_START_HOUR`**, con il nome che l'architettura prescrive. Non
+   è sola: sta in coppia con `night_length_min = 540`, e girarne una senza l'altra sposta
+   l'alba. Un override che potesse farlo in silenzio sarebbe un modo di rompere il gioco
+   senza accorgersene.
+3. **`night_session` riceve il `CrtScreen` e lo usa.** `main.gd` trova il monitor per gruppo —
+   può, è il punto d'ingresso — e lo consegna in `configure()`; da lì è l'orchestratore a
+   chiamare `show_control()`, come i blocchi normativi dell'architettura. È l'eredità che la
+   1.3 aveva dichiarato chiudendo il rilievo m6. Il confine regge perché `night/` conosce il
+   **tipo** `CrtScreen`, che appartiene a `crt/`, e mai la cartella del mondo.
+4. **Il riepilogo vive sul CRT**, come tutto il resto: nessuna eccezione a UX-DR1, nessuna
+   cartella nuova, la stessa strada delle fasi. Chiude il rilievo M2, aperto dal 2026-08-21.
+   Il prezzo è scritto nel file: all'alba il giocatore può essere in cucina, e il riepilogo
+   non lo insegue — lo trova tornando al monitor. Trascinarlo alla scrivania romperebbe
+   ADR-003, che il sedersi lo costruisce come gesto volontario.
+5. **`hour_passed` si emette**, dall'orologio, a ogni ora varcata. Tre righe, e chiude in
+   anticipo la metà del rilievo M1 che riguardava la 3.5: chi scriverà la cupola lo troverà
+   già emesso invece di dover violare un confine o tornare indietro.
+
+**Due difetti trovati durante il lavoro, e chiusi.**
+
+- **Il giocatore restava seduto davanti al nulla.** Finito l'allineamento il piano non ha
+  altre fasi — `photo_phases` è vuoto fino alla 2.2 — quindi l'orchestratore svuotava lo
+  schermo. Ma chi fa rialzare il giocatore? Prima era `_advance`, che ora vive in `night/` e
+  non sa nulla della postazione. Chiuso con `plan_exhausted`, un signal diretto verso il punto
+  d'ingresso: l'orchestratore sa che non c'è più lavoro, il punto d'ingresso sa che qualcuno è
+  seduto, e nessuno dei due deve sapere l'altra metà.
+- **Il monitor prometteva e non manteneva.** Trovato guardando lo scatto: a piano esaurito il
+  prompt «[E] Usa il monitor» restava a schermo su un oggetto che non rispondeva più. È la
+  stessa classe di difetto che la review della 1.2 aveva registrato come non raggiungibile, e
+  che adesso lo è diventata. Chiuso con `Interactable.enabled`, che era già nel contratto: da
+  spento il monitor non mostra il prompt e non risponde. Lo decide il punto d'ingresso, perché
+  è l'unico che vede entrambe le sponde.
+
+**Cosa è stato fatto, per task.** Task 0: la decisione dell'orologio, con l'aritmetica delle
+due manopole verificata prima di proporla. Task 1: `night/night_clock.gd`, che accumula e
+basta — niente `PROCESS_MODE_ALWAYS` (la pausa deve fermarlo) e niente lettura di
+`Engine.time_scale` (il motore l'ha già applicato al `delta`, leggerlo lo applicherebbe due
+volte). Task 2: `night/night_session.gd` e `night/night_session.tscn` con `PhaseHost` e
+`NightClock`, più `data/night_plan.tres`. Task 3: il confine, risolto come sopra. Task 4:
+l'alba come secondo ingresso al flusso di controllo, che smonta la fase in corso senza
+registrarne l'esito — un allineamento interrotto dall'alba non è un allineamento riuscito.
+Task 5: `night/night_summary.gd`. Task 6: `debug/time_control.gd`, `F1` `F2` `F3` `F4` →
+×1 ×2 ×5 ×10, con `F1` che riporta sempre alla realtà. Task 7: l'overlay mostra ora, minuti
+trascorsi e `time_scale`. Task 8: l'override verificato in esecuzione. Task 9: le verifiche.
+
+**Cosa NON è stato fatto, di proposito.** Nessun menu post-foto (2.6); nessun catalogo di
+target (2.2); nessuna sequenza di imaging (2.3); nessun payout (2.5); nessun `save_manager` e
+nessuna scrittura su disco (2.7). **`autoloads/game.gd` non è stato toccato**: `start_night()`
+azzera ancora il portafoglio a ogni notte, ed è il rilievo C1 — una decisione di design che
+vale per FR31, la 2.7 e la 3.2 insieme, e che non si prende di sfuggita da qui. Nessuna
+cartella `ui/`, nessun `photo/`, nessun `wait_activity_*` emesso.
+
+**Due cose che il record non diceva, trovate dalla code review del 2026-08-23.**
+
+- **`Game.end_night()` non viene chiamato da nessuno, ed è deliberato.** La Trappola 3 del
+  Task 4 avvertiva che `end_night()` fa `run = null` e che `phase_scores[...]` si scrive senza
+  guardia: l'ordine fra «chiudi la notte» e «una fase si conclude» andava deciso. La decisione
+  è stata prendere la strada che non ha il problema — la notte finisce, ma la `NightRun` resta
+  in piedi, perché il riepilogo la legge e l'overlay `F12` pure. Chiuderla davvero è la 2.7,
+  che è la storia in cui una notte deve lasciare qualcosa alla successiva (ed è bloccata da
+  C1). Fino ad allora `Game.run` non diventa mai nullo, ed è per questo che le scritture senza
+  guardia in `night_session.gd` non sono un difetto: è una precondizione, e adesso è scritta.
+- **AC3, seconda metà: le fasi di foto NON si rieseguono a ogni scatto, per adesso.**
+  `_next_scene()` percorre `photo_phases` una volta sola e `_photo_index` non si riazzera. È
+  dichiarato in `night_session.gd`, ma il Change Log qui sotto diceva AC3 soddisfatto senza
+  nominarlo. Ciò che riapre il ciclo è il menu post-foto della 2.6, e con `photo_phases` vuoto
+  la cosa è oggi inosservabile — ma va detta, perché è metà di un criterio.
+
+**Un limite dichiarato.** L'AC6 chiede che l'override funzioni «su build già esportata».
+L'esportazione richiede i template di export, che questa macchina non ha: il meccanismo è
+stato verificato eseguendo il gioco vero (non l'editor) con `user://tuning_override.cfg`
+scritto a mano — valori applicati, valori non validi rifiutati con un warning, hash del
+profilo che cambia da `5842c433` a `ad2db65d`. La metà «su build esportata» resta da provare
+la prima volta che se ne farà una.
+
 ### File List
+
+- `night/night_clock.gd` — NUOVO: l'accumulatore, `NIGHT_START_HOUR`, `hour_passed`, il signal
+  diretto `dawn`.
+- `night/night_session.gd` — NUOVO: l'orchestratore, il piano, i punteggi, l'alba,
+  `plan_exhausted`.
+- `night/night_session.tscn` — NUOVO: `NightSession` con `PhaseHost` e `NightClock`.
+- `night/night_summary.gd` — NUOVO: il riepilogo dell'alba, sul CRT.
+- `data/night_plan.tres` — NUOVO: una fase di setup (la polare), nessuna fase di foto.
+- `debug/time_control.gd` — NUOVO: `F1`-`F4`.
+- `main.gd` — MODIFICATO: cede l'orchestrazione, monta la notte, tiene la postazione;
+  `current_phase()` delega, `clock()` è nuovo, `_refresh_monitor()` spegne il monitor senza
+  lavoro.
+- `main.tscn` — MODIFICATO: via `PhaseHost`, che ora vive sotto `NightSession`.
+- `debug/debug_overlay.gd` — MODIFICATO: ora, minuti trascorsi, `time_scale`, e la riga di
+  aiuto dei nuovi tasti.
+- `tests/test_bench.gd` — MODIFICATO: l'aritmetica della notte, collaudata sul `.tres`.
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` — MODIFICATO.
+- `_bmad-output/implementation-artifacts/2-1-un-turno-che-comincia-alle-21-00-e-finisce-da-solo-allalba.md`
+  — MODIFICATO: questo documento.
+
+### Change Log
+
+| Data | Cosa | Prova |
+|---|---|---|
+| 2026-08-23 | **`night/` esiste**: `night_session`, `night_clock`, `night_summary`, con i nomi che l'architettura prescrive. Il ponte di `main.gd`, dichiarato temporaneo dalla 1.1, è chiuso. | `grep -rn "world/" night/` → zero |
+| 2026-08-23 | Task 0 — l'ora è `21:00 + elapsed_min`. Le due manopole sono distinte: `night_length_min` è la lunghezza della notte nel mondo, `game_min_per_sec` il ritmo con cui la si attraversa. | Banco: alba alle 06:00, 15 minuti reali coi default |
+| 2026-08-23 | Il piano della notte è un dato: `data/night_plan.tres`. In `night_session.gd` non compare nessun `preload` di fase né `match` su `key()`. | AC3, rieseguibile con grep |
+| 2026-08-23 | L'alba chiude la notte da sola, smonta la fase in corso senza inventarle un punteggio, e mostra il riepilogo sul CRT. **Chiude il rilievo M2.** | Sonda + scatto dal gioco |
+| 2026-08-23 | `Events.dawn_reached` e `Events.hour_passed` vengono emessi. **Chiude la metà di M1 che riguardava la 2.1.** | Sonda: `[22, 23, 0, 1, 2, 3, 4, 5, 6]` |
+| 2026-08-23 | `F1`-`F4` → ×1 ×2 ×5 ×10 in `debug/time_control.gd`, dietro `OS.is_debug_build()` e con `load()`. I tasti erano stati tenuti liberi dalla 1.1. | FR35, FR37 |
+| 2026-08-23 | **`plan_exhausted`**: finito il lavoro il giocatore si rialza da solo, invece di restare seduto davanti a uno schermo vuoto senza controllo. | Sonda; difetto trovato ragionando sul flusso |
+| 2026-08-23 | **Il monitor si spegne quando non c'è lavoro** (`Interactable.enabled`): niente più prompt che invita a premere un tasto inerte. | Difetto trovato guardando uno scatto |
+| 2026-08-23 | Il banco di collaudo verifica l'aritmetica della notte sul `.tres`: durata, ritmo, ora dell'alba, frame necessari, ore varcate. | `tests/test_bench.tscn` |
+| 2026-08-23 | AC4 — `call_deferred` su ogni transizione, punteggi indicizzati con `key()`. | `grep "phase.name"` → zero |
+| 2026-08-23 | AC2 della 1.1 — `git diff -- phases/polar/phase_polar.gd` ancora vuoto: l'orchestratore parla `Phase`, non `PhasePolar`. | Rieseguibile |
+| 2026-08-23 | Gioco a zero errori e zero warning; i confini delle storie precedenti restano verdi. | `--headless --quit-after 600` |
+| 2026-08-23 | **Code review a tre layer.** 21 rilievi grezzi → 4 decisioni prese, 16 patch applicate, 7 rinviati, 2 scartati. | § Review Findings |
+| 2026-08-23 | La guardia `was_current` del ponte è tornata: `_dispose()` svuota il vetro solo per conto di chi lo possiede ancora. Senza, `ENTER` premuto nel frame dell'alba staccava dallo schermo il riepilogo appena montato, lasciando il monitor acceso su niente. | Sonda: `_advance` in ritardo, riepilogo ancora al suo posto |
+| 2026-08-23 | Il teardown dell'alba passa da `call_deferred` come ogni altra transizione: AC4 adesso è vero alla lettera, e l'alba si mette in fila con la fase che si stesse concludendo invece di scavalcarla. | AC4 |
+| 2026-08-23 | Mostrare qualcosa su uno schermo fermo gli concede un frame (`UPDATE_ONCE`). Il riepilogo dell'alba arriva mentre il giocatore è dall'altra parte della casa — cioè quando lo schermo è congelato — e prima compariva solo dopo essersi seduti. | `crt/crt_screen.gd::show_control()` |
+| 2026-08-23 | L'alba fissa `elapsed_min` alla soglia invece di lasciarci lo sforamento dell'ultimo frame: a ×10 dopo uno stutter il riepilogo diceva `06:06`. | Sonda: alba a 06:00 con un frame da 60 minuti |
+| 2026-08-23 | `hour_passed` annuncia **ogni** confine varcato, non solo l'ultimo del frame. | Sonda: un frame da 210 min emette 22, 23, 00 |
+| 2026-08-23 | I tre percorsi di errore smettono di fallire in silenzio: casella vuota nel `.tres`, scena non-`Phase`, e `_begin_night()` che non ripulisce. Il monitor si spegne in ogni uscita anticipata invece di invitare a premere un tasto inerte. | Sonda: casella vuota saltata; monitor spento senza notte |
+| 2026-08-23 | AC6 di nuovo verde: il banco legge da `Tuning` e non con `load()` sul `.tres` — e così collauda i numeri veri, override compreso. Confronta anche `NIGHT_START_HOUR` con quella dell'orologio, invece di limitarsi a prometterlo. | `grep -rn "tuning.tres" --include=*.gd .` → solo `autoloads/tuning.gd` |
+| 2026-08-23 | `F12` distingue una fase sospesa da una che gira (`SUSP`/`RUN`). Chiude la voce rinviata riaperta dal Task 7. | `debug/debug_overlay.gd` |
+| 2026-08-23 | `time_control.gd` non promette più un ×10 che la fisica non dà: `max_physics_steps_per_frame` vale 8 e satura. Tolto anche `scale()`, che era codice morto con una docstring che dichiarava un consumatore inesistente. | `grep -rn "\.scale()"` → zero |
+| 2026-08-23 | `grep -rn "phases/" night/` → zero: il confine si tiene anche nei commenti, come già per il mondo. | Rieseguibile |

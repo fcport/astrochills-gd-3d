@@ -23,6 +23,3 @@ render_target_update_mode = 4
 
 [node name="Observatory" parent="WorldViewport/SubViewport" instance=ExtResource("2_observatory")]
 unique_name_in_owner = true
-
-[node name="PhaseHost" type="Node" parent="."]
-unique_name_in_owner = true

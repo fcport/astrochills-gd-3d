@@ -5,13 +5,23 @@
 ## post-effect a schermo intero senza CompositorEffect — che in Compatibility
 ## non esiste. Il vincolo del renderer spinge nella direzione giusta.
 ##
-## CHI CHIAMA `crt.show_control()` È QUESTO FILE. Era il rilievo m6 del readiness
-## report — «la 1.3 non dice chi lo chiama prima che `night/` esista» — e la
-## risposta viene dalla tabella dei confini, che dà il permesso a uno solo:
-## `world/` non può conoscere `phases/`, `crt/` non può conoscere `phases/`,
-## `phases/` non può conoscere `world/`. Il punto d'ingresso può tutto, ed è
-## l'unico che può. Quando arriverà `night/night_session.gd` eredita questo punto
-## di chiamata senza spostarlo: la fase parla `Control` e non sa dove finisca.
+## L'ORCHESTRAZIONE NON È PIÙ QUI, e questo file è tornato a fare il suo mestiere.
+## `night/night_session.gd` possiede il piano della notte, le fasi, l'orologio e
+## l'alba; qui restano il mondo, la postazione e gli strumenti di debug. È la
+## chiusura del ponte che la storia 1.1 aveva dichiarato temporaneo.
+##
+## IL CONFINE CHE RENDE NECESSARIO QUESTO FILE. `night/` non può conoscere
+## `world/` — lo dice la tabella dei confini — ma il monitor CRT vive proprio lì,
+## in `world/interactables/`. Il punto d'ingresso è l'unico che conosce entrambe
+## le sponde: trova il `CrtScreen` per gruppo e lo consegna all'orchestratore in
+## `configure()`. Da lì in poi è `night/` a chiamare `show_control()`, perché il
+## TIPO `CrtScreen` appartiene a `crt/`, che è nella sua colonna. L'eredità era
+## stata dichiarata dalla 1.3 come chiusura del rilievo m6, ed è questa.
+##
+## CHI FA COSA SUL CRT, che è la divisione meno ovvia di questo file:
+##   il CONTENUTO è dell'orchestratore — `show_control()` segue la fase;
+##   la POSTAZIONE è di questo file — `set_input_enabled()` e `set_live()`
+##   seguono il giocatore, che si siede e si alza.
 ##
 ## LA SEQUENZA DELLA POSTAZIONE È ADR-003, E L'ORDINE NON È DECORATIVO.
 ##   1. `player.set_enabled(false)` — il controllo si toglie PRIMA di muovere
@@ -38,9 +48,10 @@
 ##
 ## SEDUTO NON È FINITO, e sono due stati diversi che prima coincidevano. `ENTER`
 ## CONCLUDE l'allineamento; `E` alza dalla sedia e basta. Alzarsi SOSPENDE la
-## fase — `process_mode = PROCESS_MODE_DISABLED` — invece di liberarla: lo stato
-## resta dov'è e al ritorno lo schermo mostra quello vero, non uno ricostruito.
-## Vedi `_set_phase_running()`, che è dove quella regola vive per intero.
+## fase invece di liberarla: lo stato resta dov'è e al ritorno lo schermo mostra
+## quello vero, non uno ricostruito. Qui si dice soltanto SE il giocatore è alla
+## postazione (`NightSession.set_player_present`); cosa comporti per la fase lo
+## decide l'orchestratore, che è l'unico a possederla.
 ##
 ## LO STATO DEI TASTI NON SEGUE IL CONTROLLO. `Input.get_axis` e
 ## `Input.get_vector` leggono lo stato fisico della tastiera, che non sa nulla di
@@ -56,13 +67,16 @@
 ## SubViewport viene sovrascritto al primo ridimensionamento: è un numero morto
 ## che mente a chi tara il look PS1, e per questo non c'è.
 ##
-## QUELLO CHE RESTA DEL PONTE è l'orchestrazione, non lo schermo. Il CRT vero
-## c'è, e `ScreenHost`/`ScreenViewport` — il CRT povero della 1.2 — sono stati
-## smontati con la storia 1.3. Manca ancora chi decida quale fase venga dopo:
-## `night/` non esiste, e l'epica 2 mette `night_session` al posto di `_advance`.
+## IL TEMPO SCORRE ANCHE STANDO FERMI, ed è una divergenza dichiarata da FR6
+## rispetto a `economia.md §13`, che prevedeva un tempo consumato solo dalle
+## azioni. Per un MVP che esiste per misurare l'attesa è la scelta giusta: stare
+## fermi DEVE costare tempo, altrimenti l'attesa non è misurabile.
 extends Node
 
-const PHASE_POLAR := preload("res://phases/polar/phase_polar.tscn")
+## Il piano della notte e l'orchestratore che lo esegue. La SCENA si preload:
+## appartiene al gioco, non a `debug/`, e deve esistere in ogni build.
+const NIGHT_SESSION := preload("res://night/night_session.tscn")
+const NIGHT_PLAN_PATH := "res://data/night_plan.tres"
 
 ## Percorsi, NON preload. `const ... preload` risolve al caricamento dello script,
 ## in ogni build: con un preload gli strumenti di debug — e con l'iniettore anche
@@ -73,26 +87,23 @@ const PHASE_POLAR := preload("res://phases/polar/phase_polar.tscn")
 const DEBUG_OVERLAY_PATH := "res://debug/debug_overlay.tscn"
 const RENDER_TUNING_PATH := "res://debug/render_tuning.gd"
 const LIE_INJECTOR_PATH := "res://debug/lie_injector.gd"
+const TIME_CONTROL_PATH := "res://debug/time_control.gd"
 
 @onready var _container: SubViewportContainer = %WorldViewport
 @onready var _world: SubViewport = %SubViewport
-@onready var _phase_host: Node = %PhaseHost
-
-var _phase: Phase
-
-## I `process_mode` che la fase e il suo `Control` avevano quando sono nati.
-## Sospendere li sostituisce, riprendere li rimette: vedi `_set_phase_running()`.
-var _phase_mode := Node.PROCESS_MODE_INHERIT
-var _screen_mode := Node.PROCESS_MODE_INHERIT
 
 ## Lo schermo diegetico e la postazione davanti a cui ci si siede. Si risolvono
 ## in `_ready()` e restano: senza di loro non si entra in nessuna fase.
 var _crt: CrtScreen
 var _desk: DeskCamera
+var _monitor: CrtMonitor
+
+## Chi decide cosa si fa stanotte. Vive sotto questo nodo, ma non conosce il
+## mondo che gli sta intorno.
+var _night: NightSession
 
 
 func _ready() -> void:
-	Game.start_night(1)
 	Log.info("main", "avvio — renderer %s" % RenderingServer.get_video_adapter_api_version())
 	# LO STATO INIZIALE SI DICHIARA, non si eredita. `_enabled` nasce `true` nello
 	# script del giocatore e la cattura del mouse sta nel suo `_ready()`: due posti
@@ -103,6 +114,9 @@ func _ready() -> void:
 	_connect_monitor()
 	if OS.is_debug_build():
 		_install_debug_tools()
+	# LA NOTTE COMINCIA PER ULTIMA, a mondo montato: l'orchestratore mostra
+	# subito la prima fase sul CRT, e il CRT deve già esistere.
+	_begin_night()
 
 
 ## Il monitor si trova per GRUPPO, mai per percorso di nodo: un percorso si
@@ -134,6 +148,81 @@ func _connect_monitor() -> void:
 	# ogni singola pressione di `E`, e la causa vera — detta una volta all'avvio —
 	# finirebbe sepolta sotto le sue stesse conseguenze.
 	monitor.interacted.connect(_on_monitor_interacted)
+	_monitor = monitor
+
+
+## Monta l'orchestratore e gli consegna lo schermo.
+##
+## È l'unico punto in cui le due sponde si toccano: qui si sa dove vive il monitor
+## (`world/`, trovato per gruppo) e si conosce chi deve mostrarci sopra le fasi
+## (`night/`, che il mondo non può nominare). Da qui in poi non si incontrano più.
+## OGNI USCITA ANTICIPATA SPEGNE IL MONITOR, e non è una rifinitura. Senza,
+## `Interactable.enabled` resterebbe al `true` della scena: il prompt «[E] Usa il
+## monitor» inviterebbe a premere un tasto su una postazione che non esiste, e
+## `_on_monitor_interacted()` risponderebbe con un `push_error` a ogni pressione
+## — lo spam che `_connect_monitor()` si dà la pena di evitare, e per giunta con
+## un messaggio che indica la causa sbagliata. La causa vera è detta una volta,
+## qui, e il mondo resta coerente con essa.
+func _begin_night() -> void:
+	if _crt == null:
+		_refresh_monitor()
+		return  # `_connect_monitor()` ha già detto perché
+	var plan := load(NIGHT_PLAN_PATH) as NightPlan
+	if plan == null:
+		push_error("[main] piano della notte assente o illeggibile: %s" % NIGHT_PLAN_PATH)
+		_refresh_monitor()
+		return
+	# SI CONFIGURA PRIMA DI MONTARE. Un orchestratore che non sa su quale schermo
+	# lavora non è mezzo montato: è un oggetto che farebbe rispondere `true` a
+	# `_night != null` a chiunque lo chieda, per il resto della sessione.
+	var night := NIGHT_SESSION.instantiate() as NightSession
+	night.plan = plan
+	if not night.configure(_crt):
+		night.queue_free()
+		_refresh_monitor()
+		return  # l'orchestratore ha già detto perché
+	_night = night
+	add_child(_night)
+	_night.plan_exhausted.connect(_on_plan_exhausted)
+	# Il monitor si accende e si spegne con il lavoro: vedi `_refresh_monitor()`.
+	Events.phase_started.connect(func(_k: StringName) -> void: _refresh_monitor())
+	Events.dawn_reached.connect(_refresh_monitor)
+	Game.start_night(1)
+	_night.begin()
+	_refresh_monitor()
+
+
+## Il monitor promette solo ciò che può mantenere.
+##
+## `Interactable.enabled` è già nel contratto degli interagibili, e `can_interact()`
+## lo legge: da spento il monitor non mostra il prompt e non risponde a `E`.
+## Serve perché finito l'allineamento — e finché l'alba non porta il riepilogo —
+## sul CRT non c'è niente, ma il prompt «[E] Usa il monitor» continuerebbe a
+## comparire su un oggetto che non fa nulla. Un interagibile che invita a premere
+## un tasto inerte è la cosa che `world/interactables/` esiste per non fare.
+##
+## Lo decide il punto d'ingresso perché è l'unico che vede entrambe le sponde:
+## `world/` non sa cosa sia una fase, e `night/` non sa cosa sia un monitor.
+func _refresh_monitor() -> void:
+	if _monitor == null:
+		return
+	_monitor.enabled = _night != null and _night.has_phase()
+
+
+## Non c'è più niente da fare al monitor: chi è seduto si rialza.
+##
+## L'orchestratore sa che il piano è finito, ma non sa che qualcuno è alla
+## postazione — `night/` non conosce `world/`, e il giocatore vive lì. Senza
+## questa riga chi ha appena concluso l'ultima fase resterebbe seduto davanti a
+## uno schermo vuoto, senza controllo e senza un motivo visibile per premere `E`.
+##
+## Differita perché `plan_exhausted` arriva dentro l'avanzamento di una fase che
+## si sta smontando, e una transizione non si avvia dentro il teardown di
+## un'altra.
+func _on_plan_exhausted() -> void:
+	_refresh_monitor()
+	if _desk != null and _desk.is_seated:
+		_stand_up.call_deferred()
 
 
 ## Monta la postazione. `DeskCamera` non ha una scena e nessuno la istanziava: è
@@ -172,24 +261,24 @@ func _setup_desk() -> void:
 	_desk = desk
 
 
-## `E` sul monitor. È l'unico ingresso, e da qui in poi ha due significati che
-## dipendono da cosa c'è già: comincia un allineamento, oppure torna a uno
-## lasciato a metà.
+## `E` sul monitor: ci si siede a lavorare.
 ##
-## RI-SEDERSI È IL FLUSSO NORMALE, non un caso limite. Fino alla 1.2 una fase
-## viva faceva uscire questa funzione senza fare niente; adesso il ciclo
+## NON DECIDE COSA C'È DA FARE, e non lo sa. Quello lo decide l'orchestratore, che
+## esegue il piano della notte: qui si controlla solo che ci sia qualcosa sullo
+## schermo, e ci si siede. Un monitor su cui non c'è niente non merita che si
+## tolga il controllo al giocatore.
+##
+## RI-SEDERSI È IL FLUSSO NORMALE, non un caso limite: il ciclo
 ## «siediti → alzati → risiediti» è il modo in cui si gioca.
 func _on_monitor_interacted(_by: Node3D) -> void:
-	if _crt == null or _desk == null:
+	if _crt == null or _desk == null or _night == null:
 		# La postazione non è montata: non si cede il controllo a un giocatore
-		# che poi non potrebbe né vedere né rialzarsi. Stessa logica di
-		# `_phase_can_run()`, e stessa ragione.
-		push_error("[main] postazione non montata: non si entra nella fase")
+		# che poi non potrebbe né vedere né rialzarsi.
+		push_error("[main] postazione non montata: non ci si siede")
 		return
-	if _phase != null:
-		_sit_down()
+	if not _night.has_phase():
 		return
-	_enter_phase(PHASE_POLAR)
+	_sit_down()
 
 
 ## Ciò che nessuno ha gestito arriva allo schermo, e solo da seduti.
@@ -330,7 +419,8 @@ func _sit_down() -> void:
 	# ciò che l'AC1 chiede — e l'input è l'unica delle tre cose che l'AC nomina.
 	if _crt != null:
 		_crt.set_live(true)
-	_set_phase_running(true)
+	if _night != null:
+		_night.set_player_present(true)
 	_desk.toggle()
 
 
@@ -342,12 +432,10 @@ func _stand_up() -> void:
 		return
 	if _crt != null:
 		_crt.set_input_enabled(false)
-	_set_phase_running(false)
+	if _night != null:
+		_night.set_player_present(false)
 	# Lo schermo si ferma DOPO la fase, e non prima: così l'ultimo fotogramma che
-	# resta sul vetro è quello di una fase già ferma. Il frame concesso da
-	# `set_live(false)` qui non cambia un pixel — la fase è sospesa e nessun
-	# ridisegno è in coda — e serve davvero solo in `_advance()`, dove il viewport
-	# è stato appena svuotato.
+	# resta sul vetro è quello di una fase già ferma.
 	if _crt != null:
 		_crt.set_live(false)
 	_desk.toggle()
@@ -366,7 +454,7 @@ func _on_seated() -> void:
 	#
 	# Differita perché non si avvia una transizione dentro il callback di quella
 	# appena finita.
-	if _phase == null:
+	if _night == null or not _night.has_phase():
 		_stand_up.call_deferred()
 		return
 
@@ -380,68 +468,6 @@ func _on_left() -> void:
 	# E il controller torna attivo solo a transizione conclusa, che è l'altra
 	# metà della stessa clausola.
 	_set_world_active(true)
-
-
-## SOSPENDERE NON È LIBERARE, ed è la regola che questa storia stabilisce.
-##
-## SONO DUE ASSI, non uno, e tenerli distinti è ciò che rende il precedente
-## utilizzabile dalla fase 10 dell'epica 3:
-##
-##   ASCOLTARE — segue SEMPRE la postazione. Nessuna fase si comanda da un'altra
-##   stanza. Vale anche per una fase che gira in background: `runs_in_background()`
-##   dice che continua a LAVORARE quando il giocatore se ne va, non che resti
-##   raggiungibile dalla cucina. Senza questa distinzione un `ENTER` premuto in
-##   corridoio chiuderebbe una fase in background — cioè esattamente il difetto
-##   che questa funzione dichiara di chiudere. Correzione della code review del
-##   2026-08-22.
-##
-##   GIRARE — qui `runs_in_background()` esenta davvero. Per la polare è `false`
-##   e va lasciato `false`: «è la fase 10 a dover restare viva quando il giocatore
-##   se ne va, non questa».
-##
-## `PROCESS_MODE_DISABLED` ferma `_process` e `_physics_process`, e quindi
-## `_turn_screws`, che legge WASD a ogni frame e altrimenti girerebbe le viti
-## mentre il giocatore cammina in cucina.
-##
-## IL MODO PRECEDENTE SI SALVA E SI RIPRISTINA, invece di imporre
-## `PROCESS_MODE_INHERIT` alla ripresa. Una fase — o il suo `Control` — può aver
-## dichiarato `PROCESS_MODE_ALWAYS` per sopravvivere alla UI di pausa che l'epica
-## 2 porterà: sovrascriverlo la cancellerebbe al primo sedersi, in silenzio e per
-## sempre. Anche questa è della code review.
-##
-## LO STATO RESTA A SCHERMO PERCHÉ IL RENDER TARGET LO CONSERVA, non perché
-## `_draw` continui a girare: con lo schermo fermo (`CrtScreen.set_live(false)`)
-## non si ridisegna niente. È la seconda clausola dell'AC5 — al ritorno si vede
-## lo stato vero, non uno ricostruito — e non si salva né si ripristina niente:
-## `_star`, `_truth_input` e `_samples` non si sono mai mossi.
-##
-## IL CONTROL VA SOSPESO A PARTE, e questo è il dettaglio che si perde: dopo
-## `show_control()` vive nel `SubViewport` del CRT e NON è più figlio della fase,
-## quindi non eredita niente da lei. `polar_screen` ha un `_process` proprio che
-## depone un punto di scia ogni 0,08 s: senza questa riga continuerebbe a
-## deporre punti nella stessa posizione, e «punti fitti vuol dire quasi fermo»
-## racconterebbe una bugia mentre il giocatore è dall'altra parte della casa.
-func _set_phase_running(running: bool) -> void:
-	if _phase == null:
-		return
-	var s := _phase.screen()
-	var has_screen := s != null and is_instance_valid(s)
-
-	# Primo asse: l'ascolto. Sempre, background o no.
-	_phase.set_process_input(running)
-	_phase.set_process_unhandled_input(running)
-
-	# Secondo asse: girare.
-	if not running and _phase.runs_in_background():
-		return
-	if running:
-		_phase.process_mode = _phase_mode
-		if has_screen:
-			s.process_mode = _screen_mode
-		return
-	_phase.process_mode = Node.PROCESS_MODE_DISABLED
-	if has_screen:
-		s.process_mode = Node.PROCESS_MODE_DISABLED
 
 
 ## Gli strumenti di debug non esistono in release: `OS.is_debug_build()` è falso e
@@ -458,170 +484,43 @@ func _install_debug_tools() -> void:
 	injector.configure(self)
 	add_child(injector)
 
+	# `F1`-`F4`: l'apparato sperimentale con cui si tara la durata dell'attesa
+	# senza rigiocare la notte a velocità reale (FR35). Non ha bisogno di
+	# `configure()`: scrive su `Engine.time_scale` e nient'altro.
+	var time: Node = (load(TIME_CONTROL_PATH) as GDScript).new()
+	time.name = "TimeControl"
+	add_child(time)
+
 	var overlay := (load(DEBUG_OVERLAY_PATH) as PackedScene).instantiate()
 	overlay.configure(self, render)
 	add_child(overlay)
 
 
-## La fase corrente, per gli strumenti di debug. Nessuno tranne `debug/` la usa:
-## quando ci sarà l'orchestratore vero, la troverà lui sotto PhaseHost.
+## La fase corrente, per gli strumenti di debug.
+##
+## DELEGA, e non è un residuo. `debug/debug_overlay.gd` e `debug/lie_injector.gd`
+## raggiungono la fase passando da qui, con il riferimento che ricevono in
+## `configure(self)`. Se questo metodo fosse sparito insieme all'orchestrazione,
+## l'overlay avrebbe smesso di funzionare a ogni frame; se fosse rimasto
+## restituendo sempre `null`, sarebbe stato peggio — l'iniettore `F9`, che esiste
+## per dimostrare che ADR-001 regge, avrebbe risposto «nessuna fase attiva»
+## mentre una fase c'era. Uno strumento che mente in silenzio è peggio di uno
+## rotto.
 func current_phase() -> Phase:
-	return _phase
+	return _night.current_phase() if _night != null else null
 
 
-func _enter_phase(scene: PackedScene) -> void:
-	# UNA FASE PER VOLTA. Senza questo la precedente resterebbe viva sotto
-	# PhaseHost: continuerebbe a integrare, ad accumulare campioni e a ricevere
-	# `_unhandled_input` — ENTER ne chiuderebbe due — e il suo `finished` in
-	# ritardo strapperebbe lo schermo alla fase nuova.
-	if _phase != null:
-		var stale := _phase
-		_phase = null
-		if _crt != null:
-			_crt.show_control(null)
-		_dispose(stale)
-
-	var p := scene.instantiate() as Phase
-	# setup() prima di entrare nell'albero, come previsto dal contratto.
-	p.setup(Game.run, {})
-	p.finished.connect(_on_phase_finished.bind(p))
-	_phase_host.add_child(p)
-
-	# LA GUARDIA CHE IMPEDISCE UN BLOCCO SENZA RITORNO, e va PRIMA di togliere il
-	# controllo al giocatore. Una fase mal configurata non emetterà mai
-	# `finished`: nessuno riaccenderebbe il controller, il cursore resterebbe
-	# libero su un gioco che non risponde, e non esiste un tasto per annullare.
-	# In debug l'`assert` della fase lo rende evidente; in release gli assert
-	# spariscono e il giocatore resterebbe fermo davanti a uno schermo muto,
-	# senza un solo messaggio. Con la postazione il danno è peggiore: sarebbe
-	# seduto E cieco.
-	if not _phase_can_run(p):
-		push_error("[main] fase %s non configurata: non le si cede il controllo" % p.key())
-		p.queue_free()
-		return
-
-	_phase = p
-	# LO SCHERMO PRIMA DELLA SEDIA. `show_control()` reparenta il Control nel
-	# SubViewport del CRT, e `screen()` si risolve nel `_ready()` della fase: per
-	# questo l'ordine `add_child(p)` → `p.screen()` va mantenuto — `reparent()`
-	# vuole che il nodo sia già nell'albero.
-	# I modi si registrano ADESSO, appena la fase esiste e prima che qualcuno la
-	# sospenda: sono ciò che `_set_phase_running(true)` rimetterà al posto suo.
-	_phase_mode = p.process_mode
-	var scr := p.screen()
-	_screen_mode = scr.process_mode if scr != null else Node.PROCESS_MODE_INHERIT
-
-	if _crt != null:
-		_crt.show_control(scr)
-	Events.phase_started.emit(p.key())
-	_sit_down()
+## L'orologio della notte, per l'overlay di debug. Stessa ragione di sopra.
+func clock() -> NightClock:
+	return _night.clock() if _night != null else null
 
 
-## Se una fase è in condizione di girare davvero.
+## Se c'è una fase ma nessuno è alla postazione. Stessa ragione di sopra.
 ##
-## La proprietà si interroga per nome, e non con un metodo del contratto `Phase`,
-## perché aggiungerlo vorrebbe dire farlo implementare da
-## `phases/polar/phase_polar.gd` — e quel file non deve cambiare di una riga: è
-## la prova dell'AC2 della storia 1.1, rieseguibile con `git diff` da quando
-## esiste il repository. Nessuna comodità di struttura vale distruggerla.
-##
-## `&"truth" in p` distingue «la fase non ha una sorgente di verità» da «ce l'ha
-## e non l'ha ricevuta»: senza quel controllo, ogni fase futura senza `truth`
-## risulterebbe inoperabile.
-func _phase_can_run(p: Phase) -> bool:
-	if &"truth" in p and p.get(&"truth") == null:
+## Da quando alzarsi SOSPENDE una fase invece di concluderla (storia 1.3), `F12`
+## mostrava una fase ferma esattamente come una che gira: lo strumento con cui si
+## guarda cosa sta succedendo non distingueva i due stati che la 1.3 ha creato.
+func phase_suspended() -> bool:
+	if _night == null:
 		return false
-	return true
-
-
-func _on_phase_finished(result: PhaseResult, phase: Phase) -> void:
-	# Una fase che non è più quella corrente non ha voce. Senza questa guardia il
-	# `finished` di una fase già smontata scriverebbe un punteggio nel save e
-	# porterebbe via lo schermo alla fase viva.
-	if phase != _phase:
-		return
-
-	# Si registra ciò che la fase HA DICHIARATO in `result`, non ciò che
-	# risponderebbe se la si richiamasse: una fase il cui `score()` non fosse
-	# idempotente — dipendente dal tempo, o che ripulisce lo stato alla chiusura —
-	# scriverebbe nel save un numero diverso da quello che ha emesso.
-	# key(), mai name: Godot rinomina in @PhasePolar@2 e finirebbe nel save.
-	Game.run.phase_scores[phase.key()] = result.score
-	Events.phase_finished.emit(phase.key(), result.score)
-
-	if not result.ok:
-		# Canale 1: una fase che dichiara di non essere riuscita è un fatto per lo
-		# sviluppatore. Nessuna fase dell'MVP lo fa, ma il campo esiste e finora
-		# nessuno lo leggeva.
-		Log.warn("main", "fase %s conclusa con ok = false" % phase.key())
-
-	# `reason` NON compare qui: è canale 2, lo legge il giocatore sul CRT e non
-	# entra mai nel log di dev (game-architecture.md, tabella dei due canali).
-	Log.info("main", "fase %s conclusa — punteggio %d" % [phase.key(), result.score])
-	# Mai liberare un nodo dentro la sua stessa callback.
-	_advance.call_deferred(phase)
-
-
-func _advance(phase: Phase) -> void:
-	# show_control(null) PRIMA di liberare la fase: il Control è reparentato e
-	# resterebbe orfano a schermo. Ma solo se la fase è ancora quella corrente:
-	# svuotare il viewport per conto di una fase già sostituita lascerebbe nera
-	# la fase viva.
-	var was_current := _phase == phase
-	if was_current:
-		if _crt != null:
-			_crt.set_input_enabled(false)
-			_crt.show_control(null)
-			# `show_control(null)` svuota il viewport, ma svuotarlo non basta a
-			# ripulire ciò che è già a video: serve un frame di rendering. È
-			# esattamente il frame che `set_live(false)` concede prima di fermarsi.
-			_crt.set_live(false)
-		_phase = null
-
-	# LA FASE ESCE DI SCENA PRIMA CHE IL CONTROLLO TORNI: vedi `_dispose()`.
-	_dispose(phase)
-
-	if was_current:
-		# Il giocatore si alza e torna in piedi nella stanza. Il controllo gli
-		# torna su `left`, cioè a transizione conclusa: `ENTER` chiude la fase,
-		# non la postazione, e uscire dalla postazione resta il gesto lento che
-		# ADR-003 descrive.
-		#
-		# QUATTRO STRADE, perché il controllo deve tornare una volta sola e non
-		# zero. Chi è seduto si alza; chi è già in piedi lo riprende subito; chi è
-		# a metà di una transizione NON va toccato — restituirlo adesso
-		# significherebbe darlo a un corpo che un tween sta ancora trascinando.
-		# In quel caso chiude il giro il callback della transizione: `_on_left()`
-		# riaccende il controller, e `_on_seated()` — trovando `_phase` nullo — fa
-		# rialzare invece di lasciare il giocatore seduto davanti al niente.
-		# Oggi il ramo è irraggiungibile, perché `_input()` non lascia concludere
-		# una fase durante la transizione; resta scritto perché una fase futura può
-		# emettere `finished` da sola, senza che nessuno prema niente.
-		if _desk == null:
-			_set_world_active(true)
-		elif _desk.is_seated:
-			_desk.toggle()
-		elif not _desk.is_busy():
-			_set_world_active(true)
-	# Qui finisce il ponte: senza orchestratore non c'è una fase successiva.
-	# L'epica 2 mette `night_session` a questo posto.
-
-
-## Toglie una fase di scena e la libera.
-##
-## `remove_child()` PRIMA di `queue_free()`, e non è pignoleria: `queue_free()` è
-## differita a fine frame, quindi da sola lascerebbe la fase nell'albero — ancora
-## in `_process`, ancora in ascolto — per tutto il resto del frame in cui il
-## giocatore ha già ripreso il controllo. È la finestra in cui camminare
-## girerebbe le viti, cioè la cosa che questo file esiste per rendere
-## impossibile.
-##
-## Uscire dall'albero è sicuro: `Phase` libera il proprio `Control` su
-## `NOTIFICATION_PREDELETE` e non su `_exit_tree()`, proprio perché un'uscita
-## temporanea non deve uccidere l'interfaccia di una fase viva. È la lezione
-## della review della 1.1, e qui torna utile due volte: una fase sospesa resta
-## nell'albero, ma il suo Control vive comunque altrove.
-func _dispose(phase: Phase) -> void:
-	if phase.get_parent() != null:
-		phase.get_parent().remove_child(phase)
-	phase.queue_free()
+	return _night.current_phase() != null and not _night.player_present()

@@ -64,6 +64,16 @@ func show_control(c: Control) -> void:
 	# viewport è 256x192. Il primo Control che arrivasse con un rect diverso
 	# resterebbe della sua misura dentro uno schermo di un'altra.
 	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# UN FRAME ANCHE A SCHERMO FERMO. Da spento il render target è congelato
+	# sull'ultimo fotogramma (vedi `set_live()`), quindi ciò che arriva adesso
+	# non verrebbe disegnato da nessuno: si vedrebbe ancora la cosa di prima.
+	# Succede davvero all'alba — il riepilogo arriva mentre il giocatore è
+	# dall'altra parte della casa, cioè esattamente quando lo schermo è fermo — e
+	# comparirebbe solo dopo essersi seduti, perché `set_live(true)` è lì per
+	# un'altra ragione. `UPDATE_ONCE` disegna un frame e si rispegne da sé: è la
+	# stessa cosa che `set_live(false)` concede, e non riaccende niente.
+	if not _live:
+		_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 
 func viewport_size() -> Vector2i:

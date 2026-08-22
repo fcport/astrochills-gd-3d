@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://night/night_session.gd" id="1_session"]
+[ext_resource type="Script" path="res://night/night_clock.gd" id="2_clock"]
+
+[node name="NightSession" type="Node"]
+script = ExtResource("1_session")
+
+[node name="PhaseHost" type="Node" parent="."]
+unique_name_in_owner = true
+
+[node name="NightClock" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_clock")

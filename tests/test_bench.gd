@@ -6,12 +6,15 @@
 ## IL LIMITE È DICHIARATO, non nascosto: un banco STAMPA, non asserisce. Nessuna
 ## regressione viene rilevata da sola, e ogni verifica resta un atto di lettura.
 ## Se un giorno non dovesse più bastare, GUT coprirebbe queste aree senza toccare
-## una riga del codice di produzione — tutto qui dentro è già istanziabile senza
-## SceneTree e senza autoload. Ma quel giorno non è oggi, e non si decide da soli.
+## una riga del codice di produzione — niente qui dentro ha bisogno di uno
+## SceneTree. L'aritmetica della notte legge l'autoload `Tuning`, e non per
+## comodità: è ciò che l'AC6 della 2.1 impone, ed è anche l'unico modo di
+## collaudare i numeri con cui il gioco sta davvero girando, override compreso.
+## Ma quel giorno non è oggi, e non si decide da soli.
 ##
-## Aree previste dall'architettura: sorgenti di verità (qui), aggregazione della
-## qualità delle foto e migrazione del save — che non esistono ancora: arrivano
-## con l'epica 2.
+## Aree previste dall'architettura: sorgenti di verità (qui), l'aritmetica della
+## notte (qui dalla storia 2.1), aggregazione della qualità delle foto e
+## migrazione del save — che non esistono ancora: arrivano più avanti nell'epica 2.
 ##
 ## SI COLLAUDANO I .tres, NON I DEFAULT DELLO SCRIPT. Il gioco carica le sorgenti
 ## dalle risorse, non con `.new()`: un `drift_rate = 0.0` battuto per sbaglio nel
@@ -23,6 +26,14 @@ extends Node
 
 const HONEST_PATH := "res://phases/polar/sources/honest_drift.tres"
 const WANDERING_PATH := "res://phases/polar/sources/wandering_drift.tres"
+## La costante dell'orologio vero, non una copia: il banco confronta la propria
+## aritmetica con quella del gioco, e per farlo deve leggere la stessa costante.
+const CLOCK := preload("res://night/night_clock.gd")
+
+## Ripetuta qui apposta, e CONFRONTATA con quella dell'orologio in
+## `_check_night_clock()`: un banco che si limitasse a tenerne una copia
+## collauderebbe in silenzio un'aritmetica che il gioco non usa più.
+const NIGHT_START_HOUR := 21
 
 
 ## Carica la risorsa vera. Se manca lo dice invece di ripiegare in silenzio sui
@@ -43,6 +54,8 @@ func _ready() -> void:
 	_check_wandering_drift()
 	print("")
 	_check_local_to_scene()
+	print("")
+	_check_night_clock()
 	print("")
 	print("=== fine ===")
 	get_tree().quit()
@@ -146,3 +159,68 @@ func _check_local_to_scene() -> void:
 		var ok := r.resource_local_to_scene
 		print("   %-22s resource_local_to_scene = %s%s" % [
 			path.get_file(), ok, "" if ok else "   <-- ATTESO: true"])
+
+
+## L'aritmetica della notte, senza aprire una finestra.
+##
+## Qui non c'è un `NightClock` istanziato: quello ha bisogno di uno SceneTree, di
+## un `_process` e dell'autoload `Tuning`. Ciò che si collauda è la MATEMATICA che
+## ci sta dentro — la stessa formula, scritta una seconda volta e confrontata con
+## i valori del `.tres` che il gioco carica davvero. Se un giorno le due
+## divergono, è perché qualcuno ha cambiato la formula senza cambiare la storia.
+##
+## SI PASSA DALL'AUTOLOAD `Tuning`, non da un `load()` del `.tres`. È l'AC6 della
+## storia 2.1 alla lettera — «nessun punto del codice legge il `.tres` del tuning
+## con `load()`» — ed è anche l'unico modo di collaudare i numeri VERI: `Tuning`
+## applica `user://tuning_override.cfg`, che è precisamente lo strumento con cui
+## si tara l'MVP. Un banco che leggesse il `.tres` grezzo stamperebbe «l'alba cade
+## alle 06:00» mentre il gioco ne sta giocando un'altra, ed è lo strumento che
+## dovrebbe accorgersene per primo.
+func _check_night_clock() -> void:
+	print("-- La notte: durata, ritmo, e l\'ora che ne esce")
+
+	# Prima di collaudare l'aritmetica, si collauda che sia LA STESSA. La copia
+	# qui sopra esiste per non dipendere da uno SceneTree; se diverge da quella
+	# dell'orologio, tutto ciò che segue misura un gioco che non esiste.
+	if NIGHT_START_HOUR != CLOCK.NIGHT_START_HOUR:
+		print("   NIGHT_START_HOUR: banco %d, orologio %d  <-- ATTESO: uguali" % [
+			NIGHT_START_HOUR, CLOCK.NIGHT_START_HOUR])
+		return
+
+	var length := Tuning.night_length_min
+	var rate := Tuning.game_min_per_sec
+	print("   da Tuning (profilo %s): night_length_min = %.0f min di gioco, game_min_per_sec = %.2f" % [
+		Tuning.profile_hash, length, rate])
+
+	if length <= 0.0 or rate <= 0.0:
+		print("   <-- ATTESO: entrambi > 0, altrimenti la notte non finisce o non comincia")
+		return
+
+	# L'ora si ricava per somma diretta: elapsed_min E' l'ora. Nessuna compressione.
+	var dawn_hour := int(NIGHT_START_HOUR + length / 60.0) % 24
+	var dawn_minute := int(length) % 60
+	print("   l\'alba cade alle %02d:%02d  (21:00 + %.0f minuti)" % [
+		dawn_hour, dawn_minute, length])
+	if dawn_hour != 6 or dawn_minute != 0:
+		print("   <-- nota: il commento di tuning_profile.gd dice 21:00 -> 06:00 = 540")
+
+	print("   durata reale della sessione: %.1f minuti  (%.0f / %.2f secondi)" % [
+		length / rate / 60.0, length, rate])
+	print("   la stessa notte a time_scale x10: %.1f minuti" % (length / rate / 10.0 / 60.0))
+
+	# Il conto che l'orologio fa a ogni frame, rifatto qui.
+	print("   accumulo: a 60 fps un frame vale %.4f minuti di gioco" % (rate / 60.0))
+	var frames := int(ceil(length / (rate / 60.0)))
+	print("   servono %d frame a 60 fps perche' elapsed_min raggiunga la soglia" % frames)
+
+	# Le ore varcate lungo la notte, che sono i `hour_passed` che verranno emessi.
+	var hours := PackedStringArray()
+	var h := NIGHT_START_HOUR
+	var m := 0.0
+	while m < length:
+		m += 60.0
+		h = (h + 1) % 24
+		if m <= length:
+			hours.append("%02d" % h)
+	print("   ore varcate: %s  (%d segnali hour_passed)" % [
+		", ".join(hours), hours.size()])

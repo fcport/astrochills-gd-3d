@@ -72,7 +72,13 @@ Lavoro reale, rinviato con una ragione. Ogni voce dice da dove viene e cosa la s
   Ma dopo `ENTER` la fase viene liberata, e da lì un secondo `E` istanzia una fase nuova dal
   disallineamento iniziale, esattamente come prima. Quello che manca è chi decida che la
   fase 3 di questa notte è già stata giocata, e quello è l'orchestratore dell'epica 2.
-  [main.gd]
+  **CHIUSA il 2026-08-23 dalla storia 2.1.** L'orchestratore esiste, ed è lui a decidere: le
+  fasi arrivano da `data/night_plan.tres` e ogni indice avanza una volta sola, quindi finito
+  il setup non c'è più niente da rigiocare. `main.gd::_on_monitor_interacted()` non istanzia
+  più nulla — si limita a far sedere — e quando il piano si esaurisce `plan_exhausted` fa
+  rialzare chi è alla postazione e `_refresh_monitor()` spegne l'interagibile: il prompt non
+  ricompare nemmeno. Il difetto non è stato corretto, è stato tolto di mezzo per costruzione.
+  [main.gd, night/night_session.gd]
 
 - **`ESC` non consuma l'evento e coincide con `ui_cancel`.** `_unhandled_input` non chiama mai
   `get_viewport().set_input_as_handled()`, né per `interact` né per `ui_release_mouse`, e il
@@ -167,7 +173,14 @@ Lavoro reale, rinviato con una ragione. Ogni voce dice da dove viene e cosa la s
   destinatario che gli manca.* *Rinviato: il segnale è dichiarato in
   `game-architecture.md § Architectural Boundaries`, quindi toglierlo è una decisione di
   architettura e non di storia. Finché resta senza ascoltatori è codice che promette un
-  canale che nessuno usa.* [crt/crt_screen.gd, autoloads/events.gd]
+  canale che nessuno usa.* **CHIUSA come domanda il 2026-08-23 dalla storia 2.1**, che è la
+  storia per cui il segnale era stato pensato: `night/night_session.gd` dichiara in
+  intestazione perché NON lo usa — nasce dentro la scena principale e l'emissione gli è già
+  passata sopra — e riceve il `CrtScreen` da `configure()`, che è il punto d'ingresso a
+  passarglielo. La strada è decisa e scritta dove la cercherà chi verrà dopo. *Resta aperta la
+  sola domanda di architettura: il segnale continua a non avere ascoltatori, e toglierlo o
+  dargli un destinatario è una decisione di `game-architecture.md`, non di una storia.*
+  [crt/crt_screen.gd, autoloads/events.gd]
 
 ## Deferred from: code review of 1-3-sedersi-al-monitor-e-lavorare-sullo-schermo (2026-08-22)
 
@@ -220,3 +233,19 @@ Lavoro reale, rinviato con una ragione. Ogni voce dice da dove viene e cosa la s
   TUTTI i figli, per la regola di proprietà che è il cuore di questa storia: andrebbe
   insegnata un'eccezione alla funzione meno adatta a riceverne una.* [crt/crt_screen.gd,
   project.godot]
+
+## Deferred from: code review of 2-1-un-turno-che-comincia-alle-21-00-e-finisce-da-solo-allalba (2026-08-23)
+
+- **`NightClock` non valida le due manopole che legge dal `.tres`.** `autoloads/tuning.gd` applica `POSITIVE_KEYS` solo dentro `_apply_override()`: il profilo caricato da `data/tuning.tres` non passa da nessuna validazione. Con `night_length_min = 0` l'alba scatta al primo `_process`, mentre `_enter_phase` ha appena montato la polare; con `game_min_per_sec = 0` la notte non finisce mai. In entrambi i casi in silenzio — nessun `push_error`, nessuna riga di log. Il banco il controllo lo fa, ma il banco è un eseguibile a parte. *Rinviato: il difetto è pre-esistente e vive in `autoloads/tuning.gd`, che questa storia consuma e non costruisce; il valore lo batte a mano uno sviluppatore, e se ne accorge al primo avvio.* [night/night_clock.gd, autoloads/tuning.gd]
+
+- **`_on_phase_finished` non ha un latch.** La guardia `if phase != _phase: return` protegge dai `finished` tardivi, non dai doppi: `_phase` si azzera dentro `_advance`, che è differita, quindi due `finished` nello stesso frame passano entrambi — punteggio riscritto, `phase_finished` emesso due volte, `_ctx.merge()` applicato due volte, e due `_advance` in coda che saltano una fase lasciandone una viva sotto `PhaseHost`. *Rinviato: oggi non raggiungibile, `phases/polar/phase_polar.gd` ha il proprio `_done` a riga 71. Ma il contratto `core/phase.gd` non impone il latch, e l'orchestratore deve sopravvivere a sette fasi che non esistono ancora — la 2.3 (la sequenza che si conclude da sola su timer) è la prima candidata.* [night/night_session.gd]
+
+- **La lambda su `Events.phase_started` cattura `self` e non viene mai disconnessa.** `main.gd:173` connette una lambda dove la riga adiacente (`:174`) usa un `Callable` nominato. `Events` è un autoload e sopravvive a `main`. L'asimmetria fra due righe consecutive è il segnale: se una merita un metodo, le merita entrambe. *Rinviato: innocuo finché `_begin_night()` gira una volta sola per sessione. Diventa una doppia connessione — e quindi un doppio `_refresh_monitor()` — il giorno in cui la 2.6 o la 2.7 riapriranno la notte senza ricostruire la scena.* [main.gd]
+
+- **Il riepilogo trabocca dal vetro oltre cinque punteggi.** `night_summary.gd::_draw()` parte da `y = 84` e cresce di 16 per riga, mentre «the sky is getting light» sta fissa a `y = 172` su un `DESIGN_SIZE` alto 192: la sesta riga cade a 164 e si sovrappone, dalla settima si disegna fuori dal `Control`. Nessuno scroll, nessun troncamento, nessun `min()`. *Rinviato: oggi `data/night_plan.tres` ha una fase sola. Il proprietario è la storia che aggiunge fasi al piano — 2.2 e 2.3 — perché è quella che saprà anche quante righe ha senso mostrare.* [night/night_summary.gd]
+
+- **`phase_scores[key()]` sovrascrive invece di accumulare.** L'indicizzazione per `key()` è corretta ed è AC4, ma una fase di foto rieseguita a ogni scatto scriverà sempre sulla stessa chiave: il riepilogo mostrerà una riga sola con il punteggio dell'ultimo scatto. Né `night_session.gd` né `core/night_run.gd` dicono se sia la semantica voluta. *Rinviato: la decisione appartiene alla 2.3, che è la storia in cui una fase viene eseguita più volte nella stessa notte per la prima volta.* [night/night_session.gd, core/night_run.gd]
+
+- **`_photo_index` non si riazzera: il ciclo delle foto non riapre.** `_next_scene()` percorre `photo_phases` una volta sola e non torna mai indietro, quindi «le fasi di **foto** a ogni scatto» dell'AC3 è implementato a metà. *Rinviato di proposito, e dichiarato in loco a `night/night_session.gd:193-198`: ciò che riapre il ciclo è il menu post-foto della storia 2.6, e con `photo_phases` vuoto la cosa è oggi inosservabile. La voce esiste perché il Change Log della 2.1 dichiara AC3 soddisfatto senza citare il rinvio.* [night/night_session.gd]
+
+- **AC2, clausola «si chiude anche se è aperto un menu»: non verificabile in questa storia.** `night/night_clock.gd` è un `Node` lasciato a `PROCESS_MODE_INHERIT`, deliberatamente: è ciò che rende vera l'altra metà dell'AC1, «la pausa ferma il tempo davvero». Ma con l'albero in pausa `_process` non gira, quindi `dawn` non può arrivare: un menu che mette in pausa **impedisce** all'alba di chiudere la notte. Le due clausole sono in tensione per costruzione, e la domanda aperta 5 dello spec lo sapeva. *Rinviata per decisione di Federico del 2026-08-23: `ui/` è vuoto e nessuna storia prima della 2.6 crea un menu, quindi oggi non esiste niente da mettere in pausa e la clausola non è osservabile. La prova si sposta alla 2.6, insieme al menu post-foto — che è anche la storia in cui si dovrà decidere se quel menu mette davvero in pausa l'albero o si limita a coprire lo schermo.* [night/night_clock.gd, night/night_session.gd]

@@ -5,12 +5,25 @@
 ## post-effect a schermo intero senza CompositorEffect — che in Compatibility
 ## non esiste. Il vincolo del renderer spinge nella direzione giusta.
 ##
-## PONTE DICHIARATO E TEMPORANEO. Con `spike/` cancellata non esiste ancora una
-## stanza: la storia 1.2 costruisce l'osservatorio, la 1.3 porta il Control della
-## fase sul CRT diegetico. Fino ad allora questo file fa da orchestratore povero
-## e `ScreenViewport` fa da CRT povero — a 256x192, la stessa misura del monitor
-## vero, perché un'interfaccia che sta comoda a 640x360 e non ci sta a 256x192
-## sembrerebbe finita e non lo sarebbe.
+## PONTE DICHIARATO E TEMPORANEO. La stanza adesso c'è (storia 1.2), ma il
+## `Control` della fase non è ancora sul CRT diegetico: ci arriva con la 1.3.
+## Fino ad allora questo file fa da orchestratore povero e `ScreenViewport` fa da
+## CRT povero — a 256x192, la stessa misura del monitor vero, perché
+## un'interfaccia che sta comoda a 640x360 e non ci sta a 256x192 sembrerebbe
+## finita e non lo sarebbe.
+##
+## FASE E GIOCATORE SONO MUTUAMENTE ESCLUSIVI, e non è una scelta di comodo.
+## `W`, `A`, `S`, `D` e `ENTER` sono legati sia al movimento sia alle due viti
+## della fase polare: con entrambi attivi, camminare girerebbe le viti. Le azioni
+## polari non si possono rinominare, perché `phases/polar/phase_polar.gd` le
+## nomina e la prova dell'AC2 della storia 1.1 richiede che quel file non cambi.
+## Quindi comanda uno solo alla volta: si entra nella fase interagendo col
+## monitor, e il controller del giocatore si spegne.
+##
+## Spegnere il controller non è lavoro che la 1.3 butterà: ADR-003 comincia
+## esattamente con «il controller del giocatore si disabilita». Qui c'è il primo
+## passo di quella sequenza; la 1.3 aggiunge l'aggancio al `Marker3D`, il tween
+## della camera e il passaggio dell'input al `SubViewport`.
 ##
 ## LA MISURA DEL MONDO NON SI DICHIARA NELLA SCENA. `WorldViewport` è un
 ## SubViewportContainer con `stretch = true`, e un container di quel tipo impone
@@ -38,7 +51,9 @@ const LIE_INJECTOR_PATH := "res://debug/lie_injector.gd"
 @onready var _container: SubViewportContainer = %WorldViewport
 @onready var _world: SubViewport = %SubViewport
 @onready var _screen_viewport: SubViewport = %ScreenViewport
+@onready var _screen_host: SubViewportContainer = %ScreenHost
 @onready var _phase_host: Node = %PhaseHost
+@onready var _observatory: Node3D = %Observatory
 
 var _phase: Phase
 
@@ -46,9 +61,38 @@ var _phase: Phase
 func _ready() -> void:
 	Game.start_night(1)
 	Log.info("main", "avvio — renderer %s" % RenderingServer.get_video_adapter_api_version())
-	_enter_phase(PHASE_POLAR)
+	_connect_monitor()
 	if OS.is_debug_build():
 		_install_debug_tools()
+
+
+## Il monitor si trova per GRUPPO, mai per percorso di nodo: un percorso si
+## romperebbe al primo spostamento, ed è precisamente ciò che l'AC3 della storia
+## 1.2 vieta. Il gruppo sopravvive a spostamenti, rinomine e annidamenti diversi.
+func _connect_monitor() -> void:
+	var monitor := get_tree().get_first_node_in_group(CrtMonitor.GROUP) as CrtMonitor
+	if monitor == null:
+		# Canale 1: è un errore di programma. Senza monitor la fase è
+		# irraggiungibile, e il giocatore girerebbe per la stanza senza capire.
+		push_error("[main] nessun CrtMonitor nel gruppo '%s'" % CrtMonitor.GROUP)
+		return
+	monitor.interacted.connect(_on_monitor_interacted)
+
+
+func _on_monitor_interacted(_by: Node3D) -> void:
+	if _phase != null:
+		return
+	_enter_phase(PHASE_POLAR)
+
+
+## Accende il mondo o la fase, mai tutti e due.
+func _set_world_active(active: bool) -> void:
+	_screen_host.visible = not active
+	var player := _observatory.get_node_or_null("%Player") as Player
+	if player == null:
+		push_error("[main] nessun Player dentro l'osservatorio")
+		return
+	player.set_enabled(active)
 
 
 ## Gli strumenti di debug non esistono in release: `OS.is_debug_build()` è falso e
@@ -95,6 +139,7 @@ func _enter_phase(scene: PackedScene) -> void:
 	_phase = p
 	# screen() dopo: il Control si risolve in _ready della fase.
 	_show(p.screen())
+	_set_world_active(false)
 	Events.phase_started.emit(p.key())
 
 
@@ -151,6 +196,8 @@ func _advance(phase: Phase) -> void:
 	if _phase == phase:
 		_show(null)
 		_phase = null
+		# Il giocatore riprende il controllo, e torna in piedi nella stanza.
+		_set_world_active(true)
 	phase.queue_free()
 	# Qui finisce il ponte: senza orchestratore non c'è una fase successiva.
 	# L'epica 2 mette `night_session` a questo posto.

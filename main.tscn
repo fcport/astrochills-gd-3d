@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://world/observatory.tscn" id="2_observatory"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_main")
@@ -20,8 +21,12 @@ unique_name_in_owner = true
 handle_input_locally = false
 render_target_update_mode = 4
 
+[node name="Observatory" parent="WorldViewport/SubViewport" instance=ExtResource("2_observatory")]
+unique_name_in_owner = true
+
 [node name="ScreenHost" type="SubViewportContainer" parent="WorldViewport/SubViewport"]
 unique_name_in_owner = true
+visible = false
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5

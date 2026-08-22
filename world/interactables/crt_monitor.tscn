@@ -1,0 +1,36 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://world/interactables/crt_monitor.gd" id="1_monitor"]
+[ext_resource type="Shader" path="res://world/shaders/ps1.gdshader" id="2_ps1"]
+[ext_resource type="PackedScene" path="res://crt/crt_screen.tscn" id="3_screen"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_case"]
+shader = ExtResource("2_ps1")
+shader_parameter/albedo = Color(0.62, 0.6, 0.53, 1)
+shader_parameter/snap_resolution = 665.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_case"]
+size = Vector3(0.4, 0.36, 0.38)
+subdivide_width = 1
+subdivide_height = 1
+subdivide_depth = 1
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_case"]
+size = Vector3(0.4, 0.36, 0.38)
+
+[node name="CrtMonitor" type="StaticBody3D"]
+script = ExtResource("1_monitor")
+prompt_text = "Usa il monitor"
+
+[node name="Case" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.18, 0)
+mesh = SubResource("BoxMesh_case")
+material_override = SubResource("ShaderMaterial_case")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.18, 0)
+shape = SubResource("BoxShape3D_case")
+
+[node name="CrtScreen" parent="." instance=ExtResource("3_screen")]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0.191)

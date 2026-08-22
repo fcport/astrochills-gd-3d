@@ -1,5 +1,5 @@
 # generated: 2026-08-21T22:44:03
-# last_updated: 2026-08-22T02:20:00
+# last_updated: 2026-08-22T12:20:00
 # project: astrochills-gd-3d
 # project_key: NOKEY
 # tracking_system: file-system
@@ -75,7 +75,7 @@
 # Questo tracking pianifica sulle 16 storie che esistono in epics.md.
 
 generated: 2026-08-21T22:44:03
-last_updated: 2026-08-22T02:20:00
+last_updated: 2026-08-22T12:20:00
 project: astrochills-gd-3d
 project_key: NOKEY
 tracking_system: file-system
@@ -90,7 +90,7 @@ development_status:
   # Story 1.1: L'allineamento polare, e la prova che il seam regge  ← PRIMA STORIA
   1-1-lallineamento-polare-e-la-prova-che-il-seam-regge: done
   # Story 1.2: L'osservatorio esiste, e ci sei dentro
-  1-2-losservatorio-esiste-e-ci-sei-dentro: backlog
+  1-2-losservatorio-esiste-e-ci-sei-dentro: review
   # Story 1.3: Sedersi al monitor e lavorare sullo schermo
   1-3-sedersi-al-monitor-e-lavorare-sullo-schermo: backlog
   epic-1-retrospective: optional

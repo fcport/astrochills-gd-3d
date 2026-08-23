@@ -16,13 +16,22 @@
 ; 1,05 m c'è una superficie all'altezza dello sguardo, e ci si interagisce
 ; stando di fianco alla spalliera.
 ;
-; LA COLLISIONE È IN DUE PEZZI, uno per massa: il corpo del letto e la testiera.
-; Il raggio si ferma al primo che incontra, e sono lo stesso `Interactable`.
+; IL VOLUME DI COLLISIONE È PIÙ ALTO DEL LETTO, e non è una svista: arriva a
+; 1,45 m contro i 54 cm del materasso. Con la sola geometria visibile il bersaglio
+; del raggio era la lastra della testiera, spessa 8 cm — «hitbox piccolissima»,
+; e lo era: bisognava inquadrare un francobollo da mezzo metro.
+;
+; NON COSTA NIENTE AL GIOCATORE, ed è il motivo per cui si può fare. L'ingombro a
+; terra non cambia (0,92 x 2,02, quanto il letto con la testiera), e il letto era
+; già invalicabile: un `CharacterBody3D` senza salita di gradino non scavalca una
+; parete di 54 cm. La capsula ha raggio 0,30 e la camera sta sul suo asse, quindi
+; l'occhio non poteva comunque arrivare sopra il materasso. Alzare il volume
+; cambia solo COSA VEDE IL RAGGIO — cioè l'unica cosa che era rotta.
 ;
 ; NASCE SPENTO (`enabled = false`). Un letto usabile a mezzanotte chiuderebbe la
 ; notte con la posa a metà, ed è un caso che nessuno ha ancora deciso come deve
 ; comportarsi. Lo accende `main.gd` all'alba.
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://world/interactables/bed.gd" id="1_bed"]
 [ext_resource type="Shader" path="res://world/shaders/ps1.gdshader" id="2_ps1"]
@@ -50,10 +59,7 @@ size = Vector3(0.5, 0.11, 0.3)
 size = Vector3(0.92, 1.05, 0.08)
 
 [sub_resource type="BoxShape3D" id="ShapeBed"]
-size = Vector3(0.92, 0.54, 1.94)
-
-[sub_resource type="BoxShape3D" id="ShapeHeadboard"]
-size = Vector3(0.92, 1.05, 0.08)
+size = Vector3(0.92, 1.45, 2.02)
 
 [node name="Bed" type="StaticBody3D"]
 collision_mask = 0
@@ -82,9 +88,5 @@ material_override = SubResource("MatFrame")
 mesh = SubResource("BoxHeadboard")
 
 [node name="Collision" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.27, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.725, -0.04)
 shape = SubResource("ShapeBed")
-
-[node name="CollisionHeadboard" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.525, -1.01)
-shape = SubResource("ShapeHeadboard")

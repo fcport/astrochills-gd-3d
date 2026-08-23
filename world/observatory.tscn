@@ -33,7 +33,7 @@
 ;
 ; NON DISTURBARE monitor, chime, letto, player: le loro quote sono contratti di
 ; altre storie. La 3.1 aggiunge stanze e ambiente, non sposta l'esistente.
-[gd_scene load_steps=26 format=3]
+[gd_scene load_steps=28 format=3]
 
 [ext_resource type="PackedScene" path="res://world/rooms/computer_room.tscn" id="1_room"]
 [ext_resource type="PackedScene" path="res://world/interactables/crt_monitor.tscn" id="2_monitor"]
@@ -44,6 +44,7 @@
 [ext_resource type="PackedScene" path="res://world/rooms/dome.tscn" id="7_dome"]
 [ext_resource type="PackedScene" path="res://world/rooms/exterior.tscn" id="8_exterior"]
 [ext_resource type="Shader" path="res://world/shaders/ps1.gdshader" id="9_ps1"]
+[ext_resource type="Script" path="res://world/indoors_volume.gd" id="10_indoors"]
 
 ; UN SOLO WorldEnvironment, condiviso dentro e fuori (invariante di architettura).
 ;
@@ -63,13 +64,31 @@
 ;
 ; Tarato guardando DA DENTRO E DA FUORI, non stimato: se un giorno stona, si ritocca
 ; densita' e colore qui, in un punto solo.
+[sub_resource type="BoxShape3D" id="ShapeIndoors"]
+size = Vector3(12.21, 3.0, 8.45)
+
+; IL CIELO E LA NEBBIA, tarati GUARDANDO il 2026-08-24 — non stimati, che è ciò
+; che l'AC della 3.1 chiedeva e che la sessione senza Godot non poteva fare.
+;
+; `fog_sky_affect = 0.2`, E QUESTA RIGA È LA CORREZIONE. Il valore di default e'
+; 1.0: la nebbia sostituisce INTERAMENTE il cielo, che a quel punto non conta più
+; niente. Misurato: col cielo vecchio il pixel in alto valeva (0.122, 0.149, 0.216)
+; e cambiando i colori del cielo non si muoveva di un millesimo — perche' quello
+; era il colore della NEBBIA, non del cielo. La fessura della cupola mostrava
+; nebbia, e siccome la nebbia è più chiara del cielo ma più scura del tetto, la
+; fessura si leggeva come una fascia SCURA: un'apertura che sembrava un'ombra.
+;
+; I colori del cielo sono poi saliti finche' la fessura non ha letto come cielo e
+; l'edificio non si è staccato dal fondo guardandolo dal prato. Interni invariati
+; (`ambient_light_source = 2` prende il colore, non il cielo): misurati prima e
+; dopo, 0.217 la stanza computer, 0.210 la cucina.
 [sub_resource type="ProceduralSkyMaterial" id="SkyNight"]
-sky_top_color = Color(0.02, 0.03, 0.06, 1)
-sky_horizon_color = Color(0.05, 0.07, 0.1, 1)
+sky_top_color = Color(0.16, 0.22, 0.42, 1)
+sky_horizon_color = Color(0.20, 0.26, 0.44, 1)
 sky_curve = 0.15
 ground_bottom_color = Color(0.02, 0.025, 0.03, 1)
 ground_horizon_color = Color(0.04, 0.05, 0.07, 1)
-energy_multiplier = 0.6
+energy_multiplier = 1.0
 
 [sub_resource type="Sky" id="SkyObs"]
 sky_material = SubResource("SkyNight")
@@ -84,6 +103,7 @@ fog_enabled = true
 fog_light_color = Color(0.16, 0.2, 0.28, 1)
 fog_light_energy = 0.6
 fog_density = 0.035
+fog_sky_affect = 0.2
 
 ; --- Materiali dell'atrio (condivisi, come nella stanza computer) ---
 [sub_resource type="ShaderMaterial" id="MatFloorA"]
@@ -250,11 +270,30 @@ light_color = Color(0.72, 0.8, 0.92, 1)
 light_energy = 0.8
 omni_range = 6.0
 
-; --- Le stanze istanziate ---
-; Cucina: a nord dell'atrio, ruotata +90° cosi' che la sua apertura (locale −x)
-; guardi a sud, verso l'atrio. Interno mondo x∈[2,1, 5,1], z∈[−5,58, −2,58].
+; LA CUCINA STA A NORD DELL'ATRIO, e la rotazione e' quella che lo rende vero.
+;
+; DIFETTO CORRETTO IL 2026-08-24. La trasformata precedente
+; — `Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 2.1, 0, -2.575)` — ruotava nel verso
+; opposto: mandava la x locale in +z e la z locale in -x, e la cucina finiva a
+; x∈[-1.05, 2.25], z∈[-2.58, 0.58], cioe' DENTRO la stanza computer. La sua parete
+; est tagliava la stanza in due fra il letto e la scrivania. Il commento che stava
+; qui dichiarava gia' la scatola giusta (x∈[2.1, 5.1], z∈[-5.58, -2.58]): la
+; geometria non ci arrivava, e nessuno l'aveva guardata — la storia si e' chiusa
+; con «nessun binario Godot nell'ambiente», quindi validata solo staticamente. Che
+; due stanze non si compenetrino non e' una proprieta' del file .tscn: e' una
+; proprieta' dello SPAZIO, e per vederla bisogna moltiplicare le trasformate.
+;
+; PERCHE' PROPRIO QUESTA. La cucina non ha parete ovest: il varco e' tutta la
+; parete locale -x, larga 3 m. L'atrio non ha parete nord: il buco e' largo 3 m.
+; Combaciano in un modo solo — la x locale deve andare in -z (quindi
+; x_axis = (0,0,-1)) e la z locale in +x. Con origine (2.15, 0, -2.65):
+;
+;   mondo x = 2.15 + z_locale  ->  x∈[2.00, 5.30]  = le pareti esterne dell'atrio
+;   mondo z = -2.65 - x_locale ->  z∈[-5.80, -2.65] = a nord, a contatto
+;
+; Misurato dopo la correzione, non stimato.
 [node name="Kitchen" parent="." instance=ExtResource("6_kitchen")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 2.1, 0, -2.575)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 2.15, 0, -2.65)
 
 ; Cupola: a est, apertura (locale −x) verso l'atrio. Centro a x=7,46.
 [node name="Dome" parent="." instance=ExtResource("7_dome")]
@@ -284,3 +323,21 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, -2.05)
 ; oltre un metro di passaggio prima della sedia, che sta sull'asse.
 [node name="Bed" parent="." instance=ExtResource("5_bed")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.54, 0, -0.5)
+
+; IL VOLUME DELL'EDIFICIO, e le sue misure non sono scelte: sono LETTE dalle stanze.
+;
+;   x  da -2,15 (parete ovest della stanza computer) a 10,06 (bordo est della cupola)
+;   z  da -5,80 (fondo della cucina)                 a  2,65 (parete sud dell'atrio)
+;
+; larghezza 12,21, profondità 8,45, centro (3,955 · -1,575). L'altezza è 3,0 e
+; parte da terra: copre il giocatore, non il tetto della cupola — chi cammina sta
+; fra 0 e 1,8 m, e alzare il volume servirebbe solo a farlo intersecare col cielo.
+;
+; Chi lo interroga e perché: `world/sequence_chime.gd`. Il suo `holds()` risponde
+; alla sola domanda che la distanza non sapeva risolvere — dentro o fuori.
+[node name="Indoors" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.955, 1.5, -1.575)
+script = ExtResource("10_indoors")
+
+[node name="Shape" type="CollisionShape3D" parent="Indoors"]
+shape = SubResource("ShapeIndoors")

@@ -25,4 +25,26 @@ func _on_phase_finished(key: StringName, _score: int) -> void:
 	# segnale con la propria chiave, e passano di qui senza svegliare il tono.
 	if key != &"imaging":
 		return
+	# DA FUORI NON SI SENTE (storia 3.1), e la distanza da sola non poteva dirlo:
+	# appena fuori la porta sud si è a ~6,0 m da qui, il centro della cupola a ~7,7
+	# — cioè fuori è più VICINO di un posto che deve restare udibile. Serviva sapere
+	# DOVE si è, e lo dice `IndoorsVolume`.
+	if not _player_indoors():
+		return
 	play()
+
+
+## Vero se il giocatore è dentro l'edificio — e vero anche quando la risposta non
+## si può dare.
+##
+## IL RIPIEGO CADE DALLA PARTE GIUSTA. Volume assente, giocatore non trovato, scena
+## montata a metà: si torna «dentro», cioè il suono si sente, cioè esattamente il
+## comportamento che questo nodo aveva prima della 3.1. Un volume dimenticato non
+## deve poter far sparire un suono in silenzio — e il silenzio è il guasto più
+## difficile da notare che esista.
+func _player_indoors() -> bool:
+	var volume := IndoorsVolume.find_in(get_tree())
+	var player := Player.find_in(get_tree())
+	if volume == null or player == null:
+		return true
+	return volume.holds(player)

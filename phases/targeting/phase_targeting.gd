@@ -42,6 +42,13 @@ var _cursor := 0
 var _run: NightRun
 var _done := false
 
+## La commessa di stanotte in una riga, o "" se non ce n'è una aperta. La compone
+## l'orchestratore e la consegna nel `ctx`: qui si mostra e basta.
+var _commission_line := ""
+
+## La sigla del soggetto richiesto, per l'evidenza nella striscia indice.
+var _commission_target := ""
+
 
 func key() -> StringName:
 	return &"targeting"
@@ -50,8 +57,12 @@ func key() -> StringName:
 ## Chiamato dall'orchestratore PRIMA di entrare nell'albero. Si tiene la notte:
 ## `run.elapsed_min` è la sorgente dell'ora, e `run.selected_target_id` è la casa
 ## persistente della scelta.
-func setup(run: NightRun, _ctx: Dictionary) -> void:
+func setup(run: NightRun, ctx: Dictionary) -> void:
 	_run = run
+	# La commessa arriva già scritta dall'orchestratore: `phases/` non può conoscere
+	# `photo/`, dove vivono le chiavi della commessa. Vedi `Phase.CTX_COMMISSION_LINE`.
+	_commission_line = String(ctx.get(Phase.CTX_COMMISSION_LINE, ""))
+	_commission_target = String(ctx.get(Phase.CTX_COMMISSION_TARGET, ""))
 
 
 func _ready() -> void:
@@ -95,7 +106,7 @@ func _process(_delta: float) -> void:
 		return
 
 	_cursor = clampi(_cursor, 0, _catalog.size() - 1)
-	_screen.set_readout(_catalog, _cursor)
+	_screen.set_readout(_catalog, _cursor, _commission_line, _commission_target)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -118,11 +129,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	# prima che il catalogo sia stato letto.
 	if event.is_action_pressed(&"targeting_up"):
 		_cursor = (_cursor - 1 + _catalog.size()) % _catalog.size()
-		_screen.set_readout(_catalog, _cursor)
+		_screen.set_readout(_catalog, _cursor, _commission_line, _commission_target)
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"targeting_down"):
 		_cursor = (_cursor + 1) % _catalog.size()
-		_screen.set_readout(_catalog, _cursor)
+		_screen.set_readout(_catalog, _cursor, _commission_line, _commission_target)
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"targeting_confirm"):
 		_finish()

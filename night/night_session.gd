@@ -218,8 +218,41 @@ func begin() -> void:
 	if roster == null:
 		Log.warn("night", "roster committenti assente (%s): nessuna commessa stanotte" % ROSTER_PATH)
 	Game.run.commission = Commission.choose(clients, Game.run.night_index)
-
 	_enter_next()
+
+
+## La commessa in una riga da schermo, o "" se non ce n'è una aperta.
+##
+## Inglese: è testo di macchina (NFR10). Il nome del committente è un dato, la
+## sigla del soggetto arriva maiuscola perché è così che la striscia indice la
+## scrive — le due schermate devono dire la stessa cosa nello stesso modo.
+func _commission_line() -> String:
+	if not Commission.is_open(Game.run.commission):
+		return ""
+	# IL MOLTIPLICATORE CI VA. Senza, la riga dice cosa fare ma non se convenga, e
+	# con Astrofili Marche a x0.6 adempiere PAGA MENO che vendere al mercato: è una
+	# scelta, e una scelta si fa sapendo il prezzo. Compariva solo sulla schermata
+	# di vendita, cioè dopo.
+	return "%s wants %s x%s" % [
+		String(Game.run.commission.get(Commission.CLIENT_NAME, "")),
+		String(Game.run.commission.get(Commission.TARGET_ID, "")).to_upper(),
+		_fmt_mult(float(Game.run.commission.get(Commission.MULTIPLIER, 1.0))),
+	]
+
+
+## La sigla del soggetto richiesto, maiuscola, o "" se non c'è commessa aperta.
+func _commission_target() -> String:
+	if not Commission.is_open(Game.run.commission):
+		return ""
+	return String(Game.run.commission.get(Commission.TARGET_ID, "")).to_upper()
+
+
+## Il moltiplicatore senza zeri inutili: 1.4 -> "1.4", 1.0 -> "1". Stesso formato
+## della schermata di vendita, che è l'altro posto in cui il giocatore lo legge.
+func _fmt_mult(m: float) -> String:
+	if m == floor(m):
+		return "%d" % int(m)
+	return "%s" % m
 
 
 ## La fase corrente, o `null`. La usano gli strumenti di debug, che raggiungono
@@ -631,6 +664,22 @@ func _enter_phase(scene: PackedScene) -> void:
 		node.queue_free()
 		_enter_next.call_deferred()
 		return
+
+	# LA COMMESSA VA DETTA PRIMA DI SCEGLIERE, non dopo aver scattato. Fino a qui
+	# l'unico posto in cui compariva era la schermata di vendita: si scopriva chi
+	# fosse il committente — e cosa volesse — quando la foto era già fatta, e se non
+	# combaciava non restava che venderla al mercato. Il giocatore non aveva nessun
+	# modo di FARE il lavoro richiesto, perché non sapeva quale fosse.
+	#
+	# SI RINFRESCA A OGNI FASE, non una volta a inizio notte: `_ctx` viene svuotato
+	# da REDO SETUP, e la commessa si CONSUMA quando viene adempiuta. Una riga
+	# scritta all'inizio e mai più toccata sopravviverebbe a entrambi, e
+	# continuerebbe a promettere un lavoro che non c'è più.
+	#
+	# Composta qui perché le CHIAVI sono di `photo/` e le fasi non possono
+	# conoscerlo: vedi `Phase.CTX_COMMISSION_LINE`.
+	_ctx[Phase.CTX_COMMISSION_LINE] = _commission_line()
+	_ctx[Phase.CTX_COMMISSION_TARGET] = _commission_target()
 
 	# setup() PRIMA di entrare nell'albero, come vuole il contratto. `_ctx` è ciò
 	# che le fasi precedenti hanno lasciato nel proprio `payload`.

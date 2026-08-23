@@ -60,6 +60,13 @@ var _font: SystemFont
 var _catalog: Array[Dictionary] = []
 var _cursor := 0
 
+## La commessa di stanotte, già scritta, o "" se non ce n'è. Vedi
+## `Phase.CTX_COMMISSION_LINE` per il perché arrivi in forma di stringa.
+var _commission := ""
+
+## La sigla del soggetto richiesto, per l'asterisco nella striscia.
+var _wanted := ""
+
 
 func _ready() -> void:
 	custom_minimum_size = DESIGN_SIZE
@@ -69,9 +76,12 @@ func _ready() -> void:
 
 
 ## Unico ingresso della vista. La fase chiama questo e basta.
-func set_readout(catalog: Array[Dictionary], cursor: int) -> void:
+func set_readout(
+		catalog: Array[Dictionary], cursor: int, commission := "", wanted := "") -> void:
 	_catalog = catalog
 	_cursor = cursor
+	_commission = commission
+	_wanted = wanted
 	queue_redraw()
 
 
@@ -85,7 +95,19 @@ func _draw() -> void:
 	# La striscia per PRIMA: è l'intestazione oltre che la mappa.
 	_draw_index_strip()
 	_draw_detail(_catalog[_cursor])
-	_text(Vector2(MARGIN, FOOTER_TOP), "UP/DOWN SELECT   ENTER CONFIRM", FAINT, 10)
+
+	# IL PIEDE DICE LA COMMESSA QUANDO C'È, i comandi quando non c'è.
+	#
+	# Non è un compromesso al ribasso: i comandi sono due tasti e la striscia in
+	# testa dice già che si sta scorrendo un elenco, mentre la commessa non si
+	# poteva sapere in NESSUN altro modo prima di aver scattato. Fra una riga che
+	# ripete ciò che si intuisce e una che dice l'unica cosa che il gioco non ha mai
+	# detto, non c'è gara. E le due non ci stanno insieme: 31 caratteri più 30, a
+	# corpo 10, sfondano i 240 px del vetro.
+	if _commission.is_empty():
+		_text(Vector2(MARGIN, FOOTER_TOP), "UP/DOWN SELECT   ENTER CONFIRM", FAINT, 10)
+	else:
+		_text(Vector2(MARGIN, FOOTER_TOP), _commission, FG, 10)
 
 
 func _draw_detail(t: Dictionary) -> void:
@@ -142,7 +164,11 @@ func _draw_index_strip() -> void:
 			color = FG
 		elif available:
 			color = DIM
-		_text(Vector2(x, y), short, color, 10)
+		# L'ASTERISCO SUL SOGGETTO RICHIESTO, e costa zero pixel di altezza: dice
+		# QUALE senza rubare una riga alla descrizione. Il piede dice chi e quanto;
+		# questo si vede mentre si scorre, che è quando serve.
+		var mark := "*" if not _wanted.is_empty() and short.to_upper() == _wanted else ""
+		_text(Vector2(x, y), mark + short, color, 10)
 		# Passo fisso per sigla: M42/M13/... stanno tutte in <= 4 caratteri, sei
 		# voci entrano nei 256 px con margine.
 		x += 40.0

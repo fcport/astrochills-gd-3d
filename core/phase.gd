@@ -19,6 +19,25 @@ func key() -> StringName:
 	return &""
 
 
+## LA COMMESSA DI STANOTTE, GIÀ IN FORMA LEGGIBILE, dentro il `ctx`.
+##
+## PERCHÉ UNA STRINGA E NON IL DIZIONARIO. La commessa vive su `NightRun`, che le
+## fasi ricevono — ma le sue CHIAVI sono costanti di `photo/commission.gd`, e la
+## tabella dei confini vieta a `phases/` di conoscere `photo/`. Ricopiare qui i
+## nomi delle chiavi sarebbe una duplicazione che diverge in silenzio il giorno in
+## cui una cambia. L'orchestratore, che è l'unico a vedere entrambe le sponde,
+## compone la riga e la passa: la fase la mostra e basta.
+##
+## Vuota quando non c'è commessa. `ctx` è il solo canale previsto verso le fasi.
+const CTX_COMMISSION_LINE := &"commission_line"
+
+## La SIGLA del soggetto richiesto, maiuscola, o "" se non c'è commessa. Separata
+## dalla riga leggibile perché serve a un confronto, non a una lettura: cercare la
+## sigla dentro la frase funzionerebbe finché a qualcuno non venisse in mente un
+## catalogo con "M4" e "M42".
+const CTX_COMMISSION_TARGET := &"commission_target"
+
+
 ## Chiamato dall'orchestratore prima di aggiungere il nodo all'albero.
 func setup(_run: NightRun, _ctx: Dictionary) -> void:
 	pass

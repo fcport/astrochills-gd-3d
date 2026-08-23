@@ -16,10 +16,16 @@
 ; 1,05 m c'è una superficie all'altezza dello sguardo, e ci si interagisce
 ; stando di fianco alla spalliera.
 ;
-; IL VOLUME DI COLLISIONE È PIÙ ALTO DEL LETTO, e non è una svista: arriva a
-; 1,45 m contro i 54 cm del materasso. Con la sola geometria visibile il bersaglio
-; del raggio era la lastra della testiera, spessa 8 cm — «hitbox piccolissima»,
-; e lo era: bisognava inquadrare un francobollo da mezzo metro.
+; IL VOLUME DI COLLISIONE È PIÙ ALTO DEL MATERASSO, e non è una svista: arriva a
+; 1,05 m contro i 54 cm su cui si dorme. Con la sola geometria visibile il
+; bersaglio del raggio era la lastra della testiera, spessa 8 cm — «hitbox
+; piccolissima», e lo era: bisognava inquadrare un francobollo da mezzo metro.
+;
+; MA NON PIÙ ALTO DELLA TESTIERA. La prima correzione lo aveva portato a 1,45 m e
+; il rimedio era peggiore: il prompt compariva da mezza stanza e da angoli in cui
+; il letto non si stava nemmeno guardando. 1,05 m è esattamente l'altezza della
+; spalliera — cioè della cosa più alta che il letto ha davvero — quindi non c'è
+; un solo centimetro di volume sopra qualcosa che non si vede.
 ;
 ; NON COSTA NIENTE AL GIOCATORE, ed è il motivo per cui si può fare. L'ingombro a
 ; terra non cambia (0,92 x 2,02, quanto il letto con la testiera), e il letto era
@@ -59,7 +65,7 @@ size = Vector3(0.5, 0.11, 0.3)
 size = Vector3(0.92, 1.05, 0.08)
 
 [sub_resource type="BoxShape3D" id="ShapeBed"]
-size = Vector3(0.92, 1.45, 2.02)
+size = Vector3(0.92, 1.05, 2.02)
 
 [node name="Bed" type="StaticBody3D"]
 collision_mask = 0
@@ -88,5 +94,5 @@ material_override = SubResource("MatFrame")
 mesh = SubResource("BoxHeadboard")
 
 [node name="Collision" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.725, -0.04)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.525, -0.04)
 shape = SubResource("ShapeBed")

@@ -9,8 +9,8 @@
 ## col `finished` della fase, che `night_session` ripubblica come
 ## `Events.phase_finished(key, score)` — un segnale che esiste già. Il nodo filtra
 ## su `key == &"imaging"`: la stessa soft-coupling via stringa che l'epica sanziona
-## per la cupola. Zero `Events` nuovi, e il mondo continua a non conoscere
-## `phases/` — «imaging» compare qui solo come StringName di filtro sul bus.
+## per la cupola. Zero `Events` nuovi, e il mondo continua a non conoscere la
+## cartella delle fasi — «imaging» compare qui solo come StringName di filtro sul bus.
 extends AudioStreamPlayer3D
 
 

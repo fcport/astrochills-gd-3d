@@ -505,3 +505,19 @@ storie. **Descrizioni originali, conservate come storia:**
   fra le notti e' scritto su disco ma non ha un gesto che lo attraversi.* Non e' un
   criterio mancato — nessuna storia lo chiedeva — ma e' l'anello che manca perche' la
   persistenza appena costruita si veda giocando. [main.gd, night/night_summary.gd]
+
+### DW-12: Il telescopio segnaposto della cupola non ha volume di collisione: il giocatore ci cammina dentro.
+origin: spec-deferred 7f32c0b42350
+location: world/rooms/dome.tscn (Telescope)
+source_spec: `spec-3-1-losservatorio-si-allarga-una-scena-sola-dentro-e-fuori.md`
+severity: low
+reason: dome.tscn Telescope ha solo MeshInstance3D (Tube/LegA/LegB/LegC), nessun StaticBody3D. La fisicita' e l'eventuale volume di interazione del telescopio appartengono alla storia 3.5 («La cupola — stare a guardare»), che possiede l'interagibile; la 3.1 ne colloca solo la massa visibile nella fascia occhio-portata. Aggiungere un collider ora anticiperebbe la 3.5.
+status: open
+
+### DW-13: Unreadable `deferred:` items in spec-3-1-losservatorio-si-allarga-una-scena-sola-dentro-e-fuori.md
+origin: spec-deferred-malformed dcbb458a9d69
+location: n/a
+source_spec: `spec-3-1-losservatorio-si-allarga-una-scena-sola-dentro-e-fuori.md`
+severity: low
+reason: The dev session recorded deferred findings the orchestrator could not parse, so they were NOT filed as entries: item 1: not a mapping (got str). Read `spec-3-1-losservatorio-si-allarga-una-scena-sola-dentro-e-fuori.md`'s frontmatter and re-file them by hand.
+status: open

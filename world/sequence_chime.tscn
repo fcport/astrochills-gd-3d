@@ -3,9 +3,28 @@
 [ext_resource type="Script" path="res://world/sequence_chime.gd" id="1_chime"]
 [ext_resource type="AudioStream" path="res://assets/audio/sequence_done.wav" id="2_stream"]
 
+; GEOGRAFIA SONORA (storia 3.1). La posizione (transform) resta quella della 2.3 —
+; presso il monitor, a (0, 1,1, −2,05) in observatory.tscn — e NON si tocca: la
+; distanza si tara qui, con l'attenuazione. In Compatibility i muri non occludono,
+; quindi conta solo la distanza in linea d'aria dal chime al giocatore:
+;   cucina  ~2-6 m  → ovattato        (attenuato ma udibile)
+;   cupola  ~5,5-7,7 m → appena percettibile
+;   esterno ~6 m+   → attenuato, MA vedi il limite qui sotto
+; `unit_size` sceso da 6,0 a 2,5 perche' il tono cada gia' passando in cucina;
+; `max_distance` sceso da 30 a 10.
+;
+; LIMITE ONESTO, da chiudere con verifica all'orecchio (owed all'operatore): l'AC
+; «da fuori NON si sente» NON e' raggiungibile con la sola distanza. Il punto appena
+; fuori la porta sud dista ~6,0 m dal chime, cioe' PIU' VICINO del centro cupola
+; (~7,7 m) che invece deve restare «appena percettibile»: nessun raggio di taglio
+; separa i due casi. Senza occlusione dei muri (Compatibility non ce l'ha) serve un
+; meccanismo location-aware — un Area3D che rileva il giocatore FUORI e ammutolisce
+; il chime — con default «udibile» come fallback sicuro (nessuna regressione del
+; suono della 2.3). Va progettato e tarato camminando/ascoltando, cosa che l'ambiente
+; headless non puo' fare: vedi operator_actions nello spec 3.1.
 [node name="SequenceChime" type="AudioStreamPlayer3D"]
 stream = ExtResource("2_stream")
-unit_size = 6.0
-max_distance = 30.0
+unit_size = 2.5
+max_distance = 10.0
 max_db = 3.0
 script = ExtResource("1_chime")

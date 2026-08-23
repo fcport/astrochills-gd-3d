@@ -1,0 +1,1205 @@
+; L'esterno: il prato intorno all'edificio, la sterrata che si allontana, e il
+; BOSCO PERIMETRALE ad anello che e' il confine del mondo. Kit-bash con lo stesso
+; pattern del resto — mesh box/cylinder suddivise per la luce per-vertice di
+; ps1.gdshader, ShaderMaterial ps1 CONDIVISI, `material_override` MAI
+; `surface_material_override/0`. Segnaposto fino al pack di texture (prato, sterrata
+; e alberi sono materiale grezzo: arriveranno le texture, non rifinirli).
+;
+; NESSUN MURO INVISIBILE. Il confine e' il bosco: un anello di tronchi con
+; collisione a r ≈ 13 m dal centro dell'edificio. Ci si allontana quanto basta a
+; voltarsi e guardare l'edificio, non di piu' — «non ti allontani mai dall'edificio»
+; (brief). I tronchi si toccano abbastanza da fermare la capsula (raggio 0,3) senza
+; lasciarla passare, e da fuori sono una parete di bosco, non pali isolati.
+;
+; IL PRATO e' un piano ampio (40x40 m) leggermente sotto lo zero, cosi' che il
+; pavimento delle stanze (y = 0, spesse lastre) resti appena sopra il terreno e
+; non ci sia z-fighting con il prato. LA STERRATA e' una striscia di materiale
+; diverso appoggiata sopra il prato, che parte dalla porta sud e si allontana verso
+; il bosco: non porta da nessuna parte (non c'e' nient'altro), e' li' per dare al
+; prato una direzione e una scala.
+;
+; IL GUSCIO ESTERNO dell'edificio in questa storia e' dato dalle pareti delle stanze
+; stesse (sono lastre singole, visibili da entrambi i lati) piu' i TETTI qui sotto,
+; che chiudono l'edificio visto da fuori sopra l'atrio e raccordano i volumi. Le
+; stanze portano gia' il proprio soffitto; questi tetti sono il profilo dell'edificio
+; contro il cielo, segnaposto come tutto il resto.
+;
+; L'ORIGINE della scena coincide con l'origine di observatory.tscn (centro della
+; stanza computer): il prato e il bosco sono centrati sull'edificio.
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Shader" path="res://world/shaders/ps1.gdshader" id="1_ps1"]
+
+[sub_resource type="ShaderMaterial" id="MatGrass"]
+shader = ExtResource("1_ps1")
+shader_parameter/albedo = Color(0.12, 0.16, 0.12, 1)
+shader_parameter/snap_resolution = 665.0
+
+[sub_resource type="ShaderMaterial" id="MatDirt"]
+shader = ExtResource("1_ps1")
+shader_parameter/albedo = Color(0.22, 0.19, 0.14, 1)
+shader_parameter/snap_resolution = 665.0
+
+[sub_resource type="ShaderMaterial" id="MatTrunk"]
+shader = ExtResource("1_ps1")
+shader_parameter/albedo = Color(0.14, 0.13, 0.11, 1)
+shader_parameter/snap_resolution = 665.0
+
+[sub_resource type="ShaderMaterial" id="MatFoliage"]
+shader = ExtResource("1_ps1")
+shader_parameter/albedo = Color(0.08, 0.13, 0.09, 1)
+shader_parameter/snap_resolution = 665.0
+
+[sub_resource type="ShaderMaterial" id="MatRoof"]
+shader = ExtResource("1_ps1")
+shader_parameter/albedo = Color(0.24, 0.25, 0.27, 1)
+shader_parameter/snap_resolution = 665.0
+
+[sub_resource type="PlaneMesh" id="PlaneGrass"]
+size = Vector2(40.0, 40.0)
+subdivide_width = 20
+subdivide_depth = 20
+
+[sub_resource type="BoxShape3D" id="ShapeGround"]
+size = Vector3(40.0, 0.2, 40.0)
+
+[sub_resource type="BoxMesh" id="BoxPath"]
+size = Vector3(2.0, 0.04, 11.0)
+subdivide_width = 2
+subdivide_depth = 11
+
+[sub_resource type="CylinderMesh" id="CylTrunk"]
+top_radius = 0.22
+bottom_radius = 0.28
+height = 5.0
+radial_segments = 6
+
+[sub_resource type="CylinderShape3D" id="ShapeTrunk"]
+radius = 0.8
+height = 5.0
+
+[sub_resource type="BoxMesh" id="BoxRoof"]
+size = Vector3(7.7, 0.3, 5.5)
+subdivide_width = 8
+subdivide_height = 1
+subdivide_depth = 6
+
+[sub_resource type="SphereMesh" id="SphereFoliage"]
+radius = 1.3
+height = 2.6
+radial_segments = 6
+rings = 4
+
+[node name="Exterior" type="Node3D"]
+
+; IL TERRENO: piano visibile (prato) + un corpo statico piatto che regge il
+; giocatore ovunque fuori, cosi' non si cade nel vuoto uscendo dall'edificio. Il
+; piano sta a y = −0,02 per non litigare con le lastre del pavimento delle stanze.
+[node name="Ground" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.02, 0)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+material_override = SubResource("MatGrass")
+mesh = SubResource("PlaneGrass")
+
+[node name="Collision" type="CollisionShape3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+shape = SubResource("ShapeGround")
+
+; LA STERRATA: parte dalla porta sud (a z ≈ +2,6, davanti all'atrio) e va verso
+; sud fino al bosco. Appoggiata sopra il prato (y = +0,01) per restare visibile.
+[node name="Path" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0.01, 8.0)
+material_override = SubResource("MatDirt")
+mesh = SubResource("BoxPath")
+
+; I TETTI: profilo dell'edificio contro il cielo sopra l'atrio (le stanze hanno gia'
+; il proprio soffitto). Segnaposto.
+[node name="RoofBuilding" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 2.95, 0.0)
+material_override = SubResource("MatRoof")
+mesh = SubResource("BoxRoof")
+
+[node name="Forest" type="Node3D" parent="."]
+
+[node name="Tree0" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.8898, 0, 0.4564, 0, 1, 0, -0.4564, 0, 0.8898, 13.386, 0, 0.0)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.22, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree1" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.1125, 0, 0.9937, 0, 1, 0, -0.9937, 0, -0.1125, 12.937, 0, 1.36)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.9, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree2" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.0234, 0, 0.9997, 0, 1, 0, -0.9997, 0, -0.0234, 12.703, 0, 2.7)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.54, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree3" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.976, 0, 0.2177, 0, 1, 0, -0.2177, 0, 0.976, 12.887, 0, 4.187)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.6, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree4" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.8557, 0, 0.5175, 0, 1, 0, -0.5175, 0, -0.8557, 12.366, 0, 5.506)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree4"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree4"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.64, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree4"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree5" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.3897, 0, 0.9209, 0, 1, 0, -0.9209, 0, -0.3897, 11.462, 0, 6.617)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree5"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree5"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.54, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree5"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree6" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.3189, 0, 0.9478, 0, 1, 0, -0.9478, 0, 0.3189, 11.137, 0, 8.091)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree6"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree6"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.57, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree6"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree7" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.9028, 0, 0.4301, 0, 1, 0, -0.4301, 0, -0.9028, 9.638, 0, 8.679)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree7"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree7"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.82, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree7"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree8" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.9323, 0, 0.3617, 0, 1, 0, -0.3617, 0, 0.9323, 8.777, 0, 9.747)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree8"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree8"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.84, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree8"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree9" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.8431, 0, 0.5378, 0, 1, 0, -0.5378, 0, 0.8431, 8.302, 0, 11.427)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.14, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree9"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree10" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.3902, 0, 0.9207, 0, 1, 0, -0.9207, 0, 0.3902, 6.929, 0, 12.002)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree10"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree10"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.1, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree10"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree11" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.9825, 0, 0.1862, 0, 1, 0, -0.1862, 0, 0.9825, 5.285, 0, 11.871)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree11"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree11"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.73, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree11"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree12" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.2255, 0, 0.9742, 0, 1, 0, -0.9742, 0, 0.2255, 4.302, 0, 13.239)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree12"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree12"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.85, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree12"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree13" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.1465, 0, 0.9892, 0, 1, 0, -0.9892, 0, 0.1465, 2.865, 0, 13.477)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree13"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree13"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.83, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree13"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree14" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.5852, 0, 0.8109, 0, 1, 0, -0.8109, 0, -0.5852, 1.473, 0, 14.014)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree14"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree14"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.77, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree14"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree15" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.0791, 0, 0.9969, 0, 1, 0, -0.9969, 0, -0.0791, 0.0, 0, 13.762)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree15"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree15"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.46, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree15"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree16" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.618, 0, 0.7862, 0, 1, 0, -0.7862, 0, 0.618, -1.463, 0, 13.918)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree16"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree16"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.58, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree16"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree17" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.2544, 0, 0.9671, 0, 1, 0, -0.9671, 0, 0.2544, -2.719, 0, 12.791)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree17"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree17"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.33, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree17"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree18" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.0347, 0, 0.9994, 0, 1, 0, -0.9994, 0, 0.0347, -4.057, 0, 12.485)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree18"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree18"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.54, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree18"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree19" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.7387, 0, 0.674, 0, 1, 0, -0.674, 0, -0.7387, -5.655, 0, 12.7)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree19"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree19"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.13, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree19"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree20" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.5523, 0, 0.8336, 0, 1, 0, -0.8336, 0, 0.5523, -7.107, 0, 12.309)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree20"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree20"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.26, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree20"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree21" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.2484, 0, 0.9687, 0, 1, 0, -0.9687, 0, -0.2484, -8.106, 0, 11.158)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree21"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree21"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.0, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree21"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree22" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.9849, 0, 0.1729, 0, 1, 0, -0.1729, 0, -0.9849, -9.475, 0, 10.523)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree22"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree22"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.02, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree22"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree23" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.9819, 0, 0.1894, 0, 1, 0, -0.1894, 0, 0.9819, -10.327, 0, 9.298)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree23"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree23"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.27, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree23"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree24" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.9998, 0, 0.0217, 0, 1, 0, -0.0217, 0, -0.9998, -11.222, 0, 8.153)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree24"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree24"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.4, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree24"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree25" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.3511, 0, 0.9363, 0, 1, 0, -0.9363, 0, 0.3511, -11.541, 0, 6.663)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree25"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree25"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.24, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree25"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree26" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.12, 0, 0.9928, 0, 1, 0, -0.9928, 0, 0.12, -11.816, 0, 5.261)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree26"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree26"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.68, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree26"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree27" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.9829, 0, 0.1842, 0, 1, 0, -0.1842, 0, 0.9829, -12.436, 0, 4.041)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree27"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree27"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.35, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree27"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree28" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.7124, 0, 0.7018, 0, 1, 0, -0.7018, 0, 0.7124, -12.808, 0, 2.722)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree28"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree28"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.93, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree28"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree29" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.9681, 0, 0.2505, 0, 1, 0, -0.2505, 0, 0.9681, -14.129, 0, 1.485)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree29"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree29"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.99, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree29"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree30" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.9336, 0, 0.3582, 0, 1, 0, -0.3582, 0, -0.9336, -13.724, 0, 0.0)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree30"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree30"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.4, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree30"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree31" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.6412, 0, 0.7673, 0, 1, 0, -0.7673, 0, 0.6412, -14.118, 0, -1.484)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree31"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree31"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.96, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree31"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree32" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.9345, 0, 0.3558, 0, 1, 0, -0.3558, 0, -0.9345, -13.145, 0, -2.794)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree32"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree32"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.55, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree32"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree33" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.8506, 0, 0.5258, 0, 1, 0, -0.5258, 0, 0.8506, -12.484, 0, -4.056)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree33"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree33"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.76, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree33"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree34" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.0472, 0, 0.9989, 0, 1, 0, -0.9989, 0, 0.0472, -12.104, 0, -5.389)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree34"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree34"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.15, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree34"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree35" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.9999, 0, 0.0129, 0, 1, 0, -0.0129, 0, 0.9999, -11.513, 0, -6.647)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree35"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree35"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.96, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree35"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree36" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.2069, 0, 0.9784, 0, 1, 0, -0.9784, 0, -0.2069, -10.884, 0, -7.908)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree36"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree36"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.55, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree36"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree37" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.0486, 0, 0.9988, 0, 1, 0, -0.9988, 0, -0.0486, -10.356, 0, -9.325)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree37"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree37"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.18, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree37"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree38" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.9856, 0, 0.1688, 0, 1, 0, -0.1688, 0, 0.9856, -9.31, 0, -10.34)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree38"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree38"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.49, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree38"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree39" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.9233, 0, 0.3841, 0, 1, 0, -0.3841, 0, -0.9233, -8.27, 0, -11.383)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree39"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree39"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.38, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree39"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree40" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.3121, 0, 0.9501, 0, 1, 0, -0.9501, 0, 0.3121, -6.744, 0, -11.681)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree40"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree40"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.61, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree40"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree41" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.9809, 0, 0.1943, 0, 1, 0, -0.1943, 0, 0.9809, -5.634, 0, -12.654)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree41"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree41"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.57, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree41"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree42" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.8728, 0, 0.4881, 0, 1, 0, -0.4881, 0, 0.8728, -4.083, 0, -12.566)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree42"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree42"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.87, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree42"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree43" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(1.0, 0, 0.0007, 0, 1, 0, -0.0007, 0, 1.0, -2.698, 0, -12.695)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree43"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree43"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.67, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree43"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree44" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.4155, 0, 0.9096, 0, 1, 0, -0.9096, 0, 0.4155, -1.364, 0, -12.981)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree44"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree44"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.53, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree44"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree45" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.3507, 0, 0.9365, 0, 1, 0, -0.9365, 0, -0.3507, -0.0, 0, -14.211)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree45"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree45"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.66, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree45"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree46" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.4613, 0, 0.8873, 0, 1, 0, -0.8873, 0, 0.4613, 1.388, 0, -13.206)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree46"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree46"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.9, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree46"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree47" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.8895, 0, 0.457, 0, 1, 0, -0.457, 0, -0.8895, 2.72, 0, -12.798)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree47"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree47"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.59, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree47"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree48" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.0508, 0, 0.9987, 0, 1, 0, -0.9987, 0, 0.0508, 4.202, 0, -12.933)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree48"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree48"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.59, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree48"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree49" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.4745, 0, 0.8803, 0, 1, 0, -0.8803, 0, 0.4745, 5.309, 0, -11.925)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree49"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree49"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.79, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree49"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree50" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.8741, 0, 0.4857, 0, 1, 0, -0.4857, 0, 0.8741, 7.072, 0, -12.248)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree50"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree50"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.53, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree50"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree51" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.0887, 0, 0.9961, 0, 1, 0, -0.9961, 0, -0.0887, 8.421, 0, -11.59)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree51"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree51"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.66, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree51"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree52" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.9964, 0, 0.0849, 0, 1, 0, -0.0849, 0, 0.9964, 9.177, 0, -10.192)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree52"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree52"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.08, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree52"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree53" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.9092, 0, 0.4163, 0, 1, 0, -0.4163, 0, -0.9092, 10.677, 0, -9.614)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree53"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree53"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.27, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree53"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree54" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.4066, 0, 0.9136, 0, 1, 0, -0.9136, 0, 0.4066, 10.753, 0, -7.813)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree54"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree54"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.68, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree54"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree55" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.1022, 0, 0.9948, 0, 1, 0, -0.9948, 0, -0.1022, 12.175, 0, -7.029)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree55"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree55"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.36, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree55"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree56" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.7644, 0, 0.6448, 0, 1, 0, -0.6448, 0, 0.7644, 12.236, 0, -5.448)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree56"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree56"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.39, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree56"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree57" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.8947, 0, 0.4466, 0, 1, 0, -0.4466, 0, -0.8947, 13.674, 0, -4.443)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree57"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree57"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.39, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree57"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree58" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(-0.6843, 0, 0.7292, 0, 1, 0, -0.7292, 0, -0.6843, 13.819, 0, -2.937)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree58"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree58"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.75, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree58"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")
+
+[node name="Tree59" type="StaticBody3D" parent="Forest"]
+transform = Transform3D(0.4384, 0, 0.8988, 0, 1, 0, -0.8988, 0, 0.4384, 13.602, 0, -1.43)
+collision_mask = 0
+
+[node name="Trunk" type="MeshInstance3D" parent="Forest/Tree59"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+material_override = SubResource("MatTrunk")
+mesh = SubResource("CylTrunk")
+
+[node name="Foliage" type="MeshInstance3D" parent="Forest/Tree59"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.53, 0)
+material_override = SubResource("MatFoliage")
+mesh = SubResource("SphereFoliage")
+
+[node name="Collision" type="CollisionShape3D" parent="Forest/Tree59"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("ShapeTrunk")

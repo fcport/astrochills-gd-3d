@@ -164,7 +164,7 @@ development_status:
   # >>> loro; in 3D quel vincolo non esiste. Adesso la storia include anche
   # >>> L'ESTERNO, che nessuna epica aveva: e' la storia piu' grossa dell'epica 3 e
   # >>> la sola che produce geometria vera. Vedi game-architecture.md, Asset Management.
-  3-1-losservatorio-si-allarga-una-scena-sola-dentro-e-fuori: backlog
+  3-1-losservatorio-si-allarga-una-scena-sola-dentro-e-fuori: awaiting-operator
   # Story 3.2: Il terminale — spendere quello che hai guadagnato
   3-2-il-terminale-spendere-quello-che-hai-guadagnato: backlog
   # Story 3.3: Il caffè — l'attesa piccola dentro l'attesa grande

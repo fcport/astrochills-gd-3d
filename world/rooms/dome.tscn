@@ -1,0 +1,229 @@
+; La cupola: il registro «stare» dell'attesa (storia 3.5 ci mettera' l'attivita';
+; questa storia costruisce solo il posto). Kit-bash con lo stesso pattern della
+; stanza computer — mesh box suddivise per la luce per-vertice di ps1.gdshader,
+; ShaderMaterial ps1 CONDIVISI, ogni MeshInstance3D con `material_override` MAI
+; `surface_material_override/0`. Segnaposto fino al pack di texture.
+;
+; PIANTA OTTAGONALE ~O5 m (circumraggio 2,5 m), piu' alta delle stanze (~4,5 m al
+; tetto): e' la cupola dell'osservatorio, deve avere aria sopra la testa. Le otto
+; pareti stanno all'apotema (2,3097 m dal centro), ruotate di 45 gradi l'una
+; dall'altra; la parete a ovest (−x) NON c'e': e' l'ingresso a piedi dall'atrio.
+;
+; LA FESSURA nel tetto e' aperta sul cielo: due lastre di tetto lasciano un varco
+; rettangolare al centro (z ∈ [−0,5, +0,5]), da cui — con l'unico WorldEnvironment
+; di observatory.tscn — si vede il cielo notturno. Non e' un buco decorativo: e' da
+; li' che il telescopio guarda e da li' che il giocatore alza gli occhi.
+;
+; IL TELESCOPIO segnaposto (tubo su treppiede) sta al centro, visibile da vicino.
+; NON e' un interagibile in questa storia (gli interagibili sono la 3.5), ma il suo
+; volume e' progettato secondo la regola occhio-1,65 → 1,20 m: il tubo attraversa la
+; fascia dello sguardo (centro a 1,35 m, alto fino a ~1,75 m) cosi' che, quando la
+; 3.5 gli appendera' un volume di interazione, ci sia gia' massa all'altezza giusta
+; e non un francobollo sotto la portata. Nessun prompt qui: il posto c'e', l'attivita' no.
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Shader" path="res://world/shaders/ps1.gdshader" id="1_ps1"]
+
+[sub_resource type="ShaderMaterial" id="MatFloor"]
+shader = ExtResource("1_ps1")
+shader_parameter/albedo = Color(0.2, 0.21, 0.22, 1)
+shader_parameter/snap_resolution = 665.0
+
+[sub_resource type="ShaderMaterial" id="MatWall"]
+shader = ExtResource("1_ps1")
+shader_parameter/albedo = Color(0.36, 0.39, 0.42, 1)
+shader_parameter/snap_resolution = 665.0
+
+[sub_resource type="ShaderMaterial" id="MatRoof"]
+shader = ExtResource("1_ps1")
+shader_parameter/albedo = Color(0.26, 0.28, 0.3, 1)
+shader_parameter/snap_resolution = 665.0
+
+[sub_resource type="ShaderMaterial" id="MatScope"]
+shader = ExtResource("1_ps1")
+shader_parameter/albedo = Color(0.15, 0.16, 0.18, 1)
+shader_parameter/snap_resolution = 665.0
+
+[sub_resource type="CylinderMesh" id="CylFloor"]
+top_radius = 2.5
+bottom_radius = 2.5
+height = 0.15
+radial_segments = 8
+rings = 1
+
+[sub_resource type="CylinderShape3D" id="ShapeFloor"]
+radius = 2.5
+height = 0.15
+
+[sub_resource type="BoxMesh" id="BoxWall"]
+size = Vector3(1.9134, 4.5, 0.15)
+subdivide_width = 4
+subdivide_height = 9
+subdivide_depth = 1
+
+[sub_resource type="BoxShape3D" id="ShapeWall"]
+size = Vector3(1.9134, 4.5, 0.15)
+
+[sub_resource type="BoxMesh" id="BoxRoof"]
+size = Vector3(5.2, 0.15, 2.1)
+subdivide_width = 10
+subdivide_height = 1
+subdivide_depth = 4
+
+[sub_resource type="BoxShape3D" id="ShapeRoof"]
+size = Vector3(5.2, 0.15, 2.1)
+
+[sub_resource type="CylinderMesh" id="CylScopeTube"]
+top_radius = 0.11
+bottom_radius = 0.11
+height = 1.0
+radial_segments = 8
+
+[sub_resource type="BoxMesh" id="BoxScopeLeg"]
+size = Vector3(0.06, 1.3, 0.06)
+
+[node name="Dome" type="Node3D"]
+
+[node name="Floor" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.075, 0)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="Floor"]
+material_override = SubResource("MatFloor")
+mesh = SubResource("CylFloor")
+
+[node name="Collision" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("ShapeFloor")
+
+[node name="WallE" type="StaticBody3D" parent="."]
+transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, 2.3097, 2.25, 0.0)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="WallE"]
+material_override = SubResource("MatWall")
+mesh = SubResource("BoxWall")
+
+[node name="Collision" type="CollisionShape3D" parent="WallE"]
+shape = SubResource("ShapeWall")
+
+[node name="WallNE" type="StaticBody3D" parent="."]
+transform = Transform3D(-0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, -0.7071, 1.6332, 2.25, 1.6332)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="WallNE"]
+material_override = SubResource("MatWall")
+mesh = SubResource("BoxWall")
+
+[node name="Collision" type="CollisionShape3D" parent="WallNE"]
+shape = SubResource("ShapeWall")
+
+[node name="WallN" type="StaticBody3D" parent="."]
+transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, -0.0, 0, -1.0, 0.0, 2.25, 2.3097)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="WallN"]
+material_override = SubResource("MatWall")
+mesh = SubResource("BoxWall")
+
+[node name="Collision" type="CollisionShape3D" parent="WallN"]
+shape = SubResource("ShapeWall")
+
+[node name="WallNW" type="StaticBody3D" parent="."]
+transform = Transform3D(-0.7071, 0, -0.7071, 0, 1, 0, 0.7071, 0, -0.7071, -1.6332, 2.25, 1.6332)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="WallNW"]
+material_override = SubResource("MatWall")
+mesh = SubResource("BoxWall")
+
+[node name="Collision" type="CollisionShape3D" parent="WallNW"]
+shape = SubResource("ShapeWall")
+
+[node name="WallSW" type="StaticBody3D" parent="."]
+transform = Transform3D(0.7071, 0, -0.7071, 0, 1, 0, 0.7071, 0, 0.7071, -1.6332, 2.25, -1.6332)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="WallSW"]
+material_override = SubResource("MatWall")
+mesh = SubResource("BoxWall")
+
+[node name="Collision" type="CollisionShape3D" parent="WallSW"]
+shape = SubResource("ShapeWall")
+
+[node name="WallS" type="StaticBody3D" parent="."]
+transform = Transform3D(1.0, 0, -0.0, 0, 1, 0, 0.0, 0, 1.0, -0.0, 2.25, -2.3097)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="WallS"]
+material_override = SubResource("MatWall")
+mesh = SubResource("BoxWall")
+
+[node name="Collision" type="CollisionShape3D" parent="WallS"]
+shape = SubResource("ShapeWall")
+
+[node name="WallSE" type="StaticBody3D" parent="."]
+transform = Transform3D(0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, 0.7071, 1.6332, 2.25, -1.6332)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="WallSE"]
+material_override = SubResource("MatWall")
+mesh = SubResource("BoxWall")
+
+[node name="Collision" type="CollisionShape3D" parent="WallSE"]
+shape = SubResource("ShapeWall")
+
+; Tetto in due lastre: lasciano una fessura (z ∈ [−0,5, +0,5]) aperta sul cielo.
+[node name="RoofNorth" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.5, 1.55)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="RoofNorth"]
+material_override = SubResource("MatRoof")
+mesh = SubResource("BoxRoof")
+
+[node name="Collision" type="CollisionShape3D" parent="RoofNorth"]
+shape = SubResource("ShapeRoof")
+
+[node name="RoofSouth" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.5, -1.55)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="RoofSouth"]
+material_override = SubResource("MatRoof")
+mesh = SubResource("BoxRoof")
+
+[node name="Collision" type="CollisionShape3D" parent="RoofSouth"]
+shape = SubResource("ShapeRoof")
+
+; Il telescopio segnaposto al centro: tubo inclinato verso la fessura, su treppiede.
+; Il tubo attraversa la fascia occhio-portata; nessun interagibile qui (e' la 3.5).
+[node name="Telescope" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="Tube" type="MeshInstance3D" parent="Telescope"]
+transform = Transform3D(1, 0, 0, 0, 0.7071, -0.7071, 0, 0.7071, 0.7071, 0, 1.35, 0)
+material_override = SubResource("MatScope")
+mesh = SubResource("CylScopeTube")
+
+[node name="LegA" type="MeshInstance3D" parent="Telescope"]
+transform = Transform3D(1, 0, 0, 0, 0.966, 0.259, 0, -0.259, 0.966, 0.25, 0.65, 0.15)
+material_override = SubResource("MatScope")
+mesh = SubResource("BoxScopeLeg")
+
+[node name="LegB" type="MeshInstance3D" parent="Telescope"]
+transform = Transform3D(1, 0, 0, 0, 0.966, 0.259, 0, -0.259, 0.966, -0.25, 0.65, 0.15)
+material_override = SubResource("MatScope")
+mesh = SubResource("BoxScopeLeg")
+
+[node name="LegC" type="MeshInstance3D" parent="Telescope"]
+transform = Transform3D(1, 0, 0, 0, 0.966, -0.259, 0, 0.259, 0.966, 0, 0.65, -0.28)
+material_override = SubResource("MatScope")
+mesh = SubResource("BoxScopeLeg")
+
+; Fill fioco freddo: senza sorgente le pareti a luce per-vertice sarebbero nere.
+; La fessura lascia entrare il cielo, non luce da illuminare la stanza.
+[node name="Fill" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+light_color = Color(0.6, 0.68, 0.85, 1)
+light_energy = 0.7
+omni_range = 6.0

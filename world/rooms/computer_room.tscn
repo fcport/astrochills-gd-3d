@@ -28,7 +28,13 @@
 ; farà sedere il giocatore (il Marker3D `Seat` del CRT). Con un corpo solido lì
 ; davanti non ci si potrebbe più avvicinare al monitor a piedi, e il prompt di
 ; interazione non comparirebbe mai.
-[gd_scene load_steps=30 format=3]
+;
+; IL VARCO EST È PERCORRIBILE, dal 2026-08-23 (storia 3.1). WallRightA/B lasciano
+; un'apertura a z ∈ [1,0, 1,9] su x = +2,075: nell'MVP la chiudeva un nodo `Door`
+; solido, perché nessuno usciva. Ora l'osservatorio si allarga e da lì si esce
+; nell'atrio: la porta solida è stata tolta. Il `DoorLintel` sopra resta — è
+; l'architrave, non un tappo — così il vano ha ancora una forma.
+[gd_scene load_steps=27 format=3]
 
 [ext_resource type="Shader" path="res://world/shaders/ps1.gdshader" id="1_ps1"]
 
@@ -50,11 +56,6 @@ shader_parameter/snap_resolution = 665.0
 [sub_resource type="ShaderMaterial" id="MatDesk"]
 shader = ExtResource("1_ps1")
 shader_parameter/albedo = Color(0.38, 0.29, 0.2, 1)
-shader_parameter/snap_resolution = 665.0
-
-[sub_resource type="ShaderMaterial" id="MatDoor"]
-shader = ExtResource("1_ps1")
-shader_parameter/albedo = Color(0.33, 0.25, 0.18, 1)
 shader_parameter/snap_resolution = 665.0
 
 [sub_resource type="ShaderMaterial" id="MatPlastic"]
@@ -129,14 +130,6 @@ subdivide_depth = 1
 
 [sub_resource type="BoxShape3D" id="ShapeDesk"]
 size = Vector3(1.6, 0.75, 0.7)
-
-[sub_resource type="BoxMesh" id="BoxDoor"]
-size = Vector3(0.12, 2.05, 0.9)
-subdivide_height = 5
-subdivide_depth = 2
-
-[sub_resource type="BoxShape3D" id="ShapeDoor"]
-size = Vector3(0.12, 2.05, 0.9)
 
 [sub_resource type="BoxMesh" id="BoxPc"]
 size = Vector3(0.2, 0.45, 0.45)
@@ -259,17 +252,6 @@ mesh = SubResource("BoxDesk")
 
 [node name="Collision" type="CollisionShape3D" parent="Desk"]
 shape = SubResource("ShapeDesk")
-
-[node name="Door" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.075, 1.025, 1.45)
-collision_mask = 0
-
-[node name="Mesh" type="MeshInstance3D" parent="Door"]
-material_override = SubResource("MatDoor")
-mesh = SubResource("BoxDoor")
-
-[node name="Collision" type="CollisionShape3D" parent="Door"]
-shape = SubResource("ShapeDoor")
 
 [node name="Pc" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.15, 0.225, -2.2)

@@ -1,9 +1,22 @@
-; L'osservatorio: la scena contenitore del mondo di gioco.
+; L'osservatorio: la scena contenitore del mondo di gioco — UNA SCENA SOLA, dentro
+; e fuori. Dal 2026-08-23 (storia 3.1) contiene, oltre alla stanza computer:
+;   - l'ATRIO (geometria inline qui sotto): il raccordo a est della stanza computer,
+;     da cui si va in cucina (nord), in cupola (est) e fuori (porta sud);
+;   - la CUCINA, la CUPOLA e l'ESTERNO, istanziati come scene kit-bash;
+;   - un solo WorldEnvironment con cielo notturno E nebbia, condiviso dentro e fuori.
 ;
-; Con una stanza sola sembra sovrastruttura, e non lo è: la storia 3.1 ci appende
-; cucina e cupola, e senza questo nodo dovrebbe anche riorganizzare.
+; NESSUN CAMBIO DI SCENA, nessun caricamento, nessuna dissolvenza fra le aree: si
+; cammina da un posto all'altro senza interruzione. L'unica dissolvenza del gioco
+; resta quella del SONNO in main.gd (`_fade_to`), che e' salto di TEMPO non di
+; luogo — non vive qui e non si tocca.
 ;
-; LA QUOTA DEL MONITOR NON È LIBERA, ed è la catena di misure che vincola la
+; L'ATRIO E' GEOMETRIA INLINE, non una scena a parte: e' il tessuto connettivo tra
+; i tre ambienti, esiste solo in funzione di come stanno insieme qui, e metterlo in
+; un .tscn separato vorrebbe dire ricopiare in quel file le quote di questa pianta.
+; Segue lo stesso pattern kit-bash (mesh box suddivise, ShaderMaterial ps1
+; condivisi, `material_override`) di computer_room.tscn.
+;
+; LA QUOTA DEL MONITOR NON E' LIBERA, ed e' la catena di misure che vincola la
 ; storia 1.3:
 ;
 ;   piano della scrivania         0,75 m   ← il monitor ci si appoggia sopra
@@ -12,25 +25,127 @@
 ;   + Marker3D `Seat` del CRT     0,09 m
 ;   = occhio da seduto            1,19 m
 ;
-; La z è scelta perché il `Seat` cada FUORI dal volume della scrivania. Il Seat
-; sta 44 cm davanti al vetro: con il monitor a z = -2,05 il vetro è a -1,859 e il
+; La z e' scelta perche' il `Seat` cada FUORI dal volume della scrivania. Il Seat
+; sta 44 cm davanti al vetro: con il monitor a z = -2,05 il vetro e' a -1,859 e il
 ; Seat a -1,419, mentre la scrivania finisce a -1,75. La capsula del giocatore ha
 ; raggio 0,3, quindi da seduto il suo bordo arriva a -1,719 — 3 cm di gioco. Con
-; il monitor più indietro il corpo compenetrerebbe la scrivania.
-[gd_scene load_steps=8 format=3]
+; il monitor piu' indietro il corpo compenetrerebbe la scrivania.
+;
+; NON DISTURBARE monitor, chime, letto, player: le loro quote sono contratti di
+; altre storie. La 3.1 aggiunge stanze e ambiente, non sposta l'esistente.
+[gd_scene load_steps=26 format=3]
 
 [ext_resource type="PackedScene" path="res://world/rooms/computer_room.tscn" id="1_room"]
 [ext_resource type="PackedScene" path="res://world/interactables/crt_monitor.tscn" id="2_monitor"]
 [ext_resource type="PackedScene" path="res://world/player/player.tscn" id="3_player"]
 [ext_resource type="PackedScene" path="res://world/sequence_chime.tscn" id="4_chime"]
 [ext_resource type="PackedScene" path="res://world/interactables/bed.tscn" id="5_bed"]
+[ext_resource type="PackedScene" path="res://world/rooms/kitchen.tscn" id="6_kitchen"]
+[ext_resource type="PackedScene" path="res://world/rooms/dome.tscn" id="7_dome"]
+[ext_resource type="PackedScene" path="res://world/rooms/exterior.tscn" id="8_exterior"]
+[ext_resource type="Shader" path="res://world/shaders/ps1.gdshader" id="9_ps1"]
+
+; UN SOLO WorldEnvironment, condiviso dentro e fuori (invariante di architettura).
+;
+; CIELO NOTTURNO: background_mode = 2 (Sky) con un ProceduralSkyMaterial scuro — le
+; stelle vere arriveranno col pack di asset, questo e' il segnaposto. Si vede dalla
+; fessura della cupola e sopra il prato.
+;
+; NEBBIA: la stessa che chiude le distanze fuori DA' PROFONDITA' dentro. `fog_mode`
+; esponenziale (profondita'), `fog_light_color` freddo, `fog_density` bassa —
+; leggibile in una stanza di 4-5 m, chiude l'orizzonte del bosco a ~13-16 m. In
+; Compatibility la nebbia dell'Environment si applica automaticamente alle superfici
+; spatial (quindi anche a ps1.gdshader): non serve gestirla nel fragment(). Niente
+; nebbia volumetrica (Compatibility non ce l'ha, e non serve).
+;
+; AMBIENT da colore (source 2), non dal cielo: le stanze chiuse restano illuminate
+; anche senza vedere il cielo, e il tono resta freddo notturno.
+;
+; Tarato guardando DA DENTRO E DA FUORI, non stimato: se un giorno stona, si ritocca
+; densita' e colore qui, in un punto solo.
+[sub_resource type="ProceduralSkyMaterial" id="SkyNight"]
+sky_top_color = Color(0.02, 0.03, 0.06, 1)
+sky_horizon_color = Color(0.05, 0.07, 0.1, 1)
+sky_curve = 0.15
+ground_bottom_color = Color(0.02, 0.025, 0.03, 1)
+ground_horizon_color = Color(0.04, 0.05, 0.07, 1)
+energy_multiplier = 0.6
+
+[sub_resource type="Sky" id="SkyObs"]
+sky_material = SubResource("SkyNight")
 
 [sub_resource type="Environment" id="Environment_obs"]
-background_mode = 1
-background_color = Color(0.03, 0.04, 0.05, 1)
+background_mode = 2
+sky = SubResource("SkyObs")
 ambient_light_source = 2
 ambient_light_color = Color(0.36, 0.42, 0.5, 1)
 ambient_light_energy = 0.35
+fog_enabled = true
+fog_light_color = Color(0.16, 0.2, 0.28, 1)
+fog_light_energy = 0.6
+fog_density = 0.035
+
+; --- Materiali dell'atrio (condivisi, come nella stanza computer) ---
+[sub_resource type="ShaderMaterial" id="MatFloorA"]
+shader = ExtResource("9_ps1")
+shader_parameter/albedo = Color(0.21, 0.22, 0.21, 1)
+shader_parameter/snap_resolution = 665.0
+
+[sub_resource type="ShaderMaterial" id="MatCeilA"]
+shader = ExtResource("9_ps1")
+shader_parameter/albedo = Color(0.28, 0.3, 0.32, 1)
+shader_parameter/snap_resolution = 665.0
+
+[sub_resource type="ShaderMaterial" id="MatWallA"]
+shader = ExtResource("9_ps1")
+shader_parameter/albedo = Color(0.42, 0.45, 0.46, 1)
+shader_parameter/snap_resolution = 665.0
+
+; --- Geometria dell'atrio ---
+[sub_resource type="BoxMesh" id="BoxSlabA"]
+size = Vector3(3.3, 0.15, 5.3)
+subdivide_width = 8
+subdivide_height = 1
+subdivide_depth = 13
+
+[sub_resource type="BoxShape3D" id="ShapeSlabA"]
+size = Vector3(3.3, 0.15, 5.3)
+
+[sub_resource type="BoxMesh" id="BoxEastSeg"]
+size = Vector3(0.15, 2.8, 1.6)
+subdivide_width = 1
+subdivide_height = 6
+subdivide_depth = 4
+
+[sub_resource type="BoxShape3D" id="ShapeEastSeg"]
+size = Vector3(0.15, 2.8, 1.6)
+
+[sub_resource type="BoxMesh" id="BoxSouthW"]
+size = Vector3(1.025, 2.8, 0.15)
+subdivide_width = 2
+subdivide_height = 6
+subdivide_depth = 1
+
+[sub_resource type="BoxShape3D" id="ShapeSouthW"]
+size = Vector3(1.025, 2.8, 0.15)
+
+[sub_resource type="BoxMesh" id="BoxSouthE"]
+size = Vector3(1.125, 2.8, 0.15)
+subdivide_width = 3
+subdivide_height = 6
+subdivide_depth = 1
+
+[sub_resource type="BoxShape3D" id="ShapeSouthE"]
+size = Vector3(1.125, 2.8, 0.15)
+
+[sub_resource type="BoxMesh" id="BoxSouthLintel"]
+size = Vector3(1.0, 0.75, 0.15)
+subdivide_width = 2
+subdivide_height = 1
+subdivide_depth = 1
+
+[sub_resource type="BoxShape3D" id="ShapeSouthLintel"]
+size = Vector3(1.0, 0.75, 0.15)
 
 [node name="Observatory" type="Node3D"]
 
@@ -38,6 +153,115 @@ ambient_light_energy = 0.35
 environment = SubResource("Environment_obs")
 
 [node name="ComputerRoom" parent="." instance=ExtResource("1_room")]
+
+; --- L'ATRIO: raccordo a est della stanza computer ---
+; Lastra pavimento/soffitto 3,3 x 5,3: centro x=3,65 → x∈[2,0, 5,3], z∈[−2,65, +2,65],
+; pavimento y=0, soffitto y=2,8. Il walkable utile e' x∈[2,15, 5,3] (a ovest confina
+; con la parete est della stanza computer, spessa 0,15) per z∈[−2,65, +2,65].
+; NB: la profondita' 5,3 (non 5,0) e' deliberata — il pavimento arriva a z=−2,65 e
+; SOVRAPPONE la soglia della cucina (che apre a z=−2,575): la giunzione e' coperta,
+; non c'e' seam da attraversare. Stessa logica a est verso la cupola (overlap x).
+; Ovest = parete est della stanza computer (con la porta gia' aperta): niente muro.
+; Nord = interamente aperto sulla cucina. Est = apertura sulla cupola. Sud = porta.
+[node name="Atrium" type="Node3D" parent="."]
+
+[node name="Floor" type="StaticBody3D" parent="Atrium"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.65, -0.075, 0)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="Atrium/Floor"]
+material_override = SubResource("MatFloorA")
+mesh = SubResource("BoxSlabA")
+
+[node name="Collision" type="CollisionShape3D" parent="Atrium/Floor"]
+shape = SubResource("ShapeSlabA")
+
+[node name="Ceiling" type="StaticBody3D" parent="Atrium"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.65, 2.875, 0)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="Atrium/Ceiling"]
+material_override = SubResource("MatCeilA")
+mesh = SubResource("BoxSlabA")
+
+[node name="Collision" type="CollisionShape3D" parent="Atrium/Ceiling"]
+shape = SubResource("ShapeSlabA")
+
+[node name="EastNorth" type="StaticBody3D" parent="Atrium"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.225, 1.4, 1.85)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="Atrium/EastNorth"]
+material_override = SubResource("MatWallA")
+mesh = SubResource("BoxEastSeg")
+
+[node name="Collision" type="CollisionShape3D" parent="Atrium/EastNorth"]
+shape = SubResource("ShapeEastSeg")
+
+[node name="EastSouth" type="StaticBody3D" parent="Atrium"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.225, 1.4, -1.85)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="Atrium/EastSouth"]
+material_override = SubResource("MatWallA")
+mesh = SubResource("BoxEastSeg")
+
+[node name="Collision" type="CollisionShape3D" parent="Atrium/EastSouth"]
+shape = SubResource("ShapeEastSeg")
+
+[node name="SouthWest" type="StaticBody3D" parent="Atrium"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5875, 1.4, 2.575)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="Atrium/SouthWest"]
+material_override = SubResource("MatWallA")
+mesh = SubResource("BoxSouthW")
+
+[node name="Collision" type="CollisionShape3D" parent="Atrium/SouthWest"]
+shape = SubResource("ShapeSouthW")
+
+[node name="SouthEast" type="StaticBody3D" parent="Atrium"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.6625, 1.4, 2.575)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="Atrium/SouthEast"]
+material_override = SubResource("MatWallA")
+mesh = SubResource("BoxSouthE")
+
+[node name="Collision" type="CollisionShape3D" parent="Atrium/SouthEast"]
+shape = SubResource("ShapeSouthE")
+
+; Architrave sopra la porta sud: da y=2,05 a 2,8 sul varco x∈[3,1, 4,1].
+[node name="SouthLintel" type="StaticBody3D" parent="Atrium"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.6, 2.425, 2.575)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="Atrium/SouthLintel"]
+material_override = SubResource("MatWallA")
+mesh = SubResource("BoxSouthLintel")
+
+[node name="Collision" type="CollisionShape3D" parent="Atrium/SouthLintel"]
+shape = SubResource("ShapeSouthLintel")
+
+; Fill dell'atrio: freddo, fioco. Le pareti a luce per-vertice devono leggersi.
+[node name="Fill" type="OmniLight3D" parent="Atrium"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.65, 2.5, 0)
+light_color = Color(0.72, 0.8, 0.92, 1)
+light_energy = 0.8
+omni_range = 6.0
+
+; --- Le stanze istanziate ---
+; Cucina: a nord dell'atrio, ruotata +90° cosi' che la sua apertura (locale −x)
+; guardi a sud, verso l'atrio. Interno mondo x∈[2,1, 5,1], z∈[−5,58, −2,58].
+[node name="Kitchen" parent="." instance=ExtResource("6_kitchen")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 2.1, 0, -2.575)
+
+; Cupola: a est, apertura (locale −x) verso l'atrio. Centro a x=7,46.
+[node name="Dome" parent="." instance=ExtResource("7_dome")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.46, 0, 0)
+
+; Esterno: centrato sull'edificio (origine coincidente). Prato, sterrata, bosco.
+[node name="Exterior" parent="." instance=ExtResource("8_exterior")]
 
 [node name="CrtMonitor" parent="." instance=ExtResource("2_monitor")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, -2.05)
@@ -49,7 +273,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0.8)
 ; Il suono di fine posa vive QUI, presso il monitor, non nella fase: e' del luogo.
 ; Collocato all'altezza del vetro (1,10 m) e alla z del monitor, cosi' allontanandosi
 ; nella stanza si attenua ed e' percepibilmente posizionale. Non figlio del CrtMonitor:
-; e' un fatto del mondo, e la storia 3.1 (cucina/cupola) non deve spostarlo.
+; e' un fatto del mondo, e la storia 3.1 (cucina/cupola) NON lo sposta — la geografia
+; sonora si tara nell'attenuazione (vedi sequence_chime.tscn), non nella posizione.
 [node name="SequenceChime" parent="." instance=ExtResource("4_chime")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, -2.05)
 

@@ -1,5 +1,5 @@
 # generated: 2026-08-21T22:44:03
-# last_updated: 2026-08-23T13:00:00
+# last_updated: 2026-08-23T19:30:00
 # project: astrochills-gd-3d
 # project_key: NOKEY
 # tracking_system: file-system
@@ -83,7 +83,7 @@
 # Questo tracking pianifica sulle 16 storie che esistono in epics.md.
 
 generated: 2026-08-21T22:44:03
-last_updated: 2026-08-23T13:00:00
+last_updated: 2026-08-23T19:30:00
 project: astrochills-gd-3d
 project_key: NOKEY
 tracking_system: file-system
@@ -172,4 +172,11 @@ development_status:
   # >>> BLOCCATA DA C3 (aperto): la telemetria ha tre collocazioni
   # >>> contraddittorie e nessun proprietario.
   3-6-la-telemetria-trasformare-limpressione-in-prova: backlog
+  # Story 3.7: I forum della BBS — leggere mentre la posa gira
+  # >>> AGGIUNTA il 2026-08-23 su richiesta di Federico, dopo aver giocato l'epica 2
+  # >>> e giudicato l'attesa «inutile e noiosa». E' la QUARTA attivita' dell'attesa e
+  # >>> appartiene al gruppo 3.3/3.4/3.5, non al blocco della telemetria: il numero e'
+  # >>> 3.7 solo per non rinumerare cio' che esiste.
+  # >>> LA 3.6 DEVE INCLUDERE `forum` nello schema di wait_activities[].
+  3-7-i-forum-della-bbs-leggere-mentre-la-posa-gira: backlog
   epic-3-retrospective: optional

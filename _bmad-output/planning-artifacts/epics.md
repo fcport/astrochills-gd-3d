@@ -1099,6 +1099,78 @@ So that **tre notti diverse siano confrontabili, invece di essere tre impression
 
 ---
 
+### Story 3.7: I forum della BBS — leggere mentre la posa gira
+
+As a **gestore notturno con un'ora di posa davanti e un modem sulla scrivania**,
+I want **collegarmi alla BBS e leggere cosa si dicono gli altri astrofili**,
+So that **l'attesa abbia anche qualcosa da leggere, e questo mestiere abbia qualcuno che lo fa oltre a me**.
+
+> È la **quarta** attività dell'attesa, aggiunta il 2026-08-23 su richiesta di Federico dopo
+> aver giocato l'epica 2: «ovviamente ora così è inutile, e noioso. Faremo sì che ci siano i
+> forum da leggere ecc...». Le altre tre coprono i registri *fare*, *sistemare* e *stare*;
+> questa ne apre un quarto — **leggere** — che è passivo come lo «stare» ma occupa la testa
+> invece degli occhi, e non richiede di essere in nessun posto particolare.
+>
+> Il numero è 3.7 e non 3.6 solo per non rinumerare ciò che esiste: appartiene al gruppo
+> delle attività (3.3, 3.4, 3.5), non al blocco della telemetria. **La storia 3.6 deve
+> includere `forum` nello schema di `wait_activities[]`.**
+
+**Acceptance Criteria:**
+
+**Given** il modem 56k che è già sulla scrivania come arredo dalla storia 1.2
+**When** il giocatore apre la BBS dal monitor
+**Then** la connessione **richiede qualche secondo**, con l'handshake che si sente
+**And** è un'attesa piccola dentro l'attesa grande, come la moka: il tempo che ci vuole fa parte della cosa, non è un caricamento da nascondere
+**And** non costa lire e non richiede nessun acquisto: leggere è gratis, e le due attività a pagamento ci sono già
+
+**Given** la BBS collegata
+**When** il giocatore la guarda
+**Then** è un `Control` sul CRT come ogni altra interfaccia, e il CRT non sa cosa sta mostrando
+**And** ha la stessa cornice ASCII e lo stesso fosforo verde del terminale della 3.2 — **è lo stesso computer**, e due estetiche diverse sullo stesso vetro sarebbero un errore di finzione
+**And** l'interfaccia è **in inglese** (voce macchina); i messaggi del forum sono **in italiano**, perché li scrivono delle persone
+
+**Given** i 256×192 del vetro
+**When** un messaggio è più lungo di quanto ci stia
+**Then** si scorre, e lo scorrimento è **esplicito**: si vede che c'è dell'altro sopra o sotto
+**And** nessun messaggio viene troncato in silenzio — **è il difetto che la 2.2 ha pagato**: la descrizione di M42 arrivava tagliata a metà e nessuno se n'era accorto finché non l'ha vista un umano
+**And** la leggibilità si verifica **guardandola**, non stimandola
+
+**Given** l'elenco dei messaggi
+**When** il giocatore legge
+**Then** i contenuti stanno in `data/*.tres` come ogni altro dato del gioco: niente JSON, niente `FileAccess`
+**And** ci sono almeno **tre aree** con voci diverse fra loro — non un unico muro di testo dallo stesso autore
+**And** i messaggi parlano di astronomia amatoriale, di attrezzatura, di cieli e di notti perse: sono il mondo intorno all'osservatorio, non un tutorial travestito
+
+**Given** un messaggio letto
+**When** finisce
+**Then** **non dà nessun bonus meccanico**: nessun punteggio, nessuno sconto, nessun target sbloccato, nessun suggerimento che convenga seguire
+**And** da nessuna parte è scritto che potrebbe darne uno
+**And** in particolare **nessun messaggio contiene informazioni che aiutino a fotografare meglio**: se leggere fosse redditizio smetterebbe di misurare il piacere e comincerebbe a misurare l'obbedienza, che è la regola dichiarata di tutta l'epica
+
+**Given** un messaggio letto una notte
+**When** il giocatore torna la notte dopo
+**Then** si vede **quali ha già letto**, e la distinzione sopravvive al salvataggio
+**And** ne compaiono di nuovi col passare delle notti, così tornarci ha senso
+**And** **non c'è nessun contatore di non letti che solleciti**: la differenza fra «lo trovo se lo cerco» e «mi viene chiesto di svuotarla» è la differenza fra un piacere e un dovere
+
+**Given** la posa in corso
+**When** il giocatore sta leggendo e la sequenza finisce
+**Then** il suono di fine sequenza si sente comunque: è del luogo (storia 2.3), non dell'interfaccia
+**And** la BBS non si chiude da sola e non viene coperta da niente — **si finisce di leggere la riga**, e poi si decide
+
+**Given** la telemetria
+**When** la lettura comincia e quando si conclude
+**Then** emette `Events.wait_activity_started(&"forum")` all'apertura e `Events.wait_activity_ended(&"forum")` alla chiusura
+**And** una sessione aperta e mai chiusa resta distinguibile — è uno `started` senza il suo `ended`, e l'abbandono è un dato
+**And** l'emissione non produce nessun feedback visibile: il giocatore non deve sapere di essere misurato
+
+**Given** le regole di dipendenza
+**When** si cerca `phases/` dentro `crt/`, o `world/` dentro `night/`
+**Then** non c'è nessuna occorrenza, come per ogni altra interfaccia diegetica
+
+
+---
+
 ## Validation
 
 Eseguita il **2026-08-21** sul documento reale, non a memoria.

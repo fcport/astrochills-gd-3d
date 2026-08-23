@@ -27,6 +27,7 @@ extends Node
 const HONEST_PATH := "res://phases/polar/sources/honest_drift.tres"
 const WANDERING_PATH := "res://phases/polar/sources/wandering_drift.tres"
 const CATALOG_PATH := "res://phases/targeting/sources/honest_catalog.tres"
+const SEQUENCE_PATH := "res://phases/imaging/sources/honest_sequence.tres"
 ## La costante dell'orologio vero, non una copia: il banco confronta la propria
 ## aritmetica con quella del gioco, e per farlo deve leggere la stessa costante.
 const CLOCK := preload("res://night/night_clock.gd")
@@ -57,6 +58,10 @@ func _ready() -> void:
 	_check_local_to_scene()
 	print("")
 	_check_honest_catalog()
+	print("")
+	_check_imaging_sequence()
+	print("")
+	_check_imaging_setup()
 	print("")
 	_check_night_clock()
 	print("")
@@ -159,6 +164,7 @@ const SOURCE_PATHS := [
 	"res://phases/polar/sources/wandering_drift.tres",
 	"res://phases/targeting/sources/honest_catalog.tres",
 	"res://phases/targeting/sources/wandering_catalog.tres",
+	"res://phases/imaging/sources/honest_sequence.tres",
 ]
 
 
@@ -291,6 +297,110 @@ func _same_availability(a: Array[Dictionary], b: Array[Dictionary]) -> bool:
 		if a[k].get(&"available") != b[k].get(&"available"):
 			return false
 	return true
+
+
+## La sorgente onesta dell'imaging: determinismo, monotonìa del conteggio frame,
+## clamp a `frames_total`, e la guardia `min_per_frame <= 0`. Si collauda il `.tres`
+## che il gioco carica davvero, non i default dello script.
+##
+## LOGICA PURA. Non c'è fase né SceneTree: si costruisce l'input a mano e si legge
+## ciò che `sample()` restituisce. È esattamente ciò che la fase fa a ogni frame,
+## meno l'orologio della notte — che qui si simula passando il tempo trascorso.
+func _check_imaging_sequence() -> void:
+	print("-- HonestSequence: conteggio frame dal tempo, DETERMINISTICO e monotono")
+	var src := _load_source(SEQUENCE_PATH) as HonestSequence
+	if src == null:
+		return
+
+	var mpf := 5.0
+	var total := 20
+
+	# Determinismo: stesso input, due chiamate, stesso stato.
+	var i := ImagingInput.new()
+	i.elapsed_since_start_min = 2.5 * mpf
+	i.frames_total = total
+	i.min_per_frame = mpf
+	var a := src.sample(i)
+	var b := src.sample(i)
+	print("   a 2.5*min_per_frame: %s" % a)
+	print("   -> %s" % (
+		"DETERMINISTICA" if a == b else "NON deterministica  <-- ATTESO: deterministica"))
+	# Frame in corso: 2.5 frame di tempo -> 2 acquisiti (floor), ancora in corso.
+	if int(a.get(&"frames_done", -1)) != 2 or bool(a.get(&"done", true)):
+		print("   <-- ATTESO: frames_done = 2, done = false")
+
+	# Appena avviata: zero tempo -> zero frame, ma running.
+	var start := _sample_at(src, 0.0, total, mpf)
+	if int(start.get(&"frames_done", -1)) != 0 or not bool(start.get(&"running", false)):
+		print("   a elapsed 0: %s  <-- ATTESO: frames_done = 0, running = true" % start)
+	else:
+		print("   a elapsed 0: frames_done = 0, running = true")
+
+	# Monotonìa: il conteggio non scende mai col crescere del tempo, e clampa al
+	# totale senza mai superarlo. Si campiona ben oltre la fine per provare il clamp.
+	print("   monotonìa e clamp (min_per_frame = %.0f, frames_total = %d):" % [mpf, total])
+	var previous := -1
+	var monotonic := true
+	var clamped := true
+	for step in range(0, 26):
+		var elapsed := float(step) * mpf
+		var done := int(_sample_at(src, elapsed, total, mpf).get(&"frames_done", -1))
+		if done < previous:
+			monotonic = false
+		if done > total:
+			clamped = false
+		previous = done
+	# Alla fine esatta e oltre: sempre `total`, mai di più, e `done` vero.
+	var at_end := _sample_at(src, float(total) * mpf, total, mpf)
+	var past_end := _sample_at(src, float(total + 5) * mpf, total, mpf)
+	print("      alla fine (elapsed = %d*mpf): %s" % [total, at_end])
+	print("      oltre la fine (elapsed = %d*mpf): %s" % [total + 5, past_end])
+	if not monotonic:
+		print("      <-- ATTESO: il conteggio non deve mai calare")
+	if not clamped or int(at_end.get(&"frames_done", -1)) != total or int(past_end.get(&"frames_done", -1)) != total:
+		print("      <-- ATTESO: clamp a %d, mai oltre" % total)
+	if not bool(at_end.get(&"done", false)) or not bool(past_end.get(&"done", false)):
+		print("      <-- ATTESO: done = true a fine sequenza")
+
+	# NOTA: la guardia `min_per_frame <= 0` (Tuning corrotto) NON si collauda qui.
+	# È un canale 1 — un `push_error` — e questo banco lo legge il cancello
+	# `.bmad-loop/verify.ps1`, che tratta OGNI riga d'errore come un guasto (è la sua
+	# ragione d'essere). Pilotare il ramo corrotto stamperebbe un `USER ERROR` vero e
+	# tingerebbe di rosso il cancello su codice giusto. I canali d'errore li provano
+	# il cancello (sull'avvio del gioco) e l'occhio, non il banco — come per il
+	# catalogo vuoto del targeting, che infatti nessun check qui esercita.
+
+
+## Il target arriva dal `ctx` e sopravvive fino al readout (FR12/ADR-002).
+##
+## Si collauda il caso VALIDO: un target presente attraversa `setup()` ed emerge nel
+## `_config_readout()` — la stessa strada che porta al payload verso 2.4/2.5. Senza
+## SceneTree: `setup()` e `_config_readout()` non toccano né `_screen` né `truth`,
+## bastano un'istanza nuda e una `NightRun`.
+##
+## Il ramo «ctx senza target_id» NON si prova qui: emette un `push_error` (canale 1),
+## e vale la stessa ragione scritta sopra per `min_per_frame <= 0` — lo sorveglia il
+## cancello, non il banco.
+func _check_imaging_setup() -> void:
+	print("-- PhaseImaging.setup(): il target del ctx arriva fino al readout")
+	var run := NightRun.new()
+
+	var with_target := PhaseImaging.new()
+	with_target.setup(run, {&"target_id": &"m42"})
+	var ro_ok := with_target._config_readout()
+	print("   ctx con target_id = m42: readout.target = \"%s\"" % String(ro_ok.get(&"target", "")))
+	if String(ro_ok.get(&"target", "")) != "m42":
+		print("      <-- ATTESO: target = m42")
+	with_target.free()
+
+
+## Piccola comodità: costruisce l'input e campiona in una riga.
+func _sample_at(src: HonestSequence, elapsed: float, total: int, mpf: float) -> Dictionary:
+	var i := ImagingInput.new()
+	i.elapsed_since_start_min = elapsed
+	i.frames_total = total
+	i.min_per_frame = mpf
+	return src.sample(i)
 
 
 ## L'aritmetica della notte, senza aprire una finestra.

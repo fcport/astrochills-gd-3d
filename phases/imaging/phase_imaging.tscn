@@ -1,0 +1,13 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://phases/imaging/phase_imaging.gd" id="1_phase"]
+[ext_resource type="Script" path="res://phases/imaging/imaging_screen.gd" id="2_screen"]
+[ext_resource type="Resource" path="res://phases/imaging/sources/honest_sequence.tres" id="3_truth"]
+
+[node name="PhaseImaging" type="Node"]
+script = ExtResource("1_phase")
+truth = ExtResource("3_truth")
+
+[node name="ImagingScreen" type="Control" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_screen")

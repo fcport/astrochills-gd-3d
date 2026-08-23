@@ -109,7 +109,7 @@ development_status:
   # >>> di un bersaglio sotto l'orizzonte. Non e' un caso limite — M13 e M57 sono
   # >>> SEMPRE non disponibili all'ora in cui si sceglie, e la 2.2 scrive comunque
   # >>> selected_target_id. Vedi deferred-work.md, in fondo.
-  2-3-la-posa-configurare-la-sequenza-e-lasciarla-lavorare: backlog
+  2-3-la-posa-configurare-la-sequenza-e-lasciarla-lavorare: done
   # Story 2.4: Lo stack — vedere per la prima volta cosa hai preso
   2-4-lo-stack-vedere-per-la-prima-volta-cosa-hai-preso: backlog
   # Story 2.5: Qualcuno la compra, e paga subito

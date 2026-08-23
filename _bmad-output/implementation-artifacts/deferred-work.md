@@ -295,17 +295,55 @@ status: open
   che restituisce sempre tutti e sei i target nello stesso ordine.*
   [phases/targeting/phase_targeting.gd:79, :93, :115]
 
-## Decisione aperta dalla code review della 2.2 (2026-08-23) — DA CHIUDERE PRIMA DELLA 2.3
+## Decisione CHIUSA dalla storia 2.3 (2026-08-23) — era «DA CHIUDERE PRIMA DELLA 2.3»
 
-- **Cosa fa l'imaging di un bersaglio sotto l'orizzonte.** Deciso in code review che la
-  scelta resta LIBERA: il targeting segnala «not visible now» ma non impedisce di
-  confermare, come dice `epics.md:663` e come vuole un gioco che non tratta il giocatore
-  da incapace. Resta però senza risposta la seconda metà della domanda, e non è teorica:
-  il targeting gira presto nella notte, quindi `elapsed_min` vale poche decine di minuti
-  e M13 (`from` 120) e M57 (`from` 150) risultano **sempre** non disponibili nell'istante
-  in cui si sceglie. Sceglierli è quindi un caso normale, non un caso limite.
-  *La 2.3 deve dichiarare cosa succede: la posa parte lo stesso e produce una foto
-  peggiore? Aspetta che il bersaglio sorga, consumando la notte? Rifiuta e rimanda alla
-  scelta? Oggi nessun criterio di accettazione lo dice, in nessuna storia — e la 2.2 ha
-  già scritto `run.selected_target_id`, quindi la 2.3 lo riceverà comunque.*
-  [phases/targeting/phase_targeting.gd, data/targets/*.tres]
+- **Cosa fa l'imaging di un bersaglio sotto l'orizzonte.** ~~Deciso in code review che la
+  scelta resta LIBERA~~ **CHIUSA nella 2.3**: la posa **parte lo stesso e produce una foto
+  normale** — nessuna attesa del sorgere, nessun degrado, nessun rifiuto. Nell'MVP la
+  visibilità non tocca l'imaging: la segnalazione «not visible now» resta un fatto
+  diegetico del *targeting*, e l'imaging la ignora. Le tre letture alternative (aspettare
+  che sorga / rifiutare / foto peggiore) sono escluse dal design esistente — vedi
+  `spec-2-3-la-posa-configurare-la-sequenza-e-lasciarla-lavorare.md` § Design Notes, che è
+  la fonte della decisione. La scelta resta LIBERA nel targeting (`epics.md:663`); la
+  visibilità non entra nemmeno in `phase_scores`.
+  [phases/imaging/phase_imaging.gd, phases/targeting/phase_targeting.gd]
+
+### DW-2: Nessuna copertura automatica del percorso config→run→finish della fase (runs_in_background, completamento mentre il giocatore è via, elapsed→frame dal clock).
+origin: spec-deferred c8141306f567
+location: phases/imaging/phase_imaging.gd:_process/_start/_finish
+source_spec: `spec-2-3-la-posa-configurare-la-sequenza-e-lasciarla-lavorare.md`
+severity: medium
+reason: Il banco prova solo l'aritmetica pura della sorgente e il passaggio del target in setup(); il comportamento-bandiera «avvia, allontanati, si completa da solo» (AC2/AC4) è verificato solo dall'avvio-gioco di verify.ps1 (che si ferma a 600 frame e non raggiunge mai il completamento) e a schermo. È coerente col modello del progetto (il banco prova la matematica, non la fase in albero), ma la logica stateful di start/finish è nuova e non asserita.
+status: open
+
+### DW-3: L'imaging procede con ok=true e target_id vuoto quando il ctx non lo porta, propagando &"" nel payload verso 2.4/2.5.
+origin: spec-deferred 0ef2e0f3f95e
+location: phases/imaging/phase_imaging.gd:96-104,234-240
+source_spec: `spec-2-3-la-posa-configurare-la-sequenza-e-lasciarla-lavorare.md`
+severity: low
+reason: A differenza del targeting (che emette ok=false su id vuoto), il guard del ctx mancante fa solo push_error e prosegue; cosa stacking/vendita facciano di un target_id vuoto è una domanda di contratto aperta per 2.4/2.5.
+status: open
+
+### DW-4: SequenceChime si collega a Events.phase_finished in _ready senza mai disconnettersi.
+origin: spec-deferred a5b797288993
+location: phases/imaging/sequence_chime.gd:12-14
+source_spec: `spec-2-3-la-posa-configurare-la-sequenza-e-lasciarla-lavorare.md`
+severity: low
+reason: Innocuo oggi (la scena del mondo è istanziata una volta per sessione), ma diventa una doppia connessione — chime che suona più volte — il giorno in cui la scena dell'osservatorio venisse ricostruita. Rispecchia la voce rinviata dalla 2.1 sulla lambda di Events.phase_started mai disconnessa.
+status: open
+
+### DW-5: I parametri audio 3D del chime (unit_size=6, max_distance=30, max_db=3) sono segnaposto non documentati.
+origin: spec-deferred 0f77000996ca
+location: phases/imaging/sequence_chime.tscn
+source_spec: `spec-2-3-la-posa-configurare-la-sequenza-e-lasciarla-lavorare.md`
+severity: low
+reason: Regolano la caduta «udibile da un'altra stanza» (AC4) ma sono numeri a occhio, non tarati su hardware — come i segnaposto visivi, chiedono un passaggio di ascolto-e-aggiusta.
+status: open
+
+### DW-6: Il filtro &"imaging" del chime e PhaseImaging.key() sono due letterali separati, senza nulla che li tenga in sync.
+origin: spec-deferred b8ea454bc2a3
+location: phases/imaging/sequence_chime.gd:31, phases/imaging/phase_imaging.gd:86-87
+source_spec: `spec-2-3-la-posa-configurare-la-sequenza-e-lasciarla-lavorare.md`
+severity: low
+reason: Se key() cambiasse, il chime smetterebbe di suonare in silenzio; nessun controllo cross-file lega i due letterali.
+status: open

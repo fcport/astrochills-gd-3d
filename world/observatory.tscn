@@ -17,11 +17,12 @@
 ; Seat a -1,419, mentre la scrivania finisce a -1,75. La capsula del giocatore ha
 ; raggio 0,3, quindi da seduto il suo bordo arriva a -1,719 — 3 cm di gioco. Con
 ; il monitor più indietro il corpo compenetrerebbe la scrivania.
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="PackedScene" path="res://world/rooms/computer_room.tscn" id="1_room"]
 [ext_resource type="PackedScene" path="res://world/interactables/crt_monitor.tscn" id="2_monitor"]
 [ext_resource type="PackedScene" path="res://world/player/player.tscn" id="3_player"]
+[ext_resource type="PackedScene" path="res://phases/imaging/sequence_chime.tscn" id="4_chime"]
 
 [sub_resource type="Environment" id="Environment_obs"]
 background_mode = 1
@@ -43,3 +44,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, -2.05)
 [node name="Player" parent="." instance=ExtResource("3_player")]
 unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0.8)
+
+; Il suono di fine posa vive QUI, presso il monitor, non nella fase: e' del luogo.
+; Collocato all'altezza del vetro (1,10 m) e alla z del monitor, cosi' allontanandosi
+; nella stanza si attenua ed e' percepibilmente posizionale. Non figlio del CrtMonitor:
+; e' un fatto del mondo, e la storia 3.1 (cucina/cupola) non deve spostarlo.
+[node name="SequenceChime" parent="." instance=ExtResource("4_chime")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, -2.05)

@@ -111,7 +111,7 @@ development_status:
   # >>> selected_target_id. Vedi deferred-work.md, in fondo.
   2-3-la-posa-configurare-la-sequenza-e-lasciarla-lavorare: done
   # Story 2.4: Lo stack — vedere per la prima volta cosa hai preso
-  2-4-lo-stack-vedere-per-la-prima-volta-cosa-hai-preso: backlog
+  2-4-lo-stack-vedere-per-la-prima-volta-cosa-hai-preso: done
   # Story 2.5: Qualcuno la compra, e paga subito
   2-5-qualcuno-la-compra-e-paga-subito: backlog
   # Story 2.6: Decidere quanto rifare

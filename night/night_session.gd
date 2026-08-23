@@ -40,6 +40,12 @@ extends Node
 ## FR37 tiene fuori dalla release e per cui la regola è l'opposta.
 const SUMMARY := preload("res://night/night_summary.gd")
 
+## La rivelazione dello stack. `preload` come il riepilogo: appartiene a `night/` e
+## deve esistere in ogni build. Preload di un Control di `night/`, NON di una fase —
+## la prova meccanica (nessun nome di fase in questo file) resta verde: `night/` può
+## dipendere da `photo/` e da sé stesso, non deve nominare `phases/`.
+const REVEAL := preload("res://night/stacking_reveal.gd")
+
 ## Il piano non ha altro da dare, per adesso.
 ##
 ## Signal DIRETTO e non `Events`: l'ascoltatore è uno solo e si sa chi è — il
@@ -62,6 +68,11 @@ var _crt: CrtScreen
 var _phase: Phase
 var _summary: Control
 
+## La rivelazione dello stack, quando c'è. È un `Control` di `night/` mostrato sul
+## CRT come `_summary`: l'orchestratore lo possiede, lo mostra e lo libera. Non è
+## una fase — non entra in `_phase`, non emette `finished`, non scrive punteggi.
+var _stacking: Control
+
 ## Ciò che una fase lascia a quelle dopo di lei. `PhaseResult.payload` entra qui,
 ## e da qui esce in `Phase.setup(run, ctx)`: è il solo canale previsto, perché
 ## una fase non importa mai da un'altra fase (ADR-002).
@@ -73,6 +84,12 @@ var _ctx: Dictionary = {}
 ## fase. È una correzione della code review della 1.3.
 var _phase_mode := Node.PROCESS_MODE_INHERIT
 var _screen_mode := Node.PROCESS_MODE_INHERIT
+
+## Il modo che la rivelazione aveva alla nascita, per la stessa ragione degli altri
+## due: sospenderla lo sostituisce con `DISABLED`, riprenderla lo rimette. Imporre
+## `INHERIT` alla ripresa andrebbe bene qui — il Control nasce `INHERIT` — ma si
+## salva comunque per non deviare dal modello della fase e del suo schermo.
+var _stacking_mode := Node.PROCESS_MODE_INHERIT
 
 var _setup_index := 0
 var _photo_index := 0
@@ -117,6 +134,12 @@ func begin() -> void:
 	if _summary != null:
 		_summary.queue_free()
 		_summary = null
+	# Come il riepilogo: uno `_stacking` non nullo di una notte prima farebbe
+	# mentire `has_phase()` prima che esista qualcosa da fare, e resterebbe a
+	# schermo. Lo libera chi lo ha creato — il CRT non libera mai ciò che mostra.
+	if _stacking != null:
+		_stacking.queue_free()
+		_stacking = null
 	_enter_next()
 
 
@@ -128,7 +151,7 @@ func current_phase() -> Phase:
 
 ## Se c'è qualcosa da fare al monitor adesso.
 func has_phase() -> bool:
-	return _phase != null or _summary != null
+	return _phase != null or _summary != null or _stacking != null
 
 
 func clock() -> NightClock:
@@ -161,6 +184,15 @@ func player_present() -> bool:
 ## del CRT e non è più figlio della fase, quindi non eredita niente da lei.
 func set_player_present(present: bool) -> void:
 	_player_present = present
+
+	# La rivelazione dello stack è present-gated come uno schermo di fase: avanza
+	# (`_process`) solo alla postazione, così l'immagine emerge SOTTO GLI OCCHI del
+	# giocatore e non nel vuoto mentre lui è in cucina. Vive nel `SubViewport` del
+	# CRT, non è figlio di niente che erediti, quindi va sospesa a parte — come il
+	# `Control` di una fase. Non ha `runs_in_background()`: l'emersione È il guardare.
+	if _stacking != null and is_instance_valid(_stacking):
+		_stacking.process_mode = _stacking_mode if present else Node.PROCESS_MODE_DISABLED
+
 	if _phase == null:
 		return
 
@@ -226,10 +258,54 @@ func _enter_next() -> void:
 		return
 	var scene := _next_scene()
 	if scene == null:
-		_crt.show_control(null)
-		plan_exhausted.emit()
+		_finish_photo_cycle()
 		return
 	_enter_phase(scene)
+
+
+## Il ciclo delle foto si è esaurito. Se nel `ctx` c'è una foto — e non se n'è già
+## rivelata una — si conduce lo stacking; altrimenti si svuota il vetro e si
+## avverte il punto d'ingresso, il comportamento di quando `photo_phases` era vuoto.
+##
+## CHE CI SIA UNA FOTO LO DICE IL DATO, non il nome di una fase (ADR-002): lo si
+## chiede a `Photo.is_photo(_ctx)`, che guarda esposizione e conteggio frame nel
+## payload accumulato. Qui non compare nessun nome di fase, come promette la testa
+## di questo file.
+##
+## `_stacking == null` GUARDIA CONTRO LA DOPPIA RIVELAZIONE: `_enter_next` può
+## essere ri-accodato (una fase in ritardo, un `call_deferred`), e senza la guardia
+## costruirebbe un secondo stack — e registrerebbe la stessa foto due volte.
+func _finish_photo_cycle() -> void:
+	if Photo.is_photo(_ctx) and _stacking == null:
+		_enter_stacking()
+		return
+	_crt.show_control(null)
+	plan_exhausted.emit()
+
+
+## Aggrega la qualità, registra la foto, e mette la rivelazione sul vetro.
+##
+## LA QUALITÀ È AGGREGAZIONE PURA (AC2): `PhotoQuality` legge `run.phase_scores` —
+## dove l'ereditarietà vive già come persistenza — e restituisce un `int`. Il record
+## va in `Game.run.photos` col suo indice: è il canale-dati verso la 2.5. Lo
+## stacking NON scrive in `phase_scores` né emette `phase_finished`: non è una fase
+## che compone la foto, è dove la foto si aggrega.
+##
+## Il gating si arma alla fine con `set_player_present(_player_present)`, come per
+## una fase appena montata: la rivelazione nasce ferma se il giocatore non c'è.
+func _enter_stacking() -> void:
+	var quality := PhotoQuality.new().aggregate(Game.run.phase_scores)
+	var record := Photo.from_ctx(_ctx, quality, Game.run.photos.size())
+	Game.run.photos.append(record)
+
+	_stacking = REVEAL.new()
+	# Il modo si registra appena il Control esiste, prima che il gating lo sospenda.
+	_stacking_mode = _stacking.process_mode
+	_stacking.set_readout(String(_ctx.get(Photo.CTX_TARGET, "")), quality)
+	_crt.show_control(_stacking)
+	set_player_present(_player_present)
+
+	Log.info("night", "stack — foto %d registrata, qualità %d" % [record.get(Photo.KEY_ID), quality])
 
 
 func _enter_phase(scene: PackedScene) -> void:
@@ -388,6 +464,14 @@ func _close_night() -> void:
 		var stale := _phase
 		_phase = null
 		_dispose(stale, true)
+
+	# La rivelazione, se è a schermo all'alba, la libera chi la possiede — e prima
+	# che il riepilogo la sostituisca, altrimenti resterebbe orfana nel viewport.
+	# `_show_summary` chiama `show_control(_summary)`, che stacca già i figli del
+	# viewport; ma il nodo va comunque liberato, o resterebbe vivo fuori dall'albero.
+	if _stacking != null:
+		_stacking.queue_free()
+		_stacking = null
 
 	_show_summary()
 	# L'annuncio al resto del mondo va DOPO che la notte è chiusa davvero: chi

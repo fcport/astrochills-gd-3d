@@ -65,6 +65,12 @@ func _ready() -> void:
 	print("")
 	_check_night_clock()
 	print("")
+	_check_photo_quality()
+	print("")
+	_check_photo_schema()
+	print("")
+	_check_photo_record()
+	print("")
 	print("=== fine ===")
 	get_tree().quit()
 
@@ -392,6 +398,98 @@ func _check_imaging_setup() -> void:
 	if String(ro_ok.get(&"target", "")) != "m42":
 		print("      <-- ATTESO: target = m42")
 	with_target.free()
+
+
+## L'aggregazione della qualità della foto: media intera dei punteggi di fase, `0`
+## sul dizionario vuoto. LOGICA PURA — `PhotoQuality.new()` senza SceneTree, come le
+## sorgenti di verità.
+##
+## IL CASO CHE CONTA È QUELLO EREDITATO. `phase_scores` persiste fra gli scatti: se
+## la 2.6 rifà solo l'imaging, polar e targeting restano col loro punteggio vecchio,
+## e `aggregate` li conta. Non c'è un ramo dell'ereditarietà da collaudare — è la
+## persistenza del dizionario — ma il banco stampa il comportamento su un dizionario
+## «ereditato» perché è l'AC2 a chiederlo esplicitamente.
+func _check_photo_quality() -> void:
+	print("-- PhotoQuality.aggregate(): media intera dei punteggi, 0 su vuoto")
+	var q := PhotoQuality.new()
+
+	# Aggregazione tipica: (80+60+100)/3 = 80.
+	_report_quality(q, {&"polar": 80, &"targeting": 60, &"imaging": 100}, 80,
+		"tipico")
+	# Ereditato: solo l'imaging rifatto (40); polar/targeting sono i punteggi VECCHI,
+	# ancora nel dizionario perché persiste. (80+60+40)/3 = 60.
+	_report_quality(q, {&"polar": 80, &"targeting": 60, &"imaging": 40}, 60,
+		"ereditato — polar/targeting contano col punteggio precedente")
+	# Fase sola: 80/1 = 80.
+	_report_quality(q, {&"polar": 80}, 80, "una fase sola")
+	# Vuoto: 0, nessuna divisione per zero.
+	_report_quality(q, {}, 0, "nessun punteggio")
+
+
+## Stampa `aggregate` sul caso e segnala lo scostamento con `<-- ATTESO`, come gli
+## altri check del banco: si stampa sempre, si segnala solo la differenza.
+func _report_quality(q: PhotoQuality, scores: Dictionary, expected: int, label: String) -> void:
+	var got := q.aggregate(scores)
+	var note := "" if got == expected else "   <-- ATTESO: %d" % expected
+	print("   %-58s aggregate = %d%s" % [label, got, note])
+
+
+## `Photo.is_photo()`: è il DATO nel ctx a dire se c'è una foto, non il nome di una
+## fase. Servono esposizione E conteggio frame (li lascia l'imaging); il solo
+## `target_id` — che lo lascia anche il targeting — non basta. Logica pura,
+## statica: nessun nodo, nessun ctx reale, solo dizionari costruiti a mano.
+func _check_photo_schema() -> void:
+	print("-- Photo.is_photo(): esposizione + frame = foto; solo target = no")
+	# Foto presente: il payload dell'imaging (I/O matrix, riga «foto presente»).
+	_report_is_photo({&"target_id": &"m42", &"exposure_sec": 120, &"frame_count": 20}, true,
+		"ctx con esposizione e frame")
+	# Solo il target: il payload del targeting, nessuno scatto ancora.
+	_report_is_photo({&"target_id": &"m42"}, false, "solo target_id (nessuno scatto)")
+	# Ciclo vuoto: nessuna chiave (I/O matrix, riga «ciclo senza foto»).
+	_report_is_photo({}, false, "ctx vuoto")
+
+
+func _report_is_photo(ctx: Dictionary, expected: bool, label: String) -> void:
+	var got := Photo.is_photo(ctx)
+	var note := "" if got == expected else "   <-- ATTESO: %s" % expected
+	print("   %-40s is_photo = %s%s" % [label, got, note])
+
+
+## `Photo.from_ctx()`: costruisce il record foto — il contratto-dati verso la 2.5.
+## Logica pura e statica: si passa un ctx, una qualità già aggregata e un indice, e
+## si legge il `Dictionary` che ne esce. Le chiavi attese si leggono dalle costanti
+## `Photo.KEY_*`, non da stringhe: se un giorno una chiave cambia, il banco cambia
+## con essa invece di collaudare una vecchia forma.
+func _check_photo_record() -> void:
+	print("-- Photo.from_ctx(): il record verso la 2.5, target/esposizione/frame/qualità")
+
+	# Ctx pieno: il payload dell'imaging con un bersaglio scelto. Ogni campo mappato.
+	var full := Photo.from_ctx(
+		{&"target_id": &"m42", &"exposure_sec": 120, &"frame_count": 20}, 80, 0)
+	_report_record_field(full, Photo.KEY_TARGET, "m42", "ctx pieno: target")
+	_report_record_field(full, Photo.KEY_EXPOSURE, 120, "ctx pieno: esposizione")
+	_report_record_field(full, Photo.KEY_FRAMES, 20, "ctx pieno: frame")
+	_report_record_field(full, Photo.KEY_QUALITY, 80, "ctx pieno: qualità")
+	_report_record_field(full, Photo.KEY_ID, 0, "ctx pieno: id dall'indice")
+
+	# DW-3: scatto senza bersaglio scelto. `target_id` NON è nel ctx; il record lo
+	# registra come stringa VUOTA (non null, non assente) — un record ben formato.
+	var no_target := Photo.from_ctx({&"exposure_sec": 60, &"frame_count": 5}, 50, 1)
+	_report_record_field(no_target, Photo.KEY_TARGET, "", "DW-3 senza target: stringa vuota")
+	_report_record_field(no_target, Photo.KEY_EXPOSURE, 60, "DW-3 senza target: esposizione")
+	_report_record_field(no_target, Photo.KEY_FRAMES, 5, "DW-3 senza target: frame")
+	_report_record_field(no_target, Photo.KEY_QUALITY, 50, "DW-3 senza target: qualità")
+	_report_record_field(no_target, Photo.KEY_ID, 1, "DW-3 senza target: id dall'indice")
+
+
+## Legge un campo del record e lo confronta con l'atteso. Come gli altri report del
+## banco: si stampa sempre, si segnala solo lo scostamento con `<-- ATTESO`.
+## `Variant` in ingresso: il record mescola stringhe e interi, e il confronto `==`
+## regge entrambi.
+func _report_record_field(record: Dictionary, key: StringName, expected: Variant, label: String) -> void:
+	var got: Variant = record.get(key)
+	var note := "" if got == expected else "   <-- ATTESO: %s" % str(expected)
+	print("   %-40s %s = %s%s" % [label, key, str(got), note])
 
 
 ## Piccola comodità: costruisce l'input e campiona in una riga.

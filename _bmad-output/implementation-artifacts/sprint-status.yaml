@@ -1,5 +1,5 @@
 # generated: 2026-08-21T22:44:03
-# last_updated: 2026-08-23T00:55:00
+# last_updated: 2026-08-23T13:00:00
 # project: astrochills-gd-3d
 # project_key: NOKEY
 # tracking_system: file-system
@@ -83,7 +83,7 @@
 # Questo tracking pianifica sulle 16 storie che esistono in epics.md.
 
 generated: 2026-08-21T22:44:03
-last_updated: 2026-08-23T00:55:00
+last_updated: 2026-08-23T13:00:00
 project: astrochills-gd-3d
 project_key: NOKEY
 tracking_system: file-system
@@ -94,7 +94,8 @@ development_status:
   # Epic 1: Il primo pezzo di mestiere — l'allineamento polare, e il seam che regge
   # Domanda: il vincolo di ADR-001 regge?
   # ---------------------------------------------------------------------------
-  epic-1: in-progress
+  # CHIUSA il 2026-08-23 (era rimasta in-progress con tutte le storie done).
+  epic-1: done
   # Story 1.1: L'allineamento polare, e la prova che il seam regge  ← PRIMA STORIA
   1-1-lallineamento-polare-e-la-prova-che-il-seam-regge: done
   # Story 1.2: L'osservatorio esiste, e ci sei dentro
@@ -107,7 +108,12 @@ development_status:
   # Epic 2: Una notte di lavoro, dall'arrivo all'alba
   # Domanda: il ciclo di una notte funziona?
   # ---------------------------------------------------------------------------
-  epic-2: in-progress
+  # CHIUSA il 2026-08-23. Tutte e sette le storie done. Le 2.2-2.7 le ha scritte
+  # bmad-loop in autonomia; ognuna e' poi passata da una review adversariale
+  # indipendente (letture cieche + aderenza alla specifica + caccia ai casi limite
+  # sulle GIUNZIONI fra storie, che e' dove stavano i difetti veri).
+  # Restano tre domande di GIOCO aperte, non di codice: vedi deferred-work.md.
+  epic-2: done
   # Story 2.1: Un turno che comincia alle 21:00 e finisce da solo all'alba
   2-1-un-turno-che-comincia-alle-21-00-e-finisce-da-solo-allalba: done
   # Story 2.2: Scegliere cosa fotografare stanotte

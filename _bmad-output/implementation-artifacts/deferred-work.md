@@ -407,3 +407,38 @@ source_spec: `spec-2-7-il-portafoglio-e-ancora-li-la-notte-dopo.md`
 severity: low
 reason: SaveManager._save scrive in place. Il ramo di recupero (save illeggibile -> frase gentile + profilo pulito) rende la perdita garbata, ma resta una perdita. Un pattern scrivi-su-temp-poi-rinomina la renderebbe a prova di crash. Non richiesto da nessun AC della 2.7; enhancement di robustezza.
 status: open
+
+## Tre domande di GIOCO, aperte a fine epica 2 (2026-08-23)
+
+Non sono difetti di codice: l'aritmetica e' corretta ovunque e il banco e' verde. Sono
+domande su come deve funzionare il gioco, emerse dalla review adversariale delle sette
+storie. Nessuna e' stata decisa: **appartengono a Federico**, e la 3.x che le tocchera'
+deve trovarle qui.
+
+- **DQ-1 — L'esposizione che il giocatore configura non influenza niente.** Non la
+  durata (`frames_done = elapsed / min_per_frame`, e `min_per_frame` viene da `Tuning`),
+  non la qualita' (imaging e targeting restituiscono sempre 100, quindi la qualita' di
+  ogni foto dipende SOLO dal punteggio dell'allineamento polare, fatto una volta a
+  inizio notte), non il prezzo. *Conseguenza misurabile: un frame invece di quaranta
+  costa cinque minuti invece di duecento e produce una foto identica, che si vende allo
+  stesso prezzo. La strategia dominante e' `frames = 1`, e la notte da 540 minuti
+  diventa un distributore di foto uguali. E' il difetto piu' grosso emerso dalla review,
+  e nessuna delle quattro sessioni poteva vederlo dalla propria storia.* La domanda:
+  cosa deve rendere una foto migliore di un'altra? Il numero di frame? L'esposizione?
+  Il tempo totale di integrazione (frame x esposizione, che e' la risposta fisicamente
+  vera)? [phases/imaging/, photo/quality.gd]
+
+- **DQ-2 — Il punteggio delle fasi foto e' un segnaposto, e regge tutta l'economia.**
+  `PhaseTargeting.NEUTRAL_SCORE = 100` e `PhaseImaging.PLACEHOLDER_SCORE = 100` sono
+  dichiarati segnaposto nei loro file, ma `PhotoQuality.aggregate` ne fa la media con
+  il punteggio polare e da li' esce lo scaglione di payout. *Finche' valgono 100 fissi,
+  meta' dell'economia e' costante.* Legata a DQ-1: rispondere alla prima probabilmente
+  risponde anche a questa. [phases/targeting/phase_targeting.gd, phases/imaging/phase_imaging.gd]
+
+- **DQ-3 — La notte finisce e nessuno chiede se vuoi continuare.** All'alba si vede il
+  riepilogo, `end_night()` versa e salva, e il gioco resta li'. Non c'e' nessun modo,
+  dentro il gioco, di cominciare la notte 2: il save c'e' e funziona, ma solo riavviando
+  l'eseguibile si rilegge il profilo. *L'epica 2 chiude il ciclo di UNA notte; il ciclo
+  fra le notti e' scritto su disco ma non ha un gesto che lo attraversi.* Non e' un
+  criterio mancato — nessuna storia lo chiedeva — ma e' l'anello che manca perche' la
+  persistenza appena costruita si veda giocando. [main.gd, night/night_summary.gd]

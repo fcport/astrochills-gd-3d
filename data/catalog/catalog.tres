@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemCatalog" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://data/catalog/item_catalog.gd" id="1_catalog"]
+[ext_resource type="Resource" path="res://data/catalog/moka.tres" id="2_moka"]
+[ext_resource type="Resource" path="res://data/catalog/lampadina.tres" id="3_lampadina"]
+[ext_resource type="Resource" path="res://data/catalog/stufetta.tres" id="4_stufetta"]
+[ext_resource type="Resource" path="res://data/catalog/lubrificare_cupola.tres" id="5_cupola"]
+
+[resource]
+script = ExtResource("1_catalog")
+items = Array[ItemData]([ExtResource("2_moka"), ExtResource("3_lampadina"), ExtResource("4_stufetta"), ExtResource("5_cupola")])

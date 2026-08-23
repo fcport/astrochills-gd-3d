@@ -49,6 +49,31 @@ const CURRENT_VERSION := 1
 ## ricava il proprio `night_index`, e quindi la rotazione dei committenti.
 @export var nights_completed: int = 0
 
+## Ciò che il giocatore ha comprato al terminale, e che si porta dietro fra le
+## notti. STA QUI PER LA STESSA RAGIONE DEL PORTAFOGLIO (C1): un acquisto è del
+## GIOCATORE, non della notte — la moka comprata stanotte c'è ancora domani, mentre
+## i punteggi delle fasi muoiono con la `NightRun`. Metterlo su `NightRun` lo
+## azzererebbe a ogni `start_night()`, e la moka sparirebbe dalla cucina al risveglio.
+##
+## DEFAULT `[]`, E NESSUN BUMP DI `CURRENT_VERSION`: un save vecchio senza il campo
+## è correttamente «niente posseduto». `ResourceSaver` omette una proprietà uguale al
+## default, quindi un profilo con l'array vuoto non scrive il campo — e ricaricato
+## torna vuoto, che è esattamente il significato giusto. Aggiungere un campo con
+## default «assente = stato iniziale» non cambia il formato: non serve `migrate()`.
+@export var owned_items: Array[StringName] = []
+
+## Se il giocatore possiede l'articolo `id`. Lo legge il terminale (per mostrare
+## `OWNED`) e lo leggeranno 3.3/3.4 (per far comparire la moka/la lampadina).
+func owns(id: StringName) -> bool:
+	return owned_items.has(id)
+
+## Marca l'articolo `id` come posseduto. Idempotente: comprare due volte non lo
+## duplica nell'array. La spesa la fa il chiamante (`Game.spend_lire`), il salvataggio
+## anche — qui si segna soltanto il possesso.
+func mark_owned(id: StringName) -> void:
+	if not owned_items.has(id):
+		owned_items.append(id)
+
 
 func migrate() -> void:
 	if version == CURRENT_VERSION:

@@ -38,6 +38,87 @@ promemoria, non il sostituto.
 
 ---
 
+## COME SI ESEGUE GODOT — leggere prima di dire «non c'è un binario»
+
+**C'è, e non si chiama `godot`.** L'eseguibile sta nella radice del progetto e NON è nel
+PATH:
+
+```
+./Godot_v4.7.2-stable_win64.exe
+```
+
+Questa sezione esiste perché la storia 3.1 ha concluso *«nessun binario Godot
+nell'ambiente: `godot --headless` non eseguibile»* e ha consegnato cinque scene nuove —
+2.131 righe — validate solo staticamente, senza che nessuno le avesse mai aperte. Il
+binario era a due metri, con un altro nome.
+
+### I tre comandi che servono
+
+```bash
+# 1. Registrare un class_name appena creato (SEMPRE dopo aver aggiunto uno script
+#    con class_name, o gli autoload non lo trovano e il gioco non parte)
+./Godot_v4.7.2-stable_win64.exe --path . --headless --import
+
+# 2. Il cancello: banco + avvio del gioco, cerca errori e warning. E' lo stesso
+#    che bmad-loop esegue come verify. Va passato PRIMA di dichiarare finito.
+pwsh -NoProfile -File .bmad-loop/verify.ps1
+
+# 3. Eseguire una scena qualsiasi (una sonda, il banco, il gioco)
+./Godot_v4.7.2-stable_win64.exe --path . --resolution 640x360 res://tests/<sonda>.tscn
+```
+
+### CIO' CHE SI VEDE SI GUARDA, NON SI STIMA
+
+È una regola di Federico, e vale più di ogni criterio scritto: **nessuna affermazione
+su come qualcosa appare è accettabile se nessuno l'ha vista.** Non «la descrizione ci
+sta in sei righe», non «la nebbia è tarata», non «l'oggetto è raggiungibile». Si
+guarda, e si guarda con Godot che gira.
+
+`--headless` NON renderizza (usa il rasterizzatore fittizio): per uno scatto serve una
+finestra vera. Il pattern è una **sonda usa-e-getta** in `tests/`, eseguita e poi
+cancellata:
+
+```gdscript
+extends Node
+func _ready() -> void:
+    DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("user://shots"))
+    # ... colloca il giocatore, o istanzia il Control in un SubViewport 256x192 ...
+    await RenderingServer.frame_post_draw
+    await RenderingServer.frame_post_draw          # due, non uno
+    get_viewport().get_texture().get_image().save_png("user://shots/nome.png")
+    get_tree().quit()
+```
+
+Gli scatti finiscono in
+`%APPDATA%/Godot/app_userdata/Astrochill/shots/`.
+
+**E si misura, quando si può.** Per «l'oggetto è raggiungibile» un colpo d'occhio da
+una posizione non basta: si campiona una griglia di posizioni e si stampa una mappa.
+È così che si è scoperto che il primo letto non era raggiungibile da NESSUN punto
+della stanza — cosa che nessuna lettura del codice avrebbe rivelato.
+
+### Ripulire sempre
+
+`tests/` deve contenere **solo** `test_bench.gd/.tscn/.uid`. Ogni sonda si cancella
+quando ha risposto, e con lei i `.uid` che Godot le ha generato. Vanno rimossi anche i
+salvataggi di prova (`user://saves/`) e l'override di taratura
+(`user://tuning_override.cfg`), che altrimenti sporcano la partita di chi gioca dopo.
+
+### Accelerare per arrivare in fondo a una notte
+
+La notte dura 540 minuti di gioco a 0,60 al secondo = **15 minuti reali**. Per una prova
+end-to-end si scrive `%APPDATA%/Godot/app_userdata/Astrochill/tuning_override.cfg`:
+
+```ini
+[night]
+game_min_per_sec=60.0
+```
+
+e la notte passa in nove secondi. **Da cancellare dopo.** In gioco esistono `F1`-`F4`
+(1x/2x/5x/10x), ma sopra ×5 la fisica satura a ×8 e le misure non sono più confrontabili.
+
+---
+
 ## Critical Implementation Rules
 
 ### La regola numero uno

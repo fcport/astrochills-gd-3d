@@ -29,6 +29,7 @@ const WANDERING_PATH := "res://phases/polar/sources/wandering_drift.tres"
 const CATALOG_PATH := "res://phases/targeting/sources/honest_catalog.tres"
 const SEQUENCE_PATH := "res://phases/imaging/sources/honest_sequence.tres"
 const ROSTER_PATH := "res://data/clients/roster.tres"
+const ITEM_CATALOG_PATH := "res://data/catalog/catalog.tres"
 ## La costante dell'orologio vero, non una copia: il banco confronta la propria
 ## aritmetica con quella del gioco, e per farlo deve leggere la stessa costante.
 const CLOCK := preload("res://night/night_clock.gd")
@@ -81,6 +82,14 @@ func _ready() -> void:
 	_check_commission()
 	print("")
 	_check_sale()
+	print("")
+	_check_item_catalog()
+	print("")
+	_check_owned_items()
+	print("")
+	_check_spend()
+	print("")
+	_check_can_afford()
 	print("")
 	print("=== fine ===")
 	get_tree().quit()
@@ -701,6 +710,196 @@ func _report_sale(p: PhotoPayout, base: int, mult: float, fulfill: bool, expecte
 	var got := p.sale_lire(base, mult, fulfill)
 	var note := "" if got == expected else "   <-- ATTESO: %d" % expected
 	print("   %-42s lire = %d%s" % [label, got, note])
+
+
+## Il filtro del catalogo (3.2): per categoria, SOLO gli implementati.
+##
+## SI CARICA IL CATALOGO VERO (`_load_source`), non un array a mano: è il `.tres` che il
+## terminale legge davvero. moka e lampadina sono implementate; stufetta e
+## lubrificare_cupola no — sono nel file apposta per provare che il filtro fa qualcosa.
+## Se il filtro fosse rotto e mostrasse tutto, questo check lo stamperebbe.
+func _check_item_catalog() -> void:
+	print("-- ItemCatalog.for_category(): solo gli implementati per categoria (3.2)")
+	var catalog := _load_source(ITEM_CATALOG_PATH) as ItemCatalog
+	if catalog == null:
+		return
+	print("   dal .tres: %d articoli totali" % catalog.items.size())
+
+	# PERSONAL: implementati = solo moka. stufetta è personal ma non implementata.
+	_report_category(catalog, &"personal", PackedStringArray(["moka"]),
+		"personal implementati")
+	# FACILITIES: implementati = solo lampadina. lubrificare_cupola è facilities, no.
+	_report_category(catalog, &"facilities", PackedStringArray(["lampadina"]),
+		"facilities implementati")
+
+	# Il filtro spento (only_implemented = false) DEVE dare di più: è la prova che il
+	# filtro non è un no-op. personal senza filtro = moka + stufetta.
+	var all_personal := catalog.for_category(&"personal", false)
+	var impl_personal := catalog.for_category(&"personal", true)
+	var filters := all_personal.size() > impl_personal.size()
+	var fnote := "" if filters else "   <-- ATTESO: il filtro deve escludere i non implementati"
+	print("   %-40s personal: tutti %d, implementati %d%s" % [
+		"il filtro esclude davvero", all_personal.size(), impl_personal.size(), fnote])
+
+	# Il prezzo della lampadina è 2000 lire (economia §6): dato nel .tres, non nel codice.
+	var bulb := _first_with_id(catalog.for_category(&"facilities", true), &"lampadina")
+	if bulb != null:
+		var pnote := "" if bulb.price == 2000 else "   <-- ATTESO: 2000 (economia §6)"
+		print("   %-40s lampadina price = %d%s" % ["prezzo lampadina dal .tres", bulb.price, pnote])
+		# label EN, blurb IT (NFR10): la label è tutta maiuscole ASCII di software; il
+		# blurb contiene testo — non si asserisce la lingua, si stampa perché si veda.
+		print("   lampadina label EN = \"%s\", blurb IT (primi 40) = \"%s...\"" % [
+			bulb.label, bulb.blurb.substr(0, 40)])
+
+
+func _report_category(
+	catalog: ItemCatalog, cat: StringName, expected_ids: PackedStringArray, label: String
+) -> void:
+	var got := PackedStringArray()
+	for item in catalog.for_category(cat):
+		got.append(String(item.id))
+	var note := "" if _same_set(got, expected_ids) else "   <-- ATTESO: {%s}" % ", ".join(expected_ids)
+	print("   %-40s ids = {%s}%s" % [label, ", ".join(got), note])
+
+
+func _first_with_id(items: Array[ItemData], id: StringName) -> ItemData:
+	for item in items:
+		if item.id == id:
+			return item
+	return null
+
+
+## `PlayerProfile.owns/mark_owned` e il round-trip del possesso sul save (3.2).
+##
+## Il possesso è del GIOCATORE (C1) come il portafoglio: attraversa le notti e il
+## riavvio. Si collauda la logica pura (`owns`/`mark_owned`, idempotenza) e che
+## `owned_items` sopravviva al giro su disco con `SaveManager` — senza SceneTree, come
+## `_check_save_manager`. Il default `[]` non bumpa la versione: un profilo senza il
+## campo torna «niente posseduto».
+func _check_owned_items() -> void:
+	print("-- PlayerProfile.owns/mark_owned + round-trip del possesso (3.2, C1)")
+
+	var p := PlayerProfile.new()
+	print("   il giocatore nasce senza niente: owns(moka) = %s" % p.owns(&"moka"))
+	if p.owns(&"moka"):
+		print("   <-- ATTESO: un profilo nuovo non possiede niente")
+
+	p.mark_owned(&"moka")
+	print("   dopo mark_owned(moka): owns(moka) = %s, owns(lampadina) = %s" % [
+		p.owns(&"moka"), p.owns(&"lampadina")])
+	if not p.owns(&"moka") or p.owns(&"lampadina"):
+		print("   <-- ATTESO: possiede la moka, non la lampadina")
+
+	# Idempotenza: comprare due volte non duplica.
+	p.mark_owned(&"moka")
+	var dup_note := "" if p.owned_items.size() == 1 else "   <-- ATTESO: mark_owned è idempotente"
+	print("   mark_owned(moka) due volte: owned_items = %s%s" % [p.owned_items, dup_note])
+
+	# Round-trip su disco: il possesso sopravvive al save/load, come il portafoglio.
+	var bench_dir := "user://saves/_bench_items"
+	var path := "%s/profile.tres" % bench_dir
+	DirAccess.make_dir_recursive_absolute(bench_dir)
+	var saves := SaveManager.new()
+	p.mark_owned(&"lampadina")
+	p.wallet_lire = 3000
+	saves.save_profile(p, path)
+	var back := saves.load_profile(path)
+	var round_ok := back.owns(&"moka") and back.owns(&"lampadina") and back.wallet_lire == 3000
+	print("   round-trip: owns(moka)=%s owns(lampadina)=%s wallet=%d" % [
+		back.owns(&"moka"), back.owns(&"lampadina"), back.wallet_lire])
+	if not round_ok:
+		print("   <-- ATTESO: possesso e portafoglio sopravvivono al .tres")
+
+	# Un profilo SENZA il campo (default []) è «niente posseduto», non un errore.
+	var fresh := PlayerProfile.new()
+	print("   default: owned_items vuoto = %s (assente = niente posseduto)" % fresh.owned_items.is_empty())
+	if not fresh.owned_items.is_empty():
+		print("   <-- ATTESO: il default è [] — nessun bump di versione")
+
+	# Ripulire.
+	var d := DirAccess.open(bench_dir)
+	if d != null:
+		d.list_dir_begin()
+		var name := d.get_next()
+		while not name.is_empty():
+			if not d.current_is_dir():
+				DirAccess.remove_absolute(bench_dir.path_join(name))
+			name = d.get_next()
+		d.list_dir_end()
+	DirAccess.remove_absolute(bench_dir)
+
+
+## L'aritmetica della spesa (3.2): earnings-prima-poi-wallet, e `wallet_now` cala esatto.
+##
+## `Game.split_spend` è PURA e STATICA — si collauda senza toccare l'autoload `Game`,
+## come le sorgenti di verità. Il modello: `wallet_now = wallet_lire + night_earnings`;
+## la spesa deduce prima da `night_earnings` (fino a 0), il resto da `wallet_lire`, così
+## entrambi restano ≥ 0 e la somma cala esatto. Qui si simula il travaso a mano sui due
+## contatori e si verifica che rispecchi lo split.
+func _check_spend() -> void:
+	print("-- Game.split_spend(): earnings-prima-poi-wallet, wallet_now cala esatto (3.2)")
+
+	# (1) Tutto dalla presa della notte: amount <= night_earnings → niente dal wallet.
+	_report_split(500, 2000, 500, 0, "500 su presa 2000: tutto dalla presa")
+	# (2) Presa a zero: la presa cala a 0, il resto dal wallet.
+	_report_split(3000, 2000, 2000, 1000, "3000 su presa 2000: 2000 presa + 1000 wallet")
+	# (3) Nessuna presa (notte non versante): tutto dal wallet.
+	_report_split(1500, 0, 0, 1500, "1500 su presa 0: tutto dal wallet")
+	# (4) Esatto: amount == night_earnings → presa svuotata, wallet intatto.
+	_report_split(2000, 2000, 2000, 0, "2000 su presa 2000: presa svuotata")
+
+	# La somma cala ESATTO: simulando il travaso, wallet_now = wallet_lire + earnings
+	# scende di `amount`. Si prende il caso (2), che tocca entrambi i contatori.
+	var wallet_lire := 5000
+	var night_earnings := 2000
+	var before := wallet_lire + night_earnings
+	var amount := 3000
+	var split := Game.split_spend(amount, night_earnings)
+	night_earnings -= split[0]
+	wallet_lire -= split[1]
+	var after := wallet_lire + night_earnings
+	var exact := (before - after) == amount and night_earnings >= 0 and wallet_lire >= 0
+	print("   wallet_now: prima %d, speso %d, dopo %d (presa %d, wallet %d)" % [
+		before, amount, after, night_earnings, wallet_lire])
+	if not exact:
+		print("   <-- ATTESO: wallet_now cala esatto di %d, entrambi ≥ 0" % amount)
+
+
+func _report_split(amount: int, earnings: int, exp_e: int, exp_w: int, label: String) -> void:
+	var split := Game.split_spend(amount, earnings)
+	var ok := split[0] == exp_e and split[1] == exp_w
+	var note := "" if ok else "   <-- ATTESO: presa %d, wallet %d" % [exp_e, exp_w]
+	print("   %-42s presa %d, wallet %d%s" % [label, split[0], split[1], note])
+
+
+## `Game.can_afford()`: la soglia di spesa È `wallet_now()`, né più né meno (3.2).
+##
+## Si collauda sull'autoload VERO, montando uno stato temporaneo su `Game.run`/
+## `Game.profile` e ripristinandolo subito. NESSUN EFFETTO SU DISCO: `can_afford` è una
+## lettura pura (`wallet_now() >= amount`), non salva niente — a differenza di
+## `spend_lire`, che scrive sui path di save reali e per questo non si esercita qui.
+func _check_can_afford() -> void:
+	print("-- Game.can_afford(): la soglia di spesa = wallet_now (3.2)")
+	var saved_run := Game.run
+	var saved_profile := Game.profile
+	var r := NightRun.new()
+	r.night_earnings = 2000
+	var p := PlayerProfile.new()
+	p.wallet_lire = 500
+	Game.run = r
+	Game.profile = p
+	# wallet_now = wallet_lire 500 + night_earnings 2000 = 2500.
+	_report_afford(2500, true, "esatto: 2500 su 2500")
+	_report_afford(2501, false, "uno in piu': 2501 su 2500")
+	_report_afford(0, true, "zero e' sempre affordabile")
+	Game.run = saved_run
+	Game.profile = saved_profile
+
+
+func _report_afford(amount: int, expected: bool, label: String) -> void:
+	var got := Game.can_afford(amount)
+	var note := "" if got == expected else "   <-- ATTESO: %s" % expected
+	print("   %-42s can_afford(%d) = %s%s" % [label, amount, got, note])
 
 
 ## Piccola comodità: costruisce l'input e campiona in una riga.

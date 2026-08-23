@@ -78,6 +78,12 @@ extends Node
 const NIGHT_SESSION := preload("res://night/night_session.tscn")
 const NIGHT_PLAN_PATH := "res://data/night_plan.tres"
 
+## Il terminale gestionale (3.2). La SCENA si preload: appartiene al gioco, non a
+## `debug/`, e deve esistere in ogni build. È l'unica cosa di `terminal/` che questo
+## file nomina — il ponte world↔night↔terminal vive qui, l'unico punto che può
+## conoscere entrambe le sponde. `night/` non conosce `terminal/`, e viceversa.
+const TERMINAL := preload("res://terminal/terminal.tscn")
+
 ## Percorsi, NON preload. `const ... preload` risolve al caricamento dello script,
 ## in ogni build: con un preload gli strumenti di debug — e con l'iniettore anche
 ## `wandering_drift.tres` — finirebbero comunque dentro l'export di release, che
@@ -130,6 +136,16 @@ var _player_start: Transform3D
 ## mondo che gli sta intorno.
 var _night: NightSession
 
+## Il terminale gestionale, posseduto da questo ponte. Istanziato una volta e
+## riusato: aprirlo lo mostra sul CRT sopra ciò che `night/` mostrava, chiuderlo
+## ripristina il contenuto della notte. Non è figlio di questo nodo finché non lo si
+## mostra — `show_control()` lo reparenta nel viewport del CRT.
+var _terminal: Control
+
+## Vero mentre il terminale è mostrato sul CRT, sopra il contenuto della notte. È lo
+## stato che il ponte sgancia alla chiusura, all'alba, e all'inizio della notte nuova.
+var _terminal_open := false
+
 
 func _ready() -> void:
 	Log.info("main", "avvio — renderer %s" % RenderingServer.get_video_adapter_api_version())
@@ -152,6 +168,7 @@ func _ready() -> void:
 	# volte — invisibile finché non lo è più.
 	Events.phase_started.connect(func(_k: StringName) -> void: _refresh_affordances())
 	Events.dawn_reached.connect(_on_dawn_reached)
+	_setup_terminal()
 	if OS.is_debug_build():
 		_install_debug_tools()
 	# LA NOTTE COMINCIA PER ULTIMA, a mondo montato: l'orchestratore mostra
@@ -241,6 +258,12 @@ func _begin_night() -> void:
 ## letto si rispegne, e si riaccenderà quando anche questa notte sarà finita.
 func _start_new_night() -> void:
 	_dawn = false
+	# DIFENSIVO: una notte nuova comincia col terminale sganciato. La notte prima può
+	# essere finita con il terminale aperto e l'alba lo ha già sganciato senza
+	# ripristinare (il riepilogo vince); ma se un percorso non previsto lo lasciasse
+	# marcato, il flag mentirebbe alla notte nuova. Non si ripristina niente qui: si
+	# azzera soltanto lo stato, che è ciò che una notte pulita deve trovare.
+	_terminal_open = false
 	Game.start_night()
 	_night.begin()
 	_refresh_affordances()
@@ -301,8 +324,19 @@ func _capture_player_start() -> void:
 
 
 ## L'alba è arrivata: da adesso si può andare a dormire.
+##
+## SE IL TERMINALE È APERTO ALL'ALBA, si sgancia lo stato SENZA ripristinare: `night/`
+## ha già mostrato il riepilogo sul CRT, e il riepilogo vince (I/O matrix). Ripristinare
+## `reshow_current()` qui riporterebbe a schermo il contenuto della notte scavalcando il
+## riepilogo appena montato. Si scarta lo stato «terminale aperto» e basta.
 func _on_dawn_reached() -> void:
 	_dawn = true
+	# Il terminale, se era aperto, si riparcheggia sotto questo nodo senza ripristinare il
+	# contenuto della notte (il riepilogo vince). `night/` all'alba mostra il riepilogo,
+	# che rimuove il terminale dal viewport: riportarlo qui evita di lasciarlo orfano.
+	if _terminal_open:
+		_terminal_open = false
+		_park_terminal()
 	_refresh_affordances()
 
 
@@ -388,6 +422,95 @@ func _on_plan_exhausted() -> void:
 	_refresh_affordances()
 	if _desk != null and _desk.is_seated:
 		_stand_up.call_deferred()
+
+
+## Istanzia il terminale e ne ascolta l'uscita. Una volta sola, all'avvio: il terminale
+## si riusa a ogni apertura invece di rifarsi, come l'orchestratore della notte.
+##
+## LO SI PARCHEGGIA SOTTO QUESTO NODO, spento, invece di lasciarlo orfano. `show_control`
+## lo reparenta nel viewport del CRT quando lo si apre; alla chiusura `_close_terminal`
+## lo riporta qui. Così l'albero lo possiede sempre e lo libera all'uscita: un Control
+## istanziato e mai aggiunto all'albero resterebbe orfano e verrebbe segnalato come
+## risorsa ancora in uso alla chiusura del gioco. Parcheggiato e spento (`DISABLED`,
+## `hide()`) non processa e non si disegna finché non è mostrato.
+func _setup_terminal() -> void:
+	_terminal = TERMINAL.instantiate() as Control
+	if _terminal == null:
+		push_error("[main] terminale non istanziabile")
+		return
+	# `closed` → chiude il terminale e ripristina il contenuto della notte. DIFFERITO
+	# (NFR16): `closed` nasce dentro l'`_unhandled_input` del terminale, e `_close_terminal`
+	# lo riparenta fuori dal viewport del CRT — riparentare il nodo dentro la propria
+	# callback d'input è ciò che tutta la notte evita con `CONNECT_DEFERRED`. Differendo,
+	# il terminale finisce il suo input in pace e il ripristino gira al tick successivo.
+	_terminal.closed.connect(_close_terminal, CONNECT_DEFERRED)
+	_terminal.hide()
+	_terminal.process_mode = Node.PROCESS_MODE_DISABLED
+	add_child(_terminal)
+
+
+## Apre o chiude il terminale, gated sull'attesa. È il tasto `terminal_open`.
+##
+## GATED SU `is_waiting()`: mai sovrapposto a una fase interattiva o alla
+## vendita/rivelazione — aprirlo lì e poi ripristinare rischierebbe di disturbare uno
+## stato vivo. Il menu post-foto NON conta come stato vivo da proteggere: è l'attesa, e
+## il terminale è un secondo programma aperto sopra di esso.
+func _toggle_terminal() -> void:
+	if _terminal_open:
+		_close_terminal()
+		return
+	if _terminal == null or _crt == null or _night == null:
+		return
+	if not _night.is_waiting():
+		# Non si è in attesa (una fase interattiva è a schermo): il tasto non apre nulla.
+		return
+	# Riacceso all'apertura: parcheggiato era `DISABLED` e nascosto. `show_control` lo
+	# reparenta nel viewport del CRT; da seduti lo schermo è già vivo e con l'input
+	# aperto, quindi l'`_unhandled_input` del terminale riceve gli eventi inoltrati.
+	_terminal.show()
+	_terminal.process_mode = Node.PROCESS_MODE_INHERIT
+	_crt.show_control(_terminal)
+	_terminal.arm()
+	_terminal_open = true
+
+
+## Chiude il terminale e chiede a `night/` di ri-mostrare il proprio contenuto (il menu
+## post-foto, o niente). Idempotente: chiamarlo a terminale già chiuso non fa nulla.
+##
+## Lo chiama `closed()` del terminale (tasto back/quit), il secondo `terminal_open`, e
+## `interact` prima di alzarsi. NON lo chiama l'alba, che sgancia lo stato senza
+## ripristinare (il riepilogo vince).
+func _close_terminal() -> void:
+	if not _terminal_open:
+		return
+	_terminal_open = false
+	# `reshow_current()` chiama `show_control()` del contenuto della notte, che RIMUOVE il
+	# terminale dal viewport senza liberarlo (regola di proprietà del CRT). Va riportato
+	# sotto questo nodo, spento, o resterebbe orfano — vivo ma fuori dall'albero, segnalato
+	# alla chiusura del gioco. Si riparcheggia PRIMA di `reshow_current`, così il viewport
+	# è già libero quando la notte mostra il proprio Control.
+	_park_terminal()
+	if _night != null:
+		_night.reshow_current()
+
+
+## Riporta il terminale sotto questo nodo, spento e nascosto, da dovunque si trovi:
+## mostrato nel viewport del CRT (parent = il viewport) o già orfano (parent = null,
+## quando il riepilogo dell'alba l'ha già rimosso dal viewport). `reparent` vuole un
+## parent; se non c'è, `add_child`. Così il terminale è sempre posseduto dall'albero e
+## liberato all'uscita, e non compare mai come risorsa ancora in uso alla chiusura.
+func _park_terminal() -> void:
+	if _terminal == null:
+		return
+	var parent := _terminal.get_parent()
+	if parent == self:
+		pass
+	elif parent != null:
+		_terminal.reparent(self)
+	else:
+		add_child(_terminal)
+	_terminal.hide()
+	_terminal.process_mode = Node.PROCESS_MODE_DISABLED
 
 
 ## Monta la postazione. `DeskCamera` non ha una scena e nessuno la istanziava: è
@@ -520,7 +643,24 @@ func _input(event: InputEvent) -> void:
 func _shortcut_input(event: InputEvent) -> void:
 	if _desk == null or not _desk.is_seated:
 		return
+
+	# IL TERMINALE SI APRE E SI CHIUDE QUI, prima di `_unhandled_input`, per la stessa
+	# ragione per cui `interact` si legge qui: `_shortcut_input` gira dopo `_input` e
+	# PRIMA di ogni `_unhandled_input`, e nessun Control lo implementa. Intercettando
+	# `terminal_open` qui il tasto non raggiunge il Control sotto (il menu post-foto),
+	# che altrimenti lo vedrebbe come input non gestito. Correzione preventiva sul
+	# modello del commento di `_stand_up`.
+	if event.is_action_pressed(&"terminal_open"):
+		_toggle_terminal()
+		get_viewport().set_input_as_handled()
+		return
+
 	if event.is_action_pressed(&"interact"):
+		# `interact` (E) alza SEMPRE; se il terminale è aperto, prima lo si chiude e si
+		# ripristina il contenuto della notte, così ci si rialza da uno stato coerente e
+		# non con un terminale ancora marcato aperto sotto lo schermo fermo.
+		if _terminal_open:
+			_close_terminal()
 		_stand_up()
 		get_viewport().set_input_as_handled()
 

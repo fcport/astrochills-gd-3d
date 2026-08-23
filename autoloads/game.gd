@@ -59,6 +59,55 @@ func wallet_now() -> int:
 	return profile.wallet_lire + earned
 
 
+## Se il giocatore può permettersi una spesa. `wallet_now()` è la sola somma —
+## nessuna schermata la ricalcola — e la spesa la CONFRONTA, non la rifà.
+func can_afford(amount: int) -> bool:
+	return wallet_now() >= amount
+
+
+## Come si divide una spesa fra la presa della notte e il portafoglio del giocatore.
+## PURA e STATICA: nessuno stato, nessun autoload — così il banco può collaudarla senza
+## uno SceneTree. Torna `[from_earnings, from_wallet]`.
+##
+## PERCHÉ EARNINGS-PRIMA-POI-WALLET. `wallet_now() = wallet_lire + night_earnings`, e
+## il travaso della presa sul portafoglio avviene solo in `end_night()` (C1). Dedurre
+## tutto da `wallet_lire` lo manderebbe negativo quando la presa di stanotte non è
+## ancora versata. Si toglie prima da `night_earnings` (fino a 0), il resto da
+## `wallet_lire`: entrambi restano ≥ 0, e `wallet_now()` cala esatto. Conseguenza
+## voluta: `NIGHT TAKE` cala man mano che spendi — è la presa che ti resta.
+##
+## Il chiamante garantisce `amount <= wallet_now()` (via `can_afford`).
+static func split_spend(amount: int, night_earnings: int) -> Array[int]:
+	var from_earnings := mini(amount, night_earnings)
+	var from_wallet := amount - from_earnings
+	return [from_earnings, from_wallet]
+
+
+## Scala `amount` lire e SALVA. Torna `true` se speso, `false` se il giocatore non
+## se lo poteva permettere (nel qual caso non tocca niente).
+##
+## MARCARE IL POSSESSO È DEL CHIAMANTE: qui si muovono solo le lire. Il terminale
+## chiama `spend_lire`, poi `profile.mark_owned(id)`, poi emette `Events.item_purchased`
+## — questa funzione non sa cosa si stia comprando, come `wallet_now()` non lo sa.
+##
+## SI SALVANO ENTRAMBI, con lo stesso `_saves` di `end_night()`: la spesa attraversa
+## un riavvio come il guadagno. Se un save fallisce, `SaveManager` lo registra su
+## canale 1 e ritorna `false`; la spesa in memoria è già avvenuta e non si annulla —
+## la stessa scelta di `end_night()`.
+func spend_lire(amount: int) -> bool:
+	if not can_afford(amount):
+		return false
+	var earned := run.night_earnings if run != null else 0
+	var split := split_spend(amount, earned)
+	if run != null:
+		run.night_earnings -= split[0]
+	profile.wallet_lire -= split[1]
+	if run != null:
+		_saves.save_run(run)
+	_saves.save_profile(profile)
+	return true
+
+
 ## Chiude la notte e VERSA al giocatore quanto ha guadagnato.
 ##
 ## È l'unico punto in cui `profile.wallet_lire` cresce: chi vende accredita su

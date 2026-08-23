@@ -266,6 +266,38 @@ func has_phase() -> bool:
 	return _phase != null or _summary != null or _stacking != null or _sale != null or _menu != null
 
 
+## Se la notte è nella finestra d'ATTESA: nessuna fase, nessuna rivelazione, nessuna
+## vendita, nessun riepilogo interattivo a schermo. Il menu post-foto può essere vivo —
+## è l'attesa, non un'interruzione — quindi NON entra in questa condizione: si aspetta
+## col menu vivo, e sopra il menu si può aprire un secondo programma del PC.
+##
+## Lo legge `main.gd` per decidere quando un tasto dedicato può aprire quel secondo
+## programma sul CRT. Questo file NON sa cosa sia: consegna solo il gancio «adesso lo
+## schermo non ospita una fase interattiva o la vendita/rivelazione». Il gate esclude
+## proprio gli stati vivi dove sovrapporsi rischierebbe di disturbarli.
+func is_waiting() -> bool:
+	return _phase == null and _stacking == null and _sale == null and _summary == null
+
+
+## Ri-mostra sul CRT ciò che la notte sta mostrando ADESSO — il menu post-foto se c'è,
+## altrimenti niente — e ri-asserisce il gating dell'input. Lo chiama `main.gd` quando
+## un Control mostrato SOPRA il contenuto della notte si chiude, per riportare a schermo
+## quel contenuto senza che questo file conosca chi c'era sopra.
+##
+## NON RICOSTRUISCE NIENTE: `show_control()` del Control già vivo (un `reparent` nel
+## viewport), e `set_player_present(_player_present)` per rimettere il gating come una
+## fase appena rimontata. Se la notte non ha contenuto (schermo vuoto in attesa), svuota
+## il vetro — è ciò che `night/` mostrava, cioè niente.
+func reshow_current() -> void:
+	if _crt == null:
+		return
+	if _menu != null and is_instance_valid(_menu):
+		_crt.show_control(_menu)
+		set_player_present(_player_present)
+	else:
+		_crt.show_control(null)
+
+
 func clock() -> NightClock:
 	return _clock
 

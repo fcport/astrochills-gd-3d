@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/catalog/item_data.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"moka"
+category = &"personal"
+label = "MOKA POT"
+price = 8000
+blurb = "Una moka da tre tazze, alluminio annerito dall'uso. La metti sul fuoco e aspetti che borbotti: l'attesa piccola dentro l'attesa grande. Non serve a fotografare meglio — serve a farti compagnia mentre la posa gira."
+implemented = true

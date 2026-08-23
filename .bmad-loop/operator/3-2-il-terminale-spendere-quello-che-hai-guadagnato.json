@@ -1,0 +1,14 @@
+{
+  "actions": [
+    "Aprire il progetto in Godot 4.7.2 (editor) e confermare che terminal/, data/catalog/ e le modifiche a main.gd/night_session.gd/game.gd/player_profile.gd/events.gd/project.godot importano senza errori di parse/risorsa in console: nessun binario Godot era disponibile nell'ambiente di build, quindi tutto \u00e8 validato solo staticamente.",
+    "Eseguire il banco (tests/test_bench.tscn, es. `godot --headless --path . tests/test_bench.tscn`) e verificare che nessuna riga stampi \u00ab<-- ATTESO\u00bb: copre filtro catalogo, possesso+round-trip su disco, split della spesa e can_afford (logica pura). Il banco non ha potuto girare qui.",
+    "Camminare il gioco durante l'attesa (menu post-foto vivo): sedersi al monitor, premere T per aprire il terminale, verificare cornice, header WALLET/NIGHT TAKE coerenti con le lire, navigazione \u2191\u2193/ENTER/ESC col beep, descrizione IT con TAB, e leggibilit\u00e0 a 256\u00d7192 da seduti (AC percettivi non verificabili headless).",
+    "Comprare la lampadina con fondi sufficienti: il portafoglio cala, la voce passa a OWNED, ed \u00e8 emesso Events.item_purchased. Dormire e riaprire il terminale: possesso e saldo devono sopravvivere al save. Provare senza fondi: messaggio EN \u00abNOT ENOUGH LIRE\u00bb, nessuna spesa, nessun modale.",
+    "Chiudere il terminale (ESC/T/E): il CRT torna al menu post-foto e SHOOT AGAIN funziona ancora. Verificare che il terminale NON si apra mentre una fase interattiva o la vendita/rivelazione \u00e8 a schermo (gate is_waiting()).",
+    "Rifinire quando arriva il pack asset: la cornice \u00e8 un rettangolo di contorno (non caratteri di box-drawing veri) e il beep \u00e8 un'onda quadra sintetizzata in codice (nessun asset audio) \u2014 entrambi provvisori, da sostituire senza toccare la logica."
+  ],
+  "parked_at": "2026-08-23",
+  "run_id": "20260823-220300-5f97",
+  "spec_file": "_bmad-output/implementation-artifacts/spec-3-2-il-terminale-spendere-quello-che-hai-guadagnato.md",
+  "story_key": "3-2-il-terminale-spendere-quello-che-hai-guadagnato"
+}

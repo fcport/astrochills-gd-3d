@@ -521,3 +521,11 @@ source_spec: `spec-3-1-losservatorio-si-allarga-una-scena-sola-dentro-e-fuori.md
 severity: low
 reason: The dev session recorded deferred findings the orchestrator could not parse, so they were NOT filed as entries: item 1: not a mapping (got str). Read `spec-3-1-losservatorio-si-allarga-una-scena-sola-dentro-e-fuori.md`'s frontmatter and re-file them by hand.
 status: open
+
+### DW-14: Game.spend_lire (mutazione dei due contatori + save) non è esercitato end-to-end dal banco: solo lo split puro (split_spend) e can_afford lo sono.
+origin: spec-deferred ef7289bc0c27
+location: autoloads/game.gd (spend_lire) ; tests/test_bench.gd
+source_spec: `spec-3-2-il-terminale-spendere-quello-che-hai-guadagnato.md`
+severity: low
+reason: tests/test_bench.gd copre split_spend (4 casi + decremento esatto) e can_afford (soglia), ma non chiama Game.spend_lire su un run/profile reali per verificare che applichi lo split ai due contatori e salvi. Un test end-to-end scriverebbe sui path di save reali (user://saves/profile.tres|night.tres), che spend_lire usa senza override, clobberando il save del giocatore durante un run del banco. Serve o un override dei path in spend_lire o un backup/restore del profilo su disco.
+status: open

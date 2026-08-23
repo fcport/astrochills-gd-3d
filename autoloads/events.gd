@@ -33,3 +33,14 @@ signal photo_sold(photo_id: StringName, lire: int)
 ## calcolabile e l'esperimento perde il suo dato più importante.
 signal wait_activity_started(what: StringName)
 signal wait_activity_ended(what: StringName)
+
+## Un articolo è stato comprato al terminale. È il SEAM verso 3.3/3.4: il terminale
+## scala il portafoglio, marca il possesso e salva, poi ANNUNCIA qui — senza sapere
+## chi ascolta. La moka in cucina (3.3) e la lampadina (3.4) nasceranno ascoltando
+## questo segnale e leggendo `Game.profile.owns(id)`. 3.2 consegna il contratto, non
+## il suo consumatore: nessuna moka finta, nessun effetto simulato.
+##
+## Sul bus e non diretto perché gli ascoltatori saranno più di uno (moka, lampadina,
+## e domani la telemetria degli acquisti) e non si conoscono fra loro. `id` tipizzato
+## e al passato, come ogni altro segnale qui.
+signal item_purchased(id: StringName)

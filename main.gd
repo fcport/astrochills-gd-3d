@@ -84,6 +84,11 @@ const NIGHT_PLAN_PATH := "res://data/night_plan.tres"
 ## è esattamente ciò che FR37 vieta. La guardia `OS.is_debug_build()` ferma
 ## l'istanziazione, non il caricamento. Con `load()` dietro la guardia, in
 ## release questi file non vengono nemmeno aperti.
+## Quanto dura mezza dissolvenza. Mezzo secondo per lato: abbastanza da leggersi
+## come un salto di tempo, poco abbastanza da non far aspettare chi ha appena
+## deciso di andare a dormire.
+const FADE_SEC := 0.5
+
 const DEBUG_OVERLAY_PATH := "res://debug/debug_overlay.tscn"
 const RENDER_TUNING_PATH := "res://debug/render_tuning.gd"
 const LIE_INJECTOR_PATH := "res://debug/lie_injector.gd"
@@ -97,6 +102,29 @@ const TIME_CONTROL_PATH := "res://debug/time_control.gd"
 var _crt: CrtScreen
 var _desk: DeskCamera
 var _monitor: CrtMonitor
+
+## Il letto. È l'unico modo di far cominciare la notte dopo, e vale per lui la
+## stessa divisione del monitor: `world/` lo possiede, questo file decide quando
+## merita un prompt.
+var _bed: Bed
+
+## Il velo nero delle dissolvenze. Sta sopra il mondo ma SOTTO gli strumenti di
+## debug, che entrano in albero dopo: chi sviluppa deve poter leggere l'overlay
+## anche a schermo nero.
+@onready var _fade: ColorRect = %Fade
+
+## Vero dall'alba fino all'inizio della notte successiva. È la sola condizione che
+## accende il letto: dormire con una posa in corso chiuderebbe la notte a metà, e
+## nessuno ha ancora deciso cosa debba succedere in quel caso.
+var _dawn := false
+
+## Vero mentre la dissolvenza sta girando. Senza, una seconda `E` sul letto
+## partirebbe a metà transizione e smonterebbe una notte già smontata.
+var _sleeping := false
+
+## Dove il giocatore stava all'avvio, catturato dalla scena in `_ready()`. È il
+## posto in cui lo rimette il risveglio.
+var _player_start: Transform3D
 
 ## Chi decide cosa si fa stanotte. Vive sotto questo nodo, ma non conosce il
 ## mondo che gli sta intorno.
@@ -112,6 +140,18 @@ func _ready() -> void:
 	# non parte con un tasto che risulta premuto da chissà quando.
 	_set_world_active(true)
 	_connect_monitor()
+	_connect_bed()
+	# LE POSIZIONI DI PARTENZA SI CATTURANO ORA, prima che qualcuno cammini: la
+	# notte successiva rimette il giocatore dove la prima l'aveva trovato, e
+	# «dove» è ciò che la scena dichiara, non una costante ricopiata qui.
+	_capture_player_start()
+	# GLI ASCOLTI DI `Events` STANNO QUI E NON IN `_begin_night()`, e la differenza
+	# si vede solo alla seconda notte: `_begin_night()` viene richiamata a ogni
+	# risveglio, e una `connect()` là dentro accumulerebbe un ascoltatore per
+	# notte. Alla quinta, ogni `phase_started` aggiornerebbe il monitor cinque
+	# volte — invisibile finché non lo è più.
+	Events.phase_started.connect(func(_k: StringName) -> void: _refresh_affordances())
+	Events.dawn_reached.connect(_on_dawn_reached)
 	if OS.is_debug_build():
 		_install_debug_tools()
 	# LA NOTTE COMINCIA PER ULTIMA, a mondo montato: l'orchestratore mostra
@@ -165,12 +205,12 @@ func _connect_monitor() -> void:
 ## qui, e il mondo resta coerente con essa.
 func _begin_night() -> void:
 	if _crt == null:
-		_refresh_monitor()
+		_refresh_affordances()
 		return  # `_connect_monitor()` ha già detto perché
 	var plan := load(NIGHT_PLAN_PATH) as NightPlan
 	if plan == null:
 		push_error("[main] piano della notte assente o illeggibile: %s" % NIGHT_PLAN_PATH)
-		_refresh_monitor()
+		_refresh_affordances()
 		return
 	# SI CONFIGURA PRIMA DI MONTARE. Un orchestratore che non sa su quale schermo
 	# lavora non è mezzo montato: è un oggetto che farebbe rispondere `true` a
@@ -179,20 +219,34 @@ func _begin_night() -> void:
 	night.plan = plan
 	if not night.configure(_crt):
 		night.queue_free()
-		_refresh_monitor()
+		_refresh_affordances()
 		return  # l'orchestratore ha già detto perché
 	_night = night
 	add_child(_night)
 	_night.plan_exhausted.connect(_on_plan_exhausted)
-	# Il monitor si accende e si spegne con il lavoro: vedi `_refresh_monitor()`.
-	Events.phase_started.connect(func(_k: StringName) -> void: _refresh_monitor())
-	Events.dawn_reached.connect(_refresh_monitor)
+	_start_new_night()
+
+
+## Fa cominciare una notte sull'orchestratore già montato.
+##
+## L'ORCHESTRATORE SI RIUSA, NON SI RIFÀ, e non è un'economia: `begin()` è scritta
+## per essere richiamata — ripulisce il contesto, il riepilogo, la rivelazione, la
+## vendita e il menu della notte prima, e rifà ripartire l'orologio. Costruirne uno
+## nuovo a ogni risveglio lascerebbe il vecchio a possedere dei `Control` che il
+## CRT ha reparentato: non sono più suoi figli, `queue_free()` non se li porta via,
+## e resterebbero appesi al viewport per il resto della partita. Misurato con una
+## sonda, prima di scegliere questa via.
+##
+## E `_dawn` si azzera QUI: l'alba della notte precedente non vale per questa. Il
+## letto si rispegne, e si riaccenderà quando anche questa notte sarà finita.
+func _start_new_night() -> void:
+	_dawn = false
 	Game.start_night()
 	_night.begin()
-	_refresh_monitor()
+	_refresh_affordances()
 
 
-## Il monitor promette solo ciò che può mantenere.
+## Il monitor e il letto promettono solo ciò che possono mantenere.
 ##
 ## `Interactable.enabled` è già nel contratto degli interagibili, e `can_interact()`
 ## lo legge: da spento il monitor non mostra il prompt e non risponde a `E`.
@@ -203,10 +257,121 @@ func _begin_night() -> void:
 ##
 ## Lo decide il punto d'ingresso perché è l'unico che vede entrambe le sponde:
 ## `world/` non sa cosa sia una fase, e `night/` non sa cosa sia un monitor.
-func _refresh_monitor() -> void:
-	if _monitor == null:
+func _refresh_affordances() -> void:
+	if _monitor != null:
+		_monitor.enabled = _night != null and _night.has_phase()
+	# IL LETTO SEGUE LA REGOLA OPPOSTA AL MONITOR, ed è la simmetria che rende la
+	# stanza leggibile senza spiegazioni: quando c'è lavoro si può usare il
+	# monitor, quando la notte è finita si può andare a dormire. I due non
+	# invitano mai insieme.
+	#
+	# MA ESISTE UNA FINESTRA IN CUI NESSUNO DEI DUE INVITA, e va detta invece che
+	# scoperta: fra il piano esaurito e l'alba il monitor è spento e il letto non
+	# è ancora acceso. Non è un buco da tappare — è l'attesa, cioè la cosa che
+	# l'epica 3 esiste per riempire. Accendere il letto lì dentro darebbe al
+	# giocatore un modo di saltarla, e l'MVP smetterebbe di misurare ciò per cui
+	# esiste.
+	if _bed != null:
+		_bed.enabled = _dawn and not _sleeping
+
+
+## Il letto si trova per GRUPPO, come il monitor e per la stessa ragione.
+##
+## La sua assenza è canale 1: senza letto la notte 2 è irraggiungibile e il
+## giocatore girerebbe per la stanza senza capire perché non succede niente.
+func _connect_bed() -> void:
+	var bed := Bed.find_in(get_tree())
+	if bed == null:
+		push_error("[main] nessun Bed nel gruppo '%s'" % Bed.GROUP)
 		return
-	_monitor.enabled = _night != null and _night.has_phase()
+	bed.interacted.connect(_on_bed_interacted)
+	_bed = bed
+
+
+## Dove il giocatore comincia, letto dalla SCENA e non da una costante.
+##
+## Serve al risveglio: la notte nuova rimette il corpo dove la scena lo aveva
+## messo, e chi sposta il giocatore nell'editor sposta anche il risveglio senza
+## dover sapere che questa funzione esiste.
+func _capture_player_start() -> void:
+	var player := Player.find_in(get_tree())
+	if player == null:
+		return  # `_set_world_active()` ha già detto perché
+	_player_start = player.global_transform
+
+
+## L'alba è arrivata: da adesso si può andare a dormire.
+func _on_dawn_reached() -> void:
+	_dawn = true
+	_refresh_affordances()
+
+
+## `E` sul letto: si dorme, e domani è un'altra notte.
+func _on_bed_interacted(_by: Node3D) -> void:
+	_sleep()
+
+
+## LA NOTTE NUOVA NON RICARICA LA SCENA, e la differenza conta.
+##
+## Ricaricare sarebbe stato più corto da scrivere, e avrebbe buttato via anche il
+## mondo: la stanza si ricostruirebbe da capo, gli strumenti di debug si
+## rimonterebbero, e la taratura PS1 trovata con Shift+F1..F7 tornerebbe ai valori
+## del file a ogni risveglio. Qui non muore niente: l'orchestratore ricomincia, il
+## giocatore torna al suo posto, e il mondo resta quello di prima. L'osservatorio
+## non va a dormire.
+##
+## `await` dentro una risposta a un segnale è legittimo: la funzione ritorna al
+## primo `await` e riprende da sé. `_sleeping` protegge la finestra.
+func _sleep() -> void:
+	if _sleeping or _night == null:
+		return
+	_sleeping = true
+	# Il letto si spegne PRIMA della dissolvenza, non dopo: fra l'inizio del nero
+	# e la fine della transizione passa mezzo secondo di gioco vivo, e una seconda
+	# `E` lì dentro entrerebbe in una notte che si sta già smontando.
+	_refresh_affordances()
+	_set_world_active(false)
+	await _fade_to(1.0)
+	# A SCHERMO NERO, e in quest'ordine: il giocatore torna al suo posto prima che
+	# la notte nuova cominci, così il primo fotogramma dopo la dissolvenza è già
+	# quello giusto e non c'è un frame in cui si vede la stanza dal punto in cui ci
+	# si era addormentati.
+	_place_player_at_start()
+	_start_new_night()
+	await _fade_to(0.0)
+	_sleeping = false
+	_set_world_active(true)
+	_refresh_affordances()
+
+
+## Rimette il giocatore dove la scena lo aveva messo, sguardo compreso.
+##
+## LO SGUARDO ANCHE, e non è pignoleria: chi si addormenta guardando il soffitto
+## si sveglierebbe guardando il soffitto, e il primo fotogramma della notte nuova
+## sarebbe un intonaco. Il beccheggio vive sulla camera (mai sul corpo — vedi
+## l'intestazione di `player.gd`), quindi va azzerato lì.
+func _place_player_at_start() -> void:
+	var player := Player.find_in(get_tree())
+	if player == null:
+		return
+	player.velocity = Vector3.ZERO
+	player.global_transform = _player_start
+	var cam := player.camera()
+	if cam != null:
+		cam.rotation.x = 0.0
+
+
+## Porta il velo nero all'opacità voluta e aspetta che ci sia arrivato.
+##
+## Il Tween nasce da questo nodo — `create_tween()` su un orfano non riceve mai un
+## tick, e l'`await` non tornerebbe più: il gioco resterebbe a metà dissolvenza,
+## senza controllo. È la stessa trappola documentata su `_setup_desk()`.
+func _fade_to(alpha: float) -> void:
+	if _fade == null:
+		return
+	var t := create_tween()
+	t.tween_property(_fade, "color:a", alpha, FADE_SEC)
+	await t.finished
 
 
 ## Non c'è più niente da fare al monitor: chi è seduto si rialza.
@@ -220,7 +385,7 @@ func _refresh_monitor() -> void:
 ## si sta smontando, e una transizione non si avvia dentro il teardown di
 ## un'altra.
 func _on_plan_exhausted() -> void:
-	_refresh_monitor()
+	_refresh_affordances()
 	if _desk != null and _desk.is_seated:
 		_stand_up.call_deferred()
 

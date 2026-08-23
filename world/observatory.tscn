@@ -17,12 +17,13 @@
 ; Seat a -1,419, mentre la scrivania finisce a -1,75. La capsula del giocatore ha
 ; raggio 0,3, quindi da seduto il suo bordo arriva a -1,719 — 3 cm di gioco. Con
 ; il monitor più indietro il corpo compenetrerebbe la scrivania.
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="PackedScene" path="res://world/rooms/computer_room.tscn" id="1_room"]
 [ext_resource type="PackedScene" path="res://world/interactables/crt_monitor.tscn" id="2_monitor"]
 [ext_resource type="PackedScene" path="res://world/player/player.tscn" id="3_player"]
 [ext_resource type="PackedScene" path="res://world/sequence_chime.tscn" id="4_chime"]
+[ext_resource type="PackedScene" path="res://world/interactables/bed.tscn" id="5_bed"]
 
 [sub_resource type="Environment" id="Environment_obs"]
 background_mode = 1
@@ -51,3 +52,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0.8)
 ; e' un fatto del mondo, e la storia 3.1 (cucina/cupola) non deve spostarlo.
 [node name="SequenceChime" parent="." instance=ExtResource("4_chime")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, -2.05)
+
+; Il letto contro la parete sinistra, a un paio di passi dalla scrivania: all'alba
+; si legge il riepilogo sul monitor e ci si gira dentro. La parete interna sta a
+; x = -2,0 e il letto è largo 0,92, quindi appoggiato costa 0,46 di stanza — resta
+; oltre un metro di passaggio prima della sedia, che sta sull'asse.
+[node name="Bed" parent="." instance=ExtResource("5_bed")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.54, 0, -0.5)

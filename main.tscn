@@ -23,3 +23,12 @@ render_target_update_mode = 4
 
 [node name="Observatory" parent="WorldViewport/SubViewport" instance=ExtResource("2_observatory")]
 unique_name_in_owner = true
+
+[node name="Fade" type="ColorRect" parent="."]
+unique_name_in_owner = true
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)

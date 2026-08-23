@@ -18,6 +18,12 @@ const CLIENT_NAME := &"client_name"
 const MULTIPLIER := &"multiplier"
 const TARGET_ID := &"target_id"
 
+## Vero quando questa commessa è già stata adempiuta stanotte. Una commessa è una
+## RISORSA, non una regola permanente: senza questo, il menu post-foto della 2.6
+## permette di rifotografare lo stesso soggetto e riscuotere il moltiplicatore a ogni
+## giro, fino all'alba.
+const FULFILLED := &"fulfilled"
+
 
 ## Sceglie la commessa della notte fra i committenti ABILITATI, in modo
 ## DETERMINISTICO da `night_index`.
@@ -37,7 +43,11 @@ static func choose(clients: Array, night_index: int) -> Dictionary:
 			enabled.append(c)
 	if enabled.is_empty():
 		return {}
-	var picked = enabled[(night_index - 1) % enabled.size()]
+	# `maxi(night_index, 1)`: con `night_index` a 0 l'espressione varrebbe -1, e in
+	# GDScript `array[-1]` è l'ULTIMO elemento — nessun errore, committente sbagliato,
+	# e la rotazione sfasata di uno per sempre. Il campo nasce a 1 ma arriva anche da
+	# un save (2.7), dove nessuno garantisce che sia stato scritto.
+	var picked = enabled[(maxi(night_index, 1) - 1) % enabled.size()]
 	return {
 		CLIENT_NAME: picked.name,
 		MULTIPLIER: picked.multiplier,
@@ -56,3 +66,15 @@ static func applies_to(target_id: StringName, commission: Dictionary) -> bool:
 	if commission.is_empty() or target_id.is_empty():
 		return false
 	return target_id == StringName(commission.get(TARGET_ID, &""))
+
+
+## La commessa è ancora disponibile: c'è, e nessuno l'ha già adempiuta stanotte.
+static func is_open(commission: Dictionary) -> bool:
+	return not commission.is_empty() and not bool(commission.get(FULFILLED, false))
+
+
+## Marca la commessa come adempiuta. Muta il dizionario in `NightRun`, quindi
+## sopravvive al salvataggio senza che nessuno debba ricordarsene.
+static func mark_fulfilled(commission: Dictionary) -> void:
+	if not commission.is_empty():
+		commission[FULFILLED] = true

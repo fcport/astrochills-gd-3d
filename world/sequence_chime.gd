@@ -1,6 +1,6 @@
 ## Il suono di fine sequenza — che APPARTIENE AL LUOGO, non alla fase.
 ##
-## È un `AudioStreamPlayer3D` che vive in `world/`, appeso presso il monitor/
+## È un `AudioStreamPlayer3D` che vive in `world/` — e dal 2026-08-23 ci vive davvero, appeso presso il monitor/
 ## telescopio, NON figlio della fase né del CRT. Così la sua collocazione regge
 ## quando arriveranno cucina e cupola (storia 3.1): resta ancorato al punto dove la
 ## macchina lavora, e chi si allontana lo sente attenuarsi — segno che è posizionale.

@@ -58,6 +58,9 @@ const FIELD_HEIGHT := 104
 var _font: SystemFont
 var _target := ""
 var _quality := 0
+
+## Quanti frame ha davvero acquisito la posa: e' cio' che si somma a schermo.
+var _frames := 0
 var _elapsed := 0.0
 var _progress := 0.0
 
@@ -80,9 +83,10 @@ func _ready() -> void:
 
 ## Unico ingresso. Il target dà il titolo, la qualità il numero. Da qui in poi il
 ## Control avanza da sé col tempo che `_process` riceve.
-func set_readout(target: String, quality: int) -> void:
+func set_readout(target: String, quality: int, frames: int = 0) -> void:
 	_target = target
 	_quality = quality
+	_frames = frames
 	queue_redraw()
 
 
@@ -112,13 +116,26 @@ func _draw() -> void:
 	if not _target.is_empty():
 		title = "STACK — %s" % _target.to_upper()
 	_text(Vector2(8, 22), title, FG, 12)
-	_text(Vector2(8, 38), "stacking frames", DIM, 12)
+	# FR19 dice «i frame acquisiti SI SOMMANO e l'immagine emerge progressivamente».
+	# Qui c'era la stringa fissa "stacking frames": una posa da 5 frame e una da 40
+	# producevano la stessa identica rivelazione, e il conteggio — che esiste, viaggia
+	# nel payload e finisce nel record — non toccava mai il vetro. Ora sale con
+	# l'emersione, che è la metà della storia che mancava.
+	var shown := int(round(_frames * _progress))
+	if _frames > 0:
+		_text(Vector2(8, 38), "stacking %d/%d frames" % [shown, _frames], DIM, 12)
+	else:
+		_text(Vector2(8, 38), "stacking frames", DIM, 12)
 
 	_draw_field()
 
-	# Il numero compare a emersione AVVIATA, non prima: finché il campo è tutto
-	# rumore non c'è ancora niente da misurare a schermo. In inglese (AC3).
-	if _progress > 0.0:
+	# IL NUMERO ARRIVA QUANDO L'IMMAGINE C'E', non al primo fotogramma. Il criterio
+	# dice «when lo stack SI CONCLUDE, then il punteggio compare»: con `_progress > 0.0`
+	# il voto appariva dopo sedici millesimi di secondo, sopra un campo ancora di solo
+	# rumore, e ci restava per tutti e quattro i secondi. In una storia che si chiama
+	# «vedere per la prima volta cosa hai preso», il verdetto non può precedere la cosa
+	# vista. In inglese (AC3).
+	if _progress >= 1.0:
 		_text(Vector2(8, 182), "QUALITY %d" % _quality, FG, 12)
 
 

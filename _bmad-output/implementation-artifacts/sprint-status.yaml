@@ -54,6 +54,9 @@
 #   C1 — APERTO — blocca la storia 2.7 (2-7-il-portafoglio-e-ancora-li-la-notte-dopo)
 #        Non esiste un contenitore per lo stato che attraversa le notti, e
 #        Game.start_night() azzera il portafoglio. Da chiudere PRIMA della 2.7.
+#        >>> DOSSIER PRONTO: c1-dossier-stato-cross-notte.md — i fatti, tre strade
+#        >>> con i loro costi, e cosa cambia in concreto. La decisione e' di Federico.
+#        >>> Blocca anche la 3.2 (il terminale che spende) e FR31, non solo la 2.7.
 #
 #   C3 — APERTO — blocca la storia 3.6 (3-6-la-telemetria-trasformare-limpressione-in-prova)
 #        La telemetria ha tre collocazioni contraddittorie e nessun proprietario.

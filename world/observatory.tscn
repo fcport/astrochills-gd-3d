@@ -22,7 +22,7 @@
 [ext_resource type="PackedScene" path="res://world/rooms/computer_room.tscn" id="1_room"]
 [ext_resource type="PackedScene" path="res://world/interactables/crt_monitor.tscn" id="2_monitor"]
 [ext_resource type="PackedScene" path="res://world/player/player.tscn" id="3_player"]
-[ext_resource type="PackedScene" path="res://phases/imaging/sequence_chime.tscn" id="4_chime"]
+[ext_resource type="PackedScene" path="res://world/sequence_chime.tscn" id="4_chime"]
 
 [sub_resource type="Environment" id="Environment_obs"]
 background_mode = 1

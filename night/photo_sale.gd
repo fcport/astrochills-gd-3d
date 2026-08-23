@@ -66,6 +66,9 @@ var _cursor := 0
 ## menu post-foto). `_done` guarda l'input come `_done` in una fase.
 var _done := false
 var _sold := false
+
+## Il congedo e' gia' partito: non se ne emette un secondo.
+var _dismissed := false
 var _sold_lire := 0
 var _declined := false
 
@@ -123,7 +126,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	# `dismissed`, perché nasce nell'input di questo Control che l'orchestratore sta
 	# per liberare. Va PRIMA della guardia `_done`, che dopo la vendita è true.
 	if _sold:
-		if event.is_action_pressed(&"sale_confirm"):
+		# `_dismissed` E' IL LATCH CHE MANCAVA. `dismissed` arriva all'orchestratore per
+		# via differita, quindi fra la prima pressione e la costruzione del menu passa
+		# almeno un frame: senza questo flag una seconda pressione emetteva un secondo
+		# congedo, `_enter_menu` girava due volte e il primo menu restava vivo fuori
+		# dall'albero, ancora connesso. Il ramo `sale_confirm` e quello del menu
+		# post-foto hanno entrambi il loro latch; questo era l'unico senza.
+		if not _dismissed and event.is_action_pressed(&"sale_confirm"):
+			_dismissed = true
 			dismissed.emit()
 			get_viewport().set_input_as_handled()
 		return

@@ -112,6 +112,11 @@ var _sale_photo_id := 0
 ## una fase non importa mai da un'altra fase (ADR-002).
 var _ctx: Dictionary = {}
 
+## Vero quando una fase ha appena prodotto una foto che nessuno ha ancora registrato.
+## Si arma in `_on_phase_finished`, si disarma in `_enter_stacking`: è ciò che separa
+## «c'è una foto nuova» da «`_ctx` contiene ancora le chiavi di quella di prima».
+var _photo_pending := false
+
 ## I `process_mode` che la fase e il suo `Control` avevano quando sono nati.
 ## Sospendere li sostituisce, riprendere li rimette: imporre `INHERIT` alla
 ## ripresa cancellerebbe in silenzio un `PROCESS_MODE_ALWAYS` dichiarato dalla
@@ -179,6 +184,7 @@ func begin() -> void:
 	# esista una fase. Il riepilogo lo libera chi lo ha creato: il CRT non libera
 	# mai ciò che mostra, e nessun altro lo possiede.
 	_ctx.clear()
+	_photo_pending = false
 	if _summary != null:
 		_summary.queue_free()
 		_summary = null
@@ -363,9 +369,18 @@ func _enter_next() -> void:
 ## essere ri-accodato (una fase in ritardo, un `call_deferred`), e senza la guardia
 ## costruirebbe un secondo stack — e registrerebbe la stessa foto due volte.
 func _finish_photo_cycle() -> void:
-	if Photo.is_photo(_ctx) and _stacking == null:
+	# UNA RIVELAZIONE GIA' A SCHERMO SI LASCIA STARE. Prima questo caso cadeva nel ramo
+	# in fondo, che stacca il Control dal vetro ed emette `plan_exhausted`: la guardia
+	# contro la doppia rivelazione faceva sparire la PRIMA sotto gli occhi del
+	# giocatore, a meta' emersione, e lo faceva pure rialzare. Impedire un secondo
+	# stack e cancellare quello in corso sono due cose diverse.
+	if _stacking != null:
+		return
+
+	if _photo_pending and Photo.is_photo(_ctx):
 		_enter_stacking()
 		return
+
 	_crt.show_control(null)
 	plan_exhausted.emit()
 
@@ -381,6 +396,10 @@ func _finish_photo_cycle() -> void:
 ## Il gating si arma alla fine con `set_player_present(_player_present)`, come per
 ## una fase appena montata: la rivelazione nasce ferma se il giocatore non c'è.
 func _enter_stacking() -> void:
+	# Consumata: da qui in poi `_ctx` conserva la configurazione (serve a SHOOT AGAIN)
+	# ma non vale piu' come prova che ci sia una foto da registrare.
+	_photo_pending = false
+
 	var quality := PhotoQuality.new().aggregate(Game.run.phase_scores)
 	var record := Photo.from_ctx(_ctx, quality, Game.run.photos.size())
 	Game.run.photos.append(record)
@@ -388,7 +407,10 @@ func _enter_stacking() -> void:
 	_stacking = REVEAL.new()
 	# Il modo si registra appena il Control esiste, prima che il gating lo sospenda.
 	_stacking_mode = _stacking.process_mode
-	_stacking.set_readout(String(_ctx.get(Photo.CTX_TARGET, "")), quality)
+	# I frame arrivano fin qui: sono il dato che la rivelazione somma a schermo (FR19).
+	_stacking.set_readout(
+		String(_ctx.get(Photo.CTX_TARGET, "")), quality,
+		int(_ctx.get(Photo.CTX_FRAMES, 0)))
 	# `revealed` → la vendita, DIFFERITO: `revealed` nasce dentro `_process` della
 	# rivelazione, e liberare la rivelazione lì dentro sarebbe liberare un nodo dentro
 	# la propria callback — lo stesso motivo per cui ogni transizione qui è differita.
@@ -426,7 +448,8 @@ func _enter_sale(quality: int, photo_id: int) -> void:
 	_sale = SALE.new()
 	_sale_mode = _sale.process_mode
 	_sale.set_readout(
-		String(_ctx.get(Photo.CTX_TARGET, "")), quality, _sale_base, Game.run.commission)
+		String(_ctx.get(Photo.CTX_TARGET, "")), quality, _sale_base,
+		Game.run.commission if Commission.is_open(Game.run.commission) else {})
 	# Signal DIRETTO: l'ascoltatore è uno solo, questo orchestratore.
 	_sale.confirmed.connect(_on_sale_confirmed)
 	# `dismissed` → il menu post-foto, DIFFERITO: nasce nell'input della vendita che
@@ -447,11 +470,30 @@ func _enter_sale(quality: int, photo_id: int) -> void:
 ## base ×1.0. Il rifiuto non ha un ramo che sottrae: paga il base come chi non aveva
 ## commessa, e non scrive da nessuna parte di aver rifiutato (NFR20).
 func _on_sale_confirmed(fulfill: bool) -> void:
+	# `_ended` VALE ANCHE QUI, ed era l'unico ingresso del gruppo a non averlo:
+	# `_enter_sale`, `_enter_menu` e `_on_menu_chosen` lo guardano tutti. `queue_free()`
+	# e' differito, quindi la schermata di vendita resta viva fino a fine frame e il suo
+	# input continua a girare: senza questa riga un ENTER premuto nello stesso frame in
+	# cui scatta l'alba accredita su un portafoglio gia' riassunto, e `show_sold` non
+	# arriva perche' `_sale` e' gia' `null`. Il giocatore vedrebbe un totale, il
+	# portafoglio ne avrebbe un altro.
+	if _ended:
+		return
+
 	# La COMPOSIZIONE del payout è pura e vive in `PhotoPayout.sale_lire` (unica
 	# sorgente di verità, collaudata al banco): qui non c'è un ramo `if fulfill` che la
 	# duplichi. `mult` si legge sempre — è irrilevante quando `fulfill` è false.
-	var mult := float(Game.run.commission.get(Commission.MULTIPLIER, 1.0))
+	var mult := 1.0
+	if Commission.is_open(Game.run.commission):
+		mult = float(Game.run.commission.get(Commission.MULTIPLIER, 1.0))
 	var lire := PhotoPayout.new().sale_lire(_sale_base, mult, fulfill)
+
+	# LA COMMESSA E' UNA RISORSA, e si consuma. Senza questo, `SHOOT AGAIN` della 2.6
+	# riporta allo stesso soggetto e la si puo' riscuotere a ogni giro fino all'alba:
+	# nessuna delle due storie poteva accorgersene da sola — la 2.5 non sapeva che il
+	# ciclo riapre, la 2.6 non sapeva che la commessa fosse una risorsa.
+	if fulfill:
+		Commission.mark_fulfilled(Game.run.commission)
 
 	# Payout IMMEDIATO e PER-FOTO: accreditato ora, su questa foto, non aggregato di
 	# fine notte.
@@ -484,6 +526,12 @@ func _on_sale_dismissed() -> void:
 ## mostrato il riepilogo — il menu non deve scavalcarlo.
 func _enter_menu() -> void:
 	if _ended:
+		return
+	# Cintura e bretelle: `photo_sale` non emette piu' due congedi, ma questo e' l'unico
+	# ingresso del file che non si difendeva da se'. `show_control` RIMUOVE il Control
+	# precedente senza liberarlo (regola di proprieta' del CRT), quindi un secondo giro
+	# lascerebbe un menu vivo fuori dall'albero, ancora connesso a `_on_menu_chosen`.
+	if _menu != null and is_instance_valid(_menu):
 		return
 	if _sale != null and is_instance_valid(_sale):
 		_sale.queue_free()
@@ -652,6 +700,16 @@ func _on_phase_finished(result: PhaseResult, phase: Phase) -> void:
 
 	# Ciò che questa fase lascia a quelle dopo di lei. È il canale di FR12.
 	_ctx.merge(result.payload, true)
+
+	# UNA FOTO SI CONIA SOLO SE UNA FASE L'HA APPENA PRODOTTA. `_ctx` non si svuota
+	# mai — `SHOOT AGAIN` ci conta, per ripresentare la stessa configurazione — quindi
+	# `Photo.is_photo(_ctx)` resta vero per tutto il resto della notte, anche dopo che
+	# la foto è stata registrata e venduta. Senza questo flag, ogni giro del ciclo che
+	# si esaurisce SENZA passare dall'imaging (una fase saltata da un ramo d'errore, un
+	# piano con una sola fase foto) registrerebbe di nuovo la foto precedente, la
+	# rivelerebbe e la rivenderebbe: lire dal nulla, in silenzio.
+	if Photo.is_photo(result.payload):
+		_photo_pending = true
 
 	if not result.ok:
 		Log.warn("night", "fase %s conclusa con ok = false" % phase.key())

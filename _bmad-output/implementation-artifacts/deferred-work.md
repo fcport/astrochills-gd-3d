@@ -371,3 +371,23 @@ source_spec: `spec-2-6-decidere-quanto-rifare.md`
 severity: medium
 reason: Il banco (NFR19) prova solo logica pura senza SceneTree; la 2.6 è orchestrazione (NightSession) + UI (Control diegetico che gestisce input nel SubViewport), stateful. Rispecchia DW-2 (stessa lacuna per il flusso imaging della 2.3) e la lacuna della composizione di vendita della 2.5. Una regressione (indice foto errato, chiave di setup mancante in _setup_phase_keys, guardia _ended assente) lascerebbe il banco verde.
 status: open
+
+## Regola non applicata — rilevata il 2026-08-23 sulla fase imaging
+
+- **Ogni fase porta la sua bugia, e `phases/imaging/` non ce l'ha.** La regola è stata
+  decisa da Federico in code review il 2026-08-23 (seam di ADR-001 / FR34: `F9` deve avere
+  qualcosa da iniettare su OGNI fase, perché una fase senza voce in `LIE_PATHS` è una fase
+  su cui il vincolo non è mai stato messo alla prova). La 2.3 ha creato
+  `phases/imaging/sources/honest_sequence.tres` e nessuna sorgente bugiarda, e
+  `debug/lie_injector.gd:LIE_PATHS` non ha la chiave `&"imaging"`.
+  *Non è colpa della 2.3: la regola era scritta in un commento dentro `lie_injector.gd`,
+  un file che quella storia non aveva nessuna ragione di aprire. La stessa sessione ha
+  invece RACCOLTO la domanda sul bersaglio sotto l'orizzonte, che era scritta qui nel
+  ledger e accanto alla riga della 2.3 in sprint-status — e l'ha chiusa citandola per
+  nome. Il ledger si legge, un commento in un file non toccato no: da qui in avanti ogni
+  regola che deve valere per le storie future si scrive QUI, e il commento nel codice al
+  massimo la ripete.*
+  Servono: `phases/imaging/sources/wandering_sequence.gd`/`.tres` (mente su ciò che la
+  fase osserva) e la riga in `LIE_PATHS`. Da fare prima di chiudere l'epica 2, così la
+  regola vale davvero quando l'epica 3 porterà le fasi da cinque a dieci.
+  [debug/lie_injector.gd, phases/imaging/sources/]

@@ -2,7 +2,7 @@
 title: "3.2 Il terminale — spendere quello che hai guadagnato"
 type: 'feature'
 created: '2026-08-23'
-status: 'awaiting-operator'
+status: done
 baseline_revision: '0b3ff39557a5310609f9231945810f9439898c1b'
 review_loop_iteration: 0
 followup_review_recommended: true
@@ -195,3 +195,16 @@ Status: awaiting-operator
 - `Game.spend_lire` (mutazione + save) non esercitato end-to-end dal banco per accoppiamento ai path di save reali (vedi `deferred`); lo split puro e `can_afford` sono coperti.
 - Estetica provvisoria: cornice come rettangolo di contorno (non caratteri box-drawing) e beep sintetizzato in codice — da rifinire col pack asset, senza toccare la logica.
 - Integrazione input/seduta in `main.gd` (apertura/chiusura terminale, `reshow_current`, sgancio all'alba) validata solo staticamente: è la parte più delicata e va camminata.
+
+## Operator Confirmation
+
+Confirmed 2026-08-24: the external actions this story owed were carried out.
+
+- Aprire il progetto in Godot 4.7.2 (editor) e confermare che terminal/, data/catalog/ e le modifiche a main.gd/night_session.gd/game.gd/player_profile.gd/events.gd/project.godot importano senza errori di parse/risorsa in console: nessun binario Godot era disponibile nell'ambiente di build, quindi tutto è validato solo staticamente.
+- Eseguire il banco (tests/test_bench.tscn, es. `godot --headless --path . tests/test_bench.tscn`) e verificare che nessuna riga stampi «<-- ATTESO»: copre filtro catalogo, possesso+round-trip su disco, split della spesa e can_afford (logica pura). Il banco non ha potuto girare qui.
+- Camminare il gioco durante l'attesa (menu post-foto vivo): sedersi al monitor, premere T per aprire il terminale, verificare cornice, header WALLET/NIGHT TAKE coerenti con le lire, navigazione ↑↓/ENTER/ESC col beep, descrizione IT con TAB, e leggibilità a 256×192 da seduti (AC percettivi non verificabili headless).
+- Comprare la lampadina con fondi sufficienti: il portafoglio cala, la voce passa a OWNED, ed è emesso Events.item_purchased. Dormire e riaprire il terminale: possesso e saldo devono sopravvivere al save. Provare senza fondi: messaggio EN «NOT ENOUGH LIRE», nessuna spesa, nessun modale.
+- Chiudere il terminale (ESC/T/E): il CRT torna al menu post-foto e SHOOT AGAIN funziona ancora. Verificare che il terminale NON si apra mentre una fase interattiva o la vendita/rivelazione è a schermo (gate is_waiting()).
+- Rifinire quando arriva il pack asset: la cornice è un rettangolo di contorno (non caratteri di box-drawing veri) e il beep è un'onda quadra sintetizzata in codice (nessun asset audio) — entrambi provvisori, da sostituire senza toccare la logica.
+
+_Appended by the bmad-loop orchestrator (`bmad-loop confirm`, #335): a human confirmed these external actions out of band, and the story was advanced from `awaiting-operator` to `done`._

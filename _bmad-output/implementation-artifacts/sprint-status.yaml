@@ -166,7 +166,7 @@ development_status:
   # >>> la sola che produce geometria vera. Vedi game-architecture.md, Asset Management.
   3-1-losservatorio-si-allarga-una-scena-sola-dentro-e-fuori: done
   # Story 3.2: Il terminale — spendere quello che hai guadagnato
-  3-2-il-terminale-spendere-quello-che-hai-guadagnato: awaiting-operator
+  3-2-il-terminale-spendere-quello-che-hai-guadagnato: done
   # Story 3.3: Il caffè — l'attesa piccola dentro l'attesa grande
   3-3-il-caffe-lattesa-piccola-dentro-lattesa-grande: awaiting-operator
   # Story 3.4: La lampada che smette di lampeggiare

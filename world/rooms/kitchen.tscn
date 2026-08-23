@@ -14,13 +14,16 @@
 ; APERTA SULL'ATRIO sul lato ovest (−x): non c'e' muro li', si entra a piedi dal
 ; corridoio senza porta. Le pareti chiuse sono nord, est e sud.
 ;
-; IL REGISTRO «FARE» DELL'ATTESA VIVE QUI (storie 3.3/3.4): piano cottura e lampada
-; sono attivita' di quelle storie, non di questa. Qui c'e' solo il piano d'appoggio
-; segnaposto — il mobile su cui la moka andra' — perche' il posto esista. Nessun
-; interagibile funzionante: questa storia COSTRUISCE il luogo, non le attivita'.
-[gd_scene load_steps=14 format=3]
+; IL REGISTRO «FARE» DELL'ATTESA VIVE QUI: la moka (storia 3.3) e' istanziata sul piano
+; d'appoggio, e la lampada (3.4) arrivera'. La moka NASCE SPENTA e invisibile: compare
+; solo quando l'articolo &"moka" e' posseduto (comprato al terminale, 3.2), leggendo
+; `Game.profile.owns` all'avvio e ascoltando `Events.item_purchased` a runtime — tutto
+; dentro moka.gd, senza passare da qui ne' da `main.gd`. Il posto c'era (questa cucina),
+; ora c'e' l'oggetto.
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Shader" path="res://world/shaders/ps1.gdshader" id="1_ps1"]
+[ext_resource type="PackedScene" path="res://world/interactables/moka.tscn" id="2_moka"]
 
 [sub_resource type="ShaderMaterial" id="MatFloor"]
 shader = ExtResource("1_ps1")
@@ -135,9 +138,9 @@ mesh = SubResource("BoxWallE")
 [node name="Collision" type="CollisionShape3D" parent="WallEast"]
 shape = SubResource("ShapeWallE")
 
-; Il piano d'appoggio segnaposto sotto la parete est: 90 cm, l'altezza da cucina,
-; sul quale le storie 3.3/3.4 metteranno moka e lampada. Qui e' solo geometria —
-; nessun interagibile, nessun prompt: il posto c'e', l'attivita' no.
+; Il piano d'appoggio segnaposto sotto la parete est: 90 cm, l'altezza da cucina, top a
+; y = 0,9. Ci sta sopra la moka (3.3), e ci stara' la lampada (3.4). Qui e' solo il
+; mobile — l'oggetto e' l'istanza Moka piu' sotto.
 [node name="Counter" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.7, 0.45, 1.5)
 collision_mask = 0
@@ -157,3 +160,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 2.5, 1.5)
 light_color = Color(0.7, 0.78, 0.9, 1)
 light_energy = 0.9
 omni_range = 5.0
+
+; La moka sul piano d'appoggio, verso il bordo ovest (il lato da cui si entra): origine a
+; (2,5, 0,9, 1,5) — sul top del Counter (y = 0,9), un filo dentro dal bordo ovest del
+; piano (Counter a x = 2,7, largo 0,6 → bordo ovest a x = 2,4). Nasce spenta/invisibile:
+; moka.gd la accende sul possesso. La raggiungibilita' dal davanti al piano si tara
+; guardando (verifica d'operatore).
+[node name="Moka" parent="." instance=ExtResource("2_moka")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.9, 1.5)

@@ -168,7 +168,7 @@ development_status:
   # Story 3.2: Il terminale — spendere quello che hai guadagnato
   3-2-il-terminale-spendere-quello-che-hai-guadagnato: awaiting-operator
   # Story 3.3: Il caffè — l'attesa piccola dentro l'attesa grande
-  3-3-il-caffe-lattesa-piccola-dentro-lattesa-grande: backlog
+  3-3-il-caffe-lattesa-piccola-dentro-lattesa-grande: awaiting-operator
   # Story 3.4: La lampada che smette di lampeggiare
   3-4-la-lampada-che-smette-di-lampeggiare: backlog
   # Story 3.5: La cupola — stare a guardare

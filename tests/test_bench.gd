@@ -91,6 +91,8 @@ func _ready() -> void:
 	print("")
 	_check_can_afford()
 	print("")
+	_check_moka_ritual()
+	print("")
 	print("=== fine ===")
 	get_tree().quit()
 
@@ -900,6 +902,101 @@ func _report_afford(amount: int, expected: bool, label: String) -> void:
 	var got := Game.can_afford(amount)
 	var note := "" if got == expected else "   <-- ATTESO: %s" % expected
 	print("   %-42s can_afford(%d) = %s%s" % [label, amount, got, note])
+
+
+## Il rituale della moka (3.3): la logica PURA e STATICA — transizioni, interattivita' per
+## tempo, prompt, e i punti d'emissione della coppia started/ended. Gemella di
+## `Game.split_spend`: nessuno SceneTree, nessun autoload, nessun timer/suono.
+##
+## Il timer d'attesa, il suono che sale/borbotta e la raggiungibilita' del volume di
+## collisione NON si collaudano qui: sono effetti e percezione — verifiche d'operatore,
+## che si camminano nel gioco (come dice lo spec). Il banco legge la tavola.
+func _check_moka_ritual() -> void:
+	print("-- Moka: rituale a piu' tempi, transizioni pure + punti d'emissione (3.3)")
+
+	# La tavola delle transizioni `E`. BREWING → READY NON e' qui: lo guida il Timer,
+	# non un'interazione — e BREWING → BREWING e' inerte (li' `is_interactive` e' falso).
+	_report_moka_next(Moka.Step.IDLE, Moka.Step.FILLED, "IDLE + E -> FILLED (riempi)")
+	_report_moka_next(Moka.Step.FILLED, Moka.Step.BREWING, "FILLED + E -> BREWING (sul fuoco)")
+	_report_moka_next(Moka.Step.BREWING, Moka.Step.BREWING, "BREWING + E -> BREWING (inerte)")
+	_report_moka_next(Moka.Step.READY, Moka.Step.POURED, "READY + E -> POURED (versa)")
+	_report_moka_next(Moka.Step.POURED, Moka.Step.IDLE, "POURED + E -> IDLE (bevi, ripetibile)")
+
+	# Interattivita' per tempo: falso SOLO in BREWING (si aspetta e si ascolta), vero
+	# altrove. E' la condizione che `can_interact()` STRINGE sopra la base.
+	print("   -- is_interactive: falso solo in BREWING")
+	_report_moka_interactive(Moka.Step.IDLE, true, "IDLE interagibile")
+	_report_moka_interactive(Moka.Step.FILLED, true, "FILLED interagibile")
+	_report_moka_interactive(Moka.Step.BREWING, false, "BREWING inerte")
+	_report_moka_interactive(Moka.Step.READY, true, "READY interagibile")
+	_report_moka_interactive(Moka.Step.POURED, true, "POURED interagibile")
+
+	# Prompt per tempo (IT, lo legge il giocatore — NFR10). BREWING non ha prompt:
+	# durante l'attesa non c'e' niente da sollecitare (nessun conto alla rovescia).
+	print("   -- prompt per tempo")
+	_report_moka_prompt(Moka.Step.IDLE, "Riempi la moka")
+	_report_moka_prompt(Moka.Step.FILLED, "Metti la moka sul fuoco")
+	_report_moka_prompt(Moka.Step.BREWING, "")
+	_report_moka_prompt(Moka.Step.READY, "Versa il caffè")
+	_report_moka_prompt(Moka.Step.POURED, "Bevi il caffè")
+
+	# I punti d'emissione della coppia (C4): started al PRIMO tempo (riempire, cioe' da
+	# IDLE), ended all'ULTIMO (bere, cioe' da POURED). Nessun altro tempo emette.
+	print("   -- punti d'emissione: started al 1o tempo (IDLE), ended all'ultimo (POURED)")
+	var all_steps: Array[Moka.Step] = [
+		Moka.Step.IDLE, Moka.Step.FILLED, Moka.Step.BREWING, Moka.Step.READY, Moka.Step.POURED]
+	for step in all_steps:
+		var starts := Moka.starts_activity(step)
+		var ends := Moka.ends_activity(step)
+		var exp_start: bool = step == Moka.Step.IDLE
+		var exp_end: bool = step == Moka.Step.POURED
+		var note := ""
+		if starts != exp_start:
+			note = "   <-- ATTESO started = %s" % exp_start
+		elif ends != exp_end:
+			note = "   <-- ATTESO ended = %s" % exp_end
+		print("      %-10s started=%s ended=%s%s" % [_moka_step_name(step), starts, ends, note])
+
+	# Il giro completo, e la sua ripetibilita': IDLE →(E)→ FILLED →(E)→ BREWING →(Timer)→
+	# READY →(E)→ POURED →(E)→ IDLE. Si simula la mano (le `E`) e il Timer (BREWING→READY)
+	# a mano, e si verifica che si torni a IDLE — pronta per rifarlo.
+	var s := Moka.Step.IDLE
+	s = Moka.next_on_interact(s)          # riempi
+	s = Moka.next_on_interact(s)          # sul fuoco
+	if s == Moka.Step.BREWING:
+		s = Moka.Step.READY               # il Timer, non un'interazione
+	s = Moka.next_on_interact(s)          # versa
+	s = Moka.next_on_interact(s)          # bevi
+	var loop_note := "" if s == Moka.Step.IDLE else "   <-- ATTESO: torna a IDLE (ripetibile)"
+	print("   giro completo torna a IDLE: %s%s" % [_moka_step_name(s), loop_note])
+
+
+func _report_moka_next(step: Moka.Step, expected: Moka.Step, label: String) -> void:
+	var got := Moka.next_on_interact(step)
+	var note := "" if got == expected else "   <-- ATTESO: %s" % _moka_step_name(expected)
+	print("   %-42s -> %s%s" % [label, _moka_step_name(got), note])
+
+
+func _report_moka_interactive(step: Moka.Step, expected: bool, label: String) -> void:
+	var got := Moka.is_interactive(step)
+	var note := "" if got == expected else "   <-- ATTESO: %s" % expected
+	print("      %-38s is_interactive = %s%s" % [label, got, note])
+
+
+func _report_moka_prompt(step: Moka.Step, expected: String) -> void:
+	var got := Moka.prompt_for(step)
+	var note := "" if got == expected else "   <-- ATTESO: \"%s\"" % expected
+	print("      %-10s prompt = \"%s\"%s" % [_moka_step_name(step), got, note])
+
+
+func _moka_step_name(step: Moka.Step) -> String:
+	match step:
+		Moka.Step.IDLE: return "IDLE"
+		Moka.Step.FILLED: return "FILLED"
+		Moka.Step.BREWING: return "BREWING"
+		Moka.Step.READY: return "READY"
+		Moka.Step.POURED: return "POURED"
+		_: return "?"
 
 
 ## Piccola comodità: costruisce l'input e campiona in una riga.

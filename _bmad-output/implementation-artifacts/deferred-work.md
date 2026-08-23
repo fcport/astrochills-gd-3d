@@ -529,3 +529,11 @@ source_spec: `spec-3-2-il-terminale-spendere-quello-che-hai-guadagnato.md`
 severity: low
 reason: tests/test_bench.gd copre split_spend (4 casi + decremento esatto) e can_afford (soglia), ma non chiama Game.spend_lire su un run/profile reali per verificare che applichi lo split ai due contatori e salvi. Un test end-to-end scriverebbe sui path di save reali (user://saves/profile.tres|night.tres), che spend_lire usa senza override, clobberando il save del giocatore durante un run del banco. Serve o un override dei path in spend_lire o un backup/restore del profilo su disco.
 status: open
+
+### DW-15: L'emissione runtime della coppia telemetria (`wait_activity_started/ended(&"caffe")` in `_on_interacted`) e il seam di comparsa (`_apply_presence`/`_on_item_purchased`) NON sono coperti dal banco: sol
+origin: spec-deferred f1e4be24da8e
+location: world/interactables/moka.gd:176-248 ; tests/test_bench.gd::_check_moka_ritual
+source_spec: `spec-3-3-il-caffe-lattesa-piccola-dentro-lattesa-grande.md`
+severity: medium
+reason: Il banco (`tests/test_bench.gd::_check_moka_ritual`) collauda `next_on_interact`/`is_interactive`/`prompt_for`/`starts_activity`/`ends_activity` come predicati puri, senza istanziare il nodo Moka né connettersi a `Events`. Il WIRING che trasforma quei predicati in emissioni reali (`interacted.connect(_on_interacted)` + le due `Events...emit`) e il toggle di presenza da `Game.profile.owns`/`item_purchased` non sono esercitati: una regressione che rompesse la connessione o spostasse un'emissione lascerebbe il banco verde. Collaudabile headless (il binario Godot c'è e la scena del banco gira sotto SceneTree), ma tenuto fuori per rispettare la convenzione pura del banco (NFR19) — stesso trattamento del deferral di `Game.spend_lire` end-to-end in 3.2.
+status: open

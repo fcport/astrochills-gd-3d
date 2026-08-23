@@ -297,6 +297,13 @@ func _look_at_interactable() -> Interactable:
 
 func _set_focus(value: Interactable) -> void:
 	if _focus == value:
+		# Stesso oggetto, ma il TESTO del prompt puo' essere cambiato: un
+		# interagibile a piu' tempi (la moka, 3.3) cambia riga a ogni azione
+		# mentre lo si continua a guardare. Si rilegge e si ri-mostra, cosi' il
+		# prompt segue i tempi del rituale invece di restare congelato al primo.
+		# `show_prompt` e' idempotente, quindi ri-chiamarlo ogni tick e' innocuo.
+		if _focus != null:
+			_prompt.show_prompt(_focus.prompt())
 		return
 	_focus = value
 	if _focus == null:

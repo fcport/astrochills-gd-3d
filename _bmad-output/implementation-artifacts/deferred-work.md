@@ -410,10 +410,73 @@ status: open
 
 ## Tre domande di GIOCO, aperte a fine epica 2 (2026-08-23)
 
+**AGGIORNAMENTO DEL 2026-08-23, SERA — DQ-1 e DQ-3 sono CHIUSE, DQ-2 e' chiusa a
+meta'.** Le ha chiuse Federico giocando: ha fatto una notte intera, poi altre tre, e
+quello che ha visto (e il log della sua sessione) ha risposto a due domande su tre.
+Chi legge questa sezione legga prima i tre riquadri qui sotto: il codice e' gia'
+cambiato, e le descrizioni originali delle domande sono conservate solo come storia.
+
+> ### DQ-1 — CHIUSA il 2026-08-23. Regola scelta: TEMPO TOTALE = FRAME x ESPOSIZIONE.
+>
+> Da quella regola discendono tutte e tre le cose che mancavano:
+>
+> - **Durata**: un frame dura quanto integra (`_game_min_per_frame()` =
+>   `exposure_sec / 60 * Tuning.pose_time_scale`). `Tuning.min_per_frame` NON ESISTE
+>   PIU': era una costante di 5 minuti a frame che rendeva l'esposizione inerte.
+>   Al suo posto `pose_time_scale` (default 1.0), la manopola con cui l'epica 3
+>   tara quanto pesa l'attesa senza toccare la fisica.
+> - **Punteggio**: `PhaseImaging.exposure_score(total_min, min_exp)`, pura e statica.
+>   Il minimo lo dichiara il target (`min_exp` nei `.tres`) e VIAGGIA NEL PAYLOAD del
+>   targeting — una fase non conosce mai un'altra fase. Curva: 0 a zero, sale in
+>   proporzione fino a `SCORE_AT_MINIMUM` (60) al minimo, poi fino a 100 al doppio
+>   (`FULL_SCORE_RATIO`), e li' si ferma. Oltre il doppio non sale APPOSTA: premiare
+>   chi aspetta di piu' renderebbe la scelta un'ottimizzazione con una sola risposta.
+> - **Conseguenza a schermo**: il pannello di configurazione mostra totale contro
+>   minimo, la qualita' che ne esce, e quanti minuti di notte costera' la sequenza.
+>
+> La strategia dominante `frames = 1` non esiste piu': un frame solo integra troppo
+> poco per superare il minimo del target.
+>
+> **Cosa resta da tarare, e appartiene all'epica 3**: `pose_time_scale`. Con i valori
+> di partenza (20 frame x 120s) la posa dura 40 minuti di notte su 540, cioe' circa
+> 67 secondi reali. E' il numero che decide quanto dura l'attesa da riempire.
+
+> ### DQ-2 — CHIUSA A META' il 2026-08-23.
+>
+> `PhaseImaging.PLACEHOLDER_SCORE` non esiste piu': l'imaging produce un punteggio
+> vero (vedi DQ-1). `PhaseTargeting.NEUTRAL_SCORE = 100` RESTA, ed e' deliberato:
+> scegliere un bersaglio non e' un'abilita' e non deve avere un voto. Se un giorno
+> si vorra' che la scelta pesi — un target difficile che vale di piu' — il posto e'
+> `diff` nei `.tres`, che oggi si mostra e non entra in nessun calcolo.
+>
+> **Effetto sull'economia**: la qualita' e' la media di polar + targeting(100) +
+> imaging. Con due su tre variabili il payout ha finalmente un gradiente, ma le due
+> costanti lo COMPRIMONO: una posa scadente (imaging 30) porta comunque a 3500 lire,
+> una perfetta a 15000. La curva di `payout_tiers` non e' mai stata tarata contro
+> punteggi veri, e adesso per la prima volta si puo' farlo.
+
+> ### DQ-3 — CHIUSA il 2026-08-23. Si va a letto.
+>
+> Esiste `world/interactables/bed.tscn`, un `Interactable` che `main.gd` accende SOLO
+> all'alba (`_dawn`). Premendo `E`: dissolvenza, il giocatore torna al punto di
+> partenza, `Game.start_night()` e `_night.begin()` — l'orchestratore SI RIUSA, non si
+> ricostruisce, perche' `begin()` e' scritta per essere richiamata e ricostruirlo
+> perdeva i `Control` reparentati nel CRT (misurato: 16 istanze a notte).
+>
+> Scelta di Federico fra tre opzioni: un oggetto e non un pulsante sul riepilogo,
+> perche' ADR-003 dice che i passaggi sono GESTI.
+>
+> **Regola da conoscere prima di toccare `world/interactables/`**: il raggio di
+> interazione parte dall'occhio a 1,65 m e arriva a 1,2 m. Un oggetto la cui massa
+> sta sotto i ~60 cm NON E' RAGGIUNGIBILE da nessuna posizione, e non lo si scopre
+> guardando il codice. Il volume di collisione va progettato come cosa a se',
+> abbastanza alto da stare nello sguardo — ma non piu' alto della geometria visibile,
+> o il prompt compare guardando il muro dietro. Vale per la moka (3.3), la lampada
+> (3.4) e qualunque cosa la 3.1 metta in cucina.
+
 Non sono difetti di codice: l'aritmetica e' corretta ovunque e il banco e' verde. Sono
 domande su come deve funzionare il gioco, emerse dalla review adversariale delle sette
-storie. Nessuna e' stata decisa: **appartengono a Federico**, e la 3.x che le tocchera'
-deve trovarle qui.
+storie. **Descrizioni originali, conservate come storia:**
 
 - **DQ-1 — L'esposizione che il giocatore configura non influenza niente.** Non la
   durata (`frames_done = elapsed / min_per_frame`, e `min_per_frame` viene da `Tuning`),

@@ -113,6 +113,23 @@ development_status:
   # indipendente (letture cieche + aderenza alla specifica + caccia ai casi limite
   # sulle GIUNZIONI fra storie, che e' dove stavano i difetti veri).
   # Restano tre domande di GIOCO aperte, non di codice: vedi deferred-work.md.
+  #
+  # AGGIORNAMENTO 2026-08-23 SERA — Federico ha giocato l'epica 2 e ha chiuso due
+  # delle tre domande piu' meta' della terza. NON RIAPRIRLE, e leggerle in
+  # deferred-work.md PRIMA di toccare le fasi o gli interagibili:
+  #   DQ-1 CHIUSA — tempo totale = frame x esposizione. `Tuning.min_per_frame` non
+  #        esiste piu', al suo posto `pose_time_scale` (default 1.0) — E' LA MANOPOLA
+  #        CHE L'EPICA 3 DEVE TARARE: decide quanto dura l'attesa da riempire.
+  #   DQ-2 CHIUSA A META' — l'imaging produce un punteggio vero; il targeting resta a
+  #        100 fisso di proposito (scegliere non e' un'abilita').
+  #   DQ-3 CHIUSA — si va a letto: `world/interactables/bed.tscn`, acceso solo
+  #        all'alba. La notte successiva riusa l'orchestratore, non lo ricostruisce.
+  #
+  # REGOLA IMPARATA GIOCANDO, vale per la 3.1/3.3/3.4: il raggio di interazione parte
+  # dall'occhio a 1,65 m e arriva a 1,2 m. Un oggetto la cui massa sta sotto i ~60 cm
+  # NON e' raggiungibile da nessuna posizione. Il volume di collisione degli
+  # interagibili bassi (moka, lampada) va progettato a parte dalla geometria visibile
+  # — abbastanza alto da stare nello sguardo, non piu' alto di cio' che si vede.
   epic-2: done
   # Story 2.1: Un turno che comincia alle 21:00 e finisce da solo all'alba
   2-1-un-turno-che-comincia-alle-21-00-e-finisce-da-solo-allalba: done

@@ -1,5 +1,22 @@
 # C1 — Lo stato che attraversa le notti
 
+> **CHIUSO il 2026-08-23 con l'opzione A.** Federico ha delegato la decisione («finisci
+> l'epica 2»), quindi l'ho presa io e la scrivo qui perché sia ribaltabile: se leggendo
+> le tre strade preferisci la B o la C, il refactor inverso è di un'ora — i punti che
+> toccano il portafoglio sono cinque e sono elencati in fondo a questo documento.
+>
+> Cosa esiste ora: `core/player_profile.gd` (`wallet_lire`, `nights_completed`,
+> `version`, `migrate()`); `NightRun.wallet_lire` è diventato `night_earnings`;
+> `Game.end_night()` versa e incrementa; `Game.start_night()` non prende più un indice,
+> lo ricava da `nights_completed + 1`. Il banco stampa il travaso su due notti.
+>
+> **Effetto collaterale che vale da solo la chiusura:** `night_index` adesso avanza. Era
+> inchiodato a 1 dall'unica chiamata `start_night(1)` nel punto d'ingresso, e siccome la
+> commessa si sceglie con `enabled[(night_index - 1) % size]`, usciva sempre il primo
+> committente del roster — Coelum, moltiplicatore `1.0`. In ogni partita giocabile
+> `FULFILL` e `SELL OPEN` accreditavano la stessa cifra: la scelta al cuore della 2.5
+> non aveva esito osservabile. Ora ce l'ha.
+
 Dossier preparato il 2026-08-23 per chiudere il rilievo **C1**, che blocca la storia 2.7.
 Non contiene una decisione: contiene i fatti e le strade, perché la scelta è di Federico.
 

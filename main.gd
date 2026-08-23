@@ -187,7 +187,7 @@ func _begin_night() -> void:
 	# Il monitor si accende e si spegne con il lavoro: vedi `_refresh_monitor()`.
 	Events.phase_started.connect(func(_k: StringName) -> void: _refresh_monitor())
 	Events.dawn_reached.connect(_refresh_monitor)
-	Game.start_night(1)
+	Game.start_night()
 	_night.begin()
 	_refresh_monitor()
 

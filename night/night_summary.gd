@@ -28,6 +28,8 @@ const DIM := Color(0.30, 0.58, 0.34)
 
 var _font: SystemFont
 var _night_index := 1
+var _earnings := 0
+var _photos := 0
 var _clock_text := ""
 var _scores: Array[Vector2i] = []
 var _score_keys: PackedStringArray = PackedStringArray()
@@ -47,6 +49,8 @@ func set_readout(run: NightRun, clock_text: String) -> void:
 	if run == null:
 		return
 	_night_index = run.night_index
+	_earnings = run.night_earnings
+	_photos = run.photos.size()
 	_score_keys = PackedStringArray()
 	_scores = []
 	for k in run.phase_scores:
@@ -59,6 +63,12 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, DESIGN_SIZE), BG)
 	_text(Vector2(8, 22), "NIGHT %d — DAWN" % _night_index, FG, 12)
 	_text(Vector2(8, 38), "21:00 → %s" % _clock_text, DIM, 12)
+
+	# QUANTO HA RESO LA NOTTE. Prima non compariva da nessuna parte: le lire venivano
+	# accreditate e nessuno le leggeva mai — `end_night()` non era chiamata, il segnale
+	# `photo_sold` non aveva ascoltatori, e il riepilogo parlava solo di punteggi. Si
+	# poteva lavorare una notte intera senza vedere una cifra.
+	_text(Vector2(8, 54), "%d photos — %d lire" % [_photos, _earnings], FG, 12)
 
 	# La spaziatura è stata scelta guardando lo schermo, non calcolata: con le
 	# righe attaccate in alto restava un buco al centro che faceva sembrare il

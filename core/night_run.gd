@@ -18,7 +18,12 @@ const CURRENT_VERSION := 1
 ## Chiave = Phase.key(), MAI Phase.name.
 @export var phase_scores: Dictionary = {}
 
-@export var wallet_lire: int = 0
+## Quanto si e' guadagnato STANOTTE. Non e' il portafoglio: quello vive in
+## `PlayerProfile` e attraversa le notti (C1, chiuso il 2026-08-23). Questo numero
+## nasce a zero a ogni notte, cresce a ogni vendita, e viene versato al giocatore
+## quando la notte si chiude. Serve anche al riepilogo dell'alba, che deve poter dire
+## quanto ha reso questa notte e non quanto c'e' in cassa.
+@export var night_earnings: int = 0
 @export var selected_target_id: StringName = &""
 @export var photos: Array[Dictionary] = []
 

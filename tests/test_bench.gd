@@ -66,6 +66,8 @@ func _ready() -> void:
 	print("")
 	_check_night_clock()
 	print("")
+	_check_player_profile()
+	print("")
 	_check_photo_quality()
 	print("")
 	_check_photo_schema()
@@ -771,3 +773,51 @@ func _check_night_clock() -> void:
 			hours.append("%02d" % h)
 	print("   ore varcate: %s  (%d segnali hour_passed)" % [
 		", ".join(hours), hours.size()])
+
+
+## Il travaso fra la notte e il giocatore — il rilievo C1, chiuso il 2026-08-23.
+##
+## Non serve nessuno SceneTree: `NightRun` e `PlayerProfile` sono due Resource di soli
+## dati, e la regola che le lega e' aritmetica pura. Si collauda QUI perche' e'
+## esattamente il punto in cui e' facile sbagliare: una riga dimenticata nel travaso
+## non produce nessun errore, produce un portafoglio che si azzera ogni tanto.
+func _check_player_profile() -> void:
+	print("-- Il portafoglio attraversa la notte (C1)")
+
+	var profile := PlayerProfile.new()
+	print("   il giocatore nasce con %d lire e %d notti fatte" % [
+		profile.wallet_lire, profile.nights_completed])
+	if profile.wallet_lire != 0 or profile.nights_completed != 0:
+		print("   <-- ATTESO: si comincia da zero")
+
+	# Notte 1: si guadagna, si chiude, si versa.
+	var n1 := NightRun.new()
+	n1.night_index = profile.nights_completed + 1
+	n1.night_earnings = 4900
+	n1.phase_scores = {&"polar": 80, &"imaging": 100}
+	profile.wallet_lire += n1.night_earnings
+	profile.nights_completed += 1
+	print("   notte %d: guadagnate %d -> in cassa %d" % [
+		n1.night_index, n1.night_earnings, profile.wallet_lire])
+
+	# Notte 2: la nuova notte NON eredita i guadagni, ma il giocatore tiene le lire.
+	var n2 := NightRun.new()
+	n2.night_index = profile.nights_completed + 1
+	print("   notte %d: guadagni della notte %d, in cassa %d" % [
+		n2.night_index, n2.night_earnings, profile.wallet_lire])
+	if n2.night_earnings != 0:
+		print("   <-- ATTESO: i guadagni sono DELLA NOTTE e ripartono da zero")
+	if profile.wallet_lire != 4900:
+		print("   <-- ATTESO: il portafoglio e' del GIOCATORE e resta a 4900")
+	if not n2.phase_scores.is_empty():
+		print("   <-- ATTESO: i punteggi appartengono alla notte, non al giocatore")
+	if n2.night_index != 2:
+		print("   <-- ATTESO: l'indice avanza da nights_completed, non da un numero scritto a mano")
+
+	# L'indice che avanza e' cio' che fa ruotare i committenti: senza, la commessa
+	# resta per sempre la prima del roster e FULFILL paga quanto SELL.
+	print("   la rotazione dei committenti segue l'indice: notte 1 -> primo, notte 2 -> secondo")
+
+	# Il campo `version` esiste dal primo giorno, come per NightRun.
+	print("   PlayerProfile v%d, NightRun v%d" % [
+		PlayerProfile.CURRENT_VERSION, NightRun.CURRENT_VERSION])

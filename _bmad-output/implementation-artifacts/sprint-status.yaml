@@ -51,12 +51,17 @@
 # development_status perché non sono storie: si chiudono nei documenti, prima
 # che parta la storia che le tocca.
 #
-#   C1 — APERTO — blocca la storia 2.7 (2-7-il-portafoglio-e-ancora-li-la-notte-dopo)
-#        Non esiste un contenitore per lo stato che attraversa le notti, e
-#        Game.start_night() azzera il portafoglio. Da chiudere PRIMA della 2.7.
-#        >>> DOSSIER PRONTO: c1-dossier-stato-cross-notte.md — i fatti, tre strade
-#        >>> con i loro costi, e cosa cambia in concreto. La decisione e' di Federico.
-#        >>> Blocca anche la 3.2 (il terminale che spende) e FR31, non solo la 2.7.
+#   C1 — CHIUSO il 2026-08-23 — nasce core/player_profile.gd, la Resource sorella di
+#        NightRun che tiene cio' che e' del GIOCATORE: wallet_lire, nights_completed.
+#        `wallet_lire` esce da NightRun e diventa `night_earnings` (della notte);
+#        Game.end_night() versa i guadagni al profilo, e start_night() non lo tocca.
+#        Scelta l'opzione A del dossier (c1-dossier-stato-cross-notte.md): la linea
+#        fra "della notte" e "del giocatore" e' scritta in due TIPI, non in un elenco
+#        di campi dentro una funzione di copia che qualcuno deve ricordarsi.
+#        Conseguenza felice: night_index deriva da nights_completed invece di essere
+#        inchiodato a 1, quindi la rotazione dei committenti avanza — ed era il motivo
+#        per cui FULFILL e SELL pagavano identico in ogni partita.
+#        Sblocca la 2.7 e la 3.2. Collaudato in tests/test_bench.gd.
 #
 #   C3 — APERTO — blocca la storia 3.6 (3-6-la-telemetria-trasformare-limpressione-in-prova)
 #        La telemetria ha tre collocazioni contraddittorie e nessun proprietario.

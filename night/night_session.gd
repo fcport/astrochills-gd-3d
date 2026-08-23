@@ -497,7 +497,10 @@ func _on_sale_confirmed(fulfill: bool) -> void:
 
 	# Payout IMMEDIATO e PER-FOTO: accreditato ora, su questa foto, non aggregato di
 	# fine notte.
-	Game.run.wallet_lire += lire
+	# Si accredita sulla NOTTE, non sul giocatore: il travaso lo fa `Game.end_night()`
+	# quando la notte si chiude davvero (C1). Cosi' una notte interrotta non lascia
+	# meta' guadagno in tasca.
+	Game.run.night_earnings += lire
 	# `photo_id` è un `int` (Photo.KEY_ID); il signal lo vuole `StringName`. Si
 	# converte all'emissione — l'MVP non ha bisogno di un UUID.
 	Events.photo_sold.emit(StringName(str(_sale_photo_id)), lire)
@@ -810,6 +813,13 @@ func _close_night() -> void:
 		_menu = null
 
 	_show_summary()
+
+	# LA NOTTE SI CHIUDE DAVVERO. `end_night()` non era chiamata da nessuna parte: i
+	# guadagni restavano su una `NightRun` che nessuno leggeva piu', e `night_index`
+	# non avanzava mai — motivo per cui la rotazione dei committenti era ferma sul
+	# primo, e FULFILL pagava quanto SELL in ogni partita giocabile. Va DOPO il
+	# riepilogo, che tiene il proprio riferimento alla notte e continua a mostrarla.
+	Game.end_night()
 	# L'annuncio al resto del mondo va DOPO che la notte è chiusa davvero: chi
 	# ascolta — la cupola dell'epica 3, la telemetria — deve trovare uno stato
 	# già fermo, non a metà. Sul bus e non diretto, perché gli ascoltatori sono

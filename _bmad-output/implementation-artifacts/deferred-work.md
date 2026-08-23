@@ -537,3 +537,62 @@ source_spec: `spec-3-3-il-caffe-lattesa-piccola-dentro-lattesa-grande.md`
 severity: medium
 reason: Il banco (`tests/test_bench.gd::_check_moka_ritual`) collauda `next_on_interact`/`is_interactive`/`prompt_for`/`starts_activity`/`ends_activity` come predicati puri, senza istanziare il nodo Moka né connettersi a `Events`. Il WIRING che trasforma quei predicati in emissioni reali (`interacted.connect(_on_interacted)` + le due `Events...emit`) e il toggle di presenza da `Game.profile.owns`/`item_purchased` non sono esercitati: una regressione che rompesse la connessione o spostasse un'emissione lascerebbe il banco verde. Collaudabile headless (il binario Godot c'è e la scena del banco gira sotto SceneTree), ma tenuto fuori per rispettare la convenzione pura del banco (NFR19) — stesso trattamento del deferral di `Game.spend_lire` end-to-end in 3.2.
 status: open
+
+---
+
+## Verifiche d'operatore delle storie 3.1, 3.2 e 3.3 — eseguite il 2026-08-24
+
+Le tre storie si sono chiuse `awaiting-operator` con la stessa frase — «nessun binario
+Godot nell'ambiente» — e diciassette azioni dovute fra tutte. Il binario c'era: si
+chiama `Godot_v4.7.2-stable_win64.exe`, sta nella radice, e da adesso `project-context.md`
+lo dice. Ecco cosa e' stato verificato, e come. **Numeri, non impressioni.**
+
+**3.1 — un difetto vero, corretto.** La cucina stava dentro la stanza computer
+(x∈[-1.05, 2.25], z∈[-2.58, 0.58]) con la propria parete est a tagliare la stanza fra
+il letto e la scrivania. Adesso x∈[2.00, 5.30], z∈[-5.80, -2.65]. Vedi il commento
+sopra il nodo `Kitchen` in `world/observatory.tscn` per il perché il verso è quello
+e non un altro. **Che due stanze non si compenetrino non è una proprietà del file
+`.tscn`: è una proprietà dello spazio.** Nessun controllo statico può vederla.
+
+**3.1 — il chime tace da fuori.** Non con la distanza: appena fuori la porta si sta a
+6,45 m dal suono e dietro l'edificio a 6,16, mentre la cupola — che deve restare
+udibile — sta a 7,81. Nasce `world/indoors_volume.gd`. Otto posizioni provate, otto
+giuste.
+
+**3.1 — la nebbia si mangiava il cielo.** `fog_sky_affect` vale 1.0 di default e
+sostituisce il cielo per intero: cambiando i colori del cielo il pixel in alto non si
+muoveva. La fessura della cupola mostrava nebbia e si leggeva come una fascia scura.
+Ora `fog_sky_affect = 0.2`. Luminosità media misurata dopo: stanza computer 0.217,
+cucina 0.210, atrio 0.176, cupola 0.132, fuori 0.120.
+
+**3.1 — il bosco ferma.** Spingendo il corpo nei quattro versi da (3.5, 6.0): si esce
+a 12,3-13,0 m dal centro in tre direzioni; nella quarta si entra dalla porta sud, si
+attraversa l'atrio e ci si ferma al piano della cucina — **il che prova anche che il
+percorso interno è aperto**.
+
+**3.2 — il banco gira pulito** (nessuna riga «<-- ATTESO») e il gioco parte senza
+errori ne' warning. Il terminale a 256x192 è leggibile: cornice, `WALLET`/`NIGHT TAKE`
+coerenti (usa `Game.wallet_now()`, quindi mostra saldo + guadagni di stanotte), menu
+numerato, piede dei comandi.
+
+**3.3 — la moka SI raggiunge**, e la misura è costata due giri: la prima sonda diceva
+«mai da nessun punto», ed era la SONDA a sbagliare — la moka nasce assente e la sua
+collisione è disabilitata sul nodo, non solo `enabled = false`. Accesa come farebbe un
+acquisto: **42 posizioni valide, finestra verticale di 18 gradi** (da -69 a -51) stando
+davanti al piano. Alzare il volume darebbe più margine (0,45 m → 29 gradi) ma
+ricreerebbe il difetto per cui Federico si e' lamentato del letto — il prompt che
+compare guardando il muro dietro. **Si lascia com'è.**
+
+**3.2+3.3 — la giuntura tiene.** Prima dell'acquisto la moka è invisibile, inusabile e
+senza collisione; dopo `mark_owned` + `item_purchased` e' visibile, usabile e solida.
+
+### Cosa NON è stato verificato, e va detto
+
+- **Il suono.** Il salire del borbottio, il beep del terminale, l'attenuazione dalla
+  cucina e dalla cupola: nessuna sonda puo' ascoltare. Restano dovuti a un umano.
+- **Il rituale del caffè nel tempo** (riempire → fuoco → decine di secondi → versare →
+  bere), l'abbandono a meta' e la ripetizione fra notti.
+- **Le coppie di telemetria** `wait_activity_started/ended`: la 3.6 le raccoglierà, e
+  lì si vedranno.
+- **Il terminale che NON si apre** mentre una fase interattiva e' a schermo (gate
+  `is_waiting()`).

@@ -115,7 +115,7 @@ development_status:
   # Story 2.5: Qualcuno la compra, e paga subito
   2-5-qualcuno-la-compra-e-paga-subito: done
   # Story 2.6: Decidere quanto rifare
-  2-6-decidere-quanto-rifare: backlog
+  2-6-decidere-quanto-rifare: done
   # Story 2.7: Il portafoglio è ancora lì la notte dopo
   # >>> BLOCCATA DA C1 (aperto): serve un contenitore per lo stato che
   # >>> attraversa le notti; Game.start_night() azzera il portafoglio.

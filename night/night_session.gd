@@ -52,6 +52,14 @@ const REVEAL := preload("res://night/stacking_reveal.gd")
 ## e da sé stesso.
 const SALE := preload("res://night/photo_sale.gd")
 
+## Il menu post-foto. `preload` come il riepilogo, la rivelazione e la vendita: è un
+## Control di `night/` e deve esistere in ogni build. NON è una fase — la prova
+## meccanica (nessun nome di fase qui) resta verde: `night/` può dipendere da sé
+## stesso. È l'anello che chiude il ciclo notturno e lo riapre a un punto diverso del
+## piano, senza che questo file nomini mai una fase: i quattro rami muovono gli indici
+## del `NightPlan`, non un `preload` né un `match` su `key()`.
+const MENU := preload("res://night/post_photo_menu.gd")
+
 ## Il roster dei committenti. `load` e non `preload`: è un DATO in `data/`, e il caso
 ## «roster assente» è previsto (I/O matrix) — un `preload` di un file mancante
 ## romperebbe la compilazione, `load` restituisce `null` e la notte prosegue a base.
@@ -88,6 +96,11 @@ var _stacking: Control
 ## mostrato sul CRT, posseduto e liberato dall'orchestratore. Non è una fase.
 var _sale: Control
 
+## Il menu post-foto, quando c'è. Come `_sale`: un `Control` di `night/` mostrato sul
+## CRT, posseduto e liberato dall'orchestratore. Non è una fase. *chiudi ed esplora* lo
+## lascia vivo (present-gated) fino all'alba, perché risedendosi ricompaia (FR4).
+var _menu: Control
+
 ## Il payout base della foto in vendita, calcolato in `_enter_sale` e usato in
 ## `_on_sale_confirmed`: il ramo del rifiuto paga esattamente questo, senza
 ## ricalcolarlo. `_sale_photo_id` è l'indice del record da mettere in `photo_sold`.
@@ -115,6 +128,16 @@ var _stacking_mode := Node.PROCESS_MODE_INHERIT
 ## Il modo che la vendita aveva alla nascita, per la stessa ragione degli altri:
 ## sospenderla lo sostituisce con `DISABLED`, riprenderla lo rimette.
 var _sale_mode := Node.PROCESS_MODE_INHERIT
+
+## Il modo che il menu post-foto aveva alla nascita, per la stessa ragione degli
+## altri: sospenderlo lo sostituisce con `DISABLED`, riprenderlo lo rimette.
+var _menu_mode := Node.PROCESS_MODE_INHERIT
+
+## Le `key()` delle fasi di SETUP, imparate a runtime. Si popola in `_on_phase_finished`
+## quando una fase conclude mentre `_in_setup` è ancora true (Design Notes): sono
+## esattamente le chiavi che *rifai setup* azzera (FR18), senza che questo file nomini
+## una fase. La `key()`, MAI `name`: Godot rinomina in `@Phase@2`.
+var _setup_phase_keys: Dictionary = {}
 
 var _setup_index := 0
 var _photo_index := 0
@@ -170,6 +193,14 @@ func begin() -> void:
 	if _sale != null:
 		_sale.queue_free()
 		_sale = null
+	# Come gli altri Control: un menu post-foto di una notte prima farebbe mentire
+	# `has_phase()` e resterebbe a schermo. Lo libera chi l'ha creato.
+	if _menu != null:
+		_menu.queue_free()
+		_menu = null
+	# Le chiavi di setup si imparano ogni notte da capo: quelle della notte prima non
+	# valgono per un `NightPlan` che potrebbe essere cambiato.
+	_setup_phase_keys.clear()
 
 	# LA COMMESSA SI DECIDE ORA, all'inizio della notte, e vive su `NightRun`
 	# (spec: «determinata all'inizio della notte»). Il roster è un DATO in `data/`,
@@ -193,7 +224,7 @@ func current_phase() -> Phase:
 
 ## Se c'è qualcosa da fare al monitor adesso.
 func has_phase() -> bool:
-	return _phase != null or _summary != null or _stacking != null or _sale != null
+	return _phase != null or _summary != null or _stacking != null or _sale != null or _menu != null
 
 
 func clock() -> NightClock:
@@ -241,6 +272,13 @@ func set_player_present(present: bool) -> void:
 	# quindi va sospesa a parte — come il `Control` di una fase.
 	if _sale != null and is_instance_valid(_sale):
 		_sale.process_mode = _sale_mode if present else Node.PROCESS_MODE_DISABLED
+
+	# Il menu post-foto è present-gated come la vendita: sospenderlo alla postazione
+	# vuota ferma il suo `_unhandled_input`. È ciò che fa ricomparire il menu
+	# risedendosi dopo *chiudi ed esplora* — sospeso mentre si è via, ripreso al
+	# ritorno. Vive nel `SubViewport` del CRT, non è figlio di niente che erediti.
+	if _menu != null and is_instance_valid(_menu):
+		_menu.process_mode = _menu_mode if present else Node.PROCESS_MODE_DISABLED
 
 	if _phase == null:
 		return
@@ -391,6 +429,10 @@ func _enter_sale(quality: int, photo_id: int) -> void:
 		String(_ctx.get(Photo.CTX_TARGET, "")), quality, _sale_base, Game.run.commission)
 	# Signal DIRETTO: l'ascoltatore è uno solo, questo orchestratore.
 	_sale.confirmed.connect(_on_sale_confirmed)
+	# `dismissed` → il menu post-foto, DIFFERITO: nasce nell'input della vendita che
+	# `_on_sale_dismissed` sta per liberare, e non si libera un nodo dentro la propria
+	# callback (NFR16).
+	_sale.dismissed.connect(_on_sale_dismissed, CONNECT_DEFERRED)
 	_crt.show_control(_sale)
 	set_player_present(_player_present)
 
@@ -422,6 +464,103 @@ func _on_sale_confirmed(fulfill: bool) -> void:
 		_sale.show_sold(lire)
 
 	Log.info("night", "venduta — foto %d, %d lire (fulfill %s)" % [_sale_photo_id, lire, fulfill])
+
+
+# ---------------------------------------------------------------- il menu post-foto
+
+## La vendita è stata congedata: si passa al menu post-foto. Differito perché
+## `dismissed` nasce nell'input della vendita che `_enter_menu` sta per liberare, e una
+## transizione non si avvia dentro l'input del nodo che la avvia (NFR16).
+func _on_sale_dismissed() -> void:
+	_enter_menu.call_deferred()
+
+
+## Mette il menu post-foto sul CRT. Libera la vendita (che `dismissed` ha finito di
+## usare) e monta il menu, present-gated come tutto il resto: nasce fermo se il
+## giocatore non è alla postazione.
+##
+## `_ended` GUARDIA: l'alba può essere arrivata nella finestra fra `dismissed` e questo
+## `call_deferred`. Se la notte è chiusa, `_close_night` ha già liberato la vendita e
+## mostrato il riepilogo — il menu non deve scavalcarlo.
+func _enter_menu() -> void:
+	if _ended:
+		return
+	if _sale != null and is_instance_valid(_sale):
+		_sale.queue_free()
+		_sale = null
+
+	_menu = MENU.new()
+	# Il modo si registra appena il Control esiste, prima che il gating lo sospenda.
+	_menu_mode = _menu.process_mode
+	_crt.show_control(_menu)
+	# `chosen` → il rientro nel piano, DIFFERITO: nasce dentro l'input del menu, e i
+	# rami che liberano il menu non devono farlo dentro la sua stessa callback (NFR16).
+	_menu.chosen.connect(_on_menu_chosen, CONNECT_DEFERRED)
+	set_player_present(_player_present)
+
+	Log.info("night", "menu post-foto aperto")
+
+
+## Il giocatore ha scelto quanto rifare. Ogni ramo è un RIENTRO nel piano a un punto
+## diverso, e il rientro NON nomina nessuna fase (ADR-002): muove `_in_setup` e gli
+## indici del `NightPlan`, mai un `preload` né un `match` su `key()`.
+##
+## L'INVARIANTE DEL PIANO che questi indici codificano: la prima fase foto seleziona
+## il target, le successive lo catturano. Indice foto 1 = si salta la selezione del
+## target (stesso target); indice foto 0 = si rifà anche la selezione (cambia target).
+##
+## `_ended` GUARDIA: una scelta differita in arrivo dopo l'alba trova la notte chiusa
+## e si ignora — `_close_night` ha già liberato il menu e mostrato il riepilogo.
+func _on_menu_chosen(option: int) -> void:
+	if _ended:
+		return
+	match option:
+		MENU.OPTION_SHOOT_AGAIN:
+			# Stesso target, stessa configurazione: `_ctx` resta intatto, e la fase che
+			# cattura lo ripresenta come valori di partenza. Si salta la selezione del
+			# target (indice foto 1).
+			_free_menu()
+			_in_setup = false
+			_photo_index = 1
+			_enter_next()
+		MENU.OPTION_CHANGE_TARGET:
+			# Si riparte dalla prima fase foto (indice foto 0), quella che seleziona il
+			# target. I punteggi di setup restano ereditati in `phase_scores`.
+			_free_menu()
+			_in_setup = false
+			_photo_index = 0
+			_enter_next()
+		MENU.OPTION_REDO_SETUP:
+			# Si azzerano SOLO i punteggi delle fasi di setup (per `key()` imparata a
+			# runtime, FR18): le fasi foto non si toccano, le riscrive la riesecuzione.
+			# `_ctx` si svuota — il target e la configurazione vanno rifatti da capo.
+			for k: StringName in _setup_phase_keys:
+				Game.run.phase_scores.erase(k)
+			_free_menu()
+			_ctx.clear()
+			_in_setup = true
+			_setup_index = 0
+			_photo_index = 0
+			_enter_next()
+		MENU.OPTION_CLOSE:
+			# NON si libera il menu (FR4): lo si lascia vivo e present-gated, così
+			# risedendosi ricompare e si può scattare ancora senza rifare nulla.
+			# `arm()` lo ripulisce perché alla riapertura sia di nuovo interattivo.
+			# `plan_exhausted` avverte il punto d'ingresso di far rialzare il giocatore.
+			_menu.arm()
+			plan_exhausted.emit()
+
+
+## Toglie il menu di scena e lo libera. `show_control(null)` PRIMA di liberare, come
+## per la vendita e la rivelazione: dopo `reparent()` il Control non è più figlio di
+## niente, e resterebbe a schermo appartenendo a qualcosa che non esiste più.
+func _free_menu() -> void:
+	if _menu == null:
+		return
+	if _crt != null:
+		_crt.show_control(null)
+	_menu.queue_free()
+	_menu = null
 
 
 func _enter_phase(scene: PackedScene) -> void:
@@ -502,6 +641,14 @@ func _on_phase_finished(result: PhaseResult, phase: Phase) -> void:
 	# storia 2.6 succede davvero — con quella chiave finirebbe nel salvataggio.
 	Game.run.phase_scores[phase.key()] = result.score
 	Events.phase_finished.emit(phase.key(), result.score)
+
+	# SI IMPARANO QUI LE CHIAVI DI SETUP, senza nominare una fase (Design Notes).
+	# `_in_setup` è ancora true SOLO mentre lo scan del piano è nelle fasi di setup:
+	# le fasi di setup concludono con `_in_setup == true`, le foto con false.
+	# Registrare la `key()` sotto questa guardia dà l'insieme delle chiavi di setup —
+	# per `key()`, MAI `name` (FR18) — ed è esattamente ciò che *rifai setup* cancella.
+	if _in_setup:
+		_setup_phase_keys[phase.key()] = true
 
 	# Ciò che questa fase lascia a quelle dopo di lei. È il canale di FR12.
 	_ctx.merge(result.payload, true)
@@ -595,6 +742,14 @@ func _close_night() -> void:
 	if _sale != null:
 		_sale.queue_free()
 		_sale = null
+
+	# Il menu post-foto, se è a schermo all'alba (aperto, o lasciato vivo da *chiudi
+	# ed esplora*), la libera chi lo possiede — prima che il riepilogo lo sostituisca.
+	# Stesso motivo della vendita qui sopra. Una scelta differita in arrivo trova
+	# `_ended` true in `_on_menu_chosen` e si ignora.
+	if _menu != null:
+		_menu.queue_free()
+		_menu = null
 
 	_show_summary()
 	# L'annuncio al resto del mondo va DOPO che la notte è chiusa davvero: chi

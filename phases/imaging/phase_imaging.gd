@@ -103,6 +103,17 @@ func setup(run: NightRun, ctx: Dictionary) -> void:
 	if _target_id.is_empty():
 		push_error("[imaging] setup senza target_id nel ctx: uso un id vuoto (segnaposto)")
 
+	# 2.6 — scatta ancora ripresenta la STESSA configurazione: se il ctx porta già
+	# esposizione e conteggio frame (rientro dopo una vendita, senza rifare il
+	# targeting), la posa riparte da quei valori invece che dai default. Assenti (primo
+	# scatto) → i default restano. Chiavi grezze, nessun import da `photo/`: sono dati
+	# in ingresso. `clampi` ai limiti dell'interfaccia, che un ctx malformato non li
+	# violi.
+	if ctx.has(&"exposure_sec"):
+		_exposure = clampi(int(ctx[&"exposure_sec"]), EXPOSURE_MIN, EXPOSURE_MAX)
+	if ctx.has(&"frame_count"):
+		_frames_total = clampi(int(ctx[&"frame_count"]), FRAMES_MIN, FRAMES_MAX)
+
 
 func _ready() -> void:
 	if truth == null:

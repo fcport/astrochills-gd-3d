@@ -406,6 +406,52 @@ func _check_imaging_setup() -> void:
 		print("      <-- ATTESO: target = m42")
 	with_target.free()
 
+	# 2.6 — «scatta ancora → stessa configurazione»: `setup()` reidrata esposizione e
+	# frame dal ctx quando ci sono, con `clampi` ai limiti dell'interfaccia; assenti,
+	# restano i default. È logica pura e deterministica: si collauda qui, senza
+	# SceneTree, sullo stesso modello del target sopra — istanzia, `setup`, legge
+	# `_config_readout()`, libera.
+
+	# 1) In range: i valori del ctx passano intatti fino al readout.
+	var cfg := PhaseImaging.new()
+	cfg.setup(run, {&"target_id": &"m42", &"exposure_sec": 300, &"frame_count": 40})
+	var ro_cfg := cfg._config_readout()
+	print("   ctx con esposizione 300 + frame 40: readout %d / %d" % [
+		int(ro_cfg.get(&"exposure_sec", -1)), int(ro_cfg.get(&"frame_count", -1))])
+	if int(ro_cfg.get(&"exposure_sec", -1)) != 300:
+		print("      <-- ATTESO: exposure_sec = 300")
+	if int(ro_cfg.get(&"frame_count", -1)) != 40:
+		print("      <-- ATTESO: frame_count = 40")
+	cfg.free()
+
+	# 2) Fuori scala: `clampi` riporta ai massimi dell'interfaccia (EXPOSURE_MAX 600,
+	# FRAMES_MAX 60), così un ctx malformato non li viola.
+	var clamped := PhaseImaging.new()
+	clamped.setup(run, {&"target_id": &"m42", &"exposure_sec": 9000, &"frame_count": 999})
+	var ro_clamp := clamped._config_readout()
+	print("   ctx fuori scala (9000 / 999): readout %d / %d  (max %d / %d)" % [
+		int(ro_clamp.get(&"exposure_sec", -1)), int(ro_clamp.get(&"frame_count", -1)),
+		PhaseImaging.EXPOSURE_MAX, PhaseImaging.FRAMES_MAX])
+	if int(ro_clamp.get(&"exposure_sec", -1)) != PhaseImaging.EXPOSURE_MAX:
+		print("      <-- ATTESO: exposure_sec = %d" % PhaseImaging.EXPOSURE_MAX)
+	if int(ro_clamp.get(&"frame_count", -1)) != PhaseImaging.FRAMES_MAX:
+		print("      <-- ATTESO: frame_count = %d" % PhaseImaging.FRAMES_MAX)
+	clamped.free()
+
+	# 3) Senza chiavi di config: i default restano (primo scatto). EXPOSURE_DEFAULT 120,
+	# FRAMES_DEFAULT 20.
+	var defaults := PhaseImaging.new()
+	defaults.setup(run, {&"target_id": &"m42"})
+	var ro_def := defaults._config_readout()
+	print("   ctx senza config: readout %d / %d  (default %d / %d)" % [
+		int(ro_def.get(&"exposure_sec", -1)), int(ro_def.get(&"frame_count", -1)),
+		PhaseImaging.EXPOSURE_DEFAULT, PhaseImaging.FRAMES_DEFAULT])
+	if int(ro_def.get(&"exposure_sec", -1)) != PhaseImaging.EXPOSURE_DEFAULT:
+		print("      <-- ATTESO: exposure_sec = %d" % PhaseImaging.EXPOSURE_DEFAULT)
+	if int(ro_def.get(&"frame_count", -1)) != PhaseImaging.FRAMES_DEFAULT:
+		print("      <-- ATTESO: frame_count = %d" % PhaseImaging.FRAMES_DEFAULT)
+	defaults.free()
+
 
 ## L'aggregazione della qualità della foto: media intera dei punteggi di fase, `0`
 ## sul dizionario vuoto. LOGICA PURA — `PhotoQuality.new()` senza SceneTree, come le

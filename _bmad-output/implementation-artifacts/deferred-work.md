@@ -363,3 +363,11 @@ source_spec: `spec-2-5-qualcuno-la-compra-e-paga-subito.md`
 severity: low
 reason: night_session._on_sale_confirmed fa Events.photo_sold.emit(StringName(str(_sale_photo_id)), lire); _sale_photo_id = record[Photo.KEY_ID] = indice in run.photos. L'MVP non ne ha bisogno, ma va ricordato per la 2.7.
 status: open
+
+### DW-9: Il flusso del menu post-foto non ha copertura automatica: il rientro nel piano dei quattro rami (_on_menu_chosen), l'apertura via _sale.dismissed, il present-gating e la liberazione all'alba del _menu
+origin: spec-deferred c485b3c5cf15
+location: night/night_session.gd:_on_menu_chosen, night/post_photo_menu.gd
+source_spec: `spec-2-6-decidere-quanto-rifare.md`
+severity: medium
+reason: Il banco (NFR19) prova solo logica pura senza SceneTree; la 2.6 è orchestrazione (NightSession) + UI (Control diegetico che gestisce input nel SubViewport), stateful. Rispecchia DW-2 (stessa lacuna per il flusso imaging della 2.3) e la lacuna della composizione di vendita della 2.5. Una regressione (indice foto errato, chiave di setup mancante in _setup_phase_keys, guardia _ended assente) lascerebbe il banco verde.
+status: open

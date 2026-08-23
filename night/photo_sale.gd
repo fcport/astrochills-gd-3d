@@ -29,6 +29,11 @@ extends Control
 ## uno solo, l'orchestratore che ha creato questo Control.
 signal confirmed(fulfill: bool)
 
+## La schermata «SOLD» è stata congedata: il giocatore ha premuto conferma di nuovo,
+## e vuole vedere cosa fare adesso. Porta al menu post-foto (2.6). Signal DIRETTO —
+## l'ascoltatore è uno solo, l'orchestratore che ha creato questo Control.
+signal dismissed()
+
 const DESIGN_SIZE := Vector2(256, 192)
 
 const BG := Color(0.02, 0.06, 0.03)
@@ -113,9 +118,18 @@ func show_sold(lire: int) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Nello stato «SOLD» il menu di vendita è inerte, ma la conferma non lo è più:
+	# congeda la schermata e porta al menu post-foto (2.6). È deferito a valle da
+	# `dismissed`, perché nasce nell'input di questo Control che l'orchestratore sta
+	# per liberare. Va PRIMA della guardia `_done`, che dopo la vendita è true.
+	if _sold:
+		if event.is_action_pressed(&"sale_confirm"):
+			dismissed.emit()
+			get_viewport().set_input_as_handled()
+		return
+
 	# Guardato da `_done`, come le fasi: dopo la conferma l'input non muove più nulla,
-	# e la schermata «SOLD» resta finché il giocatore non si rialza con `E` (via
-	# `main._shortcut_input`, che non passa da qui).
+	# e la schermata «SOLD» resta finché il giocatore non congeda con conferma.
 	if _done:
 		return
 
@@ -171,7 +185,7 @@ func _draw_sold() -> void:
 		# Il «niente» reso percepibile (NFR20): una riga gentile, tono cozy. Nessuna
 		# penalità, nessuna traccia — solo il base pagato.
 		_text(Vector2(8, 108), "declined — no harm", DIM, 12)
-	_text(Vector2(8, 182), "press E to stand up", DIM, 12)
+	_text(Vector2(8, 182), "press enter for options", DIM, 12)
 
 
 ## Formatta il moltiplicatore senza zeri inutili: 1.4 → "1.4", 1.0 → "1".

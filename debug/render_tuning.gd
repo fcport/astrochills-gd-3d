@@ -13,6 +13,7 @@
 ##   Shift+F3              filtro di upscale nearest <-> linear
 ##   Shift+F5 / Shift+F6   jitter dei vertici (snap_resolution)
 ##   Shift+F7              jitter di fatto spento
+##   Shift+F8 / Shift+F9   passo del giocatore (metri al secondo)
 ##
 ## Il comando del jitter ha un bersaglio dalla storia 1.2: la stanza computer, i
 ## suoi arredi e la scocca del monitor usano tutti `material_override` su
@@ -71,6 +72,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			_set_shrink(shrink() + 1)
 		KEY_F3:
 			_toggle_filter()
+		KEY_F8:
+			_step_walk(-0.2)
+		KEY_F9:
+			_step_walk(0.2)
+		KEY_F10:
+			_step_sprint(-0.2)
+		KEY_F11:
+			_step_sprint(0.2)
 		KEY_F5:
 			_set_snap(snap_resolution / SNAP_STEP)
 		KEY_F6:
@@ -121,3 +130,18 @@ func _collect_materials(node: Node) -> Array[ShaderMaterial]:
 	for child in node.get_children():
 		out.append_array(_collect_materials(child))
 	return out
+
+
+## Il passo, cambiato mentre si cammina. E' il solo modo di trovarlo: un numero di
+## metri al secondo non dice niente finche' non lo si prova dentro la stanza vera.
+func _step_walk(delta_speed: float) -> void:
+	Player.walk_speed = clampf(Player.walk_speed + delta_speed, 0.4, 6.0)
+	Log.debug("render", "passo %.1f m/s" % Player.walk_speed)
+
+
+## Lo scatto si tara separatamente dal passo, e non come un multiplo: sono due
+## sensazioni diverse — quanto il posto è lento e quanto il giocatore ha fretta —
+## e legarle costringerebbe a scegliere quale delle due sacrificare.
+func _step_sprint(delta_speed: float) -> void:
+	Player.sprint_speed = clampf(Player.sprint_speed + delta_speed, 0.4, 12.0)
+	Log.debug("render", "scatto %.1f m/s" % Player.sprint_speed)

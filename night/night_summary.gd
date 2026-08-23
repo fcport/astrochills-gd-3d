@@ -34,6 +34,12 @@ var _clock_text := ""
 var _scores: Array[Vector2i] = []
 var _score_keys: PackedStringArray = PackedStringArray()
 
+## Quanto c'è in cassa DOPO che stanotte sarà stata versata. Lo compone il
+## chiamante e non questo Control: all'alba `Game.end_night()` non è ancora stata
+## chiamata, quindi `Game.profile.wallet_lire` è ancora il saldo di ieri. Vedi
+## `night_session._show_summary()`.
+var _wallet := 0
+
 
 func _ready() -> void:
 	custom_minimum_size = DESIGN_SIZE
@@ -44,8 +50,9 @@ func _ready() -> void:
 
 ## Unico ingresso. Si legge la `NightRun` una volta sola, all'alba: da qui in poi
 ## questo Control non guarda più niente, e non deve — la notte è finita.
-func set_readout(run: NightRun, clock_text: String) -> void:
+func set_readout(run: NightRun, clock_text: String, wallet_lire: int) -> void:
 	_clock_text = clock_text
+	_wallet = wallet_lire
 	if run == null:
 		return
 	_night_index = run.night_index
@@ -68,19 +75,25 @@ func _draw() -> void:
 	# accreditate e nessuno le leggeva mai — `end_night()` non era chiamata, il segnale
 	# `photo_sold` non aveva ascoltatori, e il riepilogo parlava solo di punteggi. Si
 	# poteva lavorare una notte intera senza vedere una cifra.
-	_text(Vector2(8, 54), "%d photos — %d lire" % [_photos, _earnings], FG, 12)
+	var plural := "" if _photos == 1 else "s"
+	_text(Vector2(8, 54), "%d photo%s - %d lire tonight" % [_photos, plural, _earnings], DIM, 12)
 
-	# La spaziatura è stata scelta guardando lo schermo, non calcolata: con le
-	# righe attaccate in alto restava un buco al centro che faceva sembrare il
-	# riepilogo incompiuto invece che essenziale.
-	var y := 84
+	# IL TOTALE IN CASSA, ed è la riga per cui questo riepilogo esiste. Il guadagno
+	# della notte da solo non dice niente: dice quanto ha reso una serata, non se il
+	# lavoro sta arrivando da qualche parte. Le lire attraversano le notti (C1), e
+	# fino a qui NON c'era un solo posto nel gioco in cui leggerle — si giocava alla
+	# cieca sull'unica risorsa che si accumula. In FG, più grande delle altre: fra
+	# le righe di questa schermata è quella che si guarda.
+	_text(Vector2(8, 74), "WALLET  %d lire" % _wallet, FG, 14)
+
+	var y := 104
 	if _score_keys.is_empty():
 		_text(Vector2(8, y), "NOTHING RECORDED", DIM, 12)
 	else:
-		_text(Vector2(8, 64), "PHASE SCORES", DIM, 12)
+		_text(Vector2(8, 96), "PHASE SCORES", DIM, 12)
 		for i in _score_keys.size():
-			_text(Vector2(8, y), "%-14s %3d" % [_score_keys[i], _scores[i].x], FG, 12)
-			y += 16
+			_text(Vector2(8, y), "%-14s %3d" % [_score_keys[i], _scores[i].x], DIM, 12)
+			y += 15
 
 	_text(Vector2(8, 172), "the sky is getting light", DIM, 12)
 

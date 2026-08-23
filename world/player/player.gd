@@ -41,9 +41,22 @@ extends CharacterBody3D
 ## meno 9 cm — vedi le misure della stanza in `computer_room.tscn`.
 const EYE_HEIGHT := 1.65
 
-## Metri al secondo. Si cammina, non si corre: niente sprint, niente scatto.
-## L'osservatorio è un posto dove si sta, e il passo lo dice.
-const WALK_SPEED := 2.6
+## Metri al secondo camminando. L'osservatorio è un posto dove si sta, e il passo
+## lo dice — ma la stanza va anche attraversata, e farlo non deve annoiare.
+##
+## 2.0 e non 2.6: a 2.6 si trotta. Il numero non è stato ragionato, è stato
+## trovato camminando con `Shift+F8`/`Shift+F9` e leggendo l'overlay `F12` finché
+## il passo non sembrava un passo. È l'unico modo in cui questi numeri si trovano:
+## il 2.6 di prima era stato scelto senza guardare, e si vedeva.
+static var walk_speed := 2.0
+
+## Metri al secondo tenendo SHIFT. NON è uno scatto sportivo e non c'è stamina:
+## è la scorciatoia di chi sa già dove sta andando e non vuole rifare il giro
+## della stanza al rallentatore. Il gioco resta lento; è il giocatore che a volte
+## ha fretta, ed è una cortesia lasciarglielo dire.
+##
+## Tarabile come il passo, con `Shift+F10`/`Shift+F11`.
+static var sprint_speed := 4.0
 
 ## Quanto in fretta la velocità raggiunge quella voluta. Un valore alto rende il
 ## controllo immediato senza far sembrare il giocatore su una pista di ghiaccio.
@@ -77,6 +90,7 @@ const INTERACT_RANGE := 1.2
 ## il controllo torna: vedi `set_enabled()`.
 const OWN_ACTIONS: Array[StringName] = [
 	&"move_forward", &"move_back", &"move_left", &"move_right", &"interact",
+	&"sprint",
 ]
 
 ## Chi ha bisogno del giocatore lo trova per GRUPPO, mai per percorso di nodo né
@@ -248,7 +262,11 @@ func _physics_process(delta: float) -> void:
 			&"move_left", &"move_right", &"move_forward", &"move_back")
 		wish = (transform.basis * Vector3(input.x, 0.0, input.y)).normalized()
 
-	var target := wish * WALK_SPEED
+	# SHIFT ACCELERA, e si legge qui e non in `_unhandled_input`: è uno stato
+	# continuo («sto tenendo premuto»), non un evento. Letto per azione dichiarata
+	# come tutto il resto del movimento, mai per keycode grezzo.
+	var speed := sprint_speed if Input.is_action_pressed(&"sprint") else walk_speed
+	var target := wish * speed
 	velocity.x = move_toward(velocity.x, target.x, ACCELERATION * delta)
 	velocity.z = move_toward(velocity.z, target.z, ACCELERATION * delta)
 

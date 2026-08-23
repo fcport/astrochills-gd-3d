@@ -73,6 +73,15 @@ func _lines() -> PackedStringArray:
 		out.append("snapping  %.0f%s" % [
 			_render.snap_resolution,
 			"  (spento)" if _render.snap_resolution >= 8192.0 else ""])
+	out.append("passo     %.1f m/s   scatto %.1f m/s" % [
+		Player.walk_speed, Player.sprint_speed])
+	# Le lire non sono un dato di rendering, ma sono l'unica cosa che attraversa le
+	# notti e finora NON si poteva leggere da nessuna parte: si giocava senza sapere
+	# se il lavoro stesse arrivando da qualche parte. Finché non c'è un posto
+	# diegetico dove mostrarle, stanno qui — dichiaratamente un ripiego da debug.
+	out.append("cassa     %d lire   notti fatte %d   stanotte %d" % [
+		Game.profile.wallet_lire, Game.profile.nights_completed,
+		Game.run.night_earnings if Game.run != null else 0])
 	out.append("fps       %d   tuning %s" % [
 		Engine.get_frames_per_second(), Tuning.profile_hash])
 	out.append("")
@@ -80,6 +89,7 @@ func _lines() -> PackedStringArray:
 	out.append("F9  alterna sorgente onesta/bugiarda · F12 overlay")
 	out.append("Shift+F1/F2 risoluzione · Shift+F3 filtro")
 	out.append("Shift+F5/F6 jitter · Shift+F7 spegnilo")
+	out.append("Shift+F8/F9 passo · Shift+F10/F11 scatto")
 	return out
 
 

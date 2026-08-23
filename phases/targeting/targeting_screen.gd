@@ -28,16 +28,31 @@ const FAINT := Color(0.18, 0.34, 0.20)
 ## Il margine sinistro del testo, come nella vista polare.
 const MARGIN := 8
 
-## Il testo della descrizione comincia qui, e la striscia indice comincia li'.
-## Sono le due sponde fra cui la descrizione deve stare: il numero massimo di
-## righe si RICAVA da queste, invece di essere battuto a mano — cosi' spostare la
-## striscia sposta anche il limite, e non c'e' modo che le due misure divergano.
-## 86 e non 92: guardando la schermata di M42 in gioco, la sua descrizione — la
-## piu' lunga delle sei, 260 caratteri — arrivava a TOCCARE la striscia indice,
-## mentre fra "visible now" e l'inizio del testo restavano diciotto pixel vuoti.
-## Sei pixel spostati da sopra a sotto danno il respiro senza tagliare una parola.
-const DESC_TOP := 86.0
-const STRIP_TOP := 170.0
+## LA MAPPA DEL CAROSELLO STA IN TESTA, e non è una preferenza estetica: è l'unico
+## posto da cui non ruba spazio alla descrizione.
+##
+## Prima stava in fondo (y=170) con un titolo "TARGETING / TONIGHT" in cima, e fra
+## i due restavano 84 pixel per la descrizione — sei righe a corpo 10, contro le
+## sette che M42 richiede (260 caratteri). Il risultato era una frase tagliata a
+## metà su un catalogo di sei voci, cioè su tutto il contenuto che questa fase ha.
+## Guardandola in gioco, Federico l'ha chiamata «bella strettina», ed era esatto.
+##
+## Il titolo è sparito perché la striscia lo dice meglio: sei sigle in fila SONO
+## «stai scegliendo fra questi», e chi è arrivato qui ha appena scelto TARGETING
+## dal monitor. Fra le due, la riga che si può togliere è quella che ripete.
+const STRIP_TOP := 14.0
+
+## Le due sponde fra cui vive la descrizione. Il numero massimo di righe si RICAVA
+## da queste invece di essere battuto a mano, così spostare una sponda sposta anche
+## il limite e non c'è modo che le due misure divergano.
+const DESC_TOP := 80.0
+
+## Il piede della descrizione: dove comincia la riga dei comandi, meno il suo
+## ingombro. Non è `FOOTER_TOP` esatto perché `draw_string` posiziona la BASE del
+## testo: la riga dei comandi occupa i pixel SOPRA la propria y.
+const DESC_BOTTOM := 176.0
+
+const FOOTER_TOP := 187.0
 const DESC_SIZE := 10
 
 var _font: SystemFont
@@ -62,31 +77,30 @@ func set_readout(catalog: Array[Dictionary], cursor: int) -> void:
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, DESIGN_SIZE), BG)
-	_text(Vector2(MARGIN, 15), "TARGETING / TONIGHT", FG, 12)
 
 	if _catalog.is_empty() or _cursor < 0 or _cursor >= _catalog.size():
 		_text(Vector2(MARGIN, 40), "NO CATALOG", DIM, 12)
 		return
 
-	var t := _catalog[_cursor]
-	_draw_detail(t)
+	# La striscia per PRIMA: è l'intestazione oltre che la mappa.
 	_draw_index_strip()
-	_text(Vector2(MARGIN, 184), "UP/DOWN SELECT  ENTER CONFIRM", DIM, 12)
+	_draw_detail(_catalog[_cursor])
+	_text(Vector2(MARGIN, FOOTER_TOP), "UP/DOWN SELECT   ENTER CONFIRM", FAINT, 10)
 
 
 func _draw_detail(t: Dictionary) -> void:
+	# SIGLA E NOME SULLA STESSA RIGA. Erano due righe (y=33 e y=46), e le due cose
+	# insieme non superano i 26 caratteri nemmeno con "M31 Galassia di Andromeda":
+	# la seconda riga era spazio regalato alla spaziatura invece che al testo.
 	var short: String = t.get(&"short", "")
+	_text(Vector2(MARGIN, 34), "%s  %s" % [short, String(t.get(&"full", ""))], FG, 12)
+
+	# Il tipo scende qui accanto ai numeri: è un dato tecnico fra dati tecnici, e in
+	# cima faceva concorrenza alla sigla senza aggiungerle niente.
 	var type: StringName = t.get(&"type", &"")
-	# Riga sigla + tipo: sono da macchina, restano in inglese.
-	_text(Vector2(MARGIN, 33), "%s  %s" % [short, type], FG, 12)
-
-	# Nome esteso, in italiano: è narrativa. Dim per distinguerlo dai dati tecnici.
-	_text(Vector2(MARGIN, 46), String(t.get(&"full", "")), DIM, 12)
-
-	# DIFF e MIN sono etichette da macchina, in inglese.
 	var diff: int = t.get(&"diff", 0)
 	var min_exp: int = t.get(&"min_exp", 0)
-	_text(Vector2(MARGIN, 61), "DIFF %d   MIN %dm" % [diff, min_exp], FG, 12)
+	_text(Vector2(MARGIN, 48), "%s   DIFF %d   MIN %dm" % [type, diff, min_exp], DIM, 12)
 
 	# Disponibilità: diegetica, inglese, informativa e non gate. Un target fuori
 	# finestra mostra la finestra in cui lo sarà, e resta consultabile e
@@ -94,28 +108,28 @@ func _draw_detail(t: Dictionary) -> void:
 	var available: bool = t.get(&"available", false)
 	var window: String = t.get(&"window", "")
 	if available:
-		_text(Vector2(MARGIN, 74), "visible now", FG, 12)
+		_text(Vector2(MARGIN, 62), "visible now", FG, 12)
 	else:
-		_text(Vector2(MARGIN, 74), "not visible now - %s" % window, DIM, 12)
+		_text(Vector2(MARGIN, 62), "not visible now - %s" % window, DIM, 12)
 
 	# Descrizione narrativa, in italiano, wrappata alla larghezza del vetro.
 	#
-	# `max_lines` NON e' -1. Senza tetto il testo scorre oltre la striscia indice
-	# e oltre il piede, e non con un catalogo ipotetico: M42 ha 260 caratteri, che
-	# a corpo 10 su 240px sono sette righe contro le sei che ci stanno. Il
-	# risultato non e' un troncamento pulito ma la descrizione sovrapposta alla
-	# mappa del carosello, cioe' proprio l'indicazione che serve per orientarsi.
-	# Meglio una frase tagliata di una mappa illeggibile.
+	# `max_lines` NON è -1. Senza tetto il testo scorre oltre il piede, e non con un
+	# catalogo ipotetico: M42 ha 260 caratteri. Con la striscia spostata in testa le
+	# righe disponibili sono sette invece di sei, che è quanto M42 chiede — ma il
+	# tetto resta, perché la prossima descrizione scritta da qualcuno non ha nessun
+	# obbligo di stare in 260 caratteri, e deve troncare invece di sfondare il piede.
 	var desc: String = t.get(&"desc", "")
 	var line_h := _font.get_height(DESC_SIZE)
-	var max_lines := maxi(1, int((STRIP_TOP - DESC_TOP) / line_h))
+	var max_lines := maxi(1, int((DESC_BOTTOM - DESC_TOP) / line_h))
 	draw_multiline_string(
 		_font, Vector2(MARGIN, DESC_TOP), desc,
 		HORIZONTAL_ALIGNMENT_LEFT, DESIGN_SIZE.x - MARGIN * 2, DESC_SIZE, max_lines, DIM)
 
 
-## La striscia indice: le sei sigle in fondo, con l'evidenza sulla corrente e il
-## dimming su quelle non disponibili. È la mappa del carosello.
+## La striscia indice: le sei sigle IN TESTA, con l'evidenza sulla corrente e il
+## dimming su quelle non disponibili. È la mappa del carosello e insieme
+## l'intestazione della schermata — vedi il perché su `STRIP_TOP`.
 func _draw_index_strip() -> void:
 	var x := float(MARGIN)
 	var y := STRIP_TOP

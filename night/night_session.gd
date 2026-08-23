@@ -836,5 +836,13 @@ func _close_night() -> void:
 
 func _show_summary() -> void:
 	_summary = SUMMARY.new()
-	_summary.set_readout(Game.run, _clock.clock_text())
+	# IL TOTALE IN CASSA SI COMPONE QUI, e la somma non è una svista. `_reach_dawn`
+	# mostra il riepilogo PRIMA di chiamare `Game.end_night()` — deve, perché quella
+	# azzera `Game.run` e il riepilogo la sta ancora leggendo. Quindi in questo
+	# istante `profile.wallet_lire` è ancora il saldo di IERI, e la cifra vera per il
+	# giocatore è quella che avrà fra un battito: ieri più stanotte.
+	var wallet := Game.profile.wallet_lire
+	if Game.run != null:
+		wallet += Game.run.night_earnings
+	_summary.set_readout(Game.run, _clock.clock_text(), wallet)
 	_crt.show_control(_summary)

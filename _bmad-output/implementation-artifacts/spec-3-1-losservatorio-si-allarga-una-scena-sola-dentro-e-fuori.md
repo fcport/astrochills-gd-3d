@@ -2,7 +2,7 @@
 title: "3.1 L'osservatorio si allarga — una scena sola, dentro e fuori"
 type: 'feature'
 created: '2026-08-23'
-status: 'awaiting-operator'
+status: done
 baseline_revision: '01fb10695a5d951273250ef7ea60b69aa061eca6'
 review_loop_iteration: 0
 followup_review_recommended: false
@@ -191,3 +191,15 @@ Status: awaiting-operator
 - Nebbia/cielo/chime committati con valori di partenza geometrici, non «trovati guardando/ascoltando» come gli AC richiedono: taratura umana owed.
 - L'AC audio «da fuori non si sente» resta non soddisfatto finché non si aggiunge il meccanismo location-aware (owed all'operatore).
 - Estetica interamente segnaposto fino al pack di texture/audio (coerente con la memoria di progetto sugli asset provvisori).
+
+## Operator Confirmation
+
+Confirmed 2026-08-24: the external actions this story owed were carried out.
+
+- Aprire il progetto in Godot 4.7.2 (editor) e confermare che world/observatory.tscn e le nuove scene (kitchen/dome/exterior) importano senza errori di parse/risorsa in console: nessun binario Godot era disponibile nell'ambiente di build, quindi le scene sono validate solo staticamente.
+- Camminare la scena e verificare gli AC percettivi che l'ambiente headless non puo' controllare: stanza computer -> cucina in pochi secondi senza caricamenti; porta sud -> esterno di notte; ci si allontana fino a voltarsi a guardare l'edificio ma il bosco ferma; fessura della cupola mostra il cielo; nessuna caduta fuori mondo.
+- Tarare all'occhio, guardando DA DENTRO E DA FUORI, la nebbia e il cielo dell'unico WorldEnvironment (fog_density 0,035, fog_light_color, colori del ProceduralSkyMaterial): i valori committati sono un punto di partenza geometrico, non trovati guardando come l'AC richiede. Verificare anche che la fessura della cupola non faccia entrare luce/cielo in modo da slavare l'interno.
+- Chiudere l'AC audio «da fuori NON si sente»: con la sola distanza non e' raggiungibile (il punto appena fuori la porta sud, ~6,0 m, e' piu' vicino del centro cupola, ~7,7 m, che deve restare appena percettibile). Progettare un meccanismo location-aware — un Area3D che rileva il giocatore fuori e ammutolisce il SequenceChime, con default «udibile» come fallback sicuro (nessuna regressione del suono della 2.3) — e tararlo camminando/ascoltando. Vedi il commento in world/sequence_chime.tscn.
+- Quando arriveranno il pack di texture e gli asset audio (vedi deferred): rifinire l'estetica segnaposto (cucina/cupola/telescopio/bosco/sterrata, silhouette esterna e cornice della porta sud) e aggiungere i loop ambientali per luogo.
+
+_Appended by the bmad-loop orchestrator (`bmad-loop confirm`, #335): a human confirmed these external actions out of band, and the story was advanced from `awaiting-operator` to `done`._

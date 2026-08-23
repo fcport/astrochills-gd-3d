@@ -83,7 +83,7 @@
 # Questo tracking pianifica sulle 16 storie che esistono in epics.md.
 
 generated: 2026-08-21T22:44:03
-last_updated: 2026-08-23T19:30:00
+last_updated: 2026-08-24
 project: astrochills-gd-3d
 project_key: NOKEY
 tracking_system: file-system
@@ -164,7 +164,7 @@ development_status:
   # >>> loro; in 3D quel vincolo non esiste. Adesso la storia include anche
   # >>> L'ESTERNO, che nessuna epica aveva: e' la storia piu' grossa dell'epica 3 e
   # >>> la sola che produce geometria vera. Vedi game-architecture.md, Asset Management.
-  3-1-losservatorio-si-allarga-una-scena-sola-dentro-e-fuori: awaiting-operator
+  3-1-losservatorio-si-allarga-una-scena-sola-dentro-e-fuori: done
   # Story 3.2: Il terminale — spendere quello che hai guadagnato
   3-2-il-terminale-spendere-quello-che-hai-guadagnato: awaiting-operator
   # Story 3.3: Il caffè — l'attesa piccola dentro l'attesa grande

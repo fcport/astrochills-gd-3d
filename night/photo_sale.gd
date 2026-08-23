@@ -70,6 +70,11 @@ var _sold := false
 ## Il congedo e' gia' partito: non se ne emette un secondo.
 var _dismissed := false
 var _sold_lire := 0
+
+## Quante lire ha in tasca il giocatore DOPO questa vendita. Gliela passa
+## l'orchestratore, che è l'unico a sapere quando l'accredito è avvenuto: la vista
+## non interroga `Game` da sé, come nessuna delle altre di questa cartella.
+var _wallet := 0
 var _declined := false
 
 
@@ -112,9 +117,10 @@ func set_readout(target: String, quality: int, base: int, commission: Dictionary
 
 ## Passa allo stato «SOLD — N LIRE». Se la vendita è un rifiuto della commessa
 ## (SELL OPEN su una commessa applicabile), mostra la riga gentile del «niente».
-func show_sold(lire: int) -> void:
+func show_sold(lire: int, wallet_lire: int) -> void:
 	_sold = true
 	_sold_lire = lire
+	_wallet = wallet_lire
 	# Rifiutata ⟺ la commessa ERA applicabile ma il giocatore non ha scelto FULFILL.
 	_declined = _applicable and not _fulfill_options[_cursor]
 	queue_redraw()
@@ -191,10 +197,18 @@ func _draw() -> void:
 
 func _draw_sold() -> void:
 	_text(Vector2(8, 84), "SOLD — %d LIRE" % _sold_lire, SEL, 14)
+
+	# IL TOTALE IN TASCA, ed è qui che serve leggerlo. Questo è il momento in cui il
+	# denaro cambia mano: prima della 2.7 le lire non comparivano da nessuna parte, e
+	# poi comparivano solo nel riepilogo dell'alba — cioè una volta ogni quindici
+	# minuti reali, e solo a notte finita. Sapere quanto si ha mentre si decide se
+	# rifare uno scatto è metà della decisione.
+	_text(Vector2(8, 108), "WALLET %d LIRE" % _wallet, FG, 12)
+
 	if _declined:
 		# Il «niente» reso percepibile (NFR20): una riga gentile, tono cozy. Nessuna
 		# penalità, nessuna traccia — solo il base pagato.
-		_text(Vector2(8, 108), "declined — no harm", DIM, 12)
+		_text(Vector2(8, 130), "declined — no harm", DIM, 12)
 	_text(Vector2(8, 182), "press enter for options", DIM, 12)
 
 

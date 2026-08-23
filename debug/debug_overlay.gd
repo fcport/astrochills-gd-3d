@@ -80,7 +80,7 @@ func _lines() -> PackedStringArray:
 	# se il lavoro stesse arrivando da qualche parte. Finché non c'è un posto
 	# diegetico dove mostrarle, stanno qui — dichiaratamente un ripiego da debug.
 	out.append("cassa     %d lire   notti fatte %d   stanotte %d" % [
-		Game.profile.wallet_lire, Game.profile.nights_completed,
+		Game.wallet_now(), Game.profile.nights_completed,
 		Game.run.night_earnings if Game.run != null else 0])
 	out.append("fps       %d   tuning %s" % [
 		Engine.get_frames_per_second(), Tuning.profile_hash])

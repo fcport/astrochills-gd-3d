@@ -43,6 +43,22 @@ func start_night() -> NightRun:
 	return run
 
 
+## Quante lire ha il giocatore ADESSO, notte in corso compresa.
+##
+## NESSUNO DEI DUE NUMERI, PRESO DA SOLO, È QUELLO CHE HA IN TASCA.
+## `profile.wallet_lire` è il saldo di IERI: il travaso avviene in `end_night()`,
+## quindi finché la notte gira i guadagni stanno su `run.night_earnings` e il
+## profilo non li ha ancora visti. Chi vuole mostrare «le lire» deve sommarli.
+##
+## STA QUI E NON NELLE SCHERMATE perché le schermate che lo mostrano sono già
+## quattro — vendita, menu post-foto, riepilogo dell'alba, overlay di debug — e
+## quattro copie della stessa somma sono quattro occasioni perché una diverga il
+## giorno in cui il travaso cambia momento.
+func wallet_now() -> int:
+	var earned := run.night_earnings if run != null else 0
+	return profile.wallet_lire + earned
+
+
 ## Chiude la notte e VERSA al giocatore quanto ha guadagnato.
 ##
 ## È l'unico punto in cui `profile.wallet_lire` cresce: chi vende accredita su

@@ -53,6 +53,11 @@ var _options: PackedStringArray = PackedStringArray([
 	"CLOSE & EXPLORE",
 ])
 
+## Quante lire ha in tasca il giocatore. Gliela passa l'orchestratore con
+## `set_readout()`: la vista non interroga `Game` da sé, come le altre di questa
+## cartella.
+var _wallet := 0
+
 var _font: SystemFont
 var _cursor := 0
 
@@ -102,10 +107,22 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
+## Unico ingresso della vista. Le quattro opzioni non cambiano mai; le lire sì.
+func set_readout(wallet_lire: int) -> void:
+	_wallet = wallet_lire
+	queue_redraw()
+
+
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, DESIGN_SIZE), BG)
 
 	_text(Vector2(8, 22), "WHAT NEXT?", FG, 12)
+
+	# LE LIRE DOVE SI DECIDE, e questo è il punto in cui si decide: «rifaccio uno
+	# scatto o chiudo?» è una domanda economica, e prima si rispondeva senza sapere
+	# quanto si avesse in tasca. Il riepilogo dell'alba arriva troppo tardi per
+	# servire a questa scelta — è a notte finita, quindici minuti reali più in là.
+	_text(Vector2(8, 40), "WALLET %d LIRE" % _wallet, DIM, 12)
 
 	# Le quattro scelte: la selezionata risalta. Un cursore «>» rende la scelta
 	# leggibile sullo schermo curvo anche prima che il colore si noti.

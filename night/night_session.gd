@@ -506,7 +506,7 @@ func _on_sale_confirmed(fulfill: bool) -> void:
 	Events.photo_sold.emit(StringName(str(_sale_photo_id)), lire)
 
 	if _sale != null and is_instance_valid(_sale):
-		_sale.show_sold(lire)
+		_sale.show_sold(lire, Game.wallet_now())
 
 	Log.info("night", "venduta — foto %d, %d lire (fulfill %s)" % [_sale_photo_id, lire, fulfill])
 
@@ -541,6 +541,7 @@ func _enter_menu() -> void:
 		_sale = null
 
 	_menu = MENU.new()
+	_menu.set_readout(Game.wallet_now())
 	# Il modo si registra appena il Control esiste, prima che il gating lo sospenda.
 	_menu_mode = _menu.process_mode
 	_crt.show_control(_menu)
@@ -836,13 +837,9 @@ func _close_night() -> void:
 
 func _show_summary() -> void:
 	_summary = SUMMARY.new()
-	# IL TOTALE IN CASSA SI COMPONE QUI, e la somma non è una svista. `_reach_dawn`
-	# mostra il riepilogo PRIMA di chiamare `Game.end_night()` — deve, perché quella
-	# azzera `Game.run` e il riepilogo la sta ancora leggendo. Quindi in questo
-	# istante `profile.wallet_lire` è ancora il saldo di IERI, e la cifra vera per il
-	# giocatore è quella che avrà fra un battito: ieri più stanotte.
-	var wallet := Game.profile.wallet_lire
-	if Game.run != null:
-		wallet += Game.run.night_earnings
-	_summary.set_readout(Game.run, _clock.clock_text(), wallet)
+	# `wallet_now()` e non `profile.wallet_lire`: `_reach_dawn` mostra il riepilogo
+	# PRIMA di `Game.end_night()` — deve, perché quella azzera `Game.run` e il
+	# riepilogo la sta ancora leggendo — quindi il profilo porta ancora il saldo di
+	# ieri. La somma vive in un posto solo, su `Game`.
+	_summary.set_readout(Game.run, _clock.clock_text(), Game.wallet_now())
 	_crt.show_control(_summary)

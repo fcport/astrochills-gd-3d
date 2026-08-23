@@ -11,7 +11,19 @@ extends Resource
 ## Incrementare a ogni cambio di formato, e gestirlo in _migrate().
 const CURRENT_VERSION := 1
 
-@export var version: int = CURRENT_VERSION
+## IL DEFAULT E' 0, NON `CURRENT_VERSION`, e la differenza e' tutto il meccanismo.
+## `ResourceSaver` omette ogni proprieta' uguale al proprio default: con il default a
+## `CURRENT_VERSION` il campo non finiva MAI sul disco, perche' nel momento del
+## salvataggio e' sempre uguale. Il save sembrava a posto, e il giorno in cui
+## `CURRENT_VERSION` fosse passato a 2 un file v1 sarebbe stato letto come v2 — con
+## `migrate()` che non ripara niente, in silenzio. Il ramo esisteva ed era inerte.
+##
+## Con 0 come default il numero vero viene sempre scritto — lo timbra `SaveManager`
+## subito prima di salvare — e uno 0 letto significa «file cosi' vecchio da non avere
+## la versione»: un caso che `migrate()` puo' vedere invece di scambiarlo per corrente.
+## NON si timbra qui in un `_init()`: verrebbe applicato anche a un'istanza CARICATA da
+## un file privo del campo, che e' esattamente il caso da riconoscere.
+@export var version: int = 0
 @export var night_index: int = 1
 @export var elapsed_min: float = 0.0
 

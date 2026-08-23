@@ -114,6 +114,15 @@ func _save(res: Resource, path: String) -> bool:
 	# `.tmp.tres` e NON `.tres.tmp`: `ResourceSaver` sceglie il formato dall'estensione,
 	# e con un suffisso che non conosce rifiuta di scrivere. (Verificato rompendolo: la
 	# prima versione di questa funzione usava `.tres.tmp` e non salvava piu' niente.)
+	# SI TIMBRA LA VERSIONE PRIMA DI SCRIVERE. Il campo ha default 0 apposta, cosi'
+	# `ResourceSaver` — che omette ogni proprieta' uguale al default — lo scrive davvero.
+	# Senza, il numero non finiva sul file e ogni save si sarebbe letto come «versione
+	# corrente» per sempre: il ramo di migrazione esisteva ed era inerte.
+	if res is PlayerProfile:
+		(res as PlayerProfile).version = PlayerProfile.CURRENT_VERSION
+	elif res is NightRun:
+		(res as NightRun).version = NightRun.CURRENT_VERSION
+
 	var tmp := path.get_basename() + ".tmp.tres"
 	var err := ResourceSaver.save(res, tmp)
 	if err != OK:

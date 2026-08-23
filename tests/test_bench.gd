@@ -937,7 +937,19 @@ func _check_save_manager() -> void:
 		print("   <-- ATTESO: l'indice avanza dal profilo ricaricato (nights_completed + 1)")
 
 	# Ripulire i file di banco: non devono restare a sporcare user://.
-	DirAccess.remove_absolute(profile_path)
-	DirAccess.remove_absolute(run_path)
-	DirAccess.remove_absolute(junk_path)
+	# SI SVUOTA LA CARTELLA, non si cancellano tre nomi noti. Da quando un save
+	# illeggibile viene messo in quarantena, il file spazzatura del banco non si chiama
+	# piu' come quando e' stato creato — e' diventato `junk.tres.corrupt-<ts>` — quindi
+	# `remove_absolute(junk_path)` falliva in silenzio, `remove_absolute(bench_dir)`
+	# falliva a sua volta perche' la cartella non era vuota, e il banco lasciava
+	# residui dentro la stessa directory dove il gioco tiene i salvataggi veri.
+	var d := DirAccess.open(bench_dir)
+	if d != null:
+		d.list_dir_begin()
+		var name := d.get_next()
+		while not name.is_empty():
+			if not d.current_is_dir():
+				DirAccess.remove_absolute(bench_dir.path_join(name))
+			name = d.get_next()
+		d.list_dir_end()
 	DirAccess.remove_absolute(bench_dir)

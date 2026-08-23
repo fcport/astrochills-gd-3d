@@ -158,8 +158,13 @@ development_status:
   # Domanda: l'attesa è piacevole?  ← è l'ipotesi per cui l'MVP esiste
   # ---------------------------------------------------------------------------
   epic-3: backlog
-  # Story 3.1: L'osservatorio si allarga — la cucina e la cupola
-  3-1-losservatorio-si-allarga-la-cucina-e-la-cupola: backlog
+  # Story 3.1: L'osservatorio si allarga — una scena sola, dentro e fuori
+  # >>> RISCRITTA il 2026-08-23. Decisione di Federico: UNA SCENA SOLA. Il prototipo
+  # >>> Phaser aveva tre tilemap (`esterno`, `oss1`, `oss2`) e cambiava scena fra
+  # >>> loro; in 3D quel vincolo non esiste. Adesso la storia include anche
+  # >>> L'ESTERNO, che nessuna epica aveva: e' la storia piu' grossa dell'epica 3 e
+  # >>> la sola che produce geometria vera. Vedi game-architecture.md, Asset Management.
+  3-1-losservatorio-si-allarga-una-scena-sola-dentro-e-fuori: backlog
   # Story 3.2: Il terminale — spendere quello che hai guadagnato
   3-2-il-terminale-spendere-quello-che-hai-guadagnato: backlog
   # Story 3.3: Il caffè — l'attesa piccola dentro l'attesa grande

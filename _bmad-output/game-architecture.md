@@ -331,8 +331,25 @@ apre e si legge.
 ### Asset Management
 
 **Strategia:** `preload()` per ciò che serve sempre (scene delle fasi, UI), `load()` per
-il resto, caricamento per scena. Nessun caricamento asincrono: il progetto non ha il
-volume che lo giustifichi, e lo stato asincrono si paga ovunque.
+il resto. Nessun caricamento asincrono: il progetto non ha il volume che lo giustifichi,
+e lo stato asincrono si paga ovunque.
+
+**IL MONDO È UNA SCENA SOLA** (decisione di Federico, 2026-08-23). `world/observatory.tscn`
+contiene l'edificio *e* il terreno intorno: stanza computer, cucina, cupola ed esterno,
+tutti insieme, senza nessun cambio di scena fra loro. Il prototipo Phaser aveva tre
+tilemap separate (`esterno`, `oss1`, `oss2`) perché una tilemap 2D è un rettangolo e due
+rettangoli non si toccano; in 3D quel vincolo non esiste, e un edificio con un prato
+intorno è un solo spazio.
+
+Regge il budget già dichiarato qui — *«un edificio, asset PS1: sta in memoria»*. Se un
+giorno non ci stesse, **la risposta non è tornare a spezzare la scena**: è ridurre la
+geometria. L'unica dissolvenza del gioco resta quella del sonno, che è un salto di TEMPO
+e non di luogo.
+
+Conseguenza da conoscere: **un solo `WorldEnvironment`**. Il cielo notturno di fuori e
+l'atmosfera di dentro condividono lo stesso `Environment`, e la nebbia che chiude le
+distanze all'aperto è la stessa che dà profondità nelle stanze. È un vincolo, non una
+comodità: la taratura va trovata guardandola da entrambe le parti.
 
 ### Time
 

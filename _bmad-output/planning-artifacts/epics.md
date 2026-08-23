@@ -866,26 +866,55 @@ farebbero per convenienza, e la telemetria misurerebbe l'obbedienza invece del p
 
 ---
 
-### Story 3.1: L'osservatorio si allarga — la cucina e la cupola
+### Story 3.1: L'osservatorio si allarga — una scena sola, dentro e fuori
 
 As a **gestore notturno con venti minuti di posa davanti**,
-I want **potermi allontanare dalla stanza computer e andare in cucina o salire in cupola**,
-So that **l'attesa abbia un posto dove succedere**.
+I want **potermi alzare e andare dove voglio — la cucina, la cupola, o fuori sul prato — senza mai una schermata di caricamento**,
+So that **l'attesa abbia un posto dove succedere, e quel posto sia UN posto**.
+
+> **DECISIONE DI FEDERICO, 2026-08-23: UNA SCENA SOLA.** Il prototipo Phaser aveva tre
+> tilemap separate — `esterno` (`src/data/exterior_oss.js`: griglia 60x40, prato,
+> sterrata, bosco perimetrale, porta sud), `oss1` e `oss2` — e passare dall'una all'altra
+> era un cambio di scena. **In 3D quella suddivisione non ha più una ragione**: esisteva
+> perché una tilemap 2D è un rettangolo e due rettangoli non si toccano. Un edificio con
+> un prato intorno è un solo spazio, e lo si attraversa camminando.
+>
+> **Conseguenza di scopo, e va detta:** questa storia adesso include l'ESTERNO, che
+> nessuna epica aveva. È la storia più grossa dell'epica 3, e la sola che produce
+> geometria vera.
 
 **Acceptance Criteria:**
 
-**Given** l'osservatorio
-**When** il giocatore esce dalla stanza computer
-**Then** cucina e cupola esistono come stanze percorribili a piedi, collegate alla stanza computer
+**Given** il mondo di gioco
+**When** si guarda com'è costruito
+**Then** **è una scena sola** — `world/observatory.tscn` — che contiene l'edificio e il terreno intorno
+**And** non esiste nessun cambio di scena, nessun caricamento, nessuna dissolvenza fra un'area e l'altra
+**And** l'unica dissolvenza del gioco resta quella del sonno (storia 2.7 / DQ-3), che è un salto di TEMPO, non di luogo
+
+**Given** il giocatore nella stanza computer
+**When** esce
+**Then** cucina e cupola sono stanze percorribili a piedi, collegate senza interruzione
 **And** il tragitto dalla stanza computer alla cucina si copre in pochi secondi: **andare a fare il caffè non deve diventare un tragitto da subire**, o l'attività misura la pazienza invece del piacere
+
+**Given** la porta sud dell'edificio
+**When** il giocatore la attraversa
+**Then** si trova fuori, di notte, e continua a camminare senza che sia successo niente
+**And** fuori ci sono il prato, la sterrata e il bosco perimetrale — la stessa geografia di `exterior_oss.js`, in tre dimensioni
+**And** l'edificio si vede da fuori, ed è lo stesso edificio in cui si era dentro un istante prima
+**And** ci si può allontanare quanto basta a voltarsi e guardarlo, **non di più**: il brief dice «non ti allontani mai dall'edificio», e il bosco perimetrale è il confine — non un muro invisibile in mezzo al prato
+
+**Given** una sola scena, e quindi un solo `WorldEnvironment`
+**When** si passa da dentro a fuori
+**Then** il cielo notturno e l'ambiente interno convivono nello stesso `Environment`, e il passaggio non stacca
+**And** la nebbia che chiude le distanze fuori è la stessa che dà atmosfera dentro: **è un vincolo, non una comodità**, e la taratura va trovata guardandola da entrambe le parti
 
 **Given** il suono di fine sequenza collocato nella stanza computer dalla storia 2.3
 **When** il giocatore lo ascolta da altrove
-**Then** si sente ovattato dalla cucina e appena dalla cupola
+**Then** si sente ovattato dalla cucina, appena dalla cupola, e **da fuori non si sente**
 **And** la geografia sonora si verifica camminando, non leggendo il codice
 **And** la collocazione decisa nella 2.3 non ha dovuto essere spostata
 
-**Given** ogni stanza
+**Given** ogni luogo — le tre stanze e l'esterno
 **When** il giocatore ci si trova dentro
 **Then** ha il proprio ambiente sonoro, e il silenzio è un elemento attivo — non l'assenza di un suono che manca
 **And** la resa usa `ps1.gdshader` e la nebbia dell'`Environment` come il resto del mondo
@@ -893,6 +922,17 @@ So that **l'attesa abbia un posto dove succedere**.
 **Given** la cupola
 **When** il giocatore ci entra
 **Then** c'è una fessura da cui si vede il cielo, e il telescopio è lì, visibile da vicino
+
+**Given** una scena sola con tutto dentro
+**When** si misura il costo
+**Then** resta dentro il budget dichiarato dall'architettura — «un edificio, asset PS1: sta in memoria» — e non si introduce caricamento asincrono
+**And** se non ci stesse, la risposta NON è tornare a spezzare la scena: è ridurre la geometria, che è segnaposto fino all'arrivo del pack di texture
+
+**Given** gli oggetti interagibili che questa storia colloca
+**When** se ne progetta il volume di collisione
+**Then** vale la regola imparata col letto: **il raggio parte dall'occhio a 1,65 m e arriva a 1,2 m**, quindi una massa che sta sotto i ~60 cm non è raggiungibile da nessuna posizione
+**And** il volume di interazione si progetta a parte dalla geometria visibile — abbastanza alto da stare nello sguardo, mai più alto di ciò che si vede, o il prompt compare guardando il muro dietro
+**And** si verifica misurando da dove l'oggetto è raggiungibile, non guardandolo da un punto solo
 
 **Given** le regole di dipendenza
 **When** si cerca `phases/` o `night/` dentro `world/`

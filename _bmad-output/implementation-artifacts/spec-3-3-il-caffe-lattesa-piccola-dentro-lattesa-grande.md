@@ -2,7 +2,7 @@
 title: "3.3 Il caffè — l'attesa piccola dentro l'attesa grande"
 type: 'feature'
 created: '2026-08-23'
-status: 'awaiting-operator'
+status: done
 baseline_revision: '73a236abdfc3dcc501f47f7df053b59dd083800b'
 review_loop_iteration: 0
 followup_review_recommended: true
@@ -176,3 +176,15 @@ Status: awaiting-operator
 - Emissione runtime della coppia telemetria e seam di comparsa non esercitati dal banco (vedi `deferred`): la logica pura di transizione è coperta, il wiring che la trasforma in emissioni/presenza no.
 - Estetica/audio provvisori: mesh segnaposto e borbottio sintetizzato in codice (onda quadra grave in loop) — da sostituire col pack asset senza toccare la logica.
 - Rituale portato oltre un sonno: emette la coppia a cavallo del confine per scelta («non scade niente») — la finestra per-notte di 3.6 (non ancora costruita) la ritaglierà.
+
+## Operator Confirmation
+
+Confirmed 2026-08-24: the external actions this story owed were carried out.
+
+- Aprire una build con display e audio e comprare la moka al terminale durante l'attesa: verificare che compare in cucina, che prima non c'era, e che c'è ancora dopo aver dormito (il possesso sopravvive al save).
+- Fare il caffè per intero: riempire → mettere sul fuoco → sentire il suono SALIRE per decine di secondi e BORBOTTARE alla fine → versare → bere; confermare che non ci sono conti alla rovescia né prompt di sollecito, e che il prompt segue i tempi mentre si guarda la moka.
+- Verificare la RAGGIUNGIBILITÀ: la moka è mirabile e interagibile stando davanti al piano (occhio 1,65 m, piano 0,9 m), senza che il prompt compaia da lontano. Tarare la quota del volume di collisione guardando, se serve.
+- Lasciare il rituale a metà, allontanarsi e tornare: niente si è rotto né è scaduto. Rifarlo più volte nella stessa notte e nelle notti successive.
+- Con un log/telemetria manuale, confermare che `Events.wait_activity_started(&"caffe")` parte al primo tempo (riempire) e `wait_activity_ended(&"caffe")` al bere, senza feedback visibile, e che un rituale abbandonato resta uno `started` senza `ended`.
+
+_Appended by the bmad-loop orchestrator (`bmad-loop confirm`, #335): a human confirmed these external actions out of band, and the story was advanced from `awaiting-operator` to `done`._

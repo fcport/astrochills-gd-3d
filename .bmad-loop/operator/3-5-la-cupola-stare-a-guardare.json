@@ -1,0 +1,13 @@
+{
+  "actions": [
+    "Aprire una build con display e audio, entrare nella cupola (a est) e guardare in alto attraverso la fessura: confermare che si vede il cielo notturno e il telescopio in primo piano; e che NON c'\u00e8 nessun prompt, nessun contatore, niente da completare o raccogliere, e nessun invito a interagire.",
+    "Avviare una sequenza di imaging (configurare la posa al monitor), salire in cupola e osservare il telescopio: verificare che si muove con un inseguimento LENTO e continuo, percepibile guardandolo per qualche secondo, e che quando nessuna sequenza \u00e8 in corso sta FERMO. Tarare `TRACK_RATE` (world/telescope.gd) guardando, se serve.",
+    "Con la posa in corso, restare in cupola oltre la soglia di permanenza e, da un log/telemetria manuale, confermare che parte `Events.wait_activity_started(&\"cupola\")` UNA SOLA VOLTA e senza nessun feedback visibile; che uscendo dalla cupola OPPURE a fine sequenza (quale prima) parte `wait_activity_ended(&\"cupola\")`; che passare in cupola solo pochi istanti non emette niente; e che un quit in cupola a met\u00e0 posa resta uno `started` senza `ended`. Tarare `DWELL_SECONDS` (world/dome_activity.gd) a sensazione, se serve.",
+    "Verificare l'AMBIENTE SONORO: il ronzio della montatura si sente SOLO durante la sequenza e il cigolio della cupola \u00e8 ambientale (sempre); entrambi POSIZIONALI \u2014 allontanandosi si attenuano, segno che appartengono al luogo e non alla fase. Camminare per verificarlo. Tarare livelli/timbro (`HUM_VOL_DB`, `CREAK_VOL_DB`, gli Hz) ascoltando, se serve.",
+    "Verificare la FISICIT\u00c0 (DW-12): camminare contro il telescopio e confermare che NON lo si attraversa. Tarare quota/raggio del collider `Body` (dome.tscn, `ShapeScopeBody`) guardando, se serve."
+  ],
+  "parked_at": "2026-08-24",
+  "run_id": "20260824-010520-3f03",
+  "spec_file": "_bmad-output/implementation-artifacts/spec-3-5-la-cupola-stare-a-guardare.md",
+  "story_key": "3-5-la-cupola-stare-a-guardare"
+}

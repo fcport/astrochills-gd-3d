@@ -95,6 +95,8 @@ func _ready() -> void:
 	print("")
 	_check_lamp_repair()
 	print("")
+	_check_dome_presence()
+	print("")
 	print("=== fine ===")
 	get_tree().quit()
 
@@ -1078,6 +1080,77 @@ func _lamp_state_name(state: Lamp.State) -> String:
 		Lamp.State.CHANGING: return "CHANGING"
 		Lamp.State.FIXED: return "FIXED"
 		_: return "?"
+
+
+## Lo «stare a guardare» della cupola (3.5): la logica PURA e STATICA di `DomeActivity` —
+## il gate (in cupola E posa in corso), i punti d'emissione della coppia started/ended, e
+## il filtro sulla sequenza. Gemella di `_check_moka_ritual`/`_check_lamp_repair`: nessuno
+## SceneTree, nessun autoload, nessun timer.
+##
+## Il moto del telescopio, i suoni (ronzio, cigolio), il dwell timer runtime e la
+## raggiungibilita'/collisione NON si collaudano qui: sono resa, effetto e percezione —
+## verifiche d'operatore, che si camminano nel gioco (come dice lo spec). Il banco legge
+## la tavola delle decisioni.
+func _check_dome_presence() -> void:
+	print("-- Cupola: gate del «stare a guardare», coppia started/ended, filtro sequenza (3.5)")
+
+	# is_gate_open: vero SOLO con ENTRAMBE le condizioni (in cupola E posa in corso). E'
+	# la condizione perche' la permanenza abbia senso di essere contata.
+	print("   -- is_gate_open(in_dome, seq_running): vero solo con entrambe")
+	_report_gate(false, false, false, "fuori, nessuna posa")
+	_report_gate(true, false, false, "in cupola, nessuna posa (solo passare di li')")
+	_report_gate(false, true, false, "posa in corso ma fuori dalla cupola")
+	_report_gate(true, true, true, "in cupola CON posa in corso: gate aperto")
+
+	# should_emit_started (valutato al timeout del Dwell): only se NON si sta gia'
+	# guardando E il gate e' aperto. Una permanenza troppo breve, o una posa finita prima
+	# della soglia, chiude il gate prima del timeout e non arriva qui.
+	print("   -- should_emit_started(watching, gate_open): not watching AND gate")
+	_report_started(false, true, true, "non attivo + gate aperto: emette started")
+	_report_started(true, true, false, "gia' attivo + gate aperto: niente (una sola volta)")
+	_report_started(false, false, false, "non attivo + gate chiuso: niente (soglia caduta)")
+	_report_started(true, false, false, "gia' attivo + gate chiuso: niente (lo chiude ended)")
+
+	# should_emit_ended (valutato quando una condizione cade): solo se si STA guardando E
+	# il gate si e' chiuso. Uscita dalla cupola O fine sequenza — entrambe chiudono il
+	# gate, quindi sono lo stesso caso: un solo `ended`, nessun doppio.
+	print("   -- should_emit_ended(watching, gate_open): watching AND not gate")
+	_report_ended(true, false, true, "attivo + gate chiuso (uscito O posa finita): emette ended")
+	_report_ended(true, true, false, "attivo + gate ancora aperto: niente")
+	_report_ended(false, false, false, "non attivo + gate chiuso: niente (mai partito)")
+	_report_ended(false, true, false, "non attivo + gate aperto: niente")
+
+	# affects_sequence: SOLO l'imaging apre/chiude questo gate. La polare e il targeting
+	# emettono lo stesso segnale con la propria chiave e passano senza toccarlo — stessa
+	# soft-coupling via StringName di sequence_chime.gd e del telescopio.
+	print("   -- affects_sequence(key): vero solo su &\"imaging\"")
+	_report_affects(&"imaging", true, "imaging: riguarda la cupola")
+	_report_affects(&"polar", false, "polar: passa senza aprire il gate")
+	_report_affects(&"targeting", false, "targeting: passa senza aprire il gate")
+
+
+func _report_gate(in_dome: bool, seq_running: bool, expected: bool, label: String) -> void:
+	var got := DomeActivity.is_gate_open(in_dome, seq_running)
+	var note := "" if got == expected else "   <-- ATTESO: %s" % expected
+	print("      %-46s gate = %s%s" % [label, got, note])
+
+
+func _report_started(watching: bool, gate_open: bool, expected: bool, label: String) -> void:
+	var got := DomeActivity.should_emit_started(watching, gate_open)
+	var note := "" if got == expected else "   <-- ATTESO: %s" % expected
+	print("      %-46s started = %s%s" % [label, got, note])
+
+
+func _report_ended(watching: bool, gate_open: bool, expected: bool, label: String) -> void:
+	var got := DomeActivity.should_emit_ended(watching, gate_open)
+	var note := "" if got == expected else "   <-- ATTESO: %s" % expected
+	print("      %-46s ended = %s%s" % [label, got, note])
+
+
+func _report_affects(key: StringName, expected: bool, label: String) -> void:
+	var got := DomeActivity.affects_sequence(key)
+	var note := "" if got == expected else "   <-- ATTESO: %s" % expected
+	print("      %-46s affects = %s%s" % [label, got, note])
 
 
 ## Piccola comodità: costruisce l'input e campiona in una riga.

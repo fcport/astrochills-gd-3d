@@ -604,3 +604,11 @@ source_spec: `spec-3-4-la-lampada-che-smette-di-lampeggiare.md`
 severity: medium
 reason: Il banco (`tests/test_bench.gd::_check_lamp_repair`) collauda `next_on_interact`/`is_interactive`/`prompt_for`/`starts_activity` come predicati puri, senza istanziare il nodo Lamp né connettersi a `Events`; `_check_owned_items` verifica che `lamp_fixed` sopravvive al save ma settando il campo A MANO, non tramite `Game.mark_lamp_fixed()`. Il WIRING che trasforma i predicati in emissioni reali (`interacted.connect(_on_interacted)` + le due `Events...emit`) e il set-e-salva di `mark_lamp_fixed` non sono esercitati: rompere la connessione, un'emissione o il set del flag lascerebbe il banco verde. È la stessa classe di gap accettata per la moka (DW-15) e giustificata come il deferral di `Game.spend_lire` end-to-end (3.2): tenuto fuori per la convenzione pura del banco (NFR19). Collaudabile headless (il binario Godot c'è), ma `mark_lamp_fixed` scrive sui path di save reali (come `spend_lire`), quindi non si esercita nel banco senza un parametro di path.
 status: open
+
+### DW-17: Il wiring runtime della coppia telemetria della cupola (`DomeActivity._reevaluate`→`wait_activity_ended(&"cupola")`, `_on_dwell_timeout`→`wait_activity_started(&"cupola")`), il `Dwell` Timer della sog
+origin: spec-deferred f8ee6d180c9c
+location: world/dome_activity.gd:272-294 ; world/telescope.gd:63-68 ; tests/test_bench.gd::_check_dome_presence
+source_spec: `spec-3-5-la-cupola-stare-a-guardare.md`
+severity: medium
+reason: Il banco (`tests/test_bench.gd::_check_dome_presence`) collauda i quattro predicati puri come tabelle, senza istanziare il nodo `DomeActivity` né connettersi a `Events`/all'`Area3D`. Il WIRING che trasforma i predicati in emissioni reali — le due `Events.wait_activity_*.emit`, l'avvio/stop del `Dwell` in `_reevaluate`, l'apertura/chiusura di `_in_dome` da `body_entered`/`body_exited`, di `_seq_running` da `phase_started`/`phase_finished` — non è esercitato: rompere una connessione, un'emissione o il gating del Timer lascerebbe il banco verde. È la stessa classe di gap accettata per la moka (DW-15) e la lampada (DW-16), giustificata dalla convenzione pura del banco (NFR19). Il moto del telescopio, i suoni posizionali e la collisione (DW-12) sono resa/percezione: verifiche d'operatore.
+status: open

@@ -14,15 +14,28 @@
 ; di observatory.tscn — si vede il cielo notturno. Non e' un buco decorativo: e' da
 ; li' che il telescopio guarda e da li' che il giocatore alza gli occhi.
 ;
-; IL TELESCOPIO segnaposto (tubo su treppiede) sta al centro, visibile da vicino.
-; NON e' un interagibile in questa storia (gli interagibili sono la 3.5), ma il suo
-; volume e' progettato secondo la regola occhio-1,65 → 1,20 m: il tubo attraversa la
-; fascia dello sguardo (centro a 1,35 m, alto fino a ~1,75 m) cosi' che, quando la
-; 3.5 gli appendera' un volume di interazione, ci sia gia' massa all'altezza giusta
-; e non un francobollo sotto la portata. Nessun prompt qui: il posto c'e', l'attivita' no.
-[gd_scene load_steps=14 format=3]
+; IL TELESCOPIO segnaposto (tubo su treppiede) sta al centro, visibile da vicino. Dalla
+; storia 3.5 ha VITA E FISICITA': `telescope.gd` gli fa inseguire lento il cielo mentre
+; l'imaging espone (`$Tube` ruota in azimut) e ronzare la montatura (`$Hum`, posizionale,
+; SOLO durante la sequenza), fermo e silenzioso altrimenti — e lo sa SOLO dal bus
+; (`Events.phase_started/finished` filtrati su &"imaging"), mai interrogando la fase. Il
+; figlio `Body` (StaticBody3D su LAYER_WORLD attorno alla colonna centrale) chiude DW-12:
+; la 3.1 lo aveva lasciato senza collisione («la fisicita' appartiene alla 3.5») e ci si
+; camminava dentro. NON e' un interagibile: nessun prompt, nessuna azione `E`; il `Body`
+; e' fisicita', non un volume d'interazione.
+;
+; IL REGISTRO «STARE» DELL'ATTESA VIVE QUI. Il nodo `DomeActivity` (Area3D con
+; `dome_activity.gd`, gemello di `IndoorsVolume`) rileva il giocatore nella cupola e, quando
+; c'e' una sequenza in corso e ci resta oltre la soglia di permanenza (`$Dwell` Timer),
+; emette la coppia `wait_activity_started/ended(&"cupola")` verso la telemetria (3.6) —
+; senza NESSUN feedback visibile, nessun prompt, nessun contatore, nessun bonus. Ospita il
+; cigolio ambientale del posto (`$Creak`, posizionale, NON legato alla sequenza). Il posto
+; della 3.1 prende vita, fisicita' e misura.
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Shader" path="res://world/shaders/ps1.gdshader" id="1_ps1"]
+[ext_resource type="Script" path="res://world/telescope.gd" id="2_scope"]
+[ext_resource type="Script" path="res://world/dome_activity.gd" id="3_activity"]
 
 [sub_resource type="ShaderMaterial" id="MatFloor"]
 shader = ExtResource("1_ps1")
@@ -81,6 +94,22 @@ radial_segments = 8
 
 [sub_resource type="BoxMesh" id="BoxScopeLeg"]
 size = Vector3(0.06, 1.3, 0.06)
+
+; Il volume di collisione del telescopio (DW-12): un cilindro attorno alla colonna
+; centrale. Il tubo ruota, ma la sua massa resta al mount, quindi un collider statico
+; centrale basta a fermare il giocatore. Raggio 0,35 m (abbraccia treppiede + tubo alla
+; fascia dello sguardo), alto 1,75 m — dal pavimento fino a sopra il tubo. Quota/raggio
+; si tarano guardando (verifica d'operatore).
+[sub_resource type="CylinderShape3D" id="ShapeScopeBody"]
+radius = 0.35
+height = 1.75
+
+; Il volume di rilevamento di `DomeActivity`: un cilindro dentro la pianta ottagonale
+; (circumraggio 2,5, apotema 2,31). Raggio 2,2 m, alto 2,0 m, centro y ~1,0: copre la
+; zona dove si sta a guardare senza toccare le pareti. Si tara guardando/misurando.
+[sub_resource type="CylinderShape3D" id="ShapeActivity"]
+radius = 2.2
+height = 2.0
 
 [node name="Dome" type="Node3D"]
 
@@ -196,14 +225,34 @@ mesh = SubResource("BoxRoof")
 shape = SubResource("ShapeRoof")
 
 ; Il telescopio segnaposto al centro: tubo inclinato verso la fessura, su treppiede.
-; Il tubo attraversa la fascia occhio-portata; nessun interagibile qui (e' la 3.5).
+; Dalla 3.5 e' vivo (telescope.gd): il tubo insegue durante l'imaging, la montatura
+; ronza, e il `Body` gli da' fisicita' (DW-12). Non e' un interagibile.
 [node name="Telescope" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+script = ExtResource("2_scope")
 
 [node name="Tube" type="MeshInstance3D" parent="Telescope"]
 transform = Transform3D(1, 0, 0, 0, 0.7071, -0.7071, 0, 0.7071, 0.7071, 0, 1.35, 0)
 material_override = SubResource("MatScope")
 mesh = SubResource("CylScopeTube")
+
+; Il ronzio posizionale della montatura: suona SOLO mentre l'imaging espone (telescope.gd
+; lo avvia/ferma sul bus). Presso il mount, cosi' allontanandosi si attenua — segno che
+; appartiene al luogo, non alla fase. Stream sintetizzato in codice (segnaposto).
+[node name="Hum" type="AudioStreamPlayer3D" parent="Telescope"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
+
+; La fisicita' del telescopio (DW-12): StaticBody3D su LAYER_WORLD attorno alla colonna
+; centrale, cosi' il giocatore non ci cammina dentro. La 3.1 lo aveva lasciato senza
+; collisione. Cilindro centrato a y = 0,875 (base a terra, alto 1,75). Quota/raggio si
+; tarano guardando.
+[node name="Body" type="StaticBody3D" parent="Telescope"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.875, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="Collision" type="CollisionShape3D" parent="Telescope/Body"]
+shape = SubResource("ShapeScopeBody")
 
 [node name="LegA" type="MeshInstance3D" parent="Telescope"]
 transform = Transform3D(1, 0, 0, 0, 0.966, 0.259, 0, -0.259, 0.966, 0.25, 0.65, 0.15)
@@ -227,3 +276,24 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
 light_color = Color(0.6, 0.68, 0.85, 1)
 light_energy = 0.7
 omni_range = 6.0
+
+; L'attivita' «stare a guardare» (dome_activity.gd): Area3D al centro cupola che rileva il
+; giocatore e misura la permanenza con la posa in corso, emettendo la coppia
+; wait_activity_*(&"cupola") verso la telemetria (3.6). Nessun feedback visibile. Il
+; collider cilindrico (raggio 2,2, alto 2,0, centro y = 1,0) sta dentro la pianta
+; ottagonale. Rileva SOLO il giocatore (mask LAYER_PLAYER), non e' trovabile da nessuno
+; (layer 0): dome_activity.gd li fissa in `_ready`.
+[node name="DomeActivity" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
+script = ExtResource("3_activity")
+
+[node name="Collision" type="CollisionShape3D" parent="DomeActivity"]
+shape = SubResource("ShapeActivity")
+
+; La soglia di permanenza (dome_activity.gd fissa one_shot e wait_time dal codice: e' un
+; valore di rituale, non di layout — stessa scelta del BrewTimer della moka).
+[node name="Dwell" type="Timer" parent="DomeActivity"]
+
+; Il cigolio ambientale della cupola: posizionale, appartiene al posto e NON alla
+; sequenza (a differenza del ronzio della montatura). Stream sintetizzato in codice.
+[node name="Creak" type="AudioStreamPlayer3D" parent="DomeActivity"]

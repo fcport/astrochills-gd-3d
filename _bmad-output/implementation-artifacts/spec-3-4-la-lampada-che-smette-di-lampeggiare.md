@@ -2,7 +2,7 @@
 title: "3.4 La lampada che smette di lampeggiare"
 type: 'feature'
 created: '2026-08-24'
-status: 'awaiting-operator'
+status: done
 baseline_revision: 'e7bd2a716b9f9ed592d4b2e3c50f84608467ac96'
 review_loop_iteration: 0
 followup_review_recommended: false
@@ -184,3 +184,16 @@ Status: awaiting-operator
 - Wiring runtime della coppia telemetria e effetto set+save di `mark_lamp_fixed` non esercitati dal banco (vedi `deferred`): la logica pura e il round-trip del campo sono coperti, il wiring che li trasforma in emissioni/persistenza no.
 - Estetica/audio provvisori: mesh segnaposto e ronzio sintetizzato in codice (onda quadra grave in loop) — da sostituire col pack asset senza toccare la logica.
 - La `Fill` a 0,35 e le energie del lampeggio sono valori di taratura: durante il cambio la luce va a 0 per qualche secondo — l'operatore conferma che la stanza non è troppo buia e ritara guardando.
+
+## Operator Confirmation
+
+Confirmed 2026-08-24: the external actions this story owed were carried out.
+
+- Aprire una build con display e audio: alla prima notte, entrare in cucina e verificare che la lampada LAMPEGGIA in modo visibile (la luce della cucina sfarfalla, non un'icona) e RONZA in modo udibile — un fastidio percepibile — e che NON compare nessun prompt né invito a comprare la lampadina.
+- Comprare la lampadina al terminale durante l'attesa, tornare in cucina e guardare la lampada: verificare che compare il prompt «Cambia la lampadina» e che cambiarla richiede di stare lì e dura QUALCHE SECONDO (non è istantaneo, non è un interruttore); durante il cambio la lampada è inerte.
+- A cambio concluso: confermare che l'illuminazione della cucina CAMBIA DAVVERO — luce stabile al posto di quella intermittente, ronzio spento — e che non è troppo buia durante il cambio (la luce si spegne per qualche secondo, resta la `Fill`). Tarare `Fill`/energie guardando, se serve.
+- Verificare la PERMANENZA: dopo aver cambiato la lampadina, andare a dormire e/o riavviare il gioco e confermare che la lampada è ancora stabile e silenziosa (il flag `lamp_fixed` sopravvive al save).
+- Verificare la RAGGIUNGIBILITÀ: la lampada è mirabile e interagibile stando davanti al piano (occhio 1,65 m, piano 0,9 m), senza che il prompt compaia da lontano. Tarare la quota del volume di collisione guardando, se serve.
+- Con un log/telemetria manuale, confermare che `Events.wait_activity_started(&"lampada")` parte all'inizio del cambio e `wait_activity_ended(&"lampada")` alla fine, senza feedback visibile, e che un cambio interrotto (quit a metà) resta uno `started` senza `ended` e la lampada torna rotta al riavvio.
+
+_Appended by the bmad-loop orchestrator (`bmad-loop confirm`, #335): a human confirmed these external actions out of band, and the story was advanced from `awaiting-operator` to `done`._

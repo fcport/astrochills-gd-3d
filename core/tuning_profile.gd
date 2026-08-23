@@ -32,3 +32,20 @@ extends Resource
 ## Velocità di deriva alla quale il punteggio della fase polare è 0, in
 ## arcominuti al secondo. Sotto, il punteggio sale linearmente fino a 100.
 @export var polar_max_drift_rate: float = 0.2
+
+## La curva a scaglioni del payout: dalla qualità aggregata alle lire.
+##
+## Ogni voce è `{min_score, lire}`, ordinata per `min_score` crescente: si legge lo
+## scaglione più alto con `min_score <= quality` (vedi `photo/payout.gd`).
+##
+## SEGNAPOSTO (FR22): non tarare. Sono cifre plausibili, non calibrate — la
+## progressione (500 → 1500 → 3500 → 7000 → 15000) è una decisione d'economia, e vive
+## nel dato. Il `.tres` la sovrascrive; questo default esiste perché lo script resti
+## totale se il `.tres` mancasse.
+@export var payout_tiers: Array[Dictionary] = [
+	{&"min_score": 0, &"lire": 500},
+	{&"min_score": 30, &"lire": 1500},
+	{&"min_score": 50, &"lire": 3500},
+	{&"min_score": 75, &"lire": 7000},
+	{&"min_score": 90, &"lire": 15000},
+]

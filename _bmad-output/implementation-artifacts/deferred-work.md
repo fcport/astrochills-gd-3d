@@ -347,3 +347,19 @@ source_spec: `spec-2-3-la-posa-configurare-la-sequenza-e-lasciarla-lavorare.md`
 severity: low
 reason: Se key() cambiasse, il chime smetterebbe di suonare in silenzio; nessun controllo cross-file lega i due letterali.
 status: open
+
+### DW-7: Il flusso di vendita non ha copertura automatica: la composizione in _on_sale_confirmed (credito wallet_lire + emissione photo_sold), la logica UI di photo_sale (_fulfill_options, _declined / "decline
+origin: spec-deferred 28d397b441df
+location: night/night_session.gd:_on_sale_confirmed, night/photo_sale.gd
+source_spec: `spec-2-5-qualcuno-la-compra-e-paga-subito.md`
+severity: medium
+reason: Il banco (NFR19) prova solo logica pura senza SceneTree: sale_lire/applies_to/ tier_payout sono coperti, ma la glue stateful e il Control non ospitato no. Rispecchia DW-2 (stessa lacuna per il flusso imaging della 2.3). Una regressione (chiave mult errata, credito omesso, emissione pre-moltiplicatore, ordine _fulfill_options invertito) lascerebbe il banco verde.
+status: open
+
+### DW-8: Events.photo_sold emette come photo_id l'indice per-notte del record (Photo.KEY_ID) coercito a StringName: due foto di notti diverse condividono l'indice 0, quindi l'id è ambiguo per un aggregatore cr
+origin: spec-deferred ecf51b77654c
+location: night/night_session.gd:_on_sale_confirmed
+source_spec: `spec-2-5-qualcuno-la-compra-e-paga-subito.md`
+severity: low
+reason: night_session._on_sale_confirmed fa Events.photo_sold.emit(StringName(str(_sale_photo_id)), lire); _sale_photo_id = record[Photo.KEY_ID] = indice in run.photos. L'MVP non ne ha bisogno, ma va ricordato per la 2.7.
+status: open

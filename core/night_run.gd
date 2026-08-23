@@ -22,6 +22,12 @@ const CURRENT_VERSION := 1
 @export var selected_target_id: StringName = &""
 @export var photos: Array[Dictionary] = []
 
+## La commessa della notte: un committente + il soggetto richiesto + il
+## moltiplicatore, o `{}` se nessun committente abilitato. Determinata all'inizio
+## della notte (vedi `photo/commission.gd`), è stato di NOTTE — salvabile per la 2.7,
+## che gestirà la persistenza cross-notte. Le chiavi vivono in `Commission.*`.
+@export var commission: Dictionary = {}
+
 
 func migrate() -> void:
 	if version == CURRENT_VERSION:

@@ -30,6 +30,14 @@
 ## Disegnato per 256x192, con i colori del fosforo, come il resto del CRT.
 extends Control
 
+## L'emersione è completa: l'orchestratore può passare alla vendita (2.5).
+##
+## Signal DIRETTO e non `Events`: l'ascoltatore è uno solo e si sa chi è —
+## l'orchestratore che possiede questo Control. Emesso UNA SOLA VOLTA quando
+## `_progress` raggiunge 1.0 (guardia a flag), mai a ogni frame dopo. La 2.4 resta
+## verde: nient'altro cambia in questo file.
+signal revealed()
+
 const DESIGN_SIZE := Vector2(256, 192)
 
 const BG := Color(0.02, 0.06, 0.03)
@@ -52,6 +60,10 @@ var _target := ""
 var _quality := 0
 var _elapsed := 0.0
 var _progress := 0.0
+
+## Che `revealed` sia già stato emesso. Present-gated, `_process` gira solo alla
+## postazione: senza la guardia l'emersione completa lo riemetterebbe a ogni frame.
+var _revealed_emitted := false
 
 ## Il rumore è pseudo-casuale ma STABILE: seminato una volta, così il campo non
 ## sfarfalla a ogni redraw. È un `RandomNumberGenerator` locale, non l'RNG globale —
@@ -83,6 +95,14 @@ func _process(delta: float) -> void:
 	_elapsed += delta
 	_progress = clampf(_elapsed / REVEAL_SECONDS, 0.0, 1.0)
 	queue_redraw()
+	# L'emersione è finita: lo si dice UNA VOLTA. La guardia impedisce che il ramo
+	# «>= 1.0» qui sopra — che al frame dopo esce subito — riemetta comunque: al
+	# frame del completamento `_progress` diventa 1.0 e questo blocco scatta, poi mai
+	# più. La transizione la differisce l'orchestratore: `revealed` nasce dentro
+	# questo `_process`, e liberare un nodo dentro la propria callback è vietato.
+	if _progress >= 1.0 and not _revealed_emitted:
+		_revealed_emitted = true
+		revealed.emit()
 
 
 func _draw() -> void:

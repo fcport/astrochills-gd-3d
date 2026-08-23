@@ -41,6 +41,10 @@ var polar_score_window_sec: float:
 	get: return profile.polar_score_window_sec
 var polar_max_drift_rate: float:
 	get: return profile.polar_max_drift_rate
+## La curva del payout, letta SEMPRE da qui — mai `load()` diretto sul `.tres` — così
+## un override esterno futuro passerebbe da questa superficie come gli altri numeri.
+var payout_tiers: Array[Dictionary]:
+	get: return profile.payout_tiers
 
 
 func _ready() -> void:

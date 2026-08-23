@@ -46,6 +46,17 @@ const SUMMARY := preload("res://night/night_summary.gd")
 ## dipendere da `photo/` e da sé stesso, non deve nominare `phases/`.
 const REVEAL := preload("res://night/stacking_reveal.gd")
 
+## L'interfaccia di vendita. `preload` come il riepilogo e la rivelazione: è un
+## Control di `night/`, deve esistere in ogni build. NON è una fase — la prova
+## meccanica (nessun nome di fase qui) resta verde: `night/` può dipendere da `photo/`
+## e da sé stesso.
+const SALE := preload("res://night/photo_sale.gd")
+
+## Il roster dei committenti. `load` e non `preload`: è un DATO in `data/`, e il caso
+## «roster assente» è previsto (I/O matrix) — un `preload` di un file mancante
+## romperebbe la compilazione, `load` restituisce `null` e la notte prosegue a base.
+const ROSTER_PATH := "res://data/clients/roster.tres"
+
 ## Il piano non ha altro da dare, per adesso.
 ##
 ## Signal DIRETTO e non `Events`: l'ascoltatore è uno solo e si sa chi è — il
@@ -73,6 +84,16 @@ var _summary: Control
 ## una fase — non entra in `_phase`, non emette `finished`, non scrive punteggi.
 var _stacking: Control
 
+## L'interfaccia di vendita, quando c'è. Come `_stacking`: un `Control` di `night/`
+## mostrato sul CRT, posseduto e liberato dall'orchestratore. Non è una fase.
+var _sale: Control
+
+## Il payout base della foto in vendita, calcolato in `_enter_sale` e usato in
+## `_on_sale_confirmed`: il ramo del rifiuto paga esattamente questo, senza
+## ricalcolarlo. `_sale_photo_id` è l'indice del record da mettere in `photo_sold`.
+var _sale_base := 0
+var _sale_photo_id := 0
+
 ## Ciò che una fase lascia a quelle dopo di lei. `PhaseResult.payload` entra qui,
 ## e da qui esce in `Phase.setup(run, ctx)`: è il solo canale previsto, perché
 ## una fase non importa mai da un'altra fase (ADR-002).
@@ -90,6 +111,10 @@ var _screen_mode := Node.PROCESS_MODE_INHERIT
 ## `INHERIT` alla ripresa andrebbe bene qui — il Control nasce `INHERIT` — ma si
 ## salva comunque per non deviare dal modello della fase e del suo schermo.
 var _stacking_mode := Node.PROCESS_MODE_INHERIT
+
+## Il modo che la vendita aveva alla nascita, per la stessa ragione degli altri:
+## sospenderla lo sostituisce con `DISABLED`, riprenderla lo rimette.
+var _sale_mode := Node.PROCESS_MODE_INHERIT
 
 var _setup_index := 0
 var _photo_index := 0
@@ -140,6 +165,23 @@ func begin() -> void:
 	if _stacking != null:
 		_stacking.queue_free()
 		_stacking = null
+	# Come il riepilogo e la rivelazione: una vendita di una notte prima farebbe
+	# mentire `has_phase()` e resterebbe a schermo. La libera chi l'ha creata.
+	if _sale != null:
+		_sale.queue_free()
+		_sale = null
+
+	# LA COMMESSA SI DECIDE ORA, all'inizio della notte, e vive su `NightRun`
+	# (spec: «determinata all'inizio della notte»). Il roster è un DATO in `data/`,
+	# letto con `load`: se manca — o non ha abilitati — `Commission.choose` torna `{}`
+	# e ogni vendita andrà a base ×1.0, senza crash. Un avviso su canale 1, il gioco
+	# prosegue (I/O matrix, riga «roster assente»).
+	var roster := load(ROSTER_PATH) as ClientRoster
+	var clients: Array = roster.clients if roster != null else []
+	if roster == null:
+		Log.warn("night", "roster committenti assente (%s): nessuna commessa stanotte" % ROSTER_PATH)
+	Game.run.commission = Commission.choose(clients, Game.run.night_index)
+
 	_enter_next()
 
 
@@ -151,7 +193,7 @@ func current_phase() -> Phase:
 
 ## Se c'è qualcosa da fare al monitor adesso.
 func has_phase() -> bool:
-	return _phase != null or _summary != null or _stacking != null
+	return _phase != null or _summary != null or _stacking != null or _sale != null
 
 
 func clock() -> NightClock:
@@ -192,6 +234,13 @@ func set_player_present(present: bool) -> void:
 	# `Control` di una fase. Non ha `runs_in_background()`: l'emersione È il guardare.
 	if _stacking != null and is_instance_valid(_stacking):
 		_stacking.process_mode = _stacking_mode if present else Node.PROCESS_MODE_DISABLED
+
+	# La vendita è present-gated come la rivelazione: sospenderla alla postazione
+	# vuota ferma il suo `_unhandled_input` (che gira solo mentre `process_mode` è
+	# attivo). Vive nel `SubViewport` del CRT, non è figlia di niente che erediti,
+	# quindi va sospesa a parte — come il `Control` di una fase.
+	if _sale != null and is_instance_valid(_sale):
+		_sale.process_mode = _sale_mode if present else Node.PROCESS_MODE_DISABLED
 
 	if _phase == null:
 		return
@@ -302,10 +351,77 @@ func _enter_stacking() -> void:
 	# Il modo si registra appena il Control esiste, prima che il gating lo sospenda.
 	_stacking_mode = _stacking.process_mode
 	_stacking.set_readout(String(_ctx.get(Photo.CTX_TARGET, "")), quality)
+	# `revealed` → la vendita, DIFFERITO: `revealed` nasce dentro `_process` della
+	# rivelazione, e liberare la rivelazione lì dentro sarebbe liberare un nodo dentro
+	# la propria callback — lo stesso motivo per cui ogni transizione qui è differita.
+	# La qualità e l'indice si legano ora: il record esiste già, e la vendita non deve
+	# ri-aggregare niente.
+	_stacking.revealed.connect(
+		_enter_sale.bind(quality, int(record.get(Photo.KEY_ID))), CONNECT_DEFERRED)
 	_crt.show_control(_stacking)
 	set_player_present(_player_present)
 
 	Log.info("night", "stack — foto %d registrata, qualità %d" % [record.get(Photo.KEY_ID), quality])
+
+
+## La rivelazione è completa: si passa alla vendita. Libera la rivelazione (che
+## `revealed` ha finito di usare), calcola il payout base dalla curva segnaposto, e
+## mette la schermata di vendita sul CRT. Present-gated come tutto il resto: nasce
+## ferma se il giocatore non è alla postazione.
+##
+## `_ended` GUARDIA: l'alba può essere arrivata nella finestra fra `revealed` e questo
+## `call_deferred`. Se la notte è chiusa, `_close_night` ha già liberato la rivelazione
+## e mostrato il riepilogo — la vendita non deve scavalcarlo.
+func _enter_sale(quality: int, photo_id: int) -> void:
+	if _ended:
+		return
+	if _stacking != null:
+		_stacking.queue_free()
+		_stacking = null
+
+	# LA CURVA È UN DATO, letta SEMPRE da `Tuning.payout_tiers` (mai `load()` diretto):
+	# se è vuota `tier_payout` torna 0, come `quality` su vuoto — non si inventa un
+	# numero (I/O matrix, riga «curva assente»).
+	_sale_base = PhotoPayout.new().tier_payout(quality, Tuning.payout_tiers)
+	_sale_photo_id = photo_id
+
+	_sale = SALE.new()
+	_sale_mode = _sale.process_mode
+	_sale.set_readout(
+		String(_ctx.get(Photo.CTX_TARGET, "")), quality, _sale_base, Game.run.commission)
+	# Signal DIRETTO: l'ascoltatore è uno solo, questo orchestratore.
+	_sale.confirmed.connect(_on_sale_confirmed)
+	_crt.show_control(_sale)
+	set_player_present(_player_present)
+
+	Log.info("night", "vendita — foto %d, base %d lire" % [photo_id, _sale_base])
+
+
+## Il giocatore ha confermato la vendita. QUI vivono le mutazioni di `Game.run` e
+## l'emissione su `Events` (spec: la logica pura non tocca lo stato).
+##
+## `fulfill` true ⟺ commessa applicabile e accettata: le lire sono `base * mult`
+## arrotondato. Altrimenti — nessuna commessa, o commessa rifiutata (SELL OPEN) — è il
+## base ×1.0. Il rifiuto non ha un ramo che sottrae: paga il base come chi non aveva
+## commessa, e non scrive da nessuna parte di aver rifiutato (NFR20).
+func _on_sale_confirmed(fulfill: bool) -> void:
+	# La COMPOSIZIONE del payout è pura e vive in `PhotoPayout.sale_lire` (unica
+	# sorgente di verità, collaudata al banco): qui non c'è un ramo `if fulfill` che la
+	# duplichi. `mult` si legge sempre — è irrilevante quando `fulfill` è false.
+	var mult := float(Game.run.commission.get(Commission.MULTIPLIER, 1.0))
+	var lire := PhotoPayout.new().sale_lire(_sale_base, mult, fulfill)
+
+	# Payout IMMEDIATO e PER-FOTO: accreditato ora, su questa foto, non aggregato di
+	# fine notte.
+	Game.run.wallet_lire += lire
+	# `photo_id` è un `int` (Photo.KEY_ID); il signal lo vuole `StringName`. Si
+	# converte all'emissione — l'MVP non ha bisogno di un UUID.
+	Events.photo_sold.emit(StringName(str(_sale_photo_id)), lire)
+
+	if _sale != null and is_instance_valid(_sale):
+		_sale.show_sold(lire)
+
+	Log.info("night", "venduta — foto %d, %d lire (fulfill %s)" % [_sale_photo_id, lire, fulfill])
 
 
 func _enter_phase(scene: PackedScene) -> void:
@@ -472,6 +588,13 @@ func _close_night() -> void:
 	if _stacking != null:
 		_stacking.queue_free()
 		_stacking = null
+
+	# La vendita, se è a schermo all'alba, la libera chi la possiede — prima che il
+	# riepilogo la sostituisca, altrimenti resterebbe orfana nel viewport. Stesso
+	# motivo della rivelazione qui sopra.
+	if _sale != null:
+		_sale.queue_free()
+		_sale = null
 
 	_show_summary()
 	# L'annuncio al resto del mondo va DOPO che la notte è chiusa davvero: chi

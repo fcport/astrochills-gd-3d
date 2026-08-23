@@ -9,3 +9,19 @@ game_min_per_sec = 0.6
 min_per_frame = 5.0
 polar_score_window_sec = 8.0
 polar_max_drift_rate = 0.2
+payout_tiers = Array[Dictionary]([{
+&"lire": 500,
+&"min_score": 0
+}, {
+&"lire": 1500,
+&"min_score": 30
+}, {
+&"lire": 3500,
+&"min_score": 50
+}, {
+&"lire": 7000,
+&"min_score": 75
+}, {
+&"lire": 15000,
+&"min_score": 90
+}])

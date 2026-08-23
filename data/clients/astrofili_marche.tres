@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ClientData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/clients/client_data.gd" id="1_client"]
+
+[resource]
+script = ExtResource("1_client")
+id = &"astrofili_marche"
+name = "Astrofili Marche"
+multiplier = 0.6
+wanted_target = &"m13"
+enabled = true

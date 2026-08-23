@@ -28,6 +28,7 @@ const HONEST_PATH := "res://phases/polar/sources/honest_drift.tres"
 const WANDERING_PATH := "res://phases/polar/sources/wandering_drift.tres"
 const CATALOG_PATH := "res://phases/targeting/sources/honest_catalog.tres"
 const SEQUENCE_PATH := "res://phases/imaging/sources/honest_sequence.tres"
+const ROSTER_PATH := "res://data/clients/roster.tres"
 ## La costante dell'orologio vero, non una copia: il banco confronta la propria
 ## aritmetica con quella del gioco, e per farlo deve leggere la stessa costante.
 const CLOCK := preload("res://night/night_clock.gd")
@@ -70,6 +71,12 @@ func _ready() -> void:
 	_check_photo_schema()
 	print("")
 	_check_photo_record()
+	print("")
+	_check_payout()
+	print("")
+	_check_commission()
+	print("")
+	_check_sale()
 	print("")
 	print("=== fine ===")
 	get_tree().quit()
@@ -490,6 +497,160 @@ func _report_record_field(record: Dictionary, key: StringName, expected: Variant
 	var got: Variant = record.get(key)
 	var note := "" if got == expected else "   <-- ATTESO: %s" % str(expected)
 	print("   %-40s %s = %s%s" % [label, key, str(got), note])
+
+
+## `PhotoPayout`: la curva a scaglioni ai bordi, e l'arrotondamento del moltiplicatore.
+## LOGICA PURA — `PhotoPayout.new()` senza SceneTree, come `PhotoQuality`.
+##
+## SI COLLAUDA LA CURVA DEL .tres, non i default dello script: `Tuning.payout_tiers`
+## è ciò con cui il gioco vende davvero, override compreso. I bordi degli scaglioni
+## (0/29/30/49/50/74/75/89/90/100) sono l'AC — l'ultimo scaglione superato vince — e
+## l'arrotondamento (base 3500, ×0.6 → 2100, ×1.4 → 4900) è l'aritmetica dell'I/O matrix.
+func _check_payout() -> void:
+	print("-- PhotoPayout.tier_payout(): scaglione più alto raggiunto; 0 su curva vuota")
+	var p := PhotoPayout.new()
+	var tiers: Array = Tuning.payout_tiers
+	print("   dal .tres: payout_tiers = %s" % str(tiers))
+
+	# Bordi degli scaglioni con i valori segnaposto (500/1500/3500/7000/15000).
+	_report_tier(p, tiers, 0, 500, "quality 0 → primo scaglione")
+	_report_tier(p, tiers, 29, 500, "quality 29 → ancora il primo")
+	_report_tier(p, tiers, 30, 1500, "quality 30 → secondo")
+	_report_tier(p, tiers, 49, 1500, "quality 49 → ancora il secondo")
+	_report_tier(p, tiers, 50, 3500, "quality 50 → terzo")
+	_report_tier(p, tiers, 74, 3500, "quality 74 → ancora il terzo")
+	_report_tier(p, tiers, 75, 7000, "quality 75 → quarto")
+	_report_tier(p, tiers, 89, 7000, "quality 89 → ancora il quarto")
+	_report_tier(p, tiers, 90, 15000, "quality 90 → quinto")
+	_report_tier(p, tiers, 100, 15000, "quality 100 → ancora il quinto")
+	# Curva vuota: 0, come `quality` su vuoto — non si inventa un numero.
+	_report_tier(p, [], 80, 0, "curva vuota → 0")
+
+	# L'arrotondamento del moltiplicatore (I/O matrix): base 3500.
+	print("   -- apply_multiplier(): round(base * mult)")
+	_report_mult(p, 3500, 0.6, 2100, "base 3500 × 0.6")
+	_report_mult(p, 3500, 1.4, 4900, "base 3500 × 1.4")
+	_report_mult(p, 3500, 1.0, 3500, "base 3500 × 1.0")
+
+
+func _report_tier(p: PhotoPayout, tiers: Array, quality: int, expected: int, label: String) -> void:
+	var got := p.tier_payout(quality, tiers)
+	var note := "" if got == expected else "   <-- ATTESO: %d" % expected
+	print("   %-40s lire = %d%s" % [label, got, note])
+
+
+func _report_mult(p: PhotoPayout, base: int, mult: float, expected: int, label: String) -> void:
+	var got := p.apply_multiplier(base, mult)
+	var note := "" if got == expected else "   <-- ATTESO: %d" % expected
+	print("   %-40s lire = %d%s" % [label, got, note])
+
+
+## `Commission.choose()`: scelta DETERMINISTICA da `night_index`, esclusione di
+## `privato_g`, roster vuoto → `{}`. LOGICA PURA e statica.
+##
+## SI CARICA IL ROSTER VERO (`_load_source`), non un array a mano: è il `.tres` con
+## cui il gioco sceglie davvero, e `privato_g` è nel file ma disabilitato — la prova
+## che non venga mai scelto vale solo sul dato reale.
+func _check_commission() -> void:
+	print("-- Commission.choose(): scelta deterministica su night_index, privato_g escluso")
+	var roster := _load_source(ROSTER_PATH) as ClientRoster
+	if roster == null:
+		return
+	var clients: Array = roster.clients
+	print("   dal .tres: %d committenti (di cui abilitati: %s)" % [
+		clients.size(), _enabled_names(clients)])
+
+	# Tre abilitati (Coelum, Astrofili Marche, BBS Cygnus) in ordine; `privato_g`
+	# disabilitato. La rotazione su `night_index`: 1→primo, 2→secondo, 3→terzo, 4→primo.
+	_report_commission(clients, 1, "Coelum", "notte 1 → primo abilitato")
+	_report_commission(clients, 2, "Astrofili Marche", "notte 2 → secondo")
+	_report_commission(clients, 3, "BBS Cygnus", "notte 3 → terzo")
+	_report_commission(clients, 4, "Coelum", "notte 4 → rotazione al primo")
+
+	# `privato_g` non compare mai: lo si prova scorrendo abbastanza notti.
+	var saw_privato := false
+	for n in range(1, 9):
+		var c := Commission.choose(clients, n)
+		if String(c.get(Commission.CLIENT_NAME, "")) == "Privato G.":
+			saw_privato = true
+	var privato_note := "   <-- ATTESO: mai scelto" if saw_privato else ""
+	print("   %-40s privato_g scelto = %s%s" % ["disabilitato escluso", saw_privato, privato_note])
+
+	# Roster vuoto → `{}`: nessuna commessa applicabile, ogni vendita a base.
+	var empty := Commission.choose([], 1)
+	var empty_note := "" if empty.is_empty() else "   <-- ATTESO: {}"
+	print("   %-40s choose([], 1) = %s%s" % ["roster vuoto → nessuna commessa", empty, empty_note])
+
+	# Roster NON vuoto ma tutti disabilitati → `{}`. È un PERCORSO DIVERSO dal roster
+	# vuoto: il filtro `enabled` produce una lista vuota, poi `is_empty()` scatta. La
+	# riga «Roster assente/vuoto» dell'I/O matrix copre esplicitamente entrambi i casi.
+	var d := ClientData.new()
+	d.enabled = false
+	d.name = "Disabled"
+	var all_off := Commission.choose([d], 1)
+	var all_off_note := "" if all_off.is_empty() else "   <-- ATTESO: {}"
+	print("   %-40s choose([disabled], 1) = %s%s" % [
+		"roster tutto disabilitato → nessuna commessa", all_off, all_off_note])
+
+
+func _report_commission(clients: Array, night_index: int, expected_name: String, label: String) -> void:
+	var c := Commission.choose(clients, night_index)
+	var got := String(c.get(Commission.CLIENT_NAME, ""))
+	var note := "" if got == expected_name else "   <-- ATTESO: %s" % expected_name
+	print("   %-40s client = %s%s" % [label, got, note])
+
+
+func _enabled_names(clients: Array) -> String:
+	var names := PackedStringArray()
+	for c in clients:
+		if c != null and c.enabled:
+			names.append(c.name)
+	return ", ".join(names)
+
+
+## Le QUATTRO righe di flusso della I/O matrix, provate sulla logica VERA — le stesse
+## funzioni pure che l'orchestratore e la schermata di vendita chiamano, non una copia:
+##
+##   1. «Vendita senza commessa applicabile» → target foto ≠ commission.target → base
+##   2. «Vendita con commessa, accettata» (FULFILL) → round(base*mult)
+##   3. «Vendita con commessa, rifiutata» (SELL OPEN) → base
+##   4. «Foto senza nome (DW-3)» → target_id vuoto → nessuna commessa applicabile → base
+##
+## `Commission.applies_to` decide se la commessa vale per QUESTA foto; `PhotoPayout.sale_lire`
+## compone il payout dalla scelta FULFILL/SELL. Le chiavi dei dict vengono da
+## `Commission.TARGET_ID`, non da stringhe sparse.
+func _check_sale() -> void:
+	print("-- Vendita (I/O matrix): applies_to + sale_lire, le 4 righe di flusso")
+	var p := PhotoPayout.new()
+	var comm := {Commission.TARGET_ID: &"m42", Commission.MULTIPLIER: 0.6}
+
+	# Riga 1: la foto è m42, la commessa vuole m13 → non applicabile → base.
+	var off_target := {Commission.TARGET_ID: &"m13", Commission.MULTIPLIER: 0.6}
+	_report_applies(&"m42", off_target, false, "riga 1: target foto ≠ commessa")
+	_report_sale(p, 3500, 0.6, false, 3500, "riga 1: non applicabile → base")
+
+	# Riga 2: la foto è m42, la commessa vuole m42, FULFILL → round(base*mult).
+	_report_applies(&"m42", comm, true, "riga 2/3: target foto = commessa")
+	_report_sale(p, 3500, 0.6, true, 2100, "riga 2: FULFILL → round(3500*0.6)")
+
+	# Riga 3: stessa commessa applicabile, ma SELL OPEN (rifiuto) → base ×1.0.
+	_report_sale(p, 3500, 0.6, false, 3500, "riga 3: SELL OPEN → base")
+
+	# Riga 4: foto senza nome (DW-3), target vuoto → mai applicabile → base.
+	_report_applies(&"", comm, false, "riga 4: DW-3 target vuoto → non applicabile")
+	_report_sale(p, 3500, 0.6, false, 3500, "riga 4: DW-3 → base")
+
+
+func _report_applies(target_id: StringName, commission: Dictionary, expected: bool, label: String) -> void:
+	var got := Commission.applies_to(target_id, commission)
+	var note := "" if got == expected else "   <-- ATTESO: %s" % expected
+	print("   %-42s applies_to = %s%s" % [label, got, note])
+
+
+func _report_sale(p: PhotoPayout, base: int, mult: float, fulfill: bool, expected: int, label: String) -> void:
+	var got := p.sale_lire(base, mult, fulfill)
+	var note := "" if got == expected else "   <-- ATTESO: %d" % expected
+	print("   %-42s lire = %d%s" % [label, got, note])
 
 
 ## Piccola comodità: costruisce l'input e campiona in una riga.

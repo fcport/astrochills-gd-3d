@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ClientRoster" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://data/clients/client_roster.gd" id="1_roster"]
+[ext_resource type="Resource" path="res://data/clients/coelum.tres" id="2_coelum"]
+[ext_resource type="Resource" path="res://data/clients/astrofili_marche.tres" id="3_marche"]
+[ext_resource type="Resource" path="res://data/clients/bbs_cygnus.tres" id="4_cygnus"]
+[ext_resource type="Resource" path="res://data/clients/privato_g.tres" id="5_privato"]
+
+[resource]
+script = ExtResource("1_roster")
+clients = Array[ClientData]([ExtResource("2_coelum"), ExtResource("3_marche"), ExtResource("4_cygnus"), ExtResource("5_privato")])

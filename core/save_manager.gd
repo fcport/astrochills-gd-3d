@@ -55,12 +55,20 @@ func load_profile(path := PROFILE_PATH) -> PlayerProfile:
 	if not FileAccess.file_exists(path):
 		return PlayerProfile.new()            # primo avvio: silenzioso
 	if not _looks_like_tres(path):            # sniff header, no ResourceLoader
-		_note_unreadable("profilo", path)
+		_quarantine("profilo", path)
 		return PlayerProfile.new()
 	var res := ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE)
 	var p := res as PlayerProfile
 	if p == null:
-		_note_unreadable("profilo", path)
+		_quarantine("profilo", path)
+		return PlayerProfile.new()
+	# UN SAVE PIU' NUOVO DEL GIOCO non è migrabile: `migrate()` sa scendere dal
+	# passato, non dal futuro. Degradarlo in silenzio significa riscriverlo alla fine
+	# della notte successiva nel formato vecchio, perdendo per sempre i campi che la
+	# versione nuova aveva aggiunto. Meglio trattarlo come illeggibile e metterlo da
+	# parte intatto: succede a chi prova una build nuova e poi torna indietro.
+	if p.version > PlayerProfile.CURRENT_VERSION:
+		_quarantine("profilo", path)
 		return PlayerProfile.new()
 	p.migrate()                               # SEMPRE
 	return p
@@ -72,22 +80,52 @@ func load_run(path := NIGHT_PATH) -> NightRun:
 	if not FileAccess.file_exists(path):
 		return NightRun.new()                 # nessuna notte salvata: silenzioso
 	if not _looks_like_tres(path):
-		_note_unreadable("notte", path)
+		_quarantine("notte", path)
 		return NightRun.new()
 	var res := ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE)
 	var r := res as NightRun
 	if r == null:
-		_note_unreadable("notte", path)
+		_quarantine("notte", path)
+		return NightRun.new()
+	if r.version > NightRun.CURRENT_VERSION:
+		_quarantine("notte", path)
 		return NightRun.new()
 	r.migrate()                               # SEMPRE
 	return r
 
 
+## SI SCRIVE DI FIANCO, POI SI SOSTITUISCE. `ResourceSaver.save` sul file definitivo
+## lo tronca dal primo byte: se il processo muore a metà scrittura — un alt-F4 su un
+## freeze, la batteria, un crash del driver — al riavvio il save esiste, è mozzo, e le
+## lire di tutte le notti precedenti non ci sono più. E quei secondi di I/O sono i più
+## prevedibili della partita, perché cadono sempre alla chiusura della notte.
+##
+## Con il temporaneo, un'interruzione lascia intatto il save di ieri: si perde la notte
+## appena finita, non la carriera.
 func _save(res: Resource, path: String) -> bool:
-	DirAccess.make_dir_recursive_absolute(SAVES_DIR)
-	var err := ResourceSaver.save(res, path)
+	# La directory del path che si sta per scrivere, non una costante: le due funzioni
+	# pubbliche accettano un percorso qualsiasi, e il banco ne usa uno suo.
+	var dir := path.get_base_dir()
+	var derr := DirAccess.make_dir_recursive_absolute(dir)
+	if derr != OK and not DirAccess.dir_exists_absolute(dir):
+		Log.warn("save", "cartella dei salvataggi non creabile: %s — errore %d" % [dir, derr])
+		return false
+
+	# `.tmp.tres` e NON `.tres.tmp`: `ResourceSaver` sceglie il formato dall'estensione,
+	# e con un suffisso che non conosce rifiuta di scrivere. (Verificato rompendolo: la
+	# prima versione di questa funzione usava `.tres.tmp` e non salvava piu' niente.)
+	var tmp := path.get_basename() + ".tmp.tres"
+	var err := ResourceSaver.save(res, tmp)
 	if err != OK:
-		Log.warn("save", "salvataggio fallito a %s — errore %d" % [path, err])
+		Log.warn("save", "salvataggio fallito a %s — errore %d" % [tmp, err])
+		return false
+
+	# `rename_absolute` sovrascrive: il vecchio file sparisce solo adesso, quando il
+	# nuovo è già completo sul disco.
+	var rerr := DirAccess.rename_absolute(
+		ProjectSettings.globalize_path(tmp), ProjectSettings.globalize_path(path))
+	if rerr != OK:
+		Log.warn("save", "sostituzione fallita %s -> %s — errore %d" % [tmp, path, rerr])
 		return false
 	return true
 
@@ -104,6 +142,21 @@ func _looks_like_tres(path: String) -> bool:
 	return header.begins_with("[gd_resource")
 
 
-func _note_unreadable(what: String, path: String) -> void:
+## Il file illeggibile si SPOSTA, non si lascia dov'è.
+##
+## Prima restava al suo posto, e la prima notte conclusa ci scriveva sopra il profilo
+## azzerato: la finestra per recuperarlo a mano — che è l'intera ragione per cui si
+## salva in testo leggibile — durava una notte, e nessuno avvisava il giocatore che si
+## stava consumando. Rinominato, resta lì finché qualcuno decide di guardarlo.
+func _quarantine(what: String, path: String) -> void:
 	last_load_message = UNREADABLE_MESSAGE
-	Log.warn("save", "%s illeggibile a %s — %s nuovo" % [what, path, what])
+	# Col timestamp, perche' una seconda corruzione non deve cancellare la prima: e' il
+	# file che si spera di riaprire a mano, e sovrascriverlo vanifica la quarantena.
+	var kept := "%s.corrupt-%d" % [path, int(Time.get_unix_time_from_system())]
+	var abs_from := ProjectSettings.globalize_path(path)
+	var abs_to := ProjectSettings.globalize_path(kept)
+	if DirAccess.rename_absolute(abs_from, abs_to) == OK:
+		Log.warn("save", "%s illeggibile a %s — messo da parte in %s, %s nuovo" % [
+			what, path, kept, what])
+	else:
+		Log.warn("save", "%s illeggibile a %s — %s nuovo (non spostabile)" % [what, path, what])

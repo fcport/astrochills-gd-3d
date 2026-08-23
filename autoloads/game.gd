@@ -108,6 +108,18 @@ func spend_lire(amount: int) -> bool:
 	return true
 
 
+## Segna la lampada della cucina come cambiata (3.4) e SALVA. Mutazione+salvataggio
+## atomici in un punto solo, come `spend_lire`: la persistenza resta di `Game`, unico
+## chiamante di `SaveManager` in gioco — `world/` non tocca mai `FileAccess`/`SaveManager`.
+##
+## IDEMPOTENTE: se il flag è già vero salva comunque, ed è innocuo. Se il save fallisce,
+## `SaveManager` lo registra su canale 1 e ritorna `false`; la riparazione in memoria è già
+## avvenuta e non si annulla — la stessa scelta di `spend_lire`/`end_night`.
+func mark_lamp_fixed() -> void:
+	profile.lamp_fixed = true
+	_saves.save_profile(profile)
+
+
 ## Chiude la notte e VERSA al giocatore quanto ha guadagnato.
 ##
 ## È l'unico punto in cui `profile.wallet_lire` cresce: chi vende accredita su

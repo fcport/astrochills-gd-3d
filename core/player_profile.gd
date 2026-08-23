@@ -62,6 +62,19 @@ const CURRENT_VERSION := 1
 ## default «assente = stato iniziale» non cambia il formato: non serve `migrate()`.
 @export var owned_items: Array[StringName] = []
 
+## Se la lampada della cucina è stata cambiata (3.4). È una modifica PERMANENTE del
+## giocatore al suo mondo — come `owned_items` — quindi vive qui e non sulla `NightRun`:
+## una lampada sistemata resta sistemata dopo il sonno e dopo il riavvio. Possedere la
+## `lampadina` ≠ averla installata: si può comprare e non montare, o uscire a metà cambio;
+## serve perciò un bit DISTINTO dal possesso. Lo scrive `Game.mark_lamp_fixed()`.
+##
+## DEFAULT `false`, E NESSUN BUMP DI `CURRENT_VERSION`: stessa contabilità di
+## `owned_items`. `ResourceSaver` omette una proprietà uguale al default, quindi un save
+## vecchio senza il campo non lo scrive — e ricaricato torna `false`, cioè «non riparata»,
+## che è esattamente lo stato iniziale giusto. Aggiungere un campo con default «assente =
+## stato iniziale» non cambia il formato: non serve `migrate()`.
+@export var lamp_fixed: bool = false
+
 ## Se il giocatore possiede l'articolo `id`. Lo legge il terminale (per mostrare
 ## `OWNED`) e lo leggeranno 3.3/3.4 (per far comparire la moka/la lampadina).
 func owns(id: StringName) -> bool:

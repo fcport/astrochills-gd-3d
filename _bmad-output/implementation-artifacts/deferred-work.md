@@ -596,3 +596,11 @@ senza collisione; dopo `mark_owned` + `item_purchased` e' visibile, usabile e so
   lì si vedranno.
 - **Il terminale che NON si apre** mentre una fase interattiva e' a schermo (gate
   `is_waiting()`).
+
+### DW-16: Il wiring runtime della coppia telemetria (`_on_interacted`→`wait_activity_started(&"lampada")`, `_on_change_finished`→`wait_activity_ended(&"lampada")`) e l'effetto di `Game.mark_lamp_fixed()` (set d
+origin: spec-deferred 0beacc6e1276
+location: world/interactables/lamp.gd:183-217 ; autoloads/game.gd:116-118 ; tests/test_bench.gd::_check_lamp_repair
+source_spec: `spec-3-4-la-lampada-che-smette-di-lampeggiare.md`
+severity: medium
+reason: Il banco (`tests/test_bench.gd::_check_lamp_repair`) collauda `next_on_interact`/`is_interactive`/`prompt_for`/`starts_activity` come predicati puri, senza istanziare il nodo Lamp né connettersi a `Events`; `_check_owned_items` verifica che `lamp_fixed` sopravvive al save ma settando il campo A MANO, non tramite `Game.mark_lamp_fixed()`. Il WIRING che trasforma i predicati in emissioni reali (`interacted.connect(_on_interacted)` + le due `Events...emit`) e il set-e-salva di `mark_lamp_fixed` non sono esercitati: rompere la connessione, un'emissione o il set del flag lascerebbe il banco verde. È la stessa classe di gap accettata per la moka (DW-15) e giustificata come il deferral di `Game.spend_lire` end-to-end (3.2): tenuto fuori per la convenzione pura del banco (NFR19). Collaudabile headless (il binario Godot c'è), ma `mark_lamp_fixed` scrive sui path di save reali (come `spend_lire`), quindi non si esercita nel banco senza un parametro di path.
+status: open

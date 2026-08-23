@@ -93,6 +93,8 @@ func _ready() -> void:
 	print("")
 	_check_moka_ritual()
 	print("")
+	_check_lamp_repair()
+	print("")
 	print("=== fine ===")
 	get_tree().quit()
 
@@ -797,26 +799,31 @@ func _check_owned_items() -> void:
 	var dup_note := "" if p.owned_items.size() == 1 else "   <-- ATTESO: mark_owned è idempotente"
 	print("   mark_owned(moka) due volte: owned_items = %s%s" % [p.owned_items, dup_note])
 
-	# Round-trip su disco: il possesso sopravvive al save/load, come il portafoglio.
+	# Round-trip su disco: il possesso sopravvive al save/load, come il portafoglio. E con
+	# lui `lamp_fixed` (3.4), per parita' col possesso: la riparazione della lampada e' del
+	# GIOCATORE e attraversa il riavvio, esattamente come `owned_items`.
 	var bench_dir := "user://saves/_bench_items"
 	var path := "%s/profile.tres" % bench_dir
 	DirAccess.make_dir_recursive_absolute(bench_dir)
 	var saves := SaveManager.new()
 	p.mark_owned(&"lampadina")
 	p.wallet_lire = 3000
+	p.lamp_fixed = true
 	saves.save_profile(p, path)
 	var back := saves.load_profile(path)
-	var round_ok := back.owns(&"moka") and back.owns(&"lampadina") and back.wallet_lire == 3000
-	print("   round-trip: owns(moka)=%s owns(lampadina)=%s wallet=%d" % [
-		back.owns(&"moka"), back.owns(&"lampadina"), back.wallet_lire])
+	var round_ok := back.owns(&"moka") and back.owns(&"lampadina") and back.wallet_lire == 3000 and back.lamp_fixed
+	print("   round-trip: owns(moka)=%s owns(lampadina)=%s wallet=%d lamp_fixed=%s" % [
+		back.owns(&"moka"), back.owns(&"lampadina"), back.wallet_lire, back.lamp_fixed])
 	if not round_ok:
-		print("   <-- ATTESO: possesso e portafoglio sopravvivono al .tres")
+		print("   <-- ATTESO: possesso, portafoglio e lamp_fixed sopravvivono al .tres")
 
-	# Un profilo SENZA il campo (default []) è «niente posseduto», non un errore.
+	# Un profilo SENZA i campi (default [] / false) è «niente posseduto, lampada non
+	# riparata», non un errore.
 	var fresh := PlayerProfile.new()
-	print("   default: owned_items vuoto = %s (assente = niente posseduto)" % fresh.owned_items.is_empty())
-	if not fresh.owned_items.is_empty():
-		print("   <-- ATTESO: il default è [] — nessun bump di versione")
+	print("   default: owned_items vuoto = %s, lamp_fixed = %s (assente = stato iniziale)" % [
+		fresh.owned_items.is_empty(), fresh.lamp_fixed])
+	if not fresh.owned_items.is_empty() or fresh.lamp_fixed:
+		print("   <-- ATTESO: default [] / false — nessun bump di versione")
 
 	# Ripulire.
 	var d := DirAccess.open(bench_dir)
@@ -996,6 +1003,80 @@ func _moka_step_name(step: Moka.Step) -> String:
 		Moka.Step.BREWING: return "BREWING"
 		Moka.Step.READY: return "READY"
 		Moka.Step.POURED: return "POURED"
+		_: return "?"
+
+
+## La riparazione della lampada (3.4): la logica PURA e STATICA — transizioni,
+## interattivita' gated sul possesso della lampadina, prompt, e il punto d'emissione di
+## `started`. Gemella di `_check_moka_ritual`: nessuno SceneTree, nessun autoload, nessun
+## timer/luce/suono.
+##
+## Il timer del cambio, il lampeggio+ronzio, la persistenza runtime di `lamp_fixed` e la
+## raggiungibilita' del volume di collisione NON si collaudano qui: sono effetti e
+## percezione — verifiche d'operatore, che si camminano nel gioco (come dice lo spec). Il
+## round-trip di `lamp_fixed` sul .tres sta in `_check_owned_items`, per parita' col
+## possesso. Il banco legge la tavola.
+func _check_lamp_repair() -> void:
+	print("-- Lampada: cambio a stati, transizioni pure + gating sul possesso (3.4)")
+
+	# La tavola delle transizioni `E`. Solo BROKEN → CHANGING e' una transizione da
+	# interazione; CHANGING/FIXED restano fermi (inerti: la' `is_interactive` e' falso e
+	# l'interazione non arriva nemmeno). CHANGING → FIXED NON e' qui: lo guida il Timer.
+	_report_lamp_next(Lamp.State.BROKEN, Lamp.State.CHANGING, "BROKEN + E -> CHANGING (cambia)")
+	_report_lamp_next(Lamp.State.CHANGING, Lamp.State.CHANGING, "CHANGING + E -> CHANGING (inerte)")
+	_report_lamp_next(Lamp.State.FIXED, Lamp.State.FIXED, "FIXED + E -> FIXED (inerte)")
+
+	# Interattivita' per stato E possesso: la gating con/senza lampadina e' l'AC centrale
+	# della 3.4, e qui e' una riga di tabella perche' `is_interactive` prende `owns_bulb`
+	# come parametro (resta pura). Vero SOLO da BROKEN E possedendo la lampadina.
+	print("   -- is_interactive(state, owns_bulb): vero solo BROKEN + lampadina")
+	_report_lamp_interactive(Lamp.State.BROKEN, false, false, "BROKEN senza lampadina: inerte (nessun invito a comprarla)")
+	_report_lamp_interactive(Lamp.State.BROKEN, true, true, "BROKEN con lampadina: cambiabile")
+	_report_lamp_interactive(Lamp.State.CHANGING, true, false, "CHANGING con lampadina: inerte (si aspetta il Timer)")
+	_report_lamp_interactive(Lamp.State.FIXED, true, false, "FIXED con lampadina: inerte per sempre")
+
+	# Prompt per stato (IT, lo legge il giocatore — NFR10). Solo BROKEN ha un prompt;
+	# CHANGING/FIXED no. Il prompt compare comunque solo quando `can_interact()` e' vero.
+	print("   -- prompt per stato")
+	_report_lamp_prompt(Lamp.State.BROKEN, "Cambia la lampadina")
+	_report_lamp_prompt(Lamp.State.CHANGING, "")
+	_report_lamp_prompt(Lamp.State.FIXED, "")
+
+	# Il punto d'emissione di `started` (C4): SOLO da BROKEN, cioe' all'inizio del cambio.
+	# La fine (`ended`) la emette il Timer, non un'interazione — la sua sede e'
+	# `_on_change_finished`, non una funzione pura, quindi qui si collauda solo `started`.
+	print("   -- punto d'emissione: started SOLO da BROKEN (inizio cambio)")
+	var all_states: Array[Lamp.State] = [Lamp.State.BROKEN, Lamp.State.CHANGING, Lamp.State.FIXED]
+	for state in all_states:
+		var starts := Lamp.starts_activity(state)
+		var exp_start: bool = state == Lamp.State.BROKEN
+		var note := "" if starts == exp_start else "   <-- ATTESO started = %s" % exp_start
+		print("      %-10s started=%s%s" % [_lamp_state_name(state), starts, note])
+
+
+func _report_lamp_next(state: Lamp.State, expected: Lamp.State, label: String) -> void:
+	var got := Lamp.next_on_interact(state)
+	var note := "" if got == expected else "   <-- ATTESO: %s" % _lamp_state_name(expected)
+	print("   %-42s -> %s%s" % [label, _lamp_state_name(got), note])
+
+
+func _report_lamp_interactive(state: Lamp.State, owns_bulb: bool, expected: bool, label: String) -> void:
+	var got := Lamp.is_interactive(state, owns_bulb)
+	var note := "" if got == expected else "   <-- ATTESO: %s" % expected
+	print("      %-54s is_interactive = %s%s" % [label, got, note])
+
+
+func _report_lamp_prompt(state: Lamp.State, expected: String) -> void:
+	var got := Lamp.prompt_for(state)
+	var note := "" if got == expected else "   <-- ATTESO: \"%s\"" % expected
+	print("      %-10s prompt = \"%s\"%s" % [_lamp_state_name(state), got, note])
+
+
+func _lamp_state_name(state: Lamp.State) -> String:
+	match state:
+		Lamp.State.BROKEN: return "BROKEN"
+		Lamp.State.CHANGING: return "CHANGING"
+		Lamp.State.FIXED: return "FIXED"
 		_: return "?"
 
 

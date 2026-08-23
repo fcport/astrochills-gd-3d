@@ -1,0 +1,104 @@
+; La lampada: l'attivita' del registro SISTEMARE dell'attesa (storia 3.4), e il
+; dimostratore completo di FR29 (lire → mondo che cambia). A differenza della moka, la
+; lampada C'E' DALLA PRIMA NOTTE — non compare per acquisto: e' un elemento fisso, rotto,
+; che lampeggia e ronza. La logica di stato (rotta/in cambio/sistemata), l'interattivita'
+; gated sul possesso della lampadina, il lampeggio, il ronzio e la persistenza stanno
+; tutti in lamp.gd: la scena e' geometria + nodi d'effetto, il codice li cabla da se' in
+; `_ready()`.
+;
+; NASCE PRESENTE (`enabled = true`). Il codice legge `Game.profile.lamp_fixed` all'avvio:
+; se non riparata nasce ROTTA (lampeggia+ronza), se riparata nasce FIXED (luce stabile,
+; silenzio, inerte). L'INTERATTIVITA' la decide `can_interact()` rileggendo LIVE
+; `Game.profile.owns(&"lampadina")` — nessuna sottoscrizione a `item_purchased`, meno
+; superficie della moka.
+;
+; SEGNAPOSTO fino al pack di texture: geometria grezza (base + stelo + lampadina),
+; ShaderMaterial ps1 condivisi come il resto dell'arredo. Nessuna rifinitura.
+;
+; L'ORIGINE E' ALLA BASE, appoggiata sul piano: chi la colloca in scena scrive la quota
+; del piano (0,9 m, il top del Counter di kitchen.tscn) e non deve sottrarre mezza altezza.
+;
+; RAGGIUNGIBILITA' (lezione di bed.tscn/moka.tscn). L'occhio e' a 1,65 m e il raggio
+; arriva a 1,2 m; la lampada sul piano a 0,9 m ha il suo corpo fra 0,9 e ~1,3 m — sopra i
+; ~60 cm irraggiungibili, dentro la portata. Il volume di collisione ricalca la silhouette
+; visibile: non piu' alto della cosa piu' alta che la lampada ha davvero, cosi' il prompt
+; non compare da lontano. La quota esatta si tara GUARDANDO — verifica d'operatore.
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://world/interactables/lamp.gd" id="1_lamp"]
+[ext_resource type="Shader" path="res://world/shaders/ps1.gdshader" id="2_ps1"]
+
+[sub_resource type="ShaderMaterial" id="MatBase"]
+shader = ExtResource("2_ps1")
+shader_parameter/albedo = Color(0.18, 0.17, 0.16, 1)
+shader_parameter/snap_resolution = 665.0
+
+[sub_resource type="ShaderMaterial" id="MatBulb"]
+shader = ExtResource("2_ps1")
+shader_parameter/albedo = Color(0.85, 0.82, 0.6, 1)
+shader_parameter/snap_resolution = 665.0
+
+; La base d'appoggio, lo stelo sottile e la lampadina in cima: tre box segnaposto — una
+; lampada da tavolo si legge cosi', fino al pack di texture.
+[sub_resource type="BoxMesh" id="BoxBase"]
+size = Vector3(0.14, 0.04, 0.14)
+
+[sub_resource type="BoxMesh" id="BoxStem"]
+size = Vector3(0.03, 0.28, 0.03)
+
+[sub_resource type="BoxMesh" id="BoxBulb"]
+size = Vector3(0.09, 0.11, 0.09)
+
+; Il collider ricalca la silhouette: ~0,4 m d'altezza, base a terra, top a ~0,4 m locale
+; (cioe' ~1,3 m nel mondo, sul piano a 0,9 m). Mirabile da davanti al piano, non oltre.
+[sub_resource type="BoxShape3D" id="ShapeLamp"]
+size = Vector3(0.14, 0.4, 0.14)
+
+; Nessun `prompt_text` qui: il prompt e' CODE-DRIVEN — lamp.gd fa override di `prompt()`
+; per restituire `prompt_for(_state)`. Un default di scena sarebbe una seconda sorgente di
+; verita' per la stessa riga, mai letta.
+[node name="Lamp" type="StaticBody3D"]
+collision_mask = 0
+script = ExtResource("1_lamp")
+enabled = true
+
+[node name="Base" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+material_override = SubResource("MatBase")
+mesh = SubResource("BoxBase")
+
+[node name="Stem" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.18, 0)
+material_override = SubResource("MatBase")
+mesh = SubResource("BoxStem")
+
+[node name="Bulb" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.375, 0)
+material_override = SubResource("MatBulb")
+mesh = SubResource("BoxBulb")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
+shape = SubResource("ShapeLamp")
+
+; La luce della cucina che la lampada fa. Da rotta lampeggia (energia variata in
+; `_process`), da riparata resta stabile. OmniLight3D collocato all'altezza della
+; lampadina, cosi' la stanza si illumina da li'.
+[node name="Light" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+light_color = Color(0.95, 0.92, 0.78, 1)
+light_energy = 2.2
+omni_range = 6.0
+
+; Il ronzio posizionale del neon rotto: stream sintetizzato in codice da lamp.gd (nessun
+; asset). Posizionale (AudioStreamPlayer3D) cosi' chi si allontana lo sente attenuarsi — il
+; fastidio si sente in cucina, non riempie la casa.
+[node name="Sound" type="AudioStreamPlayer3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+unit_size = 3.0
+max_distance = 8.0
+
+; Il tempo del cambio: qualche secondo, non un interruttore. One-shot; durata e connessione
+; le fissa lamp.gd (CHANGE_SECONDS), perche' e' un valore di rituale, non di layout. Conta
+; col tempo scalato → F1–F4 lo accelerano.
+[node name="ChangeTimer" type="Timer" parent="."]

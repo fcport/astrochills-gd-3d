@@ -29,11 +29,15 @@
 class_name PhaseImaging
 extends Phase
 
-## Punteggio segnaposto: come il targeting emette `NEUTRAL_SCORE`, l'imaging emette
-## una costante dichiarata. La mappatura esposizione→qualità è calibrazione
-## rinviata (FR22): `exposure_sec` e `frame_count` viaggiano nel `payload` per
-## 2.4/2.5, non ancora scored.
-const PLACEHOLDER_SCORE := 100
+## Il punteggio al MINIMO dichiarato dal target. Chi integra esattamente quanto
+## richiesto ha una foto onesta, non una eccellente: il resto se lo guadagna
+## restando aperto più a lungo.
+const SCORE_AT_MINIMUM := 60
+
+## Quante volte il minimo servono per il punteggio pieno. A 2x il target è
+## sfruttato quanto serve; oltre, la notte si consuma e la foto non migliora —
+## ed è quella la decisione, non un premio a chi aspetta di più.
+const FULL_SCORE_RATIO := 2.0
 
 ## Indici dei due campi configurabili, nell'ordine di scorrimento su/giù. Stessi
 ## valori attesi dalla vista.
@@ -69,6 +73,11 @@ var _run: NightRun
 ## Il target che si sta fotografando, arrivato nel `ctx`. Viaggia nel payload verso
 ## 2.4/2.5.
 var _target_id: StringName = &""
+
+## Il minimo di integrazione che il target chiede, in minuti. Arriva dal `ctx`
+## (lo mette il targeting, che legge il catalogo): è la sponda contro cui si
+## misura la posa, e senza di esso non c'è niente da giudicare.
+var _min_exp: int = 0
 
 ## I due parametri che il giocatore imposta in configurazione.
 var _exposure: int = EXPOSURE_DEFAULT
@@ -114,6 +123,11 @@ func setup(run: NightRun, ctx: Dictionary) -> void:
 	if ctx.has(&"frame_count"):
 		_frames_total = clampi(int(ctx[&"frame_count"]), FRAMES_MIN, FRAMES_MAX)
 
+	# Il minimo del target: dato in ingresso come il target stesso, mai un import da
+	# `phases/targeting/`. Zero o assente significa «nessun minimo dichiarato», e in
+	# quel caso la posa non si giudica (vedi `exposure_score`).
+	_min_exp = maxi(int(ctx.get(&"min_exp", 0)), 0)
+
 
 func _ready() -> void:
 	if truth == null:
@@ -146,10 +160,11 @@ func _process(_delta: float) -> void:
 
 	# Il tempo dal CLOCK, non da un accumulatore: `run.elapsed_min` è l'orologio
 	# della notte, e sottrarre l'istante d'avvio dà i minuti di posa — pausa e
-	# time_scale gratis. `min_per_frame` SEMPRE da `Tuning`, mai con `load()`.
+	# time_scale gratis. Il tempo per frame lo calcola `_game_min_per_frame()`
+	# dall'esposizione scelta, e la scala viene SEMPRE da `Tuning`, mai con `load()`.
 	_input.elapsed_since_start_min = _run.elapsed_min - _start_min
 	_input.frames_total = _frames_total
-	_input.min_per_frame = Tuning.min_per_frame
+	_input.min_per_frame = _game_min_per_frame()
 
 	_state = truth.sample(_input)  # UNICA assegnazione di _state — ADR-001
 
@@ -201,7 +216,49 @@ func screen() -> Control:
 
 
 func score() -> int:
-	return PLACEHOLDER_SCORE
+	return exposure_score(total_min(), _min_exp)
+
+
+## Quanti minuti di integrazione produce la configurazione corrente.
+##
+## È la regola scelta da Federico: TEMPO TOTALE = FRAME x ESPOSIZIONE. Prima i due
+## campi erano scollegati da tutto — la posa durava `min_per_frame` fissi a frame,
+## quindi l'esposizione non cambiava né la durata né il punteggio, e alla domanda
+## «perché dovrei cambiarla?» non c'era risposta. Adesso ce n'è una sola e vale per
+## entrambi i campi: cambiano quanto integri, e quanto integri è la foto.
+func total_min() -> float:
+	return float(_frames_total) * float(_exposure) / 60.0
+
+
+## Quanti minuti di GIOCO dura un frame. La posa dura quanto integra — un frame da
+## 120 secondi occupa due minuti di notte — riscalato da `Tuning.pose_time_scale`,
+## che è la manopola con cui si tara quanto pesa l'attesa senza toccare la fisica.
+func _game_min_per_frame() -> float:
+	return maxf(float(_exposure) / 60.0 * Tuning.pose_time_scale, 0.001)
+
+
+## Dal tempo integrato al punteggio, 0-100. PURA e statica: si collauda al banco
+## senza SceneTree, come le sorgenti di verità.
+##
+## LA CURVA, e perché questa. Sotto il minimo dichiarato dal target la foto è
+## rumorosa e il punteggio scende in proporzione, fino a zero: mancare il minimo
+## non è un mezzo successo. Al minimo esatto vale `SCORE_AT_MINIMUM` — onesta, non
+## eccellente. Da lì sale fino a 100 al doppio del minimo, e lì si ferma: oltre, il
+## giocatore sta solo consumando la notte, e premiarlo trasformerebbe la scelta in
+## un'ottimizzazione con una sola risposta.
+##
+## `min_exp <= 0` significa «nessun minimo dichiarato»: non si giudica, e si torna
+## il punteggio pieno invece di inventare una bocciatura da un dato mancante.
+static func exposure_score(total: float, min_exp: int) -> int:
+	if min_exp <= 0:
+		return 100
+	if total <= 0.0:
+		return 0
+	var ratio := total / float(min_exp)
+	if ratio < 1.0:
+		return clampi(roundi(SCORE_AT_MINIMUM * ratio), 0, SCORE_AT_MINIMUM)
+	var gain := (100.0 - SCORE_AT_MINIMUM) * (ratio - 1.0) / (FULL_SCORE_RATIO - 1.0)
+	return clampi(roundi(SCORE_AT_MINIMUM + gain), SCORE_AT_MINIMUM, 100)
 
 
 ## Cambia il valore del campo attivo di `dir` passi, entro i limiti segnaposto.
@@ -226,6 +283,13 @@ func _config_readout() -> Dictionary:
 		&"exposure_sec": _exposure,
 		&"frame_count": _frames_total,
 		&"target": String(_target_id),
+		# LA CONSEGUENZA, non solo i parametri. Il pannello mostrava due numeri e
+		# nient'altro: si potevano cambiare senza sapere cosa cambiassero. Questi tre
+		# sono la risposta — quanto integri, quanto ne chiede il target, e che foto
+		# ne esce — e li calcola la fase, che è la sola a conoscere la regola.
+		&"total_min": total_min(),
+		&"min_exp": _min_exp,
+		&"score": exposure_score(total_min(), _min_exp),
 	}
 
 
@@ -235,16 +299,22 @@ func _run_readout() -> Dictionary:
 	var out := _state.duplicate()
 	out[&"running"] = true
 	out[&"target"] = String(_target_id)
+	# Quanto manca, in minuti di notte: i frame che restano per quanto dura ognuno.
+	# Si compone qui e non nella vista — la vista non sa cosa sia un minuto di gioco,
+	# e la sorgente di verità non deve sapere quanto pesa un frame sull'orologio.
+	var left: int = maxi(_frames_total - int(_state.get(&"frames_done", 0)), 0)
+	out[&"remaining_min"] = float(left) * _game_min_per_frame()
 	return out
 
 
 ## La chiusura. CANALE 2 solo per l'esito: la posa non fallisce mai nell'MVP, `ok`
-## resta true. Il payload porta target ed esposizione e numero di frame a 2.4/2.5;
-## non sono ancora scored. `phase_finished` (emesso da `night_session`) è ciò su
+## resta true — una posa corta non è un fallimento, è una foto peggiore, e la
+## differenza la dice il punteggio. Il payload porta target, esposizione e numero
+## di frame a 2.4/2.5. `phase_finished` (emesso da `night_session`) è ciò su
 ## cui il suono del mondo si innesca — nessun `Events` nuovo qui.
 func _finish() -> void:
 	_done = true
-	finished.emit(PhaseResult.new(true, "", PLACEHOLDER_SCORE, {
+	finished.emit(PhaseResult.new(true, "", score(), {
 		&"target_id": _target_id,
 		&"exposure_sec": _exposure,
 		&"frame_count": _frames_total,

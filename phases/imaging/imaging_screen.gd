@@ -85,6 +85,30 @@ func _draw_config() -> void:
 	_field_row(58, field == FIELD_EXPOSURE, "EXPOSURE", "%ds" % exposure)
 	_field_row(76, field == FIELD_FRAMES, "FRAMES", "%d" % frames)
 
+	# LA CONSEGUENZA DEI DUE NUMERI, ed è la ragione per cui questo pannello esiste.
+	# Prima mostrava solo i parametri: si potevano cambiare senza che cambiasse
+	# niente di visibile, e alla domanda «perché dovrei?» il pannello non rispondeva.
+	# Adesso queste due righe si muovono mentre si gira la manopola — quanto si
+	# integra contro quanto il target chiede, e che foto ne esce.
+	var total: float = _state.get(&"total_min", 0.0)
+	var min_exp: int = _state.get(&"min_exp", 0)
+	var score: int = _state.get(&"score", 0)
+
+	if min_exp > 0:
+		# Il totale in FG quando basta, in DIM quando no: il colore lo dice prima
+		# che si legga il confronto.
+		var enough := total >= float(min_exp)
+		_text(Vector2(MARGIN, 108), "TOTAL    %dm  (min %dm)" % [roundi(total), min_exp],
+			FG if enough else DIM, 12)
+	else:
+		_text(Vector2(MARGIN, 108), "TOTAL    %dm" % roundi(total), DIM, 12)
+	_text(Vector2(MARGIN, 128), "QUALITY  %d" % score, FG, 12)
+
+	# È anche quanto dura l'attesa: la posa occupa la notte per lo stesso tempo che
+	# integra. Detto qui perché è il costo della scelta, non un dettaglio tecnico.
+	_text(Vector2(MARGIN, 148), "the sequence will take %dm of the night" % roundi(total),
+		DIM, 10)
+
 	_text(Vector2(MARGIN, 168), "UP/DOWN FIELD  LEFT/RIGHT VALUE", DIM, 10)
 	_text(Vector2(MARGIN, 184), "ENTER START", DIM, 12)
 
@@ -105,6 +129,13 @@ func _draw_run() -> void:
 	var done: int = _state.get(&"frames_done", 0)
 	var total: int = _state.get(&"frames_total", 0)
 	_text(Vector2(MARGIN, 66), "FRAME %d/%d" % [done, total], FG, 16)
+
+	# Quanto manca, in minuti di notte. È la domanda che si fa chi sta aspettando, e
+	# finché non c'era risposta l'unico modo di saperlo era guardare la barra e
+	# indovinare.
+	var left: float = _state.get(&"remaining_min", 0.0)
+	if left > 0.0:
+		_text(Vector2(MARGIN, 108), "about %dm left" % maxi(roundi(left), 1), DIM, 12)
 
 	# Barra testuale: un blocco per frame acquisito, un trattino per quelli ancora
 	# da fare. La larghezza è LIMITATA a `BAR_COLS` colonne perché stia nei 256 px del

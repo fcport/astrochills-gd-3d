@@ -177,7 +177,14 @@ func _finish() -> void:
 
 	# FR12 / ADR-002: l'id viaggia nel payload verso l'imaging. Nessuna fase
 	# successiva importa da `phases/targeting/`.
-	var payload := {&"target_id": target_id}
+	# IL MINIMO DEL TARGET VIAGGIA CON LUI. L'imaging non può importare il catalogo
+	# — una fase non conosce mai un'altra fase (ADR-002) — ma senza il minimo non ha
+	# nulla contro cui misurare la posa. Passa come dato nel payload, che è la
+	# strada prevista.
+	var payload := {
+		&"target_id": target_id,
+		&"min_exp": int(_catalog[_cursor].get(&"min_exp", 0)),
+	}
 	# CANALE 2 — nessun esito da segnalare: la scelta non fallisce mai. `ok` resta
 	# true e la notte va avanti.
 	finished.emit(PhaseResult.new(true, "", NEUTRAL_SCORE, payload))

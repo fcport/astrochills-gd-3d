@@ -15,7 +15,13 @@ var elapsed_since_start_min: float = 0.0
 ## configurazione.
 var frames_total: int = 0
 
-## Minuti di gioco consumati da un singolo frame di posa. È `Tuning.min_per_frame`,
-## passato qui perché la sorgente resti una funzione pura del proprio input e non
-## legga l'autoload da sola.
+## Minuti di gioco consumati da un singolo frame di posa.
+##
+## Lo calcola la fase dall'ESPOSIZIONE scelta — un frame dura quanto integra —
+## riscalato da `Tuning.pose_time_scale`. Prima era `Tuning.min_per_frame`, cioè
+## una costante: un frame da 30 secondi e uno da 600 duravano uguale, e il campo
+## EXPOSURE non cambiava niente.
+##
+## Passato qui, e non letto dalla sorgente, perché la sorgente resti una funzione
+## pura del proprio input e non conosca né l'autoload né la regola.
 var min_per_frame: float = 0.0

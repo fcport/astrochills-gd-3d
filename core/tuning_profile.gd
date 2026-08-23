@@ -18,8 +18,16 @@ extends Resource
 ## 0.6 = una notte in 15 minuti reali (il valore del prototipo Phaser).
 @export var game_min_per_sec: float = 0.6
 
-## Minuti di gioco consumati da un singolo frame di posa.
-@export var min_per_frame: float = 5.0
+## Quanti minuti di GIOCO vale un minuto di integrazione. La posa dura
+## `frame x esposizione`, e questa è la sola manopola che ne cambia il peso senza
+## toccare la fisica: a 1.0 un'ora di posa è un'ora di notte.
+##
+## HA SOSTITUITO `min_per_frame`, che valeva 5.0 minuti a frame FISSI — cioè
+## indipendenti dall'esposizione scelta. Con quella regola una posa da 30 secondi
+## a frame e una da 600 duravano uguale, e il campo EXPOSURE non cambiava niente:
+## né la durata, né il punteggio (segnaposto a 100). Era un valore da regolare
+## senza una ragione per regolarlo.
+@export var pose_time_scale: float = 1.0
 
 ## Finestra su cui si media la deriva per il punteggio della fase polare, in
 ## secondi reali.

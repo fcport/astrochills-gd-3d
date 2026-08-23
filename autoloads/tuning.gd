@@ -19,7 +19,7 @@ const OVERRIDE_PATH := "user://tuning_override.cfg"
 ## errore: produce una finestra che si svuota a ogni frame e un punteggio
 ## inchiodato a 0 per tutta la partita, in silenzio.
 const POSITIVE_KEYS := [
-	"night_length_min", "game_min_per_sec", "min_per_frame",
+	"night_length_min", "game_min_per_sec", "pose_time_scale",
 	"polar_score_window_sec", "polar_max_drift_rate",
 ]
 
@@ -35,8 +35,8 @@ var night_length_min: float:
 	get: return profile.night_length_min
 var game_min_per_sec: float:
 	get: return profile.game_min_per_sec
-var min_per_frame: float:
-	get: return profile.min_per_frame
+var pose_time_scale: float:
+	get: return profile.pose_time_scale
 var polar_score_window_sec: float:
 	get: return profile.polar_score_window_sec
 var polar_max_drift_rate: float:

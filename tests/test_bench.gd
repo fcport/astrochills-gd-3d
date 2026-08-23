@@ -68,6 +68,8 @@ func _ready() -> void:
 	print("")
 	_check_player_profile()
 	print("")
+	_check_save_manager()
+	print("")
 	_check_photo_quality()
 	print("")
 	_check_photo_schema()
@@ -821,3 +823,121 @@ func _check_player_profile() -> void:
 	# Il campo `version` esiste dal primo giorno, come per NightRun.
 	print("   PlayerProfile v%d, NightRun v%d" % [
 		PlayerProfile.CURRENT_VERSION, NightRun.CURRENT_VERSION])
+
+
+## La persistenza porta il lavoro di una notte alla successiva (2.7).
+##
+## Si collauda `SaveManager` puro, senza SceneTree: round-trip, `migrate()` SEMPRE, e
+## il ramo gentile su un file illeggibile. I percorsi di banco stanno in
+## `user://saves/_bench/` — distinti da `profile.tres`/`night.tres` reali, così il
+## banco non pesta il save del gioco — e si ripuliscono a fine check.
+##
+## NON esercita canali d'errore engine: il caso illeggibile passa dallo SNIFF
+## dell'header (`FileAccess`) PRIMA di `ResourceLoader`, quindi Godot non emette alcun
+## `ERROR` di caricamento e il cancello resta verde.
+func _check_save_manager() -> void:
+	print("-- SaveManager: il portafoglio è ancora lì la notte dopo (2.7)")
+
+	var bench_dir := "user://saves/_bench"
+	var profile_path := "%s/profile.tres" % bench_dir
+	var run_path := "%s/night.tres" % bench_dir
+	var junk_path := "%s/junk.tres" % bench_dir
+	DirAccess.make_dir_recursive_absolute(bench_dir)
+
+	var saves := SaveManager.new()
+
+	# (0) Nessun save: primo avvio. Un percorso che non esiste → profilo pulito e
+	# NESSUNA frase gentile: l'assenza di un save non è un errore, è un gioco nuovo.
+	var missing := saves.load_profile("%s/non-esiste.tres" % bench_dir)
+	print("   nessun save: wallet %d, notti %d, messaggio = \"%s\"" % [
+		missing.wallet_lire, missing.nights_completed, saves.last_load_message])
+	if missing.wallet_lire != 0 or missing.nights_completed != 0:
+		print("   <-- ATTESO: un primo avvio parte da un profilo pulito")
+	if not saves.last_load_message.is_empty():
+		print("   <-- ATTESO: un save assente è silenzioso, nessuna frase gentile")
+
+	# (a) Round-trip del profilo: wallet e notti sopravvivono al giro su disco.
+	var p := PlayerProfile.new()
+	p.wallet_lire = 4900
+	p.nights_completed = 3
+	var saved := saves.save_profile(p, profile_path)
+	var back := saves.load_profile(profile_path)
+	print("   round-trip profilo: salvato=%s, wallet %d, notti %d" % [
+		saved, back.wallet_lire, back.nights_completed])
+	if not saved or back.wallet_lire != 4900 or back.nights_completed != 3:
+		print("   <-- ATTESO: wallet 4900 e 3 notti sopravvivono al .tres")
+	if not saves.last_load_message.is_empty():
+		print("   <-- ATTESO: un load valido non lascia messaggio gentile")
+
+	# (b) `migrate()` SEMPRE: un profilo salvato con version = 0 torna a CURRENT_VERSION.
+	var old := PlayerProfile.new()
+	old.version = 0
+	saves.save_profile(old, profile_path)
+	var migrated := saves.load_profile(profile_path)
+	print("   migrate() al load: version %d -> %d" % [0, migrated.version])
+	if migrated.version != PlayerProfile.CURRENT_VERSION:
+		print("   <-- ATTESO: migrate() porta a v%d a ogni load" % PlayerProfile.CURRENT_VERSION)
+
+	# (c) Save illeggibile → frase gentile + profilo pulito, senza rumore engine. Si
+	# scrive spazzatura con FileAccess (header NON `[gd_resource`): lo sniff la
+	# intercetta prima di ResourceLoader, quindi nessun ERROR di caricamento.
+	var junk := FileAccess.open(junk_path, FileAccess.WRITE)
+	junk.store_string("questo non è un .tres — logbook rovinato\n")
+	junk.close()
+	var clean := saves.load_profile(junk_path)
+	print("   illeggibile: messaggio = \"%s\"" % saves.last_load_message)
+	print("   illeggibile: profilo pulito, wallet %d, notti %d" % [
+		clean.wallet_lire, clean.nights_completed])
+	if saves.last_load_message.is_empty():
+		print("   <-- ATTESO: un save illeggibile mette una frase gentile su last_load_message")
+	if clean.wallet_lire != 0 or clean.nights_completed != 0:
+		print("   <-- ATTESO: un save illeggibile riparte da un profilo pulito")
+
+	# (d) Round-trip NightRun: la chiave StringName di phase_scores sopravvive al .tres.
+	# Ritira per il percorso .tres la voce di deferred-work sul round-trip JSON: è JSON
+	# che perde `&"..."`, non ResourceSaver.
+	var r := NightRun.new()
+	r.phase_scores = {&"polar": 80}
+	saves.save_run(r, run_path)
+	var r_back := saves.load_run(run_path)
+	var key_ok: bool = r_back.phase_scores.has(&"polar") and r_back.phase_scores[&"polar"] == 80
+	print("   round-trip NightRun: phase_scores[&\"polar\"] = %s (chiave StringName intatta: %s)" % [
+		r_back.phase_scores.get(&"polar", "assente"), key_ok])
+	if not key_ok:
+		print("   <-- ATTESO: il .tres preserva la chiave StringName")
+
+	# (e) Il portafoglio attraversa un RIAVVIO, non solo la notte (AC2/AC3). È il caso
+	# che la storia esiste per rendere vero: si mette un disco IN MEZZO al travaso di
+	# `_check_player_profile`, dove là c'era solo memoria. La glue vera (`Game._ready`
+	# carica, `end_night` versa+salva, `start_night` fa `NightRun.new()`) resta
+	# scoperta dal banco perché è stateful e serve uno SceneTree — vedi il deferred del
+	# 2.7, sorella di DW-7/DW-9. Qui si prova la LOGICA: ciò che sopravvive al disco e
+	# ciò che no.
+	var earned := PlayerProfile.new()
+	earned.wallet_lire += 4900          # notte 1: guadagnato e versato
+	earned.nights_completed += 1
+	saves.save_profile(earned, profile_path)
+
+	var rebooted := saves.load_profile(profile_path)   # spegni e riaccendi
+	print("   riavvio: wallet %d, notti %d (prima 4900 / 1)" % [
+		rebooted.wallet_lire, rebooted.nights_completed])
+	if rebooted.wallet_lire != 4900 or rebooted.nights_completed != 1:
+		print("   <-- ATTESO: il portafoglio e le notti sopravvivono al riavvio")
+
+	# La notte nuova dopo il riavvio: `NightRun.new()`, come fa `start_night`. I
+	# punteggi della notte precedente NON ci sono (appartengono alla notte), e l'indice
+	# avanza da `nights_completed` del profilo ricaricato.
+	var next_night := NightRun.new()
+	var next_index := rebooted.nights_completed + 1
+	print("   notte dopo il riavvio: phase_scores vuoti = %s, night_index = %d (atteso 2)" % [
+		next_night.phase_scores.is_empty(), next_index])
+	if not next_night.phase_scores.is_empty():
+		print("   <-- ATTESO: i punteggi appartengono alla notte, non sopravvivono al riavvio")
+	if next_index != 2:
+		print("   <-- ATTESO: l'indice avanza dal profilo ricaricato (nights_completed + 1)")
+
+	# Ripulire i file di banco: non devono restare a sporcare user://.
+	DirAccess.remove_absolute(profile_path)
+	DirAccess.remove_absolute(run_path)
+	DirAccess.remove_absolute(junk_path)
+	DirAccess.remove_absolute(bench_dir)

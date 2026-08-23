@@ -819,6 +819,11 @@ func _close_night() -> void:
 	# non avanzava mai — motivo per cui la rotazione dei committenti era ferma sul
 	# primo, e FULFILL pagava quanto SELL in ogni partita giocabile. Va DOPO il
 	# riepilogo, che tiene il proprio riferimento alla notte e continua a mostrarla.
+	# L'indice si cattura PRIMA di `end_night()`: quella chiamata azzera `Game.run`,
+	# e il `Log.info` qui sotto lo dereferenzierebbe (`null`) a ogni alba vera —
+	# subito dopo il salvataggio. Il gate non lo vede (l'alba cade a ~900 s, il
+	# giro del gioco si ferma a 600 frame), ma in gioco crasherebbe.
+	var closed_index := Game.run.night_index
 	Game.end_night()
 	# L'annuncio al resto del mondo va DOPO che la notte è chiusa davvero: chi
 	# ascolta — la cupola dell'epica 3, la telemetria — deve trovare uno stato
@@ -826,7 +831,7 @@ func _close_night() -> void:
 	# più di due e non si conoscono ancora (rilievo M1).
 	Events.dawn_reached.emit()
 	Log.info("night", "alba — notte %d chiusa a %s" % [
-		Game.run.night_index, _clock.clock_text()])
+		closed_index, _clock.clock_text()])
 
 
 func _show_summary() -> void:

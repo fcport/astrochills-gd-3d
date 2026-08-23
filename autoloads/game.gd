@@ -16,8 +16,21 @@ extends Node
 var run: NightRun
 
 ## Il giocatore. Esiste prima della prima notte e sopravvive a tutte: `start_night()`
-## non lo tocca mai. La 2.7 lo caricherà dal save invece di costruirlo qui.
+## non lo tocca mai. Lo carica `_ready()` dal save (2.7): un avvio nuovo trova un
+## profilo pulito, un avvio dopo una notte conclusa ritrova le lire di prima.
 var profile := PlayerProfile.new()
+
+## Il persistore del save. Puro (RefCounted, no SceneTree): `Game` ne è l'unico
+## chiamante in gioco. Carica all'avvio, versa+salva alla chiusura della notte.
+var _saves := SaveManager.new()
+
+
+## Carica il profilo dal disco PRIMA della prima notte. Un save assente è un avvio
+## nuovo, silenzioso; un save illeggibile diventa un profilo pulito (la frase gentile
+## resta su `_saves.last_load_message`, canale 2): all'avvio non c'è CRT montato dove
+## mostrarla, e nessun AC chiede una schermata di boot — basta non crashare e proseguire.
+func _ready() -> void:
+	profile = _saves.load_profile()
 
 
 ## Comincia una notte nuova. L'indice NON è un argomento: si ricava dalle notti già
@@ -43,4 +56,9 @@ func end_night() -> void:
 	profile.nights_completed += 1
 	Log.info("game", "notte %d chiusa — %d lire guadagnate, %d in cassa" % [
 		run.night_index, run.night_earnings, profile.wallet_lire])
+	# Il lavoro della notte arriva alla successiva: si scrive la notte conclusa e il
+	# profilo versato PRIMA di azzerare `run`. Se un save fallisce, `SaveManager`
+	# ritorna `false` e registra su canale 1; la notte si chiude comunque.
+	_saves.save_run(run)
+	_saves.save_profile(profile)
 	run = null

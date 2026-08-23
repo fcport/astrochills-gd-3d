@@ -127,7 +127,7 @@ development_status:
   # Story 2.7: Il portafoglio è ancora lì la notte dopo
   # >>> BLOCCATA DA C1 (aperto): serve un contenitore per lo stato che
   # >>> attraversa le notti; Game.start_night() azzera il portafoglio.
-  2-7-il-portafoglio-e-ancora-li-la-notte-dopo: backlog
+  2-7-il-portafoglio-e-ancora-li-la-notte-dopo: done
   epic-2-retrospective: optional
 
   # ---------------------------------------------------------------------------

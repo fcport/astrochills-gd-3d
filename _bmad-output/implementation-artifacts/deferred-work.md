@@ -4,7 +4,7 @@ Lavoro reale, rinviato con una ragione. Ogni voce dice da dove viene e cosa la s
 
 ## Deferred from: code review of 1-1-lallineamento-polare-e-la-prova-che-il-seam-regge (2026-08-22)
 
-- **`phase_scores` con chiavi `StringName` non sopravvive a un round-trip JSON.** `Game.run.phase_scores[phase.key()]` usa `&"polar"`; in Godot 4 `dict[&"polar"]` e `dict["polar"]` sono due voci distinte. Una partita ricaricata da JSON avrebbe punteggi irraggiungibili tramite `phase.key()`, e un rigioco scriverebbe in silenzio una seconda voce parallela. *Rinviato: il sistema di save non esiste ancora — arriva con l'epica 2, ed è bloccato dalla decisione C1 (contenitore per lo stato che attraversa le notti).* [main.gd]
+- **`phase_scores` con chiavi `StringName` non sopravvive a un round-trip JSON.** `Game.run.phase_scores[phase.key()]` usa `&"polar"`; in Godot 4 `dict[&"polar"]` e `dict["polar"]` sono due voci distinte. Una partita ricaricata da JSON avrebbe punteggi irraggiungibili tramite `phase.key()`, e un rigioco scriverebbe in silenzio una seconda voce parallela. *Rinviato: il sistema di save non esiste ancora — arriva con l'epica 2, ed è bloccato dalla decisione C1 (contenitore per lo stato che attraversa le notti).* [main.gd] **CHIUSA per il percorso `.tres` il 2026-08-23 dalla storia 2.7.** Il save NON usa JSON: `core/save_manager.gd` serializza con `ResourceSaver` su `.tres`, che preserva `&"..."` — la premessa della voce (round-trip JSON) non si applica. Il banco lo dimostra: `_check_save_manager()` salva `phase_scores = {&"polar": 80}` in una `NightRun`, la ricarica, e verifica che `run.phase_scores[&"polar"] == 80`. La voce vale solo se un giorno si introducesse JSON — che l'epica 2 non fa.
 
 - **`_collect_materials` raccoglie solo `material_override`.** Salta i materiali per-superficie e `material_overlay`, e non deduplica: un `ShaderMaterial` condiviso fra N mesh viene scritto N volte e contato N volte, quindi il log `%d materiali` non permette di distinguere «non ho trovato niente» da «ho trovato la cosa sbagliata». *Sbloccato il 2026-08-22 dalla storia 1.2: la geometria 3D nel viewport adesso c'è, tutta su `material_override`, e i comandi di taratura hanno un bersaglio. Il salto dei materiali per-superficie NON è più un difetto: `crt/crt_screen.gd` usa `get_surface_override_material(0)` di proposito, perché il CRT non deve essere toccato dalla taratura del jitter del mondo. **Resta aperta la sola mancata deduplicazione**, che dalla 1.2 in poi è visibile davvero — la stanza condivide un materiale fra sei pareti — ma è innocua: scrivere N volte lo stesso parametro dà lo stesso risultato, e il conteggio nel log è ora documentato come «per mesh, non per materiale».* [debug/render_tuning.gd]
 
@@ -391,3 +391,19 @@ status: open
   fase osserva) e la riga in `LIE_PATHS`. Da fare prima di chiudere l'epica 2, così la
   regola vale davvero quando l'epica 3 porterà le fasi da cinque a dieci.
   [debug/lie_injector.gd, phases/imaging/sources/]
+
+### DW-10: La glue stateful della persistenza — Game._ready che adotta il profilo caricato, end_night che versa+salva alla chiusura, e la cattura di closed_index prima di end_night in _close_night — non ha coper
+origin: spec-deferred a883330e0b86
+location: autoloads/game.gd:32-33,56-64; night/night_session.gd:64-65
+source_spec: `spec-2-7-il-portafoglio-e-ancora-li-la-notte-dopo.md`
+severity: medium
+reason: Il banco (NFR19) prova solo logica pura senza SceneTree: _check_save_manager esercita SaveManager in isolamento e il caso (e) prova il travaso attraverso un disco, ma nessun test guida Game.end_night / Game._ready / _close_night. Il gate avvia il gioco a 600 frame e l'alba cade a ~900 s, quindi end_night e il fix del null-deref non vengono mai eseguiti in verifica. Una regressione (rimozione delle due chiamate save_*, profilo caricato ma non adottato, ritorno del deref di Game.run dopo end_night) lascerebbe banco e gate verdi. Sorella di DW-7 e DW-9, stessa lacuna per la glue di NightSession.
+status: open
+
+### DW-11: Il salvataggio non è atomico: un crash o un'interruzione a metà di ResourceSaver.save su profile.tres lo corrompe, e il giocatore perde il portafoglio — proprio ciò che la storia esiste per proteggere
+origin: spec-deferred cf54b0fd8aa9
+location: core/save_manager.gd:86-92
+source_spec: `spec-2-7-il-portafoglio-e-ancora-li-la-notte-dopo.md`
+severity: low
+reason: SaveManager._save scrive in place. Il ramo di recupero (save illeggibile -> frase gentile + profilo pulito) rende la perdita garbata, ma resta una perdita. Un pattern scrivi-su-temp-poi-rinomina la renderebbe a prova di crash. Non richiesto da nessun AC della 2.7; enhancement di robustezza.
+status: open

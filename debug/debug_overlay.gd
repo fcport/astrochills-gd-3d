@@ -84,6 +84,14 @@ func _lines() -> PackedStringArray:
 		Game.run.night_earnings if Game.run != null else 0])
 	out.append("fps       %d   tuning %s" % [
 		Engine.get_frames_per_second(), Tuning.profile_hash])
+	# L'attesa della posa in corso, DAL VIVO: i minuti della finestra e quanti scoperti
+	# (attesa non riempita — il dato più importante della telemetria). Il file confronta
+	# le notti fra loro; questa riga fa sentire l'attesa MENTRE la si vive. `debug/` legge
+	# da `Telemetry`, mai il contrario (C3): fuori posa la riga è assente (accessori a -1).
+	var pose_min := Telemetry.current_pose_min()
+	if pose_min >= 0.0:
+		out.append("posa      %.1f min   scoperti %.1f min" % [
+			pose_min, Telemetry.current_pose_uncovered_min()])
 	out.append("")
 	out.append("F1/F2/F3/F4 tempo 1x 2x 5x 10x")
 	out.append("F9  alterna sorgente onesta/bugiarda · F12 overlay")

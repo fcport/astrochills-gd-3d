@@ -639,6 +639,12 @@ func _enter_menu() -> void:
 	_menu.chosen.connect(_on_menu_chosen, CONNECT_DEFERRED)
 	set_player_present(_player_present)
 
+	# Il menu è DAVVERO presentato ora (dopo `show_control` e le guardie che evitano i
+	# doppioni): ogni presentazione — inclusa la riapertura di *chiudi ed esplora* — è un
+	# conteggio per la telemetria (3.6). `night/` dichiara il fatto sul bus, non conosce
+	# chi conta; senza ascoltatori il segnale cade nel vuoto (C3).
+	Events.photo_menu_opened.emit()
+
 	Log.info("night", "menu post-foto aperto")
 
 

@@ -31,6 +31,11 @@ const SEQUENCE_PATH := "res://phases/imaging/sources/honest_sequence.tres"
 const ROSTER_PATH := "res://data/clients/roster.tres"
 const ITEM_CATALOG_PATH := "res://data/catalog/catalog.tres"
 const FORUM_PATH := "res://data/forum/forum.tres"
+## La telemetria (3.6): le sue funzioni pure sono STATICHE sullo script. Si preloada lo
+## script — non l'autoload `Telemetry`, che ha stato per-notte e un `_ready()` che tocca
+## il disco — per collaudare `merge_intervals`/`idle_segments`/`build_report` senza
+## SceneTree né I/O, come `Game.split_spend`.
+const TELEMETRY := preload("res://autoloads/telemetry.gd")
 ## La stessa larghezza di a-capo che la BBS usa per il corpo dei messaggi. Ripetuta qui
 ## apposta: se un giorno diverge dalla BBS, il conteggio righe collauderebbe una misura
 ## che il gioco non usa — ma la BBS non espone la costante (è privata al suo Control), e
@@ -102,6 +107,8 @@ func _ready() -> void:
 	_check_lamp_repair()
 	print("")
 	_check_dome_presence()
+	print("")
+	_check_telemetry()
 	print("")
 	_check_forum()
 	print("")
@@ -1152,6 +1159,188 @@ func _report_ended(watching: bool, gate_open: bool, expected: bool, label: Strin
 	var got := DomeActivity.should_emit_ended(watching, gate_open)
 	var note := "" if got == expected else "   <-- ATTESO: %s" % expected
 	print("      %-46s ended = %s%s" % [label, got, note])
+
+
+## La telemetria (3.6): l'aritmetica PURA — unione degli intervalli, idle per differenza
+## (con sovrapposizioni), e l'assemblaggio del report (attività chiuse/abbandonate/idle/
+## fuori-posa, `wait_total_min`, `quit_mid_pose`). Gemella di `Game.split_spend`: nessuno
+## SceneTree, nessun autoload istanziato, nessun I/O su file.
+##
+## Il file su disco, la scrittura al quit (`NOTIFICATION_WM_CLOSE_REQUEST`, che in
+## headless non arriva) e la leggibilità della riga F12 li verifica l'operatore. Il banco
+## legge la logica: `build_report(..., quit=true)` copre la LOGICA del secondo momento.
+func _check_telemetry() -> void:
+	print("-- Telemetria: unione intervalli, idle per differenza, report (3.6)")
+
+	# (1) merge_intervals: sovrapposti e contigui si FONDONO, non si sommano — caffè sul
+	# fuoco mentre si sale in cupola è il caso normale. L'esempio delle Design Notes.
+	print("   -- merge_intervals: unione, non somma")
+	_report_merge([[0, 10], [5, 12], [20, 25]], [[0, 12], [20, 25]],
+		"sovrapposti [0,10]+[5,12] + disgiunto [20,25]")
+	_report_merge([[0, 5], [5, 10]], [[0, 10]], "contigui a 5 si fondono")
+	_report_merge([[10, 20], [0, 5]], [[0, 5], [10, 20]], "fuori ordine → riordinati")
+	_report_merge([[0, 10], [3, 6]], [[0, 10]], "uno dentro l'altro → il contenente")
+	_report_merge([], [], "vuoto → vuoto")
+
+	# (2) idle_segments: posa − UNIONE delle attività. L'esempio delle Design Notes, più i
+	# casi di frontiera (nessuna copertura, copertura totale).
+	print("   -- idle_segments: posa meno l'unione, nessun idle negativo")
+	_report_idle([[0, 30]], [[0, 12], [20, 25]], [[12.0, 8.0], [25.0, 5.0]],
+		"posa [0,30], coperti [0,12]+[20,25]")
+	_report_idle([[0, 30]], [], [[0.0, 30.0]], "posa senza attività → tutta idle")
+	_report_idle([[0, 30]], [[0, 30]], [], "posa tutta coperta → nessun idle")
+	# Due attività SOVRAPPOSTE dentro la posa: l'unione [5,20] lascia idle [0,5] e [20,30].
+	# Sommandole (15+5=20 > 15 reali) si otterrebbe idle negativo — qui NON accade.
+	_report_idle([[0, 30]], [[5, 15], [10, 20]], [[0.0, 5.0], [20.0, 10.0]],
+		"due sovrapposte [5,15]+[10,20] → union [5,20], niente idle negativo")
+
+	# (3) build_report: la struttura esatta del file. Attività chiusa, abbandonata, idle,
+	# e una FUORI posa (registrata lo stesso, ma non conta per idle).
+	print("   -- build_report: la struttura del file su disco")
+	# Una posa [0,30]. caffe [2,8] chiuso dentro; cupola [10,-1] abbandonato dentro;
+	# forum [40,45] chiuso FUORI dalla posa (dopo l'alba della finestra). now = 50.
+	var windows := [[0.0, 30.0]]
+	var activities := [
+		{&"what": &"caffe", &"t": 2.0, &"end": 8.0},
+		{&"what": &"cupola", &"t": 10.0, &"end": -1.0},
+		{&"what": &"forum", &"t": 40.0, &"end": 45.0},
+	]
+	var report: Dictionary = TELEMETRY.build_report(3, "abc12345", windows, activities,
+		2, false, 50.0)
+
+	_report_field(report, &"night", 3, "night = night_index")
+	_report_field(report, &"tuning_hash", "abc12345", "tuning_hash presente")
+	_report_field(report, &"menu_reopened", 2, "menu_reopened = conteggio presentazioni")
+	_report_field(report, &"quit_mid_pose", false, "quit_mid_pose = false all'alba")
+	# wait_total_min = somma delle finestre di posa = 30, NON la durata della notte.
+	_report_field(report, &"wait_total_min", 30.0, "wait_total_min = somma delle pose")
+
+	var acts: Array = report.get(&"wait_activities", [])
+	print("   wait_activities (%d voci, ordinate per t):" % acts.size())
+	for a in acts:
+		print("      %-8s t=%.1f dur=%s%s" % [
+			a.get(&"what"), a.get(&"t"), str(a.get(&"dur")),
+			"  abbandonata" if a.get(&"abandoned", false) else ""])
+
+	# caffe chiuso: dur = 6, nessun abandoned.
+	_report_activity(acts, "caffe", 2.0, 6.0, false, "caffe chiuso dentro la posa")
+	# cupola aperto alla scrittura: dur = null, abandoned = true — NON omesso.
+	_report_activity(acts, "cupola", 10.0, null, true, "cupola abbandonata (dur null)")
+	# forum FUORI posa: registrato lo stesso, dur = 5, non conta per idle.
+	_report_activity(acts, "forum", 40.0, 5.0, false, "forum fuori posa, registrato lo stesso")
+	# idle: la posa [0,30] meno l'unione delle coperture DENTRO (caffe [2,8] + cupola
+	# [10,50]→clampata alla posa a [10,30]). Scoperti: [0,2] e [8,10]. forum è fuori posa,
+	# non copre niente. → idle {t:0,dur:2} e {t:8,dur:2}.
+	_report_idle_voice(acts, 0.0, 2.0, "idle [0,2] prima del caffè")
+	_report_idle_voice(acts, 8.0, 2.0, "idle [8,10] fra caffè e cupola")
+
+	# (4) quit_mid_pose = true: la LOGICA del secondo momento. Il chiamante (`_write`)
+	# chiude la finestra aperta a `now` PRIMA di passarla; qui si simula quello — una
+	# finestra [0,20] chiusa a now=20 — e si verifica che il flag arrivi vero e che
+	# wait_total la conti.
+	print("   -- build_report(quit=true): la logica del quit a posa in corso")
+	var q_report: Dictionary = TELEMETRY.build_report(1, "def", [[0.0, 20.0]], [], 0,
+		true, 20.0)
+	_report_field(q_report, &"quit_mid_pose", true, "quit_mid_pose = true al quit")
+	_report_field(q_report, &"wait_total_min", 20.0, "posa aperta chiusa a now conta in wait_total")
+
+	# (5) Notte senza attività: file valido, wait_activities = solo idle che copre le pose.
+	var empty_report: Dictionary = TELEMETRY.build_report(2, "ghi", [[0.0, 15.0]], [], 0,
+		false, 15.0)
+	var empty_acts: Array = empty_report.get(&"wait_activities", [])
+	var only_idle: bool = empty_acts.size() == 1 and empty_acts[0].get(&"what") == "idle" \
+		and is_equal_approx(float(empty_acts[0].get(&"dur")), 15.0)
+	var idle_note := "" if only_idle else "   <-- ATTESO: una sola voce idle di dur 15"
+	print("   notte senza attività: wait_activities = %s%s" % [empty_acts, idle_note])
+
+	# (6) uncovered_min: l'aritmetica DIETRO la riga F12 (`current_pose_uncovered_min` la
+	# delega). Posa aperta [0, now=18]; caffe [2,8] chiuso, cupola [12,-1] aperto → clampato
+	# a [12,18]. Coperti [2,8]+[12,18]; scoperti [0,2] e [8,12] = 2+4 = 6. Nessuna posa → -1.
+	print("   -- uncovered_min: i minuti scoperti della posa in corso (riga F12)")
+	var live_acts := [
+		{&"what": &"caffe", &"t": 2.0, &"end": 8.0},
+		{&"what": &"cupola", &"t": 12.0, &"end": -1.0},
+	]
+	_report_scalar(TELEMETRY.uncovered_min(0.0, 18.0, live_acts), 6.0,
+		"posa [0,18], coperti caffe[2,8]+cupola[12,18] → scoperti 6")
+	_report_scalar(TELEMETRY.uncovered_min(-1.0, 18.0, live_acts), -1.0,
+		"nessuna posa → -1")
+
+
+func _report_scalar(got: float, expected: float, label: String) -> void:
+	var note := "" if is_equal_approx(got, expected) else "   <-- ATTESO: %.1f" % expected
+	print("      %-58s = %.1f%s" % [label, got, note])
+
+
+func _report_merge(input: Array, expected: Array, label: String) -> void:
+	var got := TELEMETRY.merge_intervals(input)
+	var note := "" if _same_intervals(got, expected) else "   <-- ATTESO: %s" % str(expected)
+	print("      %-52s = %s%s" % [label, str(got), note])
+
+
+func _report_idle(windows: Array, covered: Array, expected: Array, label: String) -> void:
+	var got := TELEMETRY.idle_segments(windows, covered)
+	# expected è una lista di [t, dur]; got è una lista di {t, dur}.
+	var got_pairs: Array = []
+	for seg in got:
+		got_pairs.append([float(seg[&"t"]), float(seg[&"dur"])])
+	var note := "" if _same_intervals(got_pairs, expected) else "   <-- ATTESO: %s" % str(expected)
+	print("      %-58s = %s%s" % [label, str(got_pairs), note])
+
+
+## Uguaglianza fra liste di coppie `[a, b]` di float, ordine e valori (approx).
+func _same_intervals(a: Array, b: Array) -> bool:
+	if a.size() != b.size():
+		return false
+	for k in a.size():
+		if not is_equal_approx(float(a[k][0]), float(b[k][0])):
+			return false
+		if not is_equal_approx(float(a[k][1]), float(b[k][1])):
+			return false
+	return true
+
+
+func _report_field(report: Dictionary, key: StringName, expected: Variant, label: String) -> void:
+	var got: Variant = report.get(key)
+	var ok: bool
+	if got is float and expected is float:
+		ok = is_equal_approx(got, expected)
+	else:
+		ok = got == expected
+	var note := "" if ok else "   <-- ATTESO: %s" % str(expected)
+	print("   %-46s %s = %s%s" % [label, key, str(got), note])
+
+
+func _report_activity(
+	acts: Array, what: String, exp_t: float, exp_dur: Variant, exp_abandoned: bool, label: String
+) -> void:
+	var found: Dictionary = {}
+	# La voce con questo `what` (nel report di test ce n'è una sola per what).
+	for a in acts:
+		if a.get(&"what") == what:
+			found = a
+			break
+	var ok := not found.is_empty() and is_equal_approx(float(found.get(&"t")), exp_t) \
+		and bool(found.get(&"abandoned", false)) == exp_abandoned
+	if ok:
+		if exp_dur == null:
+			ok = found.get(&"dur") == null
+		else:
+			ok = found.get(&"dur") != null and is_equal_approx(float(found.get(&"dur")), float(exp_dur))
+	var note := "" if ok else "   <-- ATTESO: t=%.1f dur=%s abandoned=%s" % [
+		exp_t, str(exp_dur), exp_abandoned]
+	print("      %-52s %s%s" % [label, "OK" if ok else "diverge", note])
+
+
+func _report_idle_voice(acts: Array, exp_t: float, exp_dur: float, label: String) -> void:
+	var found := false
+	for a in acts:
+		if a.get(&"what") == "idle" and is_equal_approx(float(a.get(&"t")), exp_t) \
+			and is_equal_approx(float(a.get(&"dur")), exp_dur):
+			found = true
+			break
+	var note := "" if found else "   <-- ATTESO: idle t=%.1f dur=%.1f" % [exp_t, exp_dur]
+	print("      %-52s %s%s" % [label, "presente" if found else "ASSENTE", note])
 
 
 ## I forum della BBS (3.7): la logica PURA e collaudabile — il filtro `available(night)`

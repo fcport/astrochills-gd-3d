@@ -65,3 +65,14 @@ signal sequence_ended()
 ## e domani la telemetria degli acquisti) e non si conoscono fra loro. `id` tipizzato
 ## e al passato, come ogni altro segnale qui.
 signal item_purchased(id: StringName)
+
+## Il menu post-foto è stato PRESENTATO. È il condotto di `menu_reopened` della
+## telemetria (3.6): il menu `extends Control`, non `Phase`, quindi non emette
+## `phase_started` e nessun altro segnale annunciava che era comparso.
+##
+## Sul bus e non diretto per la stessa ragione di `wait_activity_*`: chi è misurato
+## (`night/`, che monta il menu) non deve conoscere chi misura (`Telemetry`), e
+## togliendo l'autoload il segnale resta a cadere nel vuoto senza rompere niente.
+## Ogni PRESENTAZIONE è un fatto — inclusa la riapertura di *chiudi ed esplora* — non
+## ogni menu distinto: chi conta somma le presentazioni.
+signal photo_menu_opened()

@@ -21,6 +21,7 @@ Game="*res://autoloads/game.gd"
 Events="*res://autoloads/events.gd"
 Log="*res://autoloads/log.gd"
 Tuning="*res://autoloads/tuning.gd"
+Telemetry="*res://autoloads/telemetry.gd"
 
 [display]
 

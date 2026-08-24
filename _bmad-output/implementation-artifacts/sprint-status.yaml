@@ -191,7 +191,7 @@ development_status:
   # >>> proprietario, il segnale nuovo Events.photo_menu_opened, il secondo momento
   # >>> di scrittura per quit_mid_pose, `forum` fra le attivita' e la riga in F12.
   # >>> E' l'ULTIMA storia aperta dell'epica 3.
-  3-6-la-telemetria-trasformare-limpressione-in-prova: backlog
+  3-6-la-telemetria-trasformare-limpressione-in-prova: awaiting-operator
   # Story 3.7: I forum della BBS — leggere mentre la posa gira
   # >>> AGGIUNTA il 2026-08-23 su richiesta di Federico, dopo aver giocato l'epica 2
   # >>> e giudicato l'attesa «inutile e noiosa». E' la QUARTA attivita' dell'attesa e

@@ -774,3 +774,11 @@ Cancello `VERIFY: pulito` prima e dopo. Confini rieseguiti: `crt/` non nomina `p
 `TRACK_RATE = 0.08` rad/s (4,6 gradi/s) resta com'e': e' la scelta di gusto che rende il
 difetto 2 *visibile*, ma il numero giusto lo decide chi guarda. Nessun suono e' stato
 ascoltato da nessuno - la review e' stata di codice ed esecuzione headless, non d'orecchio.
+
+### DW-19: Il cablaggio runtime della telemetria — le connessioni ai segnali del bus, gli handler `_on_*`, la chiusura della finestra aperta a `now` in `_write`, l'idempotenza per notte (gating su `_active`), il
+origin: spec-deferred 42235f399994
+location: autoloads/telemetry.gd:38-52 (connessioni), :84-138 (_on_*), :172-193 (_write/_notification) ; night/night_session.gd:_enter_menu ; tests/test_bench.gd::_check_telemetry
+source_spec: `spec-3-6-la-telemetria-trasformare-limpressione-in-prova.md`
+severity: medium
+reason: `tests/test_bench.gd::_check_telemetry` chiama solo le statiche `TELEMETRY.merge_intervals` / `idle_segments` / `build_report` / `uncovered_min` (preload dello script, non l'autoload): nessuna connessione a `Events`, nessuna scrittura su disco, nessuna notifica di chiusura. Rompere una `.connect` in `_ready`, il conteggio in `_on_menu_opened`, la chiusura della posa aperta in `_write`, o il gate `_active` lascerebbe il banco verde. È la stessa classe di gap accettata per moka (DW-15), lampada (DW-16) e cupola (spec 3.5): la convenzione del banco è logica pura (NFR19). Il file su disco, il secondo momento di scrittura (`quit_mid_pose`, la cui notifica in headless non arriva) e la leggibilità della riga F12 sono verifiche d'operatore.
+status: open

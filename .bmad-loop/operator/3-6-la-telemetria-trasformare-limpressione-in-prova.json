@@ -1,0 +1,13 @@
+{
+  "actions": [
+    "Giocare una notte fino all'alba, poi aprire `%APPDATA%/Godot/app_userdata/Astrochill/telemetry/night-<i>.json`: confermare che \u00e8 JSON leggibile con i sei campi (`night`, `tuning_hash`, `wait_total_min`, `wait_activities[]`, `menu_reopened`, `quit_mid_pose`), che `wait_activities[]` contiene voci `caffe`/`lampada`/`cupola`/`forum`/`idle` con `t`/`dur` in minuti di gioco, e che `quit_mid_pose` \u00e8 `false` all'alba.",
+    "Chiudere la finestra dell'applicazione MENTRE una posa \u00e8 in corso e riaprire il file risultante: confermare che esiste e che `quit_mid_pose` \u00e8 `true`. \u00c8 il secondo momento di scrittura: la notifica `NOTIFICATION_WM_CLOSE_REQUEST` arriva solo con una finestra vera, non in headless.",
+    "Giocare due notti con `tuning_override.cfg` diversi e confrontare i due file: `tuning_hash` presente in entrambi e diverso (senza, le notti non sono confrontabili).",
+    "Con l'overlay `F12` acceso e una posa in corso, confermare che appare la riga `posa \u2026 min   scoperti \u2026 min`, che mostra i minuti della finestra e quelli scoperti e cambia dal vivo; e che fuori da una posa la riga \u00e8 assente.",
+    "Provocare un abbandono (es. aprire la BBS e uscire senza chiuderla, oppure entrare in cupola oltre la soglia e uscire dal gioco) e confermare che nel file l'attivit\u00e0 compare con `dur: null` e `abandoned: true`, non omessa; e che i tratti `idle` coprono il resto della finestra di posa."
+  ],
+  "parked_at": "2026-08-24",
+  "run_id": "20260824-131550-09ea",
+  "spec_file": "_bmad-output/implementation-artifacts/spec-3-6-la-telemetria-trasformare-limpressione-in-prova.md",
+  "story_key": "3-6-la-telemetria-trasformare-limpressione-in-prova"
+}

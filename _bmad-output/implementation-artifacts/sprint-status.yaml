@@ -183,5 +183,5 @@ development_status:
   # >>> appartiene al gruppo 3.3/3.4/3.5, non al blocco della telemetria: il numero e'
   # >>> 3.7 solo per non rinumerare cio' che esiste.
   # >>> LA 3.6 DEVE INCLUDERE `forum` nello schema di wait_activities[].
-  3-7-i-forum-della-bbs-leggere-mentre-la-posa-gira: awaiting-operator
+  3-7-i-forum-della-bbs-leggere-mentre-la-posa-gira: done
   epic-3-retrospective: optional

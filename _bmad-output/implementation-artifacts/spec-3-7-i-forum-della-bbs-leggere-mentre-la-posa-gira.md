@@ -2,7 +2,7 @@
 title: "3.7 I forum della BBS — leggere mentre la posa gira"
 type: 'feature'
 created: '2026-08-24'
-status: 'awaiting-operator'
+status: done
 review_loop_iteration: 0
 followup_review_recommended: false
 baseline_revision: '635532e180277d0b209800a2896b7fb39fc0adfa'
@@ -192,3 +192,16 @@ Status: awaiting-operator
 **Verifica eseguita:** import headless pulito (registra `ForumMessage`/`ForumBoard`/`ForumData`); cancello `.bmad-loop/verify.ps1` pulito («banco fino in fondo, gioco senza errori né warning»), nessuna riga «<-- ATTESO»; isolamento confermato (`rg` — `bbs/` non nomina `world/`/`night/`/`phases/`; `night/` non nomina `bbs/`). Il subagent di implementazione ha inoltre reso la BBS in una finestra reale 256×192 con una sonda usa-e-getta (poi cancellata) e confermato via screenshot cornice, EN/IT e indicatori di scroll.
 
 **Rischi residui / owed all'operatore (vedi `operator_actions`):** gli AC percettivi e interattivi non certificabili headless — l'audio dell'handshake (driver Dummy nel cancello), la leggibilità/estetica dal vero a 256×192 da seduti, e l'integrazione della postazione (apertura da seduti, mutua esclusione col terminale, `interact`/alba, chime durante la lettura, persistenza dei letti dopo il sonno). Estetica provvisoria (beep/handshake sintetizzati, cornice come rettangolo) da rifinire col pack asset senza toccare la logica.
+
+## Operator Confirmation
+
+Confirmed 2026-08-24: the external actions this story owed were carried out.
+
+- Camminare il gioco durante l'attesa (menu post-foto vivo): sedersi al monitor, premere B per aprire la BBS, e ASCOLTARE l'handshake del modem 56k (qualche secondo, vista CONNECTING) — l'audio non è verificabile headless (driver Dummy nel cancello).
+- Verificare a 256×192 da seduti la leggibilità e che è LO STESSO COMPUTER del terminale: stessa cornice a linea singola, stesso fosforo verde, interfaccia EN (CYGNUS BBS, EQUIPMENT/DEEP SKY/OFF TOPIC) e messaggi IT. (Il rendering statico è già stato controllato con una sonda usa-e-getta via screenshot; qui serve il giudizio percettivo dal vero.)
+- Aprire il messaggio lungo (M42 vista da un balcone di città): confermare che lo scorrimento è ESPLICITO — i triangoli ▲/▼ con la scritta MORE compaiono in alto/in basso quando c'è altro sopra/sotto — e che nessuna riga è troncata in silenzio, scorrendo fino in fondo con ↑/↓.
+- Provare la persistenza dei letti: leggere un messaggio (torna in DIM nell'elenco), andare a dormire e riaprire la BBS la notte dopo — il letto deve restare letto. Dopo la notte 2 deve comparire 'Perso un ortoscopico nel prato', dopo la notte 3 'Serata pubblica in piazza' (nuovi messaggi col passare delle notti).
+- Provare la mutua esclusione e l'integrazione della postazione: con il terminale aperto (T) la BBS (B) non deve aprirsi e viceversa; premere E chiude la BBS e alza dalla sedia ripristinando il contenuto della notte; se la posa finisce mentre si legge, il chime di fine sequenza si sente (è del luogo) e la BBS NON si chiude da sola; all'alba il riepilogo vince sulla BBS.
+- Rifinire quando arriva il pack asset: il beep e l'handshake del modem sono onde sintetizzate in codice (nessun asset audio) e la cornice è un rettangolo di contorno (non caratteri box-drawing) — provvisori, da sostituire senza toccare la logica.
+
+_Appended by the bmad-loop orchestrator (`bmad-loop confirm`, #335): a human confirmed these external actions out of band, and the story was advanced from `awaiting-operator` to `done`._

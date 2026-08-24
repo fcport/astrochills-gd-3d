@@ -1108,12 +1108,17 @@ So that **tre notti diverse siano confrontabili, invece di essere tre impression
 **When** viene scritta la telemetria
 **Then** finisce in `user://telemetry/`, un file per notte, **separato dal log**: non passa da `Log`, perché non è un log
 **And** è JSON leggibile a occhio
+**And** il proprietario è **`autoloads/telemetry.gd`, quinto autoload** — assegnato il 2026-08-24 chiudendo C3; ascolta il bus e basta
+**And** **nessun altro file lo nomina**: togliendolo dagli autoload il gioco resta identico. Uno strumento di misura non deve poter cambiare ciò che misura
 
 **Given** il file di una notte
 **When** lo si apre
 **Then** contiene `night`, `tuning_hash`, `wait_total_min`, `wait_activities[]`, `menu_reopened`, `quit_mid_pose`
 **And** ogni voce di `wait_activities[]` ha `what`, l'istante `t` in cui è cominciata e la sua `dur` in minuti di gioco, ricavata dalla coppia `started`/`ended`
 **And** un'attività cominciata e mai conclusa compare con `dur: null` e `abandoned: true` — **non viene omessa**: un abbandono taciuto si legge come un'attività mai fatta, e sono due cose opposte
+**And** i `what` possibili sono i **quattro** delle attività — `caffe`, `lampada`, `cupola` e **`forum`** (storia 3.7) — più `idle`
+**And** `t` e `dur` sono **minuti di gioco**, non secondi reali: con `game_min_per_sec` diverso fra due notti i secondi reali non sarebbero confrontabili
+**And** un'attività che comincia **fuori** da una finestra di posa viene registrata lo stesso: ometterla la renderebbe indistinguibile da una mai fatta
 
 **Given** due notti giocate con durate diverse
 **When** si confrontano i due file
@@ -1130,6 +1135,21 @@ So that **tre notti diverse siano confrontabili, invece di essere tre impression
 **When** la telemetria viene scritta
 **Then** `quit_mid_pose` è vero
 **And** è il segnale più forte che l'attesa non regge, e va potuto leggere senza ambiguità
+**And** quindi il file **si scrive in due momenti, non uno**: all'alba, e alla chiusura dell'applicazione a notte aperta
+**And** senza il secondo `quit_mid_pose` non potrebbe mai valere `true`, perché la sessione che lo produce è proprio quella che all'alba non arriva
+**And** il meccanismo si **verifica eseguendolo** — si chiude la finestra a posa in corso e si apre il file che ne risulta — non si stima
+
+**Given** il menu post-foto della storia 2.6
+**When** viene presentato
+**Then** `night/` emette **`Events.photo_menu_opened()`**, segnale nuovo sul bus, ed è da lì che si conta `menu_reopened`
+**And** serve perché il menu `extends Control` e non `Phase`: non emette `phase_started`, e oggi nessun condotto annuncia che è stato aperto
+**And** sta sul bus e non è diretto per la stessa ragione di `wait_activity_*`: chi è misurato non conosce chi misura, e senza ascoltatori il segnale cade nel vuoto senza rompere niente
+
+**Given** l'overlay di debug `F12`
+**When** una posa è in corso
+**Then** mostra **dal vivo** i minuti di quella finestra di posa e quanti ne sono scoperti
+**And** il file serve a confrontare notti fra loro, la riga a sentire l'attesa **mentre** la si vive: sono due cose diverse e servono entrambe
+**And** `debug/` legge da `Telemetry`, **mai il contrario** — la dipendenza va nella direzione che si taglia in release senza toccare la misura
 
 **Given** i dati raccolti
 **When** la notte finisce
@@ -1319,6 +1339,36 @@ porta `dur` per ogni voce e `abandoned: true` per le attività interrotte.
 contenitore per lo stato che attraversa le notti, e `Game.start_night()` azzera il portafoglio —
 da chiudere prima della storia 2.7; e **C3** — la telemetria ha tre collocazioni contraddittorie
 e nessun proprietario — da chiudere prima della 3.6. Più sei rilievi maggiori, nel report.
+
+### Revisione del 2026-08-24 — C1 e C3 chiusi: nessun critico resta aperto
+
+**C1 è stato chiuso il 2026-08-23** con l'opzione A — `core/player_profile.gd` come Resource
+sorella di `NightRun`. Dossier: `implementation-artifacts/c1-dossier-stato-cross-notte.md`.
+Effetto collaterale che valeva da solo la chiusura: `night_index` adesso avanza davvero, e la
+scelta fra `FULFILL` e `SELL OPEN` al cuore della 2.5 ha finalmente un esito osservabile.
+
+**C3 è stato chiuso il 2026-08-24** assegnando alla telemetria un proprietario esplicito:
+**`autoloads/telemetry.gd`, quinto autoload**, che ascolta il bus e non è nominato da nessuno.
+Dossier: `implementation-artifacts/c3-dossier-telemetria.md`.
+
+Metà del rilievo si era chiusa da sola mentre l'epica 3 veniva costruita: `tuning_hash` esiste
+come `Tuning.profile_hash`; i quattro emettitori — `caffe`, `lampada`, `cupola`, `forum` — sono
+tutti a posto con la coppia `started`/`ended`; la finestra della posa è già sul bus come
+`phase_started(&"imaging")`. Mancava solo il capo del condotto, e **nessuno ascoltava**.
+
+Due cose che nessun documento copriva sono state aggiunte alla 3.6: **`menu_reopened` non aveva
+un condotto** (il menu post-foto `extends Control`, non `Phase`, quindi non emette nulla — serve
+`Events.photo_menu_opened()`), e **`quit_mid_pose` implica un secondo momento di scrittura**,
+perché la sessione che lo produce è precisamente quella che all'alba non arriva.
+
+→ Corretto anche `game-architecture.md` in tre punti: l'albero diceva `log.gd # logging +
+telemetria di sessione`, il Pattern 2 regola 3 diceva «la telemetria la raccoglie la fase», e
+la sezione Logging non nominava nessun proprietario. La regola 3 conteneva però un punto vero —
+la fase è l'unica che sa quando l'attesa comincia e finisce — e la correzione lo conserva:
+**la fase dichiara la finestra, non la raccoglie**.
+
+→ Su richiesta di Federico la 3.6 guadagna anche **una riga dal vivo in `F12`**: il file serve
+a confrontare notti fra loro, la riga a sentire l'attesa mentre la si vive.
 
 ### Cosa questo documento non contiene, per costruzione
 

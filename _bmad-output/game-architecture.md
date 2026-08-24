@@ -564,7 +564,21 @@ con un evento solo né le durate né `idle` erano ricavabili.)*
 
 **`tuning_hash` non è opzionale:** senza sapere con quali numeri è stata giocata quella
 notte, i dati di tre notti diverse non sono confrontabili e l'esperimento non conclude
-niente.
+niente. Esiste già come `Tuning.profile_hash`.
+
+**Il proprietario è `autoloads/telemetry.gd`, quinto autoload** *(assegnato il 2026-08-24,
+chiudendo C3)*. Ascolta il bus e basta: le due coppie `wait_activity_*`, `phase_started` /
+`phase_finished` per la finestra della posa, `photo_menu_opened` per `menu_reopened`,
+`dawn_reached` per scrivere. **Nessun altro file lo nomina**: togliendolo dagli autoload il
+gioco resta identico, ed è la proprietà che rende sicuro uno strumento di misura — non deve
+poter cambiare ciò che misura. Non passa da `Log`, che è senza stato e per riga.
+
+**Si scrive in due momenti, non uno:** all'alba, e alla chiusura dell'applicazione a notte
+aperta. Senza il secondo `quit_mid_pose` non potrebbe mai valere `true`, perché la sessione
+che dovrebbe produrlo è proprio quella che all'alba non arriva.
+
+**E una riga dal vivo in `F12`**, oltre al file: il file serve a confrontare notti fra loro,
+la riga a sentire l'attesa mentre la si vive. `debug/` legge da `Telemetry`, mai il contrario.
 
 ### Configuration
 
@@ -683,8 +697,9 @@ astrochills-gd-3d/
 ├── autoloads/
 │   ├── game.gd                   # portachiavi: possiede la NightRun corrente
 │   ├── events.gd                 # EventBus — solo fatti di notte
-│   ├── log.gd                    # logging + telemetria di sessione
-│   └── tuning.gd                 # carica tuning.tres + override .cfg
+│   ├── log.gd                    # logging tecnico. La telemetria NON passa di qui
+│   ├── tuning.gd                 # carica tuning.tres + override .cfg
+│   └── telemetry.gd              # un file JSON per notte. Ascolta il bus, non lo tocca nessuno
 │
 ├── core/                         # contratti e infrastruttura. ZERO gameplay
 │   ├── phase.gd                  # class_name Phase
@@ -1007,8 +1022,15 @@ World
 2. **I suoni appartengono al luogo, non alla fase.** Il ronzio della sequenza è un
    `AudioStreamPlayer3D` nella cupola, non un figlio della fase — altrimenti in cucina si
    sente come se si fosse lì dentro.
-3. **La telemetria dell'attesa la raccoglie la fase**, ascoltando `Events`. È l'unica che
-   sa quando l'attesa è cominciata e quando finisce.
+3. **La fase DICHIARA la finestra dell'attesa; non la raccoglie.** È l'unica che sa
+   quando l'attesa comincia e quando finisce, e lo dice emettendo `phase_started(key())` /
+   `phase_finished(...)`. A raccogliere è `autoloads/telemetry.gd`, che ascolta il bus.
+   *(Corretto il 2026-08-24 chiudendo C3. La formulazione precedente — «la telemetria la
+   raccoglie la fase» — era scorretta: la fase viene istanziata e distrutta più volte per
+   notte, le attività dell'attesa vivono in `world/` e `bbs/` dove non le vede, `phases/`
+   può conoscere solo `core/`, e la chiusura dell'applicazione non è osservabile da un
+   oggetto che sta venendo distrutto. Dossier:
+   `_bmad-output/implementation-artifacts/c3-dossier-telemetria.md`.)*
 
 ### Pattern 3 — Lo schermo diegetico
 

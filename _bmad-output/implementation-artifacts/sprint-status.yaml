@@ -63,9 +63,21 @@
 #        per cui FULFILL e SELL pagavano identico in ogni partita.
 #        Sblocca la 2.7 e la 3.2. Collaudato in tests/test_bench.gd.
 #
-#   C3 — APERTO — blocca la storia 3.6 (3-6-la-telemetria-trasformare-limpressione-in-prova)
-#        La telemetria ha tre collocazioni contraddittorie e nessun proprietario.
-#        Da chiudere PRIMA della 3.6.
+#   C3 — CHIUSO il 2026-08-24 insieme a Federico — sblocca la storia 3.6
+#        Proprietario assegnato: autoloads/telemetry.gd, QUINTO autoload. Ascolta il
+#        bus e basta, e nessun altro file lo nomina: togliendolo, il gioco resta
+#        identico. Uno strumento di misura non deve poter cambiare cio' che misura.
+#        Meta' del rilievo si era chiusa da sola con l'epica 3: tuning_hash esiste
+#        (Tuning.profile_hash), i quattro emettitori (caffe/lampada/cupola/forum)
+#        sono a posto, la finestra della posa e' gia' sul bus. Mancava il CAPO del
+#        condotto: nessuno ascoltava.
+#        Due buchi che nessun documento copriva, ora nella 3.6: menu_reopened non
+#        aveva un condotto (serve Events.photo_menu_opened — il menu post-foto
+#        extends Control, non Phase); e quit_mid_pose implica un SECONDO momento di
+#        scrittura, perche' la sessione che lo produce e' quella che all'alba non
+#        arriva. Piu' una riga dal vivo in F12, scelta da Federico.
+#        Corretto game-architecture.md in tre punti (albero, Pattern 2 regola 3,
+#        Logging). Dossier: c3-dossier-telemetria.md.
 #
 #   C2 — CHIUSO il 2026-08-21 — la fase 6 era senza sorgente di verità: la storia
 #        2.2 ha ora il suo blocco su honest_catalog; FR16 dichiarato cross-cutting
@@ -157,7 +169,7 @@ development_status:
   # Epic 3: L'attesa — l'osservatorio mentre la posa gira
   # Domanda: l'attesa è piacevole?  ← è l'ipotesi per cui l'MVP esiste
   # ---------------------------------------------------------------------------
-  epic-3: backlog
+  epic-3: in-progress
   # Story 3.1: L'osservatorio si allarga — una scena sola, dentro e fuori
   # >>> RISCRITTA il 2026-08-23. Decisione di Federico: UNA SCENA SOLA. Il prototipo
   # >>> Phaser aveva tre tilemap (`esterno`, `oss1`, `oss2`) e cambiava scena fra
@@ -174,8 +186,11 @@ development_status:
   # Story 3.5: La cupola — stare a guardare
   3-5-la-cupola-stare-a-guardare: done
   # Story 3.6: La telemetria — trasformare l'impressione in prova
-  # >>> BLOCCATA DA C3 (aperto): la telemetria ha tre collocazioni
-  # >>> contraddittorie e nessun proprietario.
+  # >>> SBLOCCATA il 2026-08-24: C3 chiuso. Proprietario = autoloads/telemetry.gd,
+  # >>> quinto autoload. La storia negli epics e' stata aggiornata con il
+  # >>> proprietario, il segnale nuovo Events.photo_menu_opened, il secondo momento
+  # >>> di scrittura per quit_mid_pose, `forum` fra le attivita' e la riga in F12.
+  # >>> E' l'ULTIMA storia aperta dell'epica 3.
   3-6-la-telemetria-trasformare-limpressione-in-prova: backlog
   # Story 3.7: I forum della BBS — leggere mentre la posa gira
   # >>> AGGIUNTA il 2026-08-23 su richiesta di Federico, dopo aver giocato l'epica 2

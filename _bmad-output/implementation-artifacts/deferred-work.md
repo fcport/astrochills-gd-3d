@@ -620,3 +620,52 @@ source_spec: `spec-3-7-i-forum-della-bbs-leggere-mentre-la-posa-gira.md`
 severity: low
 reason: tests/test_bench.gd (_check_forum) collauda ForumBoard.available(night), mark_read/has_read e il round-trip save/load su "user://saves/_bench_forum" (path di override, per non clobberare il save del giocatore). Ma Game.mark_forum_read salva su "user://saves/profile.tres" senza override: chiamarlo dal banco scriverebbe sul save reale. È la stessa limitazione della 3.2 (Game.spend_lire non esercitato end-to-end per l'accoppiamento ai path di save). La glue autoload (mutazione+save sul path reale) resta verificabile solo camminando il gioco.
 status: open
+
+---
+
+## Verifiche d'operatore delle storie 3.4, 3.5 e 3.7 — eseguite il 2026-08-24
+
+Le tre storie scritte DOPO che `project-context.md` ha imparato dove sta Godot. Nessuna
+delle tre aveva difetti di geometria — la 3.1, scritta prima, aveva una stanza dentro
+un'altra. Non è una prova, ma è l'unica differenza fra i due gruppi.
+
+**3.4, la lampada — passata senza correzioni.** Non usabile senza lampadina, usabile con
+(prompt «Cambia la lampadina»), raggiungibile con 24 gradi di finestra. E il lampeggio è
+MISURATO, non giudicato: novanta fotogrammi guardando la cucina danno media 0.2143 con
+oscillazione fra 0.193 e 0.248 (ballo 0.055, il 26% della media); sistemata, 0.2362 fermo
+esatto, ballo 0.000. L'AC «l'illuminazione cambia davvero, non un'icona» è soddisfatto e
+il numero lo dimostra.
+
+**3.5, la cupola — passata, con una taratura lasciata a Federico.** Zero interagibili
+attivi dentro la cupola (niente da completare, nessun invito): AC rispettato. Il
+telescopio sta fermo a posa spenta e gira a posa accesa. DW-12 chiuso: spinto contro il
+telescopio il corpo si ferma, non lo attraversa.
+
+> **APERTO — `TRACK_RATE` (world/telescope.gd).** Vale 0.08 rad/s, cioè **4,6 gradi al
+> secondo: 23 gradi in cinque secondi.** L'AC chiede «un inseguimento LENTO e continuo,
+> percepibile guardandolo per qualche secondo»: a questa velocità è percepibile in
+> mezzo secondo, e legge come un motore piuttosto che come un inseguimento. Proposta:
+> `0.02` (1,15 gradi/s, ~6 gradi in cinque secondi). **È gusto, non correttezza**, e la
+> storia stessa la mette fra le tarature d'occhio: la decide Federico, è una costante.
+
+**3.7, i forum — passata.** L'indice legge a 256x192: tre aree, otto messaggi, titoli in
+italiano e autori nella colonna destra. La vista di lettura manda a capo e sta nel vetro.
+I contenuti sono chiacchiere di astrofili veri (collimazione, montature, serate perse) —
+nessuno contiene informazioni che aiutino a fotografare meglio, che era la clausola per
+cui la storia esiste.
+
+> **DA SAPERE — il margine è di cinque caratteri.** `WRAP_WIDTH = 42` e
+> `BODY_WINDOW = 8` danno 336 caratteri per schermata; il messaggio piu' lungo dei dati
+> (`eq_newton_collimazione`) ne ha ~331. **Oggi nessun messaggio scorre**, quindi il ramo
+> di scorrimento — e con lui l'indicatore che avvisa che c'è dell'altro — non e' mai
+> esercitato giocando. La logica c'è ed è corretta (provata con un corpo finto da 24
+> righe: si clampa a 16, cioè `righe - BODY_WINDOW`), ma l'indicatore non è mai stato
+> VISTO renderizzare. Il primo messaggio scritto un po' piu' lungo lo rende portante di
+> colpo. Chi aggiunge contenuti al forum guardi quella schermata.
+
+### Cosa resta dovuto a un umano, per tutte e tre
+
+Il suono: il ronzio della lampada rotta, il borbottio della moka che sale, il cigolio
+della cupola, il ronzio della montatura, l'handshake del modem, i beep. Nessuna sonda
+può ascoltare. E i tempi vissuti: il rituale del caffè, i «qualche secondo» del cambio
+lampadina, la soglia di permanenza in cupola.

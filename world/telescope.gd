@@ -31,7 +31,14 @@ const GROUP := &"telescope"
 ## moltiplica per `delta`, già scalato da `Engine.time_scale`, quindi F1–F4 lo
 ## accelerano come tutto il resto. La velocità esatta la tara l'operatore guardando:
 ## «percepibile in qualche secondo» è un giudizio d'occhio, non un numero da stimare.
-const TRACK_RATE := 0.08
+##
+## 0.08 ERA TROPPO: 4,6 gradi al secondo, ventitré in cinque secondi — si legge come un
+## motore che gira, non come una montatura che insegue. Il numero non era mai stato
+## guardato da nessuno perché fino alla review del 2026-08-24 il moto partiva al MONTAGGIO
+## della fase, cioè in un momento in cui il giocatore sta al monitor e non lo vede.
+## Portato a 0.02 (1,15 gradi al secondo) da Federico il 2026-08-24, sempre a occhio: se
+## rivedendolo giocare risultasse ancora sbagliato, è questa riga e nient'altro.
+const TRACK_RATE := 0.02
 
 ## Il ronzio sintetizzato della montatura: un tono grave in loop (onda quadra), come il
 ## borbottio della moka (3.3) e il ronzio della lampada (3.4). Nessun asset d'arte

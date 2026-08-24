@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ForumMessage" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/forum/forum_message.gd" id="1_msg"]
+
+[resource]
+script = ExtResource("1_msg")
+id = &"ot_notte_persa"
+author = "orso_polare"
+subject = "Tre ore di attesa, poi le nuvole"
+body = "Montato tutto, allineato, messo su il caffe'. Alle undici arriva un banco di nubi da ovest e in venti minuti si mangia il cielo. Sono rimasto seduto fuori al freddo a finire il caffe' guardando le nuvole passare, e sapete che vi dico, non e' stata una serata sprecata. Certe attese non danno niente e vanno bene lo stesso."
+appears_from_night = 1

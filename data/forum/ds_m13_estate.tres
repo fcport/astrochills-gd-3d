@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ForumMessage" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/forum/forum_message.gd" id="1_msg"]
+
+[resource]
+script = ExtResource("1_msg")
+id = &"ds_m13_estate"
+author = "ercole_57"
+subject = "M13 e il rimpianto dell'estate"
+body = "Adesso che le notti sono lunghe mi manca l'ammasso in Ercole alto sopra la testa a mezzanotte d'estate. Con la coda dell'occhio sembra pieno di formiche che si muovono. Segnatevelo per giugno: e' la cosa che fa dire ohh a chiunque metta l'occhio all'oculare, anche a chi del cielo non gliene importa niente."
+appears_from_night = 1

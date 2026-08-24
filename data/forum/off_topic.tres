@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ForumBoard" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://data/forum/forum_board.gd" id="1_board"]
+[ext_resource type="Resource" path="res://data/forum/ot_notte_persa.tres" id="2_m1"]
+[ext_resource type="Resource" path="res://data/forum/ot_termos.tres" id="3_m2"]
+
+[resource]
+script = ExtResource("1_board")
+id = &"off_topic"
+title = "OFF TOPIC"
+messages = Array[ForumMessage]([ExtResource("2_m1"), ExtResource("3_m2")])

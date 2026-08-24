@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ForumMessage" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/forum/forum_message.gd" id="1_msg"]
+
+[resource]
+script = ExtResource("1_msg")
+id = &"eq_montatura_cinese"
+author = "vega_1999"
+subject = "La montatura nuova borbotta in AR"
+body = "Sara' l'usato, ma la mia EQ fa un rumore secco quando inverte il moto in ascensione retta. Ho aperto il carter e dentro c'era grasso vecchio duro come la cera. Pulito tutto e rimesso grasso al litio, adesso gira liscia. Non buttate via le montature vecchie: hanno solo bisogno che qualcuno le apra."
+appears_from_night = 1

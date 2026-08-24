@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ForumMessage" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/forum/forum_message.gd" id="1_msg"]
+
+[resource]
+script = ExtResource("1_msg")
+id = &"ds_saturno_bambini"
+author = "vega_1999"
+subject = "Serata pubblica in piazza"
+body = "Sabato l'associazione ha portato i telescopi in piazza. Coda di quaranta minuti per guardare Saturno. Un bambino ha detto alla mamma che sembrava un adesivo appiccicato dentro il tubo, non ci credeva che fosse vero. Momenti cosi' valgono tutte le montature che si inceppano."
+appears_from_night = 3

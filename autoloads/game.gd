@@ -120,6 +120,20 @@ func mark_lamp_fixed() -> void:
 	_saves.save_profile(profile)
 
 
+## Segna il messaggio `id` del forum come letto (3.7) e SALVA. Mutazione+salvataggio
+## atomici in un punto solo, come `mark_lamp_fixed`/`spend_lire`: la persistenza resta
+## di `Game`, unico chiamante di `SaveManager` in gioco — la BBS non tocca mai
+## `FileAccess`/`SaveManager`. Un save per messaggio aperto, come `spend_lire` salva per
+## acquisto.
+##
+## IDEMPOTENTE: `mark_read` non duplica; se il messaggio e' gia' letto salva comunque,
+## ed e' innocuo. Se il save fallisce, `SaveManager` lo registra su canale 1; il letto in
+## memoria e' gia' avvenuto e non si annulla — la stessa scelta di `spend_lire`.
+func mark_forum_read(id: StringName) -> void:
+	profile.mark_read(id)
+	_saves.save_profile(profile)
+
+
 ## Chiude la notte e VERSA al giocatore quanto ha guadagnato.
 ##
 ## È l'unico punto in cui `profile.wallet_lire` cresce: chi vende accredita su

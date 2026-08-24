@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://bbs/bbs.gd" id="1_bbs"]
+
+[node name="Bbs" type="Control"]
+custom_minimum_size = Vector2(256, 192)
+offset_right = 256.0
+offset_bottom = 192.0
+script = ExtResource("1_bbs")

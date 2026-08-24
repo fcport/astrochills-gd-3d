@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ForumBoard" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://data/forum/forum_board.gd" id="1_board"]
+[ext_resource type="Resource" path="res://data/forum/eq_newton_collimazione.tres" id="2_m1"]
+[ext_resource type="Resource" path="res://data/forum/eq_montatura_cinese.tres" id="3_m2"]
+[ext_resource type="Resource" path="res://data/forum/eq_oculare_perso.tres" id="4_m3"]
+
+[resource]
+script = ExtResource("1_board")
+id = &"equipment"
+title = "EQUIPMENT"
+messages = Array[ForumMessage]([ExtResource("2_m1"), ExtResource("3_m2"), ExtResource("4_m3")])

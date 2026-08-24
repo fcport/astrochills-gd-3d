@@ -2,7 +2,7 @@
 title: "3.5 La cupola — stare a guardare"
 type: 'feature'
 created: '2026-08-24'
-status: 'awaiting-operator'
+status: done
 baseline_revision: '8ca6fe1e91dc21e2295aeeba024d64e8fcec6dd8'
 review_loop_iteration: 0
 followup_review_recommended: false
@@ -183,3 +183,15 @@ Status: awaiting-operator
 - Wiring runtime della coppia telemetria + `Dwell` + rilevamento `Area3D` non esercitati dal banco (vedi `deferred`): coperti solo i quattro predicati puri.
 - Estetica/audio provvisori: mesh segnaposto, ronzio/cigolio sintetizzati in codice (onde quadre gravi) — da sostituire col pack asset senza toccare la logica.
 - `TRACK_RATE`, `DWELL_SECONDS`, i livelli/Hz dei suoni e quota/raggio del collider `Body` sono valori di taratura: l'operatore li ritara guardando/ascoltando.
+
+## Operator Confirmation
+
+Confirmed 2026-08-24: the external actions this story owed were carried out.
+
+- Aprire una build con display e audio, entrare nella cupola (a est) e guardare in alto attraverso la fessura: confermare che si vede il cielo notturno e il telescopio in primo piano; e che NON c'è nessun prompt, nessun contatore, niente da completare o raccogliere, e nessun invito a interagire.
+- Avviare una sequenza di imaging (configurare la posa al monitor), salire in cupola e osservare il telescopio: verificare che si muove con un inseguimento LENTO e continuo, percepibile guardandolo per qualche secondo, e che quando nessuna sequenza è in corso sta FERMO. Tarare `TRACK_RATE` (world/telescope.gd) guardando, se serve.
+- Con la posa in corso, restare in cupola oltre la soglia di permanenza e, da un log/telemetria manuale, confermare che parte `Events.wait_activity_started(&"cupola")` UNA SOLA VOLTA e senza nessun feedback visibile; che uscendo dalla cupola OPPURE a fine sequenza (quale prima) parte `wait_activity_ended(&"cupola")`; che passare in cupola solo pochi istanti non emette niente; e che un quit in cupola a metà posa resta uno `started` senza `ended`. Tarare `DWELL_SECONDS` (world/dome_activity.gd) a sensazione, se serve.
+- Verificare l'AMBIENTE SONORO: il ronzio della montatura si sente SOLO durante la sequenza e il cigolio della cupola è ambientale (sempre); entrambi POSIZIONALI — allontanandosi si attenuano, segno che appartengono al luogo e non alla fase. Camminare per verificarlo. Tarare livelli/timbro (`HUM_VOL_DB`, `CREAK_VOL_DB`, gli Hz) ascoltando, se serve.
+- Verificare la FISICITÀ (DW-12): camminare contro il telescopio e confermare che NON lo si attraversa. Tarare quota/raggio del collider `Body` (dome.tscn, `ShapeScopeBody`) guardando, se serve.
+
+_Appended by the bmad-loop orchestrator (`bmad-loop confirm`, #335): a human confirmed these external actions out of band, and the story was advanced from `awaiting-operator` to `done`._

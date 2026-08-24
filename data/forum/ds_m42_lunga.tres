@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ForumMessage" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/forum/forum_message.gd" id="1_msg"]
+
+[resource]
+script = ExtResource("1_msg")
+id = &"ds_m42_lunga"
+author = "nebulosa_anna"
+subject = "M42 vista da un balcone di citta'"
+body = "Voglio raccontarla per esteso perche' mi ha fatto una certa impressione e forse serve a qualcun altro che come me sta in centro e pensa di non poter vedere niente.
+
+Abito al quarto piano di un palazzo con i lampioni arancioni proprio sotto casa. Per anni mi sono detta che era inutile anche solo tirare fuori il telescopio, che tanto il cielo era una zuppa lattiginosa e non si vedeva una stella. Poi una sera di gennaio, con l'aria tersa dopo un temporale, ho puntato la spada di Orione tanto per fare.
+
+E c'era. Non il grigio-verde delle foto, sia chiaro: a occhio nudo all'oculare M42 e' un batuffolo pallido, quasi un alito sul vetro. Ma le quattro stelline del Trapezio si staccavano nette una dall'altra, e intorno la nebulosita' si apriva a ventaglio come un'ala. Sono rimasta col naso all'oculare finche' non mi si e' congelato.
+
+La cosa buffa e' che il balcone tremava di macchine che passavano, il vicino guardava la TV a tutto volume, e io in mezzo a quel casino stavo guardando una cosa lontana millecinquecento anni luce nata prima di qualsiasi cosa io conosca.
+
+Non ho scattato niente, non avevo la macchina montata e non mi importava. Volevo solo guardarla. Certe notti basta quello. La prossima volta magari provo a disegnarla a matita, che e' un altro modo di guardare piano.
+
+Se abitate in citta' e ci avete rinunciato: aspettate la sera giusta, quella dopo la pioggia col vento che pulisce. Il cielo torna, per qualche ora torna."
+appears_from_night = 1

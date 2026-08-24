@@ -30,6 +30,12 @@ const CATALOG_PATH := "res://phases/targeting/sources/honest_catalog.tres"
 const SEQUENCE_PATH := "res://phases/imaging/sources/honest_sequence.tres"
 const ROSTER_PATH := "res://data/clients/roster.tres"
 const ITEM_CATALOG_PATH := "res://data/catalog/catalog.tres"
+const FORUM_PATH := "res://data/forum/forum.tres"
+## La stessa larghezza di a-capo che la BBS usa per il corpo dei messaggi. Ripetuta qui
+## apposta: se un giorno diverge dalla BBS, il conteggio righe collauderebbe una misura
+## che il gioco non usa — ma la BBS non espone la costante (è privata al suo Control), e
+## importarla vorrebbe dire montare quel Control. Si tiene il numero e lo si dichiara.
+const BBS_WRAP_WIDTH := 42
 ## La costante dell'orologio vero, non una copia: il banco confronta la propria
 ## aritmetica con quella del gioco, e per farlo deve leggere la stessa costante.
 const CLOCK := preload("res://night/night_clock.gd")
@@ -96,6 +102,8 @@ func _ready() -> void:
 	_check_lamp_repair()
 	print("")
 	_check_dome_presence()
+	print("")
+	_check_forum()
 	print("")
 	print("=== fine ===")
 	get_tree().quit()
@@ -1151,6 +1159,180 @@ func _report_affects(key: StringName, expected: bool, label: String) -> void:
 	var got := DomeActivity.affects_sequence(key)
 	var note := "" if got == expected else "   <-- ATTESO: %s" % expected
 	print("      %-46s affects = %s%s" % [label, got, note])
+
+
+## I forum della BBS (3.7): la logica PURA e collaudabile — il filtro `available(night)`
+## per notte, il round-trip di `forum_read` sul save (i letti attraversano le notti), e il
+## conteggio righe dell'a-capo su un corpo lungo (nessuna perdita di testo). Gemello di
+## `_check_owned_items`/`_check_dome_presence`: nessuno SceneTree, nessun timer, nessun suono.
+##
+## La connessione (handshake), il disegno del vetro, lo scroll esplicito e la
+## leggibilità a 256x192 NON si collaudano qui: sono effetto e percezione — verifiche
+## d'operatore, che si camminano nel gioco (come dice lo spec). Il banco legge la tavola.
+func _check_forum() -> void:
+	print("-- Forum BBS: filtro per notte, round-trip forum_read, a-capo senza perdite (3.7)")
+
+	# (1) ForumBoard.available(night): i messaggi compaiono col passare delle notti. Si
+	# carica il FORUM VERO (`forum.tres`), non board a mano: è ciò che la BBS legge davvero.
+	var forum := _load_source(FORUM_PATH) as ForumData
+	if forum == null:
+		return
+	print("   dal .tres: %d aree" % forum.boards.size())
+	if forum.boards.size() < 3:
+		print("   <-- ATTESO: almeno 3 aree con voci diverse")
+
+	# Ogni messaggio con `appears_from_night <= night` è disponibile; gli altri no. Il
+	# conteggio dei disponibili non deve mai calare col crescere della notte (monotono), e
+	# almeno un messaggio deve comparire DOPO la notte 1 (prova la comparsa nel tempo).
+	var total_msgs := 0
+	var appears_later := false
+	for board in forum.boards:
+		total_msgs += board.messages.size()
+		for msg in board.messages:
+			if msg != null and msg.appears_from_night > 1:
+				appears_later = true
+	print("   messaggi totali nel .tres: %d" % total_msgs)
+	if not appears_later:
+		print("   <-- ATTESO: almeno un messaggio con appears_from_night > 1")
+
+	# Monotonìa e correttezza del filtro su una board: a notte più alta, mai meno messaggi.
+	var previous := -1
+	var monotonic := true
+	for night in range(1, 6):
+		var count := 0
+		for board in forum.boards:
+			var avail := board.available(night)
+			count += avail.size()
+			# Correttezza: ogni disponibile ha appears_from_night <= night; nessun assente
+			# ha appears_from_night <= night.
+			for msg in board.messages:
+				var is_avail := avail.has(msg)
+				var should := msg.appears_from_night <= night
+				if is_avail != should:
+					print("   <-- ATTESO: %s a notte %d disponibile=%s (appears_from_night=%d)" % [
+						msg.id, night, should, msg.appears_from_night])
+		if count < previous:
+			monotonic = false
+		print("   notte %d: %d messaggi visibili" % [night, count])
+		previous = count
+	if not monotonic:
+		print("   <-- ATTESO: i messaggi visibili non calano mai col crescere della notte")
+
+	# (2) PlayerProfile.has_read/mark_read + round-trip: un letto una notte resta letto la
+	# notte dopo (attraversa il save). Stessa contabilità di owned_items — default [], nessun
+	# bump di versione.
+	var p := PlayerProfile.new()
+	print("   il giocatore nasce senza niente letto: has_read = %s" % p.has_read(&"eq_newton_collimazione"))
+	if p.has_read(&"eq_newton_collimazione"):
+		print("   <-- ATTESO: un profilo nuovo non ha letto niente")
+
+	p.mark_read(&"eq_newton_collimazione")
+	print("   dopo mark_read: has_read(letto)=%s has_read(altro)=%s" % [
+		p.has_read(&"eq_newton_collimazione"), p.has_read(&"ds_m13_estate")])
+	if not p.has_read(&"eq_newton_collimazione") or p.has_read(&"ds_m13_estate"):
+		print("   <-- ATTESO: legge quello marcato, non gli altri")
+
+	# Idempotenza: leggere due volte non duplica.
+	p.mark_read(&"eq_newton_collimazione")
+	var dup_note := "" if p.forum_read.size() == 1 else "   <-- ATTESO: mark_read è idempotente"
+	print("   mark_read due volte: forum_read = %s%s" % [p.forum_read, dup_note])
+
+	# Round-trip su disco: i letti sopravvivono al save/load, come il possesso.
+	var bench_dir := "user://saves/_bench_forum"
+	var path := "%s/profile.tres" % bench_dir
+	DirAccess.make_dir_recursive_absolute(bench_dir)
+	var saves := SaveManager.new()
+	p.mark_read(&"ds_m13_estate")
+	saves.save_profile(p, path)
+	var back := saves.load_profile(path)
+	var round_ok := back.has_read(&"eq_newton_collimazione") and back.has_read(&"ds_m13_estate")
+	print("   round-trip: has_read(a)=%s has_read(b)=%s" % [
+		back.has_read(&"eq_newton_collimazione"), back.has_read(&"ds_m13_estate")])
+	if not round_ok:
+		print("   <-- ATTESO: i letti sopravvivono al .tres (attraversano le notti)")
+
+	# Un profilo SENZA il campo (default []) è «niente letto», non un errore.
+	var fresh := PlayerProfile.new()
+	print("   default: forum_read vuoto = %s (assente = niente letto)" % fresh.forum_read.is_empty())
+	if not fresh.forum_read.is_empty():
+		print("   <-- ATTESO: default [] — nessun bump di versione")
+
+	# Ripulire i file di banco.
+	var d := DirAccess.open(bench_dir)
+	if d != null:
+		d.list_dir_begin()
+		var name := d.get_next()
+		while not name.is_empty():
+			if not d.current_is_dir():
+				DirAccess.remove_absolute(bench_dir.path_join(name))
+			name = d.get_next()
+		d.list_dir_end()
+	DirAccess.remove_absolute(bench_dir)
+
+	# (3) A-capo del corpo lungo: NESSUNA PERDITA DI TESTO. Si prende il messaggio più
+	# lungo del forum, lo si manda a capo con la STESSA logica della BBS, e si verifica che
+	# ricomponendo le righe si riottengano tutte le parole del corpo — nessuna riga
+	# troncata in silenzio (l'AC che la 2.2 ha pagato). Lo scroll esplicito è d'operatore;
+	# qui si prova che il testo non si perde.
+	var longest: ForumMessage = null
+	for board in forum.boards:
+		for msg in board.messages:
+			if msg != null and (longest == null or msg.body.length() > longest.body.length()):
+				longest = msg
+	if longest == null:
+		print("   <-- ATTESO: almeno un messaggio nel forum")
+		return
+	var lines := _bbs_wrap(longest.body, BBS_WRAP_WIDTH)
+	print("   messaggio più lungo (%s): %d caratteri -> %d righe a %d col" % [
+		longest.id, longest.body.length(), lines.size(), BBS_WRAP_WIDTH])
+	# Nessuna riga eccede la larghezza (a meno di una singola parola più lunga di width).
+	var over := 0
+	for line in lines:
+		if line.length() > BBS_WRAP_WIDTH and line.find(" ") != -1:
+			over += 1
+	if over > 0:
+		print("   <-- ATTESO: nessuna riga a più parole eccede %d col" % BBS_WRAP_WIDTH)
+	# Nessuna parola persa: le parole del corpo (ignorando gli spazi e gli a-capo)
+	# ricompaiono tutte nelle righe.
+	var src_words := PackedStringArray()
+	for token in longest.body.replace("\n", " ").split(" ", false):
+		src_words.append(token)
+	var out_words := PackedStringArray()
+	for line in lines:
+		for token in line.split(" ", false):
+			out_words.append(token)
+	var same_count := src_words.size() == out_words.size()
+	print("   parole nel corpo: %d, parole nelle righe: %d" % [src_words.size(), out_words.size()])
+	if not same_count:
+		print("   <-- ATTESO: nessuna parola persa nell'a-capo (troncamento silenzioso)")
+	# Almeno una board deve avere un messaggio che eccede una finestra ragionevole (prova
+	# che lo scroll ha materiale su cui esercitarsi). BODY_WINDOW della BBS è 8.
+	if lines.size() <= 8:
+		print("   <-- ATTESO: almeno un messaggio più lungo del vetro (per provare lo scroll)")
+
+
+## L'a-capo della BBS, RIPRODOTTO qui per collaudare che il corpo non si perda. È una
+## copia della logica di `bbs.gd::_wrap` — la BBS non la espone (è privata al suo Control,
+## e importarla vorrebbe dire montarlo). Se un giorno la BBS cambia il suo `_wrap`, questa
+## copia va aggiornata: il banco collauda la FORMA dell'a-capo, non l'identità del codice.
+func _bbs_wrap(text: String, width: int) -> PackedStringArray:
+	var out := PackedStringArray()
+	for paragraph in text.split("\n", true):
+		if paragraph.is_empty():
+			out.append("")
+			continue
+		var line := ""
+		for word in paragraph.split(" ", false):
+			if line.is_empty():
+				line = word
+			elif line.length() + 1 + word.length() <= width:
+				line += " " + word
+			else:
+				out.append(line)
+				line = word
+		if not line.is_empty():
+			out.append(line)
+	return out
 
 
 ## Piccola comodità: costruisce l'input e campiona in una riga.

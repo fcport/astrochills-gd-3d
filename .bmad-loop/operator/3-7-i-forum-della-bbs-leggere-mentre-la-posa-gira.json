@@ -1,0 +1,14 @@
+{
+  "actions": [
+    "Camminare il gioco durante l'attesa (menu post-foto vivo): sedersi al monitor, premere B per aprire la BBS, e ASCOLTARE l'handshake del modem 56k (qualche secondo, vista CONNECTING) \u2014 l'audio non \u00e8 verificabile headless (driver Dummy nel cancello).",
+    "Verificare a 256\u00d7192 da seduti la leggibilit\u00e0 e che \u00e8 LO STESSO COMPUTER del terminale: stessa cornice a linea singola, stesso fosforo verde, interfaccia EN (CYGNUS BBS, EQUIPMENT/DEEP SKY/OFF TOPIC) e messaggi IT. (Il rendering statico \u00e8 gi\u00e0 stato controllato con una sonda usa-e-getta via screenshot; qui serve il giudizio percettivo dal vero.)",
+    "Aprire il messaggio lungo (M42 vista da un balcone di citt\u00e0): confermare che lo scorrimento \u00e8 ESPLICITO \u2014 i triangoli \u25b2/\u25bc con la scritta MORE compaiono in alto/in basso quando c'\u00e8 altro sopra/sotto \u2014 e che nessuna riga \u00e8 troncata in silenzio, scorrendo fino in fondo con \u2191/\u2193.",
+    "Provare la persistenza dei letti: leggere un messaggio (torna in DIM nell'elenco), andare a dormire e riaprire la BBS la notte dopo \u2014 il letto deve restare letto. Dopo la notte 2 deve comparire 'Perso un ortoscopico nel prato', dopo la notte 3 'Serata pubblica in piazza' (nuovi messaggi col passare delle notti).",
+    "Provare la mutua esclusione e l'integrazione della postazione: con il terminale aperto (T) la BBS (B) non deve aprirsi e viceversa; premere E chiude la BBS e alza dalla sedia ripristinando il contenuto della notte; se la posa finisce mentre si legge, il chime di fine sequenza si sente (\u00e8 del luogo) e la BBS NON si chiude da sola; all'alba il riepilogo vince sulla BBS.",
+    "Rifinire quando arriva il pack asset: il beep e l'handshake del modem sono onde sintetizzate in codice (nessun asset audio) e la cornice \u00e8 un rettangolo di contorno (non caratteri box-drawing) \u2014 provvisori, da sostituire senza toccare la logica."
+  ],
+  "parked_at": "2026-08-24",
+  "run_id": "20260824-012618-343e",
+  "spec_file": "_bmad-output/implementation-artifacts/spec-3-7-i-forum-della-bbs-leggere-mentre-la-posa-gira.md",
+  "story_key": "3-7-i-forum-della-bbs-leggere-mentre-la-posa-gira"
+}

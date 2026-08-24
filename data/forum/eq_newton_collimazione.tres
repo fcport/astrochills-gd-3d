@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ForumMessage" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/forum/forum_message.gd" id="1_msg"]
+
+[resource]
+script = ExtResource("1_msg")
+id = &"eq_newton_collimazione"
+author = "orso_polare"
+subject = "Collimazione del newton, di nuovo"
+body = "Ho ripreso in mano il 200/1000 dopo mesi in cantina e ovviamente era tutto storto. Ci ho messo mezz'ora buona con la stella artificiale prima di rimettere a posto il secondario. Ogni volta mi dico che segno le viti con un pennarello e ogni volta non lo faccio. Qualcuno usa ancora il tappo di cartone forato o sono rimasto solo io?"
+appears_from_night = 1

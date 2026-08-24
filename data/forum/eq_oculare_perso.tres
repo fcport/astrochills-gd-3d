@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ForumMessage" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/forum/forum_message.gd" id="1_msg"]
+
+[resource]
+script = ExtResource("1_msg")
+id = &"eq_oculare_perso"
+author = "manfredi_g"
+subject = "Perso un ortoscopico nel prato"
+body = "Notte scorsa mi e' scivolato di mano un ortoscopico da 6mm mentre cambiavo oculare al buio. Caduto nell'erba alta. L'ho ritrovato solo all'alba, bagnato di rugiada ma intatto. Da ieri porto una torcia rossa legata al polso e un telo chiaro sotto il treppiede. Le cose piccole al buio spariscono e basta."
+appears_from_night = 2

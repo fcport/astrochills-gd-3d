@@ -612,3 +612,11 @@ source_spec: `spec-3-5-la-cupola-stare-a-guardare.md`
 severity: medium
 reason: Il banco (`tests/test_bench.gd::_check_dome_presence`) collauda i quattro predicati puri come tabelle, senza istanziare il nodo `DomeActivity` né connettersi a `Events`/all'`Area3D`. Il WIRING che trasforma i predicati in emissioni reali — le due `Events.wait_activity_*.emit`, l'avvio/stop del `Dwell` in `_reevaluate`, l'apertura/chiusura di `_in_dome` da `body_entered`/`body_exited`, di `_seq_running` da `phase_started`/`phase_finished` — non è esercitato: rompere una connessione, un'emissione o il gating del Timer lascerebbe il banco verde. È la stessa classe di gap accettata per la moka (DW-15) e la lampada (DW-16), giustificata dalla convenzione pura del banco (NFR19). Il moto del telescopio, i suoni posizionali e la collisione (DW-12) sono resa/percezione: verifiche d'operatore.
 status: open
+
+### DW-18: Game.mark_forum_read (mutazione di forum_read + save sul path reale) non è esercitato end-to-end dal banco: solo PlayerProfile.mark_read/has_read e il round-trip su un path di override lo sono.
+origin: spec-deferred 0774bc26dccc
+location: autoloads/game.gd (mark_forum_read) ; tests/test_bench.gd
+source_spec: `spec-3-7-i-forum-della-bbs-leggere-mentre-la-posa-gira.md`
+severity: low
+reason: tests/test_bench.gd (_check_forum) collauda ForumBoard.available(night), mark_read/has_read e il round-trip save/load su "user://saves/_bench_forum" (path di override, per non clobberare il save del giocatore). Ma Game.mark_forum_read salva su "user://saves/profile.tres" senza override: chiamarlo dal banco scriverebbe sul save reale. È la stessa limitazione della 3.2 (Game.spend_lire non esercitato end-to-end per l'accoppiamento ai path di save). La glue autoload (mutazione+save sul path reale) resta verificabile solo camminando il gioco.
+status: open

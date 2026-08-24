@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ForumMessage" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/forum/forum_message.gd" id="1_msg"]
+
+[resource]
+script = ExtResource("1_msg")
+id = &"ot_termos"
+author = "manfredi_g"
+subject = "Il vero accessorio indispensabile"
+body = "Dopo dieci anni di osservazioni ho capito qual e' lo strumento che cambia la serata: un buon termos e un paio di calze di lana. Si ride, ma chi ha freddo smonta alle undici e mezza e va a letto. Chi sta caldo resta fino all'alba. Il cielo lo vede chi resta."
+appears_from_night = 1

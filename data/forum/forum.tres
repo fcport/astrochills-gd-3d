@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ForumData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://data/forum/forum_data.gd" id="1_forum"]
+[ext_resource type="Resource" path="res://data/forum/equipment.tres" id="2_equipment"]
+[ext_resource type="Resource" path="res://data/forum/deep_sky.tres" id="3_deep_sky"]
+[ext_resource type="Resource" path="res://data/forum/off_topic.tres" id="4_off_topic"]
+
+[resource]
+script = ExtResource("1_forum")
+boards = Array[ForumBoard]([ExtResource("2_equipment"), ExtResource("3_deep_sky"), ExtResource("4_off_topic")])

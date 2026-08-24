@@ -172,7 +172,7 @@ development_status:
   # Story 3.4: La lampada che smette di lampeggiare
   3-4-la-lampada-che-smette-di-lampeggiare: done
   # Story 3.5: La cupola — stare a guardare
-  3-5-la-cupola-stare-a-guardare: awaiting-operator
+  3-5-la-cupola-stare-a-guardare: done
   # Story 3.6: La telemetria — trasformare l'impressione in prova
   # >>> BLOCCATA DA C3 (aperto): la telemetria ha tre collocazioni
   # >>> contraddittorie e nessun proprietario.
@@ -183,5 +183,5 @@ development_status:
   # >>> appartiene al gruppo 3.3/3.4/3.5, non al blocco della telemetria: il numero e'
   # >>> 3.7 solo per non rinumerare cio' che esiste.
   # >>> LA 3.6 DEVE INCLUDERE `forum` nello schema di wait_activities[].
-  3-7-i-forum-della-bbs-leggere-mentre-la-posa-gira: backlog
+  3-7-i-forum-della-bbs-leggere-mentre-la-posa-gira: awaiting-operator
   epic-3-retrospective: optional

@@ -84,6 +84,13 @@ const NIGHT_PLAN_PATH := "res://data/night_plan.tres"
 ## conoscere entrambe le sponde. `night/` non conosce `terminal/`, e viceversa.
 const TERMINAL := preload("res://terminal/terminal.tscn")
 
+## La BBS (3.7), il secondo programma diegetico del PC — gemello del terminale. Stessa
+## lifecycle: posseduto qui, mostrato sul CRT sopra il contenuto della notte, gated
+## sull'attesa. È l'unica cosa di `bbs/` che questo file nomina — il ponte world↔night↔bbs
+## vive qui, l'unico punto che può conoscere entrambe le sponde. `night/` non conosce
+## `bbs/`, e viceversa.
+const BBS := preload("res://bbs/bbs.tscn")
+
 ## Percorsi, NON preload. `const ... preload` risolve al caricamento dello script,
 ## in ogni build: con un preload gli strumenti di debug — e con l'iniettore anche
 ## `wandering_drift.tres` — finirebbero comunque dentro l'export di release, che
@@ -146,6 +153,16 @@ var _terminal: Control
 ## stato che il ponte sgancia alla chiusura, all'alba, e all'inizio della notte nuova.
 var _terminal_open := false
 
+## La BBS, posseduta da questo ponte come il terminale. Istanziata una volta e riusata:
+## aprirla la mostra sul CRT sopra ciò che `night/` mostrava, chiuderla ripristina il
+## contenuto della notte. Non è figlia di questo nodo finché non la si mostra —
+## `show_control()` la reparenta nel viewport del CRT.
+var _bbs: Control
+
+## Vero mentre la BBS è mostrata sul CRT. MUTUAMENTE ESCLUSIVA col terminale: al più uno
+## dei due è aperto, così due Control non si contendono il viewport (Design Notes).
+var _bbs_open := false
+
 
 func _ready() -> void:
 	Log.info("main", "avvio — renderer %s" % RenderingServer.get_video_adapter_api_version())
@@ -169,6 +186,7 @@ func _ready() -> void:
 	Events.phase_started.connect(func(_k: StringName) -> void: _refresh_affordances())
 	Events.dawn_reached.connect(_on_dawn_reached)
 	_setup_terminal()
+	_setup_bbs()
 	if OS.is_debug_build():
 		_install_debug_tools()
 	# LA NOTTE COMINCIA PER ULTIMA, a mondo montato: l'orchestratore mostra
@@ -264,6 +282,15 @@ func _start_new_night() -> void:
 	# marcato, il flag mentirebbe alla notte nuova. Non si ripristina niente qui: si
 	# azzera soltanto lo stato, che è ciò che una notte pulita deve trovare.
 	_terminal_open = false
+	# La BBS, come il terminale: si sgancia lo stato e la si riparcheggia spenta. Si
+	# chiama `deactivate()` così un `started` eventualmente ancora aperto chiude la
+	# propria coppia con `ended` — la telemetria non deve trovare un forum aperto che
+	# attraversa il sonno. `deactivate` è idempotente (guardia `_active`): innocuo se
+	# non era attivo.
+	if _bbs != null:
+		_bbs.deactivate()
+	_bbs_open = false
+	_park_bbs()
 	Game.start_night()
 	_night.begin()
 	_refresh_affordances()
@@ -337,6 +364,15 @@ func _on_dawn_reached() -> void:
 	if _terminal_open:
 		_terminal_open = false
 		_park_terminal()
+	# La BBS all'alba: stesso trattamento del terminale. Si sgancia lo stato SENZA
+	# ripristinare (il riepilogo vince), e si chiama `deactivate()` per emettere `ended` —
+	# la sessione di lettura finisce quando l'alba porta il riepilogo. `main.gd` chiama
+	# `deactivate` in OGNI percorso di chiusura, così la coppia resta bilanciata.
+	if _bbs_open:
+		_bbs_open = false
+		if _bbs != null:
+			_bbs.deactivate()
+		_park_bbs()
 	_refresh_affordances()
 
 
@@ -461,6 +497,10 @@ func _toggle_terminal() -> void:
 		return
 	if _terminal == null or _crt == null or _night == null:
 		return
+	# MUTUA ESCLUSIONE con la BBS (3.7): il terminale si apre solo se la BBS è chiusa, così
+	# due Control non si contendono il viewport. Il simmetrico è in `_toggle_bbs`.
+	if _bbs_open:
+		return
 	if not _night.is_waiting():
 		# Non si è in attesa (una fase interattiva è a schermo): il tasto non apre nulla.
 		return
@@ -511,6 +551,93 @@ func _park_terminal() -> void:
 		add_child(_terminal)
 	_terminal.hide()
 	_terminal.process_mode = Node.PROCESS_MODE_DISABLED
+
+
+## Istanzia la BBS e ne ascolta l'uscita. Una volta sola, all'avvio: la BBS si riusa a
+## ogni apertura invece di rifarsi, come il terminale e l'orchestratore della notte.
+## Parcheggiata sotto questo nodo, spenta (`DISABLED`, `hide()`), finché non la si mostra.
+func _setup_bbs() -> void:
+	_bbs = BBS.instantiate() as Control
+	if _bbs == null:
+		push_error("[main] BBS non istanziabile")
+		return
+	# `closed` → chiude la BBS e ripristina il contenuto della notte. DIFFERITO (NFR16),
+	# per la stessa ragione del terminale: `closed` nasce dentro l'`_unhandled_input` della
+	# BBS, e `_close_bbs` la reparenta fuori dal viewport del CRT — riparentare il nodo
+	# dentro la propria callback d'input è ciò che tutta la notte evita con `CONNECT_DEFERRED`.
+	_bbs.closed.connect(_close_bbs, CONNECT_DEFERRED)
+	_bbs.hide()
+	_bbs.process_mode = Node.PROCESS_MODE_DISABLED
+	add_child(_bbs)
+
+
+## Apre o chiude la BBS, gated sull'attesa e MUTUAMENTE ESCLUSIVA col terminale. È il
+## tasto `bbs_open`.
+##
+## GATED SU `is_waiting()`, come il terminale: mai sovrapposta a una fase interattiva o
+## alla vendita/rivelazione. MUTUA ESCLUSIONE: si apre solo se il terminale è chiuso, così
+## due Control non si contendono il viewport. `activate()` emette `wait_activity_started`.
+func _toggle_bbs() -> void:
+	if _bbs_open:
+		_close_bbs()
+		return
+	if _bbs == null or _crt == null or _night == null:
+		return
+	if _terminal_open:
+		# Il terminale è aperto: la BBS non si apre (mutua esclusione). Si finisce col
+		# terminale prima.
+		return
+	if not _night.is_waiting():
+		# Non si è in attesa (una fase interattiva è a schermo): il tasto non apre nulla.
+		return
+	_bbs.show()
+	_bbs.process_mode = Node.PROCESS_MODE_INHERIT
+	_crt.show_control(_bbs)
+	_bbs.arm()
+	# `activate()` DOPO `arm()`: `arm` mette a punto la vista (e avvia l'handshake),
+	# `activate` è il fatto misurato — emette `wait_activity_started(&"forum")`.
+	_bbs.activate()
+	_bbs_open = true
+
+
+## Chiude la BBS e chiede a `night/` di ri-mostrare il proprio contenuto (il menu
+## post-foto, o niente). Idempotente: chiamarlo a BBS già chiusa non fa nulla.
+##
+## Lo chiama `closed()` della BBS (tasto back/quit dall'elenco), il secondo `bbs_open`, e
+## `interact` prima di alzarsi. NON lo chiama l'alba, che sgancia lo stato senza
+## ripristinare (il riepilogo vince) ma chiama comunque `deactivate()`.
+func _close_bbs() -> void:
+	if not _bbs_open:
+		return
+	_bbs_open = false
+	# `deactivate()` emette `wait_activity_ended(&"forum")` (idempotente): la coppia si
+	# chiude qui, come su ogni percorso di chiusura.
+	if _bbs != null:
+		_bbs.deactivate()
+	# Si riparcheggia PRIMA di `reshow_current`, così il viewport è già libero quando la
+	# notte mostra il proprio Control. Stessa regola di proprietà del CRT del terminale.
+	_park_bbs()
+	if _night != null:
+		_night.reshow_current()
+
+
+## Riporta la BBS sotto questo nodo, spenta e nascosta, da dovunque si trovi — mostrata
+## nel viewport del CRT o già orfana (quando il riepilogo dell'alba l'ha rimossa). Gemello
+## di `_park_terminal`: `reparent` se ha un parent, `add_child` se orfana. Così la BBS è
+## sempre posseduta dall'albero e liberata all'uscita, e non compare mai come risorsa
+## ancora in uso alla chiusura.
+func _park_bbs() -> void:
+	if _bbs == null:
+		return
+	var parent := _bbs.get_parent()
+	if parent == self:
+		pass
+	elif parent != null:
+		_bbs.reparent(self)
+	else:
+		add_child(_bbs)
+	_bbs.hide()
+	_bbs.process_mode = Node.PROCESS_MODE_DISABLED
 
 
 ## Monta la postazione. `DeskCamera` non ha una scena e nessuno la istanziava: è
@@ -655,12 +782,28 @@ func _shortcut_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
+	# La BBS si apre e si chiude QUI, accanto al terminale e per la stessa ragione:
+	# `_shortcut_input` gira dopo `_input` e PRIMA di ogni `_unhandled_input`, e nessun
+	# Control lo implementa. Intercettando `bbs_open` qui il tasto non raggiunge il Control
+	# sotto. La mutua esclusione è SIMMETRICA e vive nei due toggle: `_toggle_bbs` si apre
+	# solo se il terminale è chiuso, e `_toggle_terminal` si apre solo se la BBS è chiusa
+	# (ciascun toggle rifiuta se l'altro è aperto). Così al più uno dei due è a schermo, e
+	# due Control non si contendono mai il viewport.
+	if event.is_action_pressed(&"bbs_open"):
+		_toggle_bbs()
+		get_viewport().set_input_as_handled()
+		return
+
 	if event.is_action_pressed(&"interact"):
-		# `interact` (E) alza SEMPRE; se il terminale è aperto, prima lo si chiude e si
-		# ripristina il contenuto della notte, così ci si rialza da uno stato coerente e
-		# non con un terminale ancora marcato aperto sotto lo schermo fermo.
+		# `interact` (E) alza SEMPRE; se il terminale o la BBS sono aperti, prima li si
+		# chiude e si ripristina il contenuto della notte, così ci si rialza da uno stato
+		# coerente e non con un Control ancora marcato aperto sotto lo schermo fermo. Al
+		# più uno dei due è aperto (mutua esclusione), ma chiuderli entrambi è innocuo
+		# (idempotenti) e non dipende dall'invariante.
 		if _terminal_open:
 			_close_terminal()
+		if _bbs_open:
+			_close_bbs()
 		_stand_up()
 		get_viewport().set_input_as_handled()
 

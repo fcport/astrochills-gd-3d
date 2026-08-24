@@ -75,6 +75,19 @@ const CURRENT_VERSION := 1
 ## stato iniziale» non cambia il formato: non serve `migrate()`.
 @export var lamp_fixed: bool = false
 
+## I messaggi del forum della BBS che il giocatore ha gia' letto (3.7). Un letto una
+## notte resta letto la notte dopo: la distinzione e' del GIOCATORE — come `owned_items`
+## e `lamp_fixed` — quindi vive qui e non sulla `NightRun`, che muore col sonno. Lo
+## scrive `Game.mark_forum_read()`; lo legge la BBS per disegnare in `DIM` cio' che e'
+## gia' stato aperto.
+##
+## DEFAULT `[]`, E NESSUN BUMP DI `CURRENT_VERSION`: stessa contabilita' di `owned_items`.
+## `ResourceSaver` omette una proprieta' uguale al default, quindi un save vecchio senza
+## il campo non lo scrive — e ricaricato torna vuoto, cioe' «niente letto», che e'
+## esattamente lo stato iniziale giusto. Aggiungere un campo con default «assente =
+## stato iniziale» non cambia il formato: non serve `migrate()`.
+@export var forum_read: Array[StringName] = []
+
 ## Se il giocatore possiede l'articolo `id`. Lo legge il terminale (per mostrare
 ## `OWNED`) e lo leggeranno 3.3/3.4 (per far comparire la moka/la lampadina).
 func owns(id: StringName) -> bool:
@@ -86,6 +99,18 @@ func owns(id: StringName) -> bool:
 func mark_owned(id: StringName) -> void:
 	if not owned_items.has(id):
 		owned_items.append(id)
+
+## Se il giocatore ha gia' letto il messaggio `id` del forum. Lo legge la BBS per
+## disegnare in `DIM` cio' che e' letto e in `FG` cio' che non lo e'.
+func has_read(id: StringName) -> bool:
+	return forum_read.has(id)
+
+## Marca il messaggio `id` come letto. Idempotente: leggerlo due volte non lo duplica
+## nell'array. Il salvataggio lo fa il chiamante (`Game.mark_forum_read`), come per
+## `mark_owned`: qui si segna soltanto il letto.
+func mark_read(id: StringName) -> void:
+	if not forum_read.has(id):
+		forum_read.append(id)
 
 
 func migrate() -> void:

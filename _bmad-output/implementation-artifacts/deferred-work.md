@@ -769,6 +769,35 @@ sottrazione.
 Cancello `VERIFY: pulito` prima e dopo. Confini rieseguiti: `crt/` non nomina `phases/`,
 `night/` non nomina `world/`.
 
+### Difetto 3 - la maculazione mobile sul soffitto (storia 3.1), trovato da Federico
+
+Non l'ha trovato la review: l'ha visto **giocando**, il 2026-08-24, e l'ha descritto come
+«una maculazione strana che si muove come io mi muovo». Che si muova con l'osservatore e'
+la firma dello z-fighting, e infatti era aritmetica:
+
+```
+soffitto stanza computer   centro y=2,875  spessore 0,15  ->  da 2,80 a 2,95
+tetto dell'edificio        centro y=2,95   spessore 0,30  ->  da 2,80 a 3,10
+                                                    ^^^^ la stessa faccia inferiore
+```
+
+Le due facce inferiori stavano **entrambe a y = 2,80 esatti**, e il tetto (7,7 x 8,7 a
+x=1,5 z=-1,6) copre per intero i soffitti di stanza computer, atrio e cucina: la
+maculazione era su tutto il piano di sopra della casa. Il tetto affondava dentro le lastre
+invece di appoggiarcisi.
+
+Corretto portando `RoofBuilding` a y=3,10: faccia inferiore a 2,95, che e' la faccia
+SUPERIORE dei soffitti e la cima dei muri (alti 2,8). Verificato guardando - tre
+inquadrature prima e tre dopo, piu' un controllo della giunzione atrio/cucina a z=-2,65
+per escludere una fessura sul cielo: le bande dure sono sparite e al loro posto c'e' la
+sfumatura continua della luce.
+
+**E' della stessa famiglia degli altri due, ed e' il caso piu' puro:** `computer_room.tscn`
+ed `exterior.tscn` erano corretti ciascuno per conto suo, il difetto viveva nella somma, e
+nessun controllo statico poteva vederlo - come la cucina finita dentro la stanza del
+computer. Due superfici che non si compenetrano sono una proprieta' dello SPAZIO, non di
+un file.
+
 ### Cosa la review NON ha toccato
 
 `TRACK_RATE = 0.08` rad/s (4,6 gradi/s) resta com'e': e' la scelta di gusto che rende il

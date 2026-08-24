@@ -122,8 +122,16 @@ mesh = SubResource("BoxPath")
 ; a z = -2,75 perche' la cucina era finita dentro la stanza computer e da fuori non
 ; c'era niente da coprire. Adesso la cucina sta davvero a nord (z fino a -5,80) e il
 ; tetto la segue: z∈[-5,95, 2,75], profondita' 8,7.
+; Il tetto APPOGGIA sulle lastre di soffitto, non ci affonda dentro. y=3,10 con
+; spessore 0,30 -> faccia inferiore a 2,95, che e' esattamente la faccia SUPERIORE dei
+; soffitti (lastre 0,15 centrate a 2,875, da 2,80 a 2,95) e la cima dei muri (alti 2,8).
+; ERA a 2,95: faccia inferiore a 2,80, cioe' COMPLANARE con la faccia inferiore dei
+; soffitti. Due superfici nello stesso piano, e da dentro la stanza si vedeva la
+; maculazione mobile dello z-fighting su tutto il soffitto — segnalata guardando, il
+; 2026-08-24. Nessun controllo statico poteva vederla: i due file erano corretti
+; ciascuno per conto suo, e il difetto viveva nella somma.
 [node name="RoofBuilding" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 2.95, -1.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 3.1, -1.6)
 material_override = SubResource("MatRoof")
 mesh = SubResource("BoxRoof")
 

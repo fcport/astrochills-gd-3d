@@ -185,6 +185,12 @@ func _ready() -> void:
 	# volte — invisibile finché non lo è più.
 	Events.phase_started.connect(func(_k: StringName) -> void: _refresh_affordances())
 	Events.dawn_reached.connect(_on_dawn_reached)
+	# LA POSA FINISCE E LO SCHERMO TORNA ALLA NOTTE. Adesso che terminale e BBS si
+	# aprono DURANTE la posa, la fine della sequenza è il momento in cui `night/` si
+	# riprende il vetro per la rivelazione: senza questo, il Control aperto verrebbe
+	# sfrattato dal viewport restando marcato «aperto» — e per la telemetria della 3.6
+	# una lettura del forum continuerebbe a correre attraverso stack, vendita e menu.
+	Events.sequence_ended.connect(_on_sequence_ended)
 	_setup_terminal()
 	_setup_bbs()
 	if OS.is_debug_build():
@@ -348,6 +354,16 @@ func _capture_player_start() -> void:
 	if player == null:
 		return  # `_set_world_active()` ha già detto perché
 	_player_start = player.global_transform
+
+
+## La sequenza è finita: chi era aperto sopra di lei si chiude, e `reshow_current()`
+## rimette a schermo ciò che la notte mostra. Vale anche per la posa smontata a metà
+## (alba, *rifai setup*), che è il caso in cui `sequence_ended` arriva da `_exit_tree`.
+func _on_sequence_ended() -> void:
+	if _terminal_open:
+		_close_terminal()
+	if _bbs_open:
+		_close_bbs()
 
 
 ## L'alba è arrivata: da adesso si può andare a dormire.

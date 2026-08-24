@@ -669,3 +669,108 @@ Il suono: il ronzio della lampada rotta, il borbottio della moka che sale, il ci
 della cupola, il ronzio della montatura, l'handshake del modem, i beep. Nessuna sonda
 può ascoltare. E i tempi vissuti: il rituale del caffè, i «qualche secondo» del cambio
 lampadina, la soglia di permanenza in cupola.
+
+---
+
+## Review dell'epica 3 - 2026-08-24 - due difetti cross-storia, corretti
+
+Prima review indipendente del progetto. Il motivo per cui non ne era mai partita una: in
+`.bmad-loop/policy.toml` `review.trigger` era `"recommended"`, cioe' la seconda passata
+gira solo se il dev si autoflagga `followup_review_recommended: true` - e non l'ha mai
+fatto, sei storie su sei. Messo a `"always"` il 2026-08-24.
+
+Perimetro: `4c315b8..HEAD`, 48 file, +5686 righe. Entrambi i difetti sono **fra** le
+storie: ogni file preso da solo era corretto, e nessuna review per-storia li avrebbe visti.
+
+### La radice, che e' una sola
+
+`Events.phase_started` / `phase_finished` venivano letti come «la sequenza sta girando».
+Dicono un'altra cosa: **«lo schermo della sequenza esiste»**. L'orchestratore li emette al
+montaggio della fase, cioe' quando compare il pannello di configurazione - e non li emette
+affatto quando una fase viene smontata senza concludere. Tre nodi in tre storie diverse
+hanno fatto lo stesso errore.
+
+### Difetto 1 - durante la posa non si poteva leggere (storia 3.7)
+
+`NightSession.is_waiting()` era `_phase == null and ...`, ma durante la posa `_phase` E' la
+fase di imaging: e' il meccanismo stesso che le fa contare mentre giri per casa. Quindi
+l'attesa risultava falsa esattamente nella finestra che l'epica 3 esiste per riempire. La
+BBS - storia intitolata *«leggere mentre la posa gira»* - si apriva solo davanti al menu
+post-foto, cioe' nei secondi in cui decidi se rifare lo scatto.
+
+Misurato con una sonda, **con controllo negativo** (senza il quale l'accusa non varrebbe):
+
+```
+[POSA IN CORSO]  is_waiting=false  ->  tasto B apre la BBS?  NO
+[_stacking]      is_waiting=false  ->  tasto B apre la BBS?  NO
+[_sale]          is_waiting=false  ->  tasto B apre la BBS?  NO
+[_menu]          is_waiting=true   ->  tasto B apre la BBS?  SI   <- la sonda funziona
+```
+
+Come ci si e' arrivati: lo spec della 3.7 dice *«`night_session.gd` - riuso, nessuna
+modifica»* e definisce la prova d'operatore come *«camminare il gioco durante l'attesa
+(menu post-foto vivo)»*. Il gate era stato scritto per il terminale della 3.2, dove
+«attesa» voleva dire quello. La 3.7 l'ha ereditato senza accorgersi che per lei «attesa»
+significa la posa. **Ne segue che un AC dell'epica non era verificabile:** *«Given la posa
+in corso, When il giocatore sta leggendo e la sequenza finisce, Then il suono di fine
+sequenza si sente comunque»* descriveva una situazione irraggiungibile.
+
+### Difetto 2 - il telescopio inseguiva prima dello START (storie 3.5, 3.6)
+
+`telescope.gd` e `dome_activity.gd` si accendevano su `phase_started(&"imaging")`. Misurato:
+
+```
+[MONTATA, NON AVVIATA]  telescopio _tracking=true
+[DOPO LO START]         telescopio _tracking=true
+```
+
+Due conseguenze: la montatura ronzava e il tubo ruotava a 4,6 gradi/s mentre il giocatore
+sceglieva ancora frame ed esposizione; e la cupola contava `cupola` come attivita'
+dell'attesa, cioe' **la telemetria della 3.6 avrebbe misurato come attesa vissuta del tempo
+in cui nessuna posa esisteva**. Terza conseguenza trovata correggendo: `phase_finished` non
+viene emesso quando la fase e' smontata a meta' (alba durante una posa, *rifai setup*), e il
+telescopio sarebbe rimasto a ruotare e a ronzare per il resto della partita.
+
+### La correzione
+
+Un fatto nuovo, dove mancava. `core/phase.gd` guadagna `is_working()` - default `false`,
+cosi' **nessuna fase esistente deve cambiare per rispondere, `phase_polar.gd` compreso**
+(verificato: `git diff` su quel file e' vuoto). `autoloads/events.gd` guadagna la coppia
+`sequence_started()` / `sequence_ended()`, senza chiave: chi ascolta non filtra piu' su
+`&"imaging"`, e la stringa sparisce da `world/`. `phase_imaging` le emette allo START e
+alla fine - **e in `_exit_tree()`**, che e' il caso che non arrivava mai.
+
+`is_waiting()` diventa `_phase == null or _phase.is_working()`. **`is_working()` e non
+`runs_in_background()`**, che era il riflesso sbagliato: l'imaging gira in background
+sempre, anche mentre mostra il pannello di configurazione, e sopra quel pannello un
+secondo programma non deve potersi aprire.
+
+`reshow_current()` guadagna il ramo della fase: chiudendo la BBS durante la posa il vetro
+sarebbe restato NERO invece di tornare all'avanzamento. `main.gd` chiude i programmi
+aperti su `sequence_ended`, o una lettura del forum continuerebbe a correre - per la
+telemetria della 3.6 - attraverso stack, vendita e menu.
+
+**`DomeActivity.affects_sequence(key)` e' stata rimossa**: filtrava le chiavi, e non c'e' piu'
+niente da filtrare. Con lei sono uscite le quattro righe del banco che la collaudavano -
+tolte, non sostituite: cio' che il gate fa adesso e' gia' coperto da `is_gate_open` /
+`should_emit_started` / `should_emit_ended`. E' l'unica modifica al banco, ed e' una
+sottrazione.
+
+### Verifica della correzione - sonda, cinque controlli
+
+```
+[config]  is_working=false  is_waiting=false  telescopio=false   B apre? NO
+[posa]    is_working=true   is_waiting=true   telescopio=true    B apre? SI
+[aperta]  sul vetro: Bbs (bbs.gd)
+[chiusa]  sul vetro: ImagingScreen (imaging_screen.gd)     <- non nero
+[alba durante la posa]  dawn=true  telescopio=false        <- non resta a ronzare
+```
+
+Cancello `VERIFY: pulito` prima e dopo. Confini rieseguiti: `crt/` non nomina `phases/`,
+`night/` non nomina `world/`.
+
+### Cosa la review NON ha toccato
+
+`TRACK_RATE = 0.08` rad/s (4,6 gradi/s) resta com'e': e' la scelta di gusto che rende il
+difetto 2 *visibile*, ma il numero giusto lo decide chi guarda. Nessun suono e' stato
+ascoltato da nessuno - la review e' stata di codice ed esecuzione headless, non d'orecchio.

@@ -266,17 +266,31 @@ func has_phase() -> bool:
 	return _phase != null or _summary != null or _stacking != null or _sale != null or _menu != null
 
 
-## Se la notte è nella finestra d'ATTESA: nessuna fase, nessuna rivelazione, nessuna
-## vendita, nessun riepilogo interattivo a schermo. Il menu post-foto può essere vivo —
-## è l'attesa, non un'interruzione — quindi NON entra in questa condizione: si aspetta
-## col menu vivo, e sopra il menu si può aprire un secondo programma del PC.
+## Se la notte è nella finestra d'ATTESA: niente di INTERATTIVO a schermo. Nessuna
+## rivelazione, nessuna vendita, nessun riepilogo. Il menu post-foto può essere vivo — è
+## l'attesa, non un'interruzione — e sopra il menu si può aprire un secondo programma
+## del PC.
+##
+## E UNA FASE CHE STA LAVORANDO NON INTERROMPE L'ATTESA: È L'ATTESA. Questa riga diceva
+## `_phase == null`, e la review dell'epica 3 l'ha trovata: durante la posa `_phase` è la
+## fase di imaging — è il meccanismo stesso che le fa continuare a contare mentre giri
+## per casa — quindi l'attesa risultava falsa proprio nell'unica finestra che l'epica 3
+## esiste per riempire. La BBS della storia 3.7, intitolata «leggere MENTRE LA POSA
+## GIRA», non era apribile durante la posa: si apriva solo davanti al menu post-foto,
+## cioè nei secondi in cui decidi se rifare lo scatto. Misurato con una sonda.
+##
+## `is_working()` E NON `runs_in_background()`, che sarebbe stato il riflesso sbagliato:
+## la fase di imaging gira in background SEMPRE, anche mentre mostra il pannello di
+## configurazione — e sopra quel pannello un secondo programma non deve potersi aprire,
+## perché lì il giocatore sta lavorando. `is_working()` è vero da START in poi.
 ##
 ## Lo legge `main.gd` per decidere quando un tasto dedicato può aprire quel secondo
-## programma sul CRT. Questo file NON sa cosa sia: consegna solo il gancio «adesso lo
-## schermo non ospita una fase interattiva o la vendita/rivelazione». Il gate esclude
-## proprio gli stati vivi dove sovrapporsi rischierebbe di disturbarli.
+## programma sul CRT. Questo file NON sa cosa sia: consegna solo il gancio.
 func is_waiting() -> bool:
-	return _phase == null and _stacking == null and _sale == null and _summary == null
+	# «Nessuna fase, oppure una che sta lavorando»: il pannello di configurazione della
+	# posa è l'unico stato di fase che l'attesa NON è.
+	var phase_leaves_room := _phase == null or _phase.is_working()
+	return phase_leaves_room and _stacking == null and _sale == null and _summary == null
 
 
 ## Ri-mostra sul CRT ciò che la notte sta mostrando ADESSO — il menu post-foto se c'è,
@@ -294,8 +308,18 @@ func reshow_current() -> void:
 	if _menu != null and is_instance_valid(_menu):
 		_crt.show_control(_menu)
 		set_player_present(_player_present)
-	else:
-		_crt.show_control(null)
+		return
+	# LA FASE CHE STAVA LAVORANDO SI RIPRENDE IL VETRO. Questo ramo non c'era, e fino
+	# alla review dell'epica 3 non poteva servire: `is_waiting()` non lasciava aprire
+	# niente sopra una fase. Adesso che la BBS si apre durante la posa, chiuderla senza
+	# questo ramo lascerebbe il CRT NERO al posto dell'avanzamento della sequenza.
+	if _phase != null and is_instance_valid(_phase):
+		var scr := _phase.screen()
+		if scr != null and is_instance_valid(scr):
+			_crt.show_control(scr)
+			set_player_present(_player_present)
+			return
+	_crt.show_control(null)
 
 
 func clock() -> NightClock:

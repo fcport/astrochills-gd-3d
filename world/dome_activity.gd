@@ -18,7 +18,7 @@
 ##
 ## IL GATE E LA SOGLIA SONO PURI; TIMER ED EMISSIONE SONO EFFETTO. Come `Moka`/`Lamp`, la
 ## logica di decisione è in funzioni statiche collaudabili sul banco (`is_gate_open`,
-## `should_emit_started`, `should_emit_ended`, `affects_sequence`): nessuno SceneTree,
+## `should_emit_started`, `should_emit_ended`): nessuno SceneTree,
 ## nessun autoload, nessun timer. Il nodo tiene lo stato, guida il `Dwell` Timer, e
 ## MAPPA le decisioni pure sull'emissione onesta della coppia.
 ##
@@ -91,11 +91,10 @@ static func should_emit_started(watching: bool, gate_open: bool) -> bool:
 static func should_emit_ended(watching: bool, gate_open: bool) -> bool:
 	return watching and not gate_open
 
-
-## Se una chiave di fase riguarda questa attività. SOLO l'imaging: la polare e il targeting
-## emettono lo stesso segnale con la propria chiave e passano senza aprire/chiudere il gate.
-static func affects_sequence(key: StringName) -> bool:
-	return key == &"imaging"
+## `affects_sequence(key)` VIVEVA QUI, e la review dell'epica 3 l'ha tolta: filtrava le
+## chiavi di `phase_started` per decidere se il gate riguardasse questa cupola. Adesso il
+## gate si apre su `Events.sequence_started`, che porta il fatto senza la chiave — non
+## c'è più niente da filtrare, e `&"imaging"` non compare più in questo file.
 
 
 # --- Il nodo: mappa le decisioni pure sugli effetti ----------------------------------
@@ -114,9 +113,13 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 
-	# La sequenza dal bus: `phase_started`/`phase_finished` filtrati su `&"imaging"`.
-	Events.phase_started.connect(_on_phase_started)
-	Events.phase_finished.connect(_on_phase_finished)
+	# LA SEQUENZA dal bus, e non lo schermo della sequenza. Fino alla review dell'epica 3
+	# il gate si apriva su `phase_started(&"imaging")`, cioè al MONTAGGIO della fase:
+	# chi fosse salito in cupola mentre il pannello di configurazione era a schermo
+	# avrebbe visto contare «sto a guardare la posa» senza nessuna posa in corso — e la
+	# telemetria della 3.6 avrebbe misurato quel tempo come attesa vissuta.
+	Events.sequence_started.connect(_on_sequence_started)
+	Events.sequence_ended.connect(_on_sequence_ended)
 
 	# Il Dwell Timer della soglia: one-shot, avviato quando il gate si apre. Il nodo
 	# `Timer` conta col tempo scalato, così F1–F4 lo accelerano come il `BrewTimer` della
@@ -149,19 +152,18 @@ func _on_body_exited(body: Node3D) -> void:
 	_reevaluate()
 
 
-## Una sequenza è partita. SOLO l'imaging apre questo gate; le altre fasi passano.
-func _on_phase_started(key: StringName) -> void:
-	if not affects_sequence(key):
-		return
+## La sequenza è partita davvero (START premuto). Nessun filtro per chiave: il segnale
+## porta già il fatto, e `&"imaging"` non compare più in questo file.
+func _on_sequence_started() -> void:
 	_seq_running = true
 	_reevaluate()
 
 
-## Una sequenza è finita. SOLO l'imaging chiude questo gate. Se si stava guardando, la fine
-## della sequenza è uno dei due modi di smettere di «stare» — `_reevaluate()` emette `ended`.
-func _on_phase_finished(key: StringName, _score: int) -> void:
-	if not affects_sequence(key):
-		return
+## La sequenza è finita — conclusa, oppure smontata a metà (alba, *rifai setup*). Se si
+## stava guardando, è uno dei due modi di smettere di «stare»: `_reevaluate()` emette
+## `ended`. Il caso «smontata a metà» prima non arrivava affatto — `phase_finished` non
+## viene emesso — e lasciava uno `started` senza il suo `ended` nella telemetria.
+func _on_sequence_ended() -> void:
 	_seq_running = false
 	_reevaluate()
 

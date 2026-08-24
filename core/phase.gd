@@ -53,6 +53,24 @@ func score() -> int:
 	return 100
 
 
+## Se questa fase sta LAVORANDO adesso, e non solo esistendo.
+##
+## SONO DUE FATTI DIVERSI, e confonderli è costato tre difetti nell'epica 3. Una
+## fase montata mostra il proprio schermo — il giocatore la sta configurando — ma
+## non sta ancora facendo niente; il telescopio che inseguiva e la cupola che
+## contava l'attesa partivano dal montaggio, cioè da un momento in cui non c'è
+## nessuna posa. E `night/` apriva i programmi del PC solo a fase ASSENTE, che è
+## l'unico stato in cui la posa di sicuro non gira: la BBS della 3.7 — «leggere
+## mentre la posa gira» — non era apribile durante la posa.
+##
+## DEFAULT `false`, e la ragione è che così NESSUNA fase esistente deve cambiare
+## per rispondere: chi non distingue i due stati non sta mai «lavorando» in questo
+## senso. `phases/polar/phase_polar.gd` in particolare non cambia di una riga — è
+## la prova dell'AC2 della storia 1.1, rieseguibile con `git diff`.
+func is_working() -> bool:
+	return false
+
+
 ## true se la fase continua a girare quando il giocatore si allontana.
 ##
 ## Una fase in background non assume MAI di essere visibile: niente

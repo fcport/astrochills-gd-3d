@@ -34,6 +34,27 @@ signal photo_sold(photo_id: StringName, lire: int)
 signal wait_activity_started(what: StringName)
 signal wait_activity_ended(what: StringName)
 
+## LA SEQUENZA STA GIRANDO — e non «lo schermo della sequenza esiste».
+##
+## PERCHÉ NON BASTAVA `phase_started(&"imaging")`. Quello lo emette l'orchestratore
+## quando MONTA la fase, cioè quando compare il pannello di configurazione: da lì al
+## momento in cui il giocatore preme START passa tutto il tempo che gli serve per
+## scegliere frame ed esposizione. Il telescopio inseguiva e la montatura ronzava per
+## tutto quel tempo, e la cupola contava «sto a guardare la posa» quando nessuna posa
+## esisteva. Sono due fatti distinti e servono due segnali distinti.
+##
+## SENZA CHIAVE, di proposito: chi ascolta non deve più filtrare su `&"imaging"`, e
+## la stringa sparisce da `world/`. Se un giorno una seconda fase avrà una sequenza,
+## emetterà lo stesso fatto e il mondo risponderà senza sapere chi è stato.
+##
+## `sequence_ended` arriva SEMPRE, e arriva una volta sola: a sequenza conclusa, e
+## anche quando la fase viene smontata a sequenza in corso — l'alba durante una posa,
+## o *rifai setup*. Senza quel secondo caso il telescopio resterebbe a ronzare per il
+## resto della partita. NON è il segnale del suono di fine sequenza: quello resta
+## `phase_finished`, perché una posa interrotta non ha finito niente e non deve suonare.
+signal sequence_started()
+signal sequence_ended()
+
 ## Un articolo è stato comprato al terminale. È il SEAM verso 3.3/3.4: il terminale
 ## scala il portafoglio, marca il possesso e salva, poi ANNUNCIA qui — senza sapere
 ## chi ascolta. La moka in cucina (3.3) e la lampadina (3.4) nasceranno ascoltando

@@ -26,6 +26,12 @@
 ## aritmetica sul tempo (AC3). Il suono di fine sequenza NON è figlio di questa
 ## fase: vive nel mondo (`world/`) e ascolta `Events.phase_finished` filtrando su
 ## `&"imaging"` — è il luogo che possiede il suono, non la fase.
+##
+## QUESTA FASE ANNUNCIA DUE FATTI SUL BUS, e non li annunciava: `sequence_started`
+## quando il giocatore preme START, `sequence_ended` quando la sequenza si conclude o
+## quando la fase viene smontata a sequenza in corso. Il montaggio della fase NON è
+## l'inizio della posa, e chi nel mondo si accendeva su `phase_started(&"imaging")`
+## si accendeva troppo presto. Vedi `autoloads/events.gd`.
 class_name PhaseImaging
 extends Phase
 
@@ -94,6 +100,13 @@ var _done := false
 
 func key() -> StringName:
 	return &"imaging"
+
+
+## Sta LAVORANDO solo da START in poi, e solo finché non ha finito. Prima di START
+## la fase esiste e mostra il pannello di configurazione: è un momento interattivo, e
+## `night/` lo usa per NON aprirci sopra i programmi del PC. Vedi `Phase.is_working()`.
+func is_working() -> bool:
+	return _started and not _done
 
 
 func runs_in_background() -> bool:
@@ -274,6 +287,26 @@ func _adjust(dir: int) -> void:
 func _start() -> void:
 	_started = true
 	_start_min = _run.elapsed_min if _run != null else 0.0
+	# IL FATTO CHE IL MONDO ASPETTAVA. Fino alla review dell'epica 3 il telescopio e la
+	# cupola si accendevano su `phase_started(&"imaging")`, che l'orchestratore emette al
+	# MONTAGGIO: la montatura ronzava e il tubo ruotava mentre il giocatore stava ancora
+	# scegliendo i frame. La sequenza comincia qui, e qui lo si dice.
+	Events.sequence_started.emit()
+
+
+## LA POSA SMONTATA A META'. L'alba durante una sequenza, o *rifai setup*, liberano
+## questa fase senza che `_finish()` sia mai passato: `phase_finished` non viene emesso
+## da nessuno, e prima di questa riga il telescopio restava a inseguire e a ronzare per
+## il resto della partita, e la cupola con uno `started` senza il suo `ended`.
+##
+## `_exit_tree` e non `queue_free`: l'orchestratore fa `remove_child()` prima di
+## liberare (lo dice in `_dispose`), quindi questo è il momento in cui la fase esce
+## davvero di scena. La guardia `is_working()` rende l'emissione unica: dopo `_finish()`
+## `_done` e' vero e qui non si emette due volte.
+func _exit_tree() -> void:
+	if is_working():
+		_done = true
+		Events.sequence_ended.emit()
 
 
 func _config_readout() -> Dictionary:
@@ -310,10 +343,17 @@ func _run_readout() -> Dictionary:
 ## La chiusura. CANALE 2 solo per l'esito: la posa non fallisce mai nell'MVP, `ok`
 ## resta true — una posa corta non è un fallimento, è una foto peggiore, e la
 ## differenza la dice il punteggio. Il payload porta target, esposizione e numero
-## di frame a 2.4/2.5. `phase_finished` (emesso da `night_session`) è ciò su
-## cui il suono del mondo si innesca — nessun `Events` nuovo qui.
+## di frame a 2.4/2.5. `phase_finished` (emesso da `night_session`) resta ciò su cui
+## il SUONO del mondo si innesca — una posa interrotta non ha finito niente e non deve
+## suonare. Il moto e le attività dell'attesa invece si spengono su `sequence_ended`,
+## che arriva anche quando la posa viene smontata a metà.
 func _finish() -> void:
 	_done = true
+	# PRIMA di `finished`: chi ha acceso qualcosa su `sequence_started` lo spegne mentre
+	# la fase è ancora quella corrente, non dopo che l'orchestratore ha già montato la
+	# rivelazione. Il suono di fine sequenza NON è questo — è `phase_finished`, che
+	# l'orchestratore emette solo se la posa ha davvero concluso.
+	Events.sequence_ended.emit()
 	finished.emit(PhaseResult.new(true, "", score(), {
 		&"target_id": _target_id,
 		&"exposure_sec": _exposure,

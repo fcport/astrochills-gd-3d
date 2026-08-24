@@ -1128,13 +1128,12 @@ func _check_dome_presence() -> void:
 	_report_ended(false, false, false, "non attivo + gate chiuso: niente (mai partito)")
 	_report_ended(false, true, false, "non attivo + gate aperto: niente")
 
-	# affects_sequence: SOLO l'imaging apre/chiude questo gate. La polare e il targeting
-	# emettono lo stesso segnale con la propria chiave e passano senza toccarlo — stessa
-	# soft-coupling via StringName di sequence_chime.gd e del telescopio.
-	print("   -- affects_sequence(key): vero solo su &\"imaging\"")
-	_report_affects(&"imaging", true, "imaging: riguarda la cupola")
-	_report_affects(&"polar", false, "polar: passa senza aprire il gate")
-	_report_affects(&"targeting", false, "targeting: passa senza aprire il gate")
+	# `affects_sequence(key)` NON ESISTE PIU'. La review dell'epica 3 ha spostato il gate
+	# della cupola da `phase_started(&"imaging")` — che e' il MONTAGGIO della fase — a
+	# `Events.sequence_started`, che e' lo START vero. Il segnale porta il fatto senza la
+	# chiave: non c'e' piu' niente da filtrare, e queste righe collaudavano un filtro che
+	# non c'e'. Tolte con la funzione, non sostituite: cio' che il gate fa adesso e' gia'
+	# coperto da `is_gate_open`/`should_emit_started`/`should_emit_ended` qui sopra.
 
 
 func _report_gate(in_dome: bool, seq_running: bool, expected: bool, label: String) -> void:
@@ -1153,12 +1152,6 @@ func _report_ended(watching: bool, gate_open: bool, expected: bool, label: Strin
 	var got := DomeActivity.should_emit_ended(watching, gate_open)
 	var note := "" if got == expected else "   <-- ATTESO: %s" % expected
 	print("      %-46s ended = %s%s" % [label, got, note])
-
-
-func _report_affects(key: StringName, expected: bool, label: String) -> void:
-	var got := DomeActivity.affects_sequence(key)
-	var note := "" if got == expected else "   <-- ATTESO: %s" % expected
-	print("      %-46s affects = %s%s" % [label, got, note])
 
 
 ## I forum della BBS (3.7): la logica PURA e collaudabile — il filtro `available(night)`

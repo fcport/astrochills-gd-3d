@@ -56,32 +56,33 @@ func _ready() -> void:
 	# Non `connect` in scena: il collegamento sta nel codice del nodo, così chi istanzia
 	# `dome.tscn` in `world/` non deve ricablare nulla. Stessa disciplina di
 	# `sequence_chime.gd`.
-	Events.phase_started.connect(_on_phase_started)
-	Events.phase_finished.connect(_on_phase_finished)
+	# LA SEQUENZA, non lo schermo della sequenza. `phase_started(&"imaging")` diceva
+	# «il pannello di configurazione è comparso»: il tubo si metteva a inseguire mentre
+	# il giocatore stava ancora scegliendo i frame. `sequence_started` arriva su START.
+	Events.sequence_started.connect(_on_sequence_started)
+	Events.sequence_ended.connect(_on_sequence_ended)
 
 	# Fermo e silenzioso finché una sequenza non parte: `_process` gira SOLO in
 	# tracking (lo accende `_on_phase_started`), così a riposo non c'è lavoro per frame.
 	set_process(false)
 
 
-## Una sequenza è partita. SOLO l'imaging muove questo telescopio: la polare e il
-## targeting emettono lo stesso segnale con la propria chiave e passano di qui senza
-## svegliare il moto. Filtro inline come `sequence_chime.gd`.
-func _on_phase_started(key: StringName) -> void:
-	if key != &"imaging":
-		return
+## La sequenza è partita DAVVERO (il giocatore ha premuto START). Nessun filtro per
+## chiave: il segnale porta già il fatto, e la stringa `&"imaging"` non compare più in
+## questo file — il mondo non ha mai avuto bisogno di sapere come si chiama la fase.
+func _on_sequence_started() -> void:
 	_tracking = true
 	set_process(true)
 	if _hum.stream != null and _audio_is_audible():
 		_hum.play()
 
 
-## Una sequenza è finita. Solo l'imaging spegne il moto; le altre fasi non lo avevano
-## acceso. Il tubo si ferma dov'è (nessun ritorno a casa: è un segnaposto, non una
-## montatura vera che fa il parking) e la montatura tace.
-func _on_phase_finished(key: StringName, _score: int) -> void:
-	if key != &"imaging":
-		return
+## La sequenza è finita — conclusa, oppure smontata a metà dall'alba o da *rifai
+## setup*. Prima della review dell'epica 3 questo nodo ascoltava `phase_finished`, che
+## nel secondo caso non arriva MAI: una posa interrotta lasciava il tubo a ruotare e la
+## montatura a ronzare per il resto della partita. Il tubo si ferma dov'è (nessun
+## ritorno a casa: è un segnaposto, non una montatura vera che fa il parking).
+func _on_sequence_ended() -> void:
 	_tracking = false
 	set_process(false)
 	_hum.stop()

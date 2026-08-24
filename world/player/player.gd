@@ -48,7 +48,7 @@ const EYE_HEIGHT := 1.65
 ## trovato camminando con `Shift+F8`/`Shift+F9` e leggendo l'overlay `F12` finché
 ## il passo non sembrava un passo. È l'unico modo in cui questi numeri si trovano:
 ## il 2.6 di prima era stato scelto senza guardare, e si vedeva.
-static var walk_speed := 2.0
+static var walk_speed := 2.5
 
 ## Metri al secondo tenendo SHIFT. NON è uno scatto sportivo e non c'è stamina:
 ## è la scorciatoia di chi sa già dove sta andando e non vuole rifare il giro
@@ -56,7 +56,7 @@ static var walk_speed := 2.0
 ## ha fretta, ed è una cortesia lasciarglielo dire.
 ##
 ## Tarabile come il passo, con `Shift+F10`/`Shift+F11`.
-static var sprint_speed := 4.0
+static var sprint_speed := 4.5
 
 ## Quanto in fretta la velocità raggiunge quella voluta. Un valore alto rende il
 ## controllo immediato senza far sembrare il giocatore su una pista di ghiaccio.

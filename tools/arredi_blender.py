@@ -280,7 +280,7 @@ def minutaglia():
     for k in range(4):
         cilindro("Gomma", x0 + 0.08, tz + 0.08 - k * 0.012, alt + 0.02, alt + 0.03, 0.010, 8)
     # il registro delle osservazioni, aperto, con la penna
-    rz = zs + 1.35
+    rz = zs + 1.15
     scatola("Carta", x0 + 0.10, x0 + 0.52, alt, alt + 0.018, rz - 0.15, rz + 0.15)
     scatola("Carta", x0 + 0.12, x0 + 0.50, alt + 0.018, alt + 0.021, rz - 0.14, rz + 0.14)
     cilindro_orizz("Plastica", x0 + 0.31, alt + 0.026, rz - 0.02, "z", 0.14, 0.005, 8)

@@ -663,7 +663,16 @@ ARREDI_PC = [
     # UNA POSTAZIONE SOLA. Erano due, e la seconda non serviva a niente: due monitor
     # per un turno di una persona. Il resto dei 2,80 m di piano regge quello che si
     # posa su una consolle - telefono, registro, stampati, lampada.
-    ("Sedia1",    6.02, 1.28, 6.64, 1.90, 1.05),   # 62 x 62: la misura di una girevole vera
+    # LA SEDIA NON STA PIU' IN FONDO ALLA CONSOLLE, e non e' un dettaglio: la
+    # postazione si costruisce attorno a lei, e in fondo alla consolle il mouse non
+    # ci stava. Chi si siede guarda la vetrata, cioe' verso -X, e la sua destra cade
+    # su -Z: con la sedia in mezzeria su 1,59 restavano trentanove centimetri di
+    # piano a destra, e la tastiera da sola ne occupa quarantasette. Il mouse
+    # finiva a sbalzo oltre il bordo - il controllo delle impronte lo diceva, e
+    # per due sessioni non l'ha letto nessuno perche' il modello continuava a
+    # esistere: era quello vecchio. Spostata a 2,00 restano ottanta centimetri a
+    # destra, che e' quanto serve per posarci un mouse.
+    ("Sedia1",    6.02, 1.69, 6.64, 2.31, 1.05),   # 62 x 62: la misura di una girevole vera
 ]
 
 # La cucina e' netta x 8,35..13,30 e z 1,60..4,00: quasi cinque metri per due e

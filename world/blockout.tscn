@@ -1735,7 +1735,7 @@ transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 6.800, 0
 shape = SubResource("s_91")
 
 [node name="Sedia1_1" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 6.330, 0.525, 1.590)
+transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 6.330, 0.525, 2.000)
 
 [node name="Col" type="CollisionShape3D" parent="Sedia1_1"]
 shape = SubResource("s_64")
@@ -2355,7 +2355,7 @@ mesh = SubResource("mesh_vetro")
 material_override = SubResource("mat_vetro_est")
 
 [node name="LuceMonitor" type="OmniLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.950, 1.020, 1.590)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.950, 1.020, 2.000)
 light_energy = 0.45
 light_color = Color(0.24, 0.72, 0.36, 1)
 light_specular = 0.10

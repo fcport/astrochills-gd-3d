@@ -742,28 +742,105 @@ def verifica_orientamenti(testo):
     return problemi
 
 
-def verifica_freschezza():
-    """Un modello che ne importa un altro va ricostruito DOPO di quello.
+# Quale script scrive quale modello. Serve solo a `verifica_freschezza`, e sta qui
+# perche' e' l'unico posto che deve saperlo: chi aggiunge una stanza aggiunge una riga.
+SCRIVONO = {
+    "osservatorio_blender.py": "osservatorio.glb",
+    "telescopio_blender.py": "telescopio.glb",
+    "cupola_blender.py": "cupola.glb",
+    "arredi_blender.py": "controllo_pc.glb",
+    "cucina_blender.py": "cucina.glb",
+    "divulgazione_blender.py": "divulgazione.glb",
+    "impianti_blender.py": "impianti.glb",
+}
 
-    osservatorio.glb incorpora cupola.glb e telescopio.glb al momento della
-    costruzione: rifare la cupola e non rifare l'osservatorio lascia in gioco la
-    vecchia, e non se ne accorge nessuno. E' successo con lo shading liscio della
-    calotta - ricostruita, reimportata, e in gioco restava sfaccettata mentre io
-    davo la colpa alle ombre.
+
+def verifica_freschezza():
+    """I .glb devono essere piu' nuovi di chi li scrive, e in gioco piu' nuovi di loro.
+
+    TRE MODI DI GIOCARE CON UN MODELLO CHE NON ESISTE PIU', e li ho fatti tutti e tre.
+
+    1. UN MODELLO CHE NE IMPORTA UN ALTRO va ricostruito DOPO di quello.
+       osservatorio.glb incorpora cupola.glb e telescopio.glb al momento della
+       costruzione: rifare la cupola e non rifare l'osservatorio lascia in gioco la
+       vecchia. E' successo con lo shading liscio della calotta - ricostruita,
+       reimportata, e in gioco restava sfaccettata mentre davo la colpa alle ombre.
+
+    2. UNO SCRIPT MODIFICATO E NON RILANCIATO. Il mouse della sala di controllo e'
+       stato spostato di fianco alla tastiera in arredi_blender.py, e per due
+       sessioni e' rimasto dov'era: il .glb era di due ore prima della modifica.
+       Ci siamo detti due volte la stessa cosa - "il mouse sta a sinistra" - e
+       tutte e due le volte l'ho spostato in un file che nessuno rileggeva.
+
+    3. UN .glb NON REIMPORTATO. Avviare il gioco non reimporta niente: usa quello
+       che sta in .godot/imported, che resta quello di prima (vedi assets/LEGGIMI.txt).
+       Questo e' l'unico dei tre che non si vede nemmeno guardando le date dei
+       modelli, perche' i modelli sono giusti - e' la scena a leggere altro.
+
+    Sono tre difetti identici da fuori: si guarda il gioco e si vede roba vecchia.
+    Nessuno dei tre da' errore, e tutti e tre fanno perdere un pomeriggio a cercare
+    la causa nel posto sbagliato.
     """
+    import glob
+    import hashlib
     import os
-    modelli = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                           "..", "assets", "models")
+    qui = os.path.dirname(os.path.abspath(__file__))
+    modelli = os.path.join(qui, "..", "assets", "models")
+    importati = os.path.join(qui, "..", ".godot", "imported")
     problemi = []
+
+    def data(*pezzi):
+        via = os.path.join(*pezzi)
+        return os.path.getmtime(via) if os.path.exists(via) else None
+
+    # 1. chi incorpora chi
     for contenitore, pezzi in (("osservatorio.glb", ("cupola.glb", "telescopio.glb")),):
-        fuori = os.path.join(modelli, contenitore)
-        if not os.path.exists(fuori):
+        fuori = data(modelli, contenitore)
+        if fuori is None:
             continue
         for pezzo in pezzi:
-            dentro = os.path.join(modelli, pezzo)
-            if os.path.exists(dentro) and os.path.getmtime(dentro) > os.path.getmtime(fuori):
+            dentro = data(modelli, pezzo)
+            if dentro is not None and dentro > fuori:
                 problemi.append("  MODELLO VECCHIO          %s e' piu' nuovo di %s: "
                                 "rifai %s" % (pezzo, contenitore, contenitore))
+
+    # 2. lo script e il modello che produce
+    for script, prodotto in SCRIVONO.items():
+        sorgente = data(qui, script)
+        fuori = data(modelli, prodotto)
+        if sorgente is None or fuori is None:
+            continue
+        if sorgente > fuori:
+            problemi.append("  MODELLO VECCHIO          %s e' cambiato dopo %s: "
+                            "rilancia %s" % (script, prodotto, script))
+
+    # 3. il modello e cio' che la scena legge davvero
+    #
+    # SI CONFRONTA L'MD5, NON LA DATA, perche' e' l'MD5 che guarda Godot. Ricostruire
+    # un modello senza cambiare niente riscrive il file con lo stesso contenuto: la
+    # data avanza, l'md5 no, e Godot giustamente non reimporta. Con il confronto sulle
+    # date questo controllo gridava "da reimportare" su due modelli che erano gia'
+    # esattamente quelli in gioco - e un controllo che grida quando va tutto bene si
+    # impara a ignorare, che e' il modo migliore di non accorgersi di quando ha ragione.
+    for prodotto in sorted(set(SCRIVONO.values())):
+        via = os.path.join(modelli, prodotto)
+        if not os.path.exists(via):
+            continue
+        firme = glob.glob(os.path.join(importati, prodotto + "-*.md5"))
+        if not firme:
+            problemi.append("  DA REIMPORTARE           %s non e' mai stato importato: "
+                            "vedi assets/LEGGIMI.txt" % prodotto)
+            continue
+        with io.open(via, "rb") as f:
+            adesso = hashlib.md5(f.read()).hexdigest()
+        registrati = []
+        for firma in firme:
+            for riga in io.open(firma, encoding="utf-8"):
+                if riga.startswith("source_md5="):
+                    registrati.append(riga.split('"')[1])
+        if adesso not in registrati:
+            problemi.append("  DA REIMPORTARE           %s e' cambiato dopo l'ultimo "
+                            "import: vedi assets/LEGGIMI.txt" % prodotto)
     return problemi
 
 

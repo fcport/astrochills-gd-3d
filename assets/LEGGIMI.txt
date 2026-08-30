@@ -48,6 +48,13 @@ quest'ordine, e ci vogliono un paio di minuti.
    dando la colpa alle ombre mentre in scena c'era una cupola sfaccettata gia'
    sostituita.
 
+NON SERVE RICORDARSI QUALI PASSI RIFARE: `gen_blockout.py` confronta le date degli
+script con quelle dei .glb che producono, e l'MD5 di ogni .glb con quello che la
+scena legge davvero. Se qualcosa e' vecchio lo dice per nome, con il comando da
+rilanciare. (Le date da sole non bastavano: ricostruire senza cambiare niente
+riscrive il file con lo stesso contenuto, la data avanza e Godot giustamente non
+reimporta - il controllo gridava su due modelli che erano gia' quelli in gioco.)
+
 Ogni passo controlla se stesso e si ferma con un messaggio se qualcosa non torna:
 arredi fuori dalla loro impronta, finestre tappate, muri con fessure, interruttori
 dentro un vano. Un passo che stampa e basta e' un passo andato bene.

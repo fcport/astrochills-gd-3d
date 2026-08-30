@@ -1868,3 +1868,49 @@ Serviva il controllo opposto: se non si è aperta, allora qualcuno si DEVE esser
 
 Nessuno dei tre si vedeva leggendo il codice del banco. Si sono visti tutti e tre
 **iniettando il difetto che il banco esiste per trovare** e guardandolo passare.
+
+### D-097 — Il mouse era già a destra: era il modello a essere vecchio
+
+Due volte mi è stato detto che il mouse sta a sinistra della tastiera, e due volte l'ho
+spostato — nello stesso file, che nessuno ricostruiva. `controllo_pc.glb` era di due ore
+prima della modifica, e in gioco c'era ancora quello.
+
+E non era nemmeno una dimenticanza. Lo spostamento **faceva fallire un controllo**: con la
+sedia in mezzeria a 1,59 e la consolle che finisce a 1,20, a destra di chi si siede
+restano trentanove centimetri, e la tastiera da sola ne occupa quarantasette. Il mouse
+finiva a sbalzo oltre il bordo, `verifica_impronte` lo diceva, e lo script usciva con
+`sys.exit(1)` **prima di esportare**. Il controllo ha funzionato perfettamente: ha impedito
+di scrivere un modello sbagliato. Poi però il modello vecchio è rimasto lì, valido,
+caricabile, indistinguibile — e il gioco ha continuato a mostrarlo.
+
+Quindi la cura non è spostare il mouse, è **spostare la postazione**: la sedia va a 2,00 e
+a destra restano ottanta centimetri, che è quanto serve per posarci un mouse. Una scrivania
+di due metri e ottanta con la postazione schiacciata in fondo era un difetto suo,
+indipendente da tutto questo.
+
+E la destra è −Z, non +Z: chi si siede guarda la vetrata, cioè −X, e ruotando di novanta
+gradi il suo +X finisce su −Z. L'avevo dedotto giusto la prima volta e poi rimesso in
+discussione guardando una fotografia — che era la fotografia del modello vecchio.
+
+### D-098 — Un modello vecchio non dà errore: va chiesto a chi lo legge
+
+Tre modi diversi di giocare con un modello che non esiste più, e li ho fatti tutti e tre:
+
+1. **un modello che ne incorpora un altro** e non viene rifatto dopo (la cupola sfaccettata);
+2. **uno script modificato e mai rilanciato**, o rilanciato e fermato da un controllo (il mouse);
+3. **un .glb non reimportato**, perché avviare il gioco non reimporta niente.
+
+Da fuori sono identici: si guarda il gioco e si vede roba vecchia. Nessuno dei tre dà
+errore. `verifica_freschezza` adesso li copre tutti e tre — c'era solo il primo — e la
+tabella `SCRIVONO` dice quale script produce quale modello, così chi aggiunge una stanza
+aggiunge una riga.
+
+**Il terzo controllo confronta gli MD5, non le date, perché è l'MD5 che guarda Godot.**
+Con le date gridava «da reimportare» su cucina e impianti, che erano già esattamente
+quelli in partita: ricostruire senza cambiare niente riscrive il file con lo stesso
+contenuto, la data avanza e Godot giustamente salta l'import. Un controllo che grida
+quando va tutto bene si impara a ignorare, ed è il modo migliore di non accorgersi di
+quando ha ragione.
+
+Validato iniettando i due difetti — uno script toccato dopo il suo modello, un modello
+cambiato e non reimportato — e guardandoli comparire.

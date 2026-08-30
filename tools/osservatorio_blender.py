@@ -284,6 +284,14 @@ def passerella_e_scala():
     # corrimano e' l'ultima cosa a cui ci si aggrappa, e vederlo sospeso e' la
     # differenza fra una scala e un disegno di una scala.
     H_CORRIMANO = 0.95
+    # IL PIANEROTTOLO. Una scala dritta che arriva su un anello lascia due lune
+    # vuote ai lati dell'ultimo gradino: il bordo dell'impalcato e' curvo, la
+    # pedata e' diritta, e fra i due resta un buco a mezzaluna. Da sopra si vedeva
+    # che scala e passerella non si toccavano. Questa lastra copre il raccordo per
+    # tutta la larghezza della scala e sborda dentro l'anello di venti centimetri.
+    bmesh.ops.create_cube(bm, size=1.0, matrix=(
+        Matrix.Translation(Vector((cx, piede_y + LUNGO_RAMPA + 0.10, DISL_RAMPA - 0.025)))
+        @ Matrix.Diagonal(Vector((1.00, 0.40, 0.05, 1.0)))))
     for lato in (-1, 1):
         x = cx + lato * 0.52
         a = Vector((x, piede_y, H_CORRIMANO))

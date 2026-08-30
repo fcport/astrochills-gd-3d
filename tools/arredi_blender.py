@@ -87,7 +87,10 @@ def postazione(zc, accesa):
     """
     x0, _z0, _x1, _z1, alt = IMPRONTE["Consolle"]
     y_piano = alt
-    posati = posa_modello(MONITOR, (x0 + 0.03, zc - 0.24, x0 + 0.53, zc + 0.24, 0.42),
+    # il monitor scostato a sinistra di venti centimetri: al centro esatto
+    # occupava il posto che serve al mouse, e una postazione con tastiera,
+    # monitor e mouse tutti sulla stessa mezzeria non e' una postazione.
+    posati = posa_modello(MONITOR, (x0 + 0.03, zc - 0.04, x0 + 0.53, zc + 0.44, 0.42),
                           gradi=0.0, appoggio=y_piano)
     # lo schermo acceso: in partita ci andra' il display vero, qui basta che si veda
     # che e' acceso, ed e' l'unica luce propria della stanza
@@ -260,7 +263,11 @@ def minutaglia():
     x0, z0, x1, z1, alt = IMPRONTE["Consolle"]
     zs = (IMPRONTE["Sedia1"][1] + IMPRONTE["Sedia1"][3]) / 2
     # tappetino e mouse, a fianco della tastiera
-    zm = zs + 0.38
+    # IL MOUSE STA A DESTRA, e destra qui vuol dire z DECRESCENTE: chi si siede
+    # guarda la vetrata, cioe' verso -X, e con il pollice in su la sua destra cade
+    # su -Z. Stava a +0,38 - la mano sinistra - ed e' una di quelle cose che non si
+    # calcolano, si guardano.
+    zm = zs - 0.38
     scatola("Gomma", x0 + 0.48, x0 + 0.66, alt, alt + 0.004, zm - 0.09, zm + 0.09)
     scatola("Plastica", x0 + 0.53, x0 + 0.61, alt + 0.004, alt + 0.032, zm - 0.045, zm + 0.045)
     # il telefono: nel 1999 e' l'unico modo che ha questo posto di parlare con fuori

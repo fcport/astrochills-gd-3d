@@ -306,19 +306,35 @@ def _mat(nome, colore, ruvido=0.6, metallo=0.0, texture=None):
     p_.inputs["Roughness"].default_value = ruvido
     p_.inputs["Metallic"].default_value = metallo
     if texture is not None:
-        applica_texture(m, texture)
+        # metallico=False anche se la mappa si chiama "Metallo": e' lamiera
+        # VERNICIATA, e collegare la mappa metallica farebbe della cupola uno
+        # specchio - cioe' una superficie nera, perche' qui non c'e' cielo da
+        # riflettere. E' lo stesso inganno che ha reso nero il telescopio.
+        applica_texture(m, texture, metallico=False)
     return m
 
 
+# LA LAMIERA DELLE PLAFONIERE ERA LA SCELTA SBAGLIATA. PaintedMetal012 e' una
+# vernice SCROSTATA: su una calotta da cinque metri diventa una distesa di macchie
+# scure che non si capisce cosa siano - non leggono come usura, leggono come
+# sporco sulla texture. E i portelli non l'avevano, quindi la cupola era chiazzata
+# e il suo sportello no: due pezzi dello stesso guscio con due storie diverse.
+# Il set della carpenteria e' una lamiera verniciata pulita, ed e' quello che e'
+# una cupola: un guscio di metallo verniciato che qualcuno mantiene.
+CUPOLA_TEX = "Metallo"
 for oggetto_, colore_, ruvido_, metallo_, tex_ in (
-        (calotta, (0.84, 0.84, 0.85), 0.75, 0.0, "Lamiera"),
-        (ossatura, (0.46, 0.46, 0.48), 0.55, 0.4, "Lamiera"),
+        (calotta, (0.84, 0.84, 0.85), 0.75, 0.0, CUPOLA_TEX),
+        (ossatura, (0.46, 0.46, 0.48), 0.55, 0.4, CUPOLA_TEX),
         (cavi, (0.13, 0.13, 0.14), 0.4, 0.7, None)):
     oggetto_.data.materials.append(
         _mat(oggetto_.name, colore_, ruvido_, metallo_, tex_))
+# I PORTELLI PRENDONO LA STESSA MAPPA. Sono ritagliati nello stesso guscio: dargli
+# un materiale liscio mentre la calotta ne ha uno con la trama e' la cosa che
+# faceva chiedere "perche' quello che si apre non e' come il resto".
 for oggetto_ in bpy.data.objects:
     if oggetto_.name.startswith("Portello") and not oggetto_.data.materials:
-        oggetto_.data.materials.append(_mat(oggetto_.name, (0.72, 0.72, 0.74), 0.6, 0.2))
+        oggetto_.data.materials.append(
+            _mat(oggetto_.name, (0.72, 0.72, 0.74), 0.6, 0.2, CUPOLA_TEX))
 
 # --- la calotta e' una sfera, non un poliedro --------------------------------
 # Senza shading liscio ognuno dei 48 anelli di latitudine ha una normale COSTANTE:

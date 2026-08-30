@@ -103,7 +103,11 @@ TEXTURE = {
     "Soffitto":     ("intonaco", 3.20),
     "Pavimento":    ("pavimento", 0.90),
     "Tetto":        ("tetto", 2.60),
-    "Passerella":   ("metallo", 1.00),
+    # MANDORLATA, e non la lamiera liscia della carpenteria. Un impalcato in
+    # quota ha il rilievo antiscivolo, ed e' quel rilievo che dice all'occhio
+    # "qui ci si cammina": con la lamiera liscia la passerella leggeva come un
+    # disco di cartone. 0,55 per ripetizione: il passo delle mandorle vere.
+    "Passerella":   ("mandorlata", 0.55),
     # gli impianti. Senza queste tre righe carcasse, diffusori e placche erano
     # colori piatti, e sul soffitto una plafoniera leggeva come un blocco appena
     # piu' chiaro dell'intonaco invece che come una lampada.

@@ -63,6 +63,11 @@ SET = {
                "La plastica avorio degli interruttori. Stesso asset della plastica dei\n"
                "calcolatori ma con un'altra tinta: il beige di un monitor del 1999 e\n"
                "l'avorio di una placca non sono lo stesso colore."),
+    "mandorlata": ("MetalPlates006", (176, 174, 170),
+                   "Lamiera mandorlata per l'impalcato della passerella. Prima portava la"
+                   " stessa lamiera verniciata della carpenteria e leggeva come un disco"
+                   " di cartone: un piano su cui si cammina in quota ha il rilievo"
+                   " antiscivolo, ed e' quel rilievo a dirti che ci puoi salire."),
     "libri": ("Fabric062", (198, 196, 190),
               "Tela da rilegatura per i dorsi dei libri. Sugli scaffali c'erano"
               " parallelepipedi a tinta piatta: da un metro leggevano come un motivo"

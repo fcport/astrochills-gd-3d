@@ -277,10 +277,22 @@ def verifica_trappole(statura=1.80):
     luce_sotto = H_PASS - SP_PASS / 2
     if luce_sotto >= statura:
         return problemi
+    # DUE MODI DI NON CADERCI, e il controllo deve accettarli tutti e due: un
+    # parapetto sul bordo interno, OPPURE un vuoto centrale cosi' stretto che non ci
+    # si entra. Prima chiedeva il parapetto e basta - il mezzo invece del fine - e
+    # quando il centro e' stato riempito fino a filo del calpestio ha continuato a
+    # protestare per un pozzo che non esiste piu'.
     interni = [b for b in blocchi if b[6].startswith("ParapettoInt")]
     if not interni:
-        problemi.append("  TRAPPOLA          il vuoto centrale (%.2f m di luce) non ha parapetto"
-                        % luce_sotto)
+        pieno = [b for b in blocchi if b[6].startswith("Montatura")]
+        # il raggio libero peggiore: sul mezzo faccia dell'ottagono, non sui vertici
+        libero = R_PASS - W_PASS / 2.0
+        for b in pieno:
+            mezzo = min(b[3], b[5]) / 2.0
+            libero = min(libero, (R_PASS - W_PASS / 2.0) - mezzo)
+        if libero >= CAPSULA:
+            problemi.append("  TRAPPOLA          il vuoto centrale (%.2f m di luce) non ha "
+                            "parapetto e resta aperto per %.2f m" % (luce_sotto, libero))
         return problemi
     # il parapetto deve girare tutto intorno, salvo il varco della scala
     angoli = sorted(math.degrees(math.atan2(b[2] - CUPOLA[1] * K, b[0] - CUPOLA[0] * K)) % 360

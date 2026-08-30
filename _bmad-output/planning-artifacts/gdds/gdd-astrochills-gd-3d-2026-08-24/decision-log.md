@@ -1819,3 +1819,52 @@ riflette un poco, uno specchio no.
 
 Le texture arrivano a 4096 e diventano 1K: ventidue megabyte dentro il `.glb` della stanza,
 per un tubo che si guarda da un metro.
+
+### D-095 — Scostare non è sparare indietro: il limite non è sullo spazio, è sulla velocità
+
+La cura di D-088 — la porta che si apre verso di te ti sposta invece di attraversarti —
+era giusta nel principio e sbagliata nel modo: **un `move_and_collide` solo, al momento
+dell'interazione**. Mezzo metro abbondante in un fotogramma, cioè trentasei metri al
+secondo. Non si legge come farsi da parte, si legge come un calcio.
+
+Lo spostamento non si può ridurre: lo impone la geometria del settore, e per uscire da
+sotto un'anta lunga novanta centimetri bisogna spostarsi di ottanta. Quello che si può
+fare è **distribuirlo**. Adesso l'anta gira un fotogramma alla volta, scosta di quel tanto
+che serve in quel fotogramma, e non supera mai 1,1 m/s — la velocità di una camminata.
+
+Il freno vincola anche l'anta, ed è la parte che non era ovvia: la stessa rotazione, a un
+metro dal cardine, sposta il doppio che a mezzo. Quindi la porta rallenta in funzione del
+raggio a cui sta chi si sta scostando, e la spinta resta sotto il tetto qualunque sia la
+posizione. Costa mezzo secondo in più e vale tutto il resto.
+
+**Distanza dal segmento, non angolo.** Il primo tentativo decideva chi era «nel giro»
+dall'angolo rispetto al cardine, e un corpo a mezzo metro dal cardine ne sottende trentotto
+di gradi: chi stava *dietro* la porta, dalla parte opposta, risultava comunque dentro il
+settore e veniva spinto. L'anta è un segmento, e ciò che conta è la distanza da quel
+segmento.
+
+Il conto si rifà a ogni fotogramma, e da questo viene un guadagno che non avevo cercato:
+la porta che si è fermata contro un muro **finisce la corsa da sola** appena ci si sposta,
+invece di restare mezza aperta finché non la si richiude.
+
+### D-096 — Il banco passava anche col difetto rimesso apposta
+
+Tre difetti nello strumento di misura, e nessuno visibile guardando i risultati.
+
+Il primo: **misurava lo spostamento leggendo la posizione due volte nello stesso istante.**
+Il callback del banco gira prima dei nodi, quindi fra le due letture la porta non aveva
+ancora mosso niente e la velocità risultava zero sempre. Rimessa la spinta istantanea,
+il banco diceva zero guasti.
+
+Il secondo: **metteva la persona «dalla parte opposta» addosso al battente** — trentacinque
+centimetri dal filo dell'anta chiusa, meno del margine. La porta la sfiorava chiudendosi e
+il banco la chiamava pistone. Non era un difetto della porta, era il banco che pretendeva
+che una porta non toccasse chi le sta appiccicato.
+
+Il terzo, ed è il più insidioso: **una porta che non si apre non fa male a nessuno.**
+Tolta del tutto la spinta, l'anta si ferma a sei gradi contro chi ha davanti e tutti i
+controlli di sicurezza passano — nessuna compenetrazione, nessuno strappo, nessun pistone.
+Serviva il controllo opposto: se non si è aperta, allora qualcuno si DEVE essere mosso.
+
+Nessuno dei tre si vedeva leggendo il codice del banco. Si sono visti tutti e tre
+**iniettando il difetto che il banco esiste per trovare** e guardandolo passare.

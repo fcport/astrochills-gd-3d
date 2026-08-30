@@ -19,18 +19,24 @@
 ## una via di fuga non si apre verso l'interno; le interne verso il locale
 ## servito, tranne dove il locale è troppo stretto per contenere l'anta.
 ##
-## `StaticBody3D` CHE SI MUOVE, E CHI GLI STA DAVANTI. `Interactable` estende
-## `StaticBody3D`, che non spinge un `CharacterBody3D` fermo nel suo raggio:
-## l'anta gli passava attraverso, e siccome per aprire una porta bisogna
-## guardarla da vicino, capitava a ogni porta che si apre verso chi la apre.
+## LA PORTA NON CAMBIA VERSO PER FARTI COMODO, MA NON TI SPARA NEMMENO INDIETRO.
+## `Interactable` estende `StaticBody3D`, che non spinge un `CharacterBody3D` fermo
+## nel suo raggio: l'anta gli passava attraverso, e siccome per aprire una porta
+## bisogna guardarla da vicino, capitava a ogni porta che si apre verso chi la apre.
+## La prima cura è stata scostarlo con un `move_and_collide` solo, al momento
+## dell'interazione — e quello era un TELETRASPORTO: mezzo metro abbondante in un
+## fotogramma, che non si legge come farsi da parte ma come un calcio.
 ##
-## LA PORTA NON CAMBIA VERSO PER FARTI COMODO. Il verso è un dato fisico — i
-## cardini stanno da una parte sola — e girarlo secondo dove sta il giocatore
-## renderebbe l'ingresso una porta che si apre verso l'interno, che è proprio
-## quello che una via di fuga non può fare. Chi apre una porta verso di sé fa un
-## passo indietro: qui lo fa la porta per lui, spingendolo FUORI DAL SETTORE che
-## l'anta spazza, radialmente rispetto al cardine, con `move_and_collide` perché
-## un muro alle spalle lo fermi invece di farlo attraversare.
+## Adesso l'anta gira UN FOTOGRAMMA ALLA VOLTA e scosta un pochino per volta, solo
+## mentre gli arriva vicino e solo di quanto serve — comincia a mezzo giro di
+## distanza e finisce a contatto, così lo spostamento totale è lo stesso ma
+## distribuito su mezzo secondo, e mentre lo fa l'anta rallenta. È il gesto vero: chi
+## apre una porta verso di sé arretra di un passo, non viene scaraventato.
+##
+## E se dietro c'è un muro — il magazzino è largo 1,55 — la spinta si ferma e
+## **l'anta si apre di meno**, fermandosi a filo di chi l'ha aperta. Non è una posa
+## definitiva: il conto si rifà a ogni fotogramma, quindi appena ci si sposta la
+## porta finisce di aprirsi da sola.
 class_name Door
 extends Interactable
 
@@ -42,21 +48,28 @@ extends Interactable
 ## scrive il generatore, che lo ricava dalla normale del muro.
 @export var verso: int = 1
 
+## Quanto dura il movimento a vuoto. Mezzo secondo scarso: abbastanza da vedersi,
+## non tanto da far aspettare chi attraversa venti volte per notte. Scostando
+## qualcuno ci mette di più, ed è giusto così.
+@export var durata: float = 0.55
+
 ## Quanta aria si lascia oltre la punta dell'anta scostando chi è nel giro.
 ## Trentaquattro centimetri: il raggio della capsula del giocatore (0,30) più
 ## quattro dita. Non di più — la spinta si ferma contro il muro alle spalle, e un
-## margine più generoso del necessario fa fallire lo scostamento nei disimpegni
-## stretti per una manciata di centimetri che l'anta non usa comunque.
+## margine più generoso del necessario fa fermare l'anta prima del dovuto nei
+## disimpegni stretti, per una manciata di centimetri che non usa comunque.
 const MARGINE := 0.34
 
-## L'aria sull'angolo del settore, in radianti. Chi sta appena fuori ci finisce
-## dentro con mezzo passo, e una spinta che arriva a metà rotazione si vede più
-## di una spinta che parte subito.
-const ARIA := 0.25
-
-## Quanto dura il movimento. Mezzo secondo scarso: abbastanza da vedersi, non
-## tanto da far aspettare chi attraversa venti volte per notte.
-@export var durata: float = 0.55
+## Quanto in fretta l'anta può spostare chi ha davanti, in metri al secondo. È
+## QUESTO il numero che distingue una spinta da uno strappo. Un uomo che cammina fa
+## 1,4 m/s: l'anta ti muove come una camminata, mai più in fretta.
+##
+## Non è un limite sullo spostamento — quello lo impone la geometria del settore e
+## resta mezzo metro — è un limite sulla VELOCITÀ, e vincola anche l'anta: finché
+## sta scostando qualcuno rallenta quanto basta perché la spinta stia sotto. Una
+## porta che incontra una persona non continua alla stessa andatura, e il tempo che
+## ci mette in più è il tempo di accorgersi che ci si sta spostando.
+const SPINTA_MASSIMA := 1.1
 
 ## Emesso a movimento concluso, con lo stato raggiunto. Serve a chi vorrà
 ## appenderci un suono o una reazione senza sapere come è fatta la rotazione.
@@ -64,13 +77,21 @@ signal moved(open: bool)
 
 var _aperta := false
 var _chiusa_y := 0.0
-var _tween: Tween = null
 
-## Di quanto si apre QUESTA volta. Di norma è `apertura_gradi`, ma in un locale
-## stretto chi apre non ha dove indietreggiare: il magazzino è largo 1,55 e con
-## l'anta dentro restano undici centimetri di troppo. Allora la porta si apre di
-## meno — che è quello che fa una persona vera in un ripostiglio.
-var _apertura_utile := 0.0
+## I gradi di apertura raggiunti, sempre da 0 a `apertura_gradi`. Il verso lo
+## applica `_applica()`: qui l'angolo è un numero positivo e i confronti «più
+## aperta / meno aperta» restano leggibili.
+var _angolo := 0.0
+
+## Chi ha aperto, per continuare a fargli largo mentre l'anta gira. È l'unico stato
+## che sopravvive all'interazione, e serve proprio perché il conto NON si fa una
+## volta sola.
+var _chi: CharacterBody3D = null
+
+## A che distanza dal cardine l'anta stava scostando qualcuno l'ultimo fotogramma,
+## o zero. Serve a rallentare l'anta: la stessa rotazione, a un metro dal cardine,
+## sposta il doppio che a mezzo metro.
+var _contatto := 0.0
 
 
 func _ready() -> void:
@@ -79,7 +100,8 @@ func _ready() -> void:
 	# assumere zero significa che una porta ruotata a mano nell'editor continua a
 	# funzionare.
 	_chiusa_y = rotation.y
-	_apertura_utile = apertura_gradi
+	_angolo = 0.0
+	set_physics_process(false)
 	# `interact()` non va sovrascritta — lo dice il contratto — così un domani la
 	# porta può avere più di un ascoltatore senza che nessuno chiami `super()`.
 	interacted.connect(_on_interacted)
@@ -99,27 +121,43 @@ func is_open() -> bool:
 ## Porta la porta nello stato voluto. `immediata` salta l'animazione — serve a
 ## chi allestisce una scena già aperta senza vederla sbattere all'avvio.
 func set_open(open: bool, immediata: bool = false) -> void:
-	if _tween != null and _tween.is_valid():
-		# Chi cambia idea a metà corsa non deve accodare due rotazioni: la
-		# precedente si annulla, e si riparte da dove l'anta è arrivata.
-		_tween.kill()
 	_aperta = open
-	var bersaglio := _chiusa_y + (deg_to_rad(_apertura_utile) * signf(verso) if open else 0.0)
 	if immediata:
-		rotation.y = bersaglio
+		_angolo = apertura_gradi if open else 0.0
+		_applica()
+		set_physics_process(false)
 		moved.emit(_aperta)
 		return
-	_tween = create_tween()
-	_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	_tween.tween_property(self, ^"rotation:y", bersaglio, durata)
-	_tween.finished.connect(func() -> void: moved.emit(_aperta))
+	set_physics_process(true)
 
 
 func _on_interacted(by: Node3D) -> void:
-	# prima si sposta chi è nel giro, poi l'anta parte: al contrario il primo
-	# fotogramma di rotazione lo troverebbe ancora lì
-	_apertura_utile = _scosta(by)
+	_chi = by as CharacterBody3D
 	set_open(not _aperta)
+
+
+func _applica() -> void:
+	rotation.y = _chiusa_y + deg_to_rad(_angolo) * signf(verso)
+
+
+## Un fotogramma di rotazione: si prova ad avvicinarsi alla meta, e chi è nel giro
+## viene scostato di quel tanto che serve adesso.
+##
+## Il processo resta acceso finché l'anta non è arrivata — anche se è ferma perché
+## bloccata da qualcuno. È voluto: appena quel qualcuno si sposta, la porta finisce
+## la corsa da sola invece di restare mezza aperta finché non la si riapre.
+func _physics_process(delta: float) -> void:
+	var meta := apertura_gradi if _aperta else 0.0
+	var passo := (apertura_gradi / maxf(durata, 0.05)) * delta
+	if _contatto > 0.05:
+		# a un metro dal cardine la stessa rotazione sposta il doppio che a mezzo:
+		# il freno si calcola sul raggio a cui sta chi si sta scostando
+		passo = minf(passo, rad_to_deg(SPINTA_MASSIMA * delta / _contatto))
+	_angolo = _fa_largo(move_toward(_angolo, meta, passo), delta)
+	_applica()
+	if is_equal_approx(_angolo, meta):
+		set_physics_process(false)
+		moved.emit(_aperta)
 
 
 ## Quanto è lunga l'anta, letta dalla sua collisione invece che assunta.
@@ -134,41 +172,66 @@ func _lunghezza_anta() -> float:
 	return box.size.x if box != null else 0.9
 
 
-## Toglie dai piedi chi sta dentro il settore che l'anta spazzerà.
+## Fa largo a chi sta nel settore, e dice fino a che angolo l'anta può arrivare
+## davvero in questo fotogramma.
 ##
 ## Il conto si fa nel sistema dell'anta A BATTENTE CHIUSO, non in quello corrente:
 ## chiudendo, il nodo è già ruotato, e il settore da liberare resta quello.
 ## `+X` locale è l'anta chiusa, e ruotando di `verso` positivo la punta va verso
 ## `-Z` locale — quindi il settore sta fra l'angolo zero e l'apertura, misurato
 ## in quel verso.
-func _scosta(chi: Node3D) -> float:
-	var corpo := chi as CharacterBody3D
-	if corpo == null:
-		return apertura_gradi
+func _fa_largo(voluto: float, delta: float) -> float:
+	_contatto = 0.0
+	if not is_instance_valid(_chi):
+		return voluto
 	var chiusa := Transform3D(Basis(Vector3.UP, _chiusa_y), global_position)
-	var loc := chiusa.affine_inverse() * corpo.global_position
-	var raggio := Vector2(loc.x, loc.z).length()
-	var portata := _lunghezza_anta() + MARGINE
-	if raggio < 0.05 or raggio > portata:
-		return apertura_gradi
-	# ARIA sull'angolo: chi sta appena fuori dal settore ci finisce dentro
-	# facendo mezzo passo, e una spinta che arriva a metà rotazione si vede.
-	var angolo := atan2(-loc.z * signf(verso), loc.x)
-	if angolo < -ARIA or angolo > deg_to_rad(apertura_gradi) + ARIA:
-		return apertura_gradi
-	var fuori := chiusa.basis * Vector3(loc.x, 0.0, loc.z).normalized()
-	corpo.move_and_collide(fuori * (portata - raggio))
+	var loc := chiusa.affine_inverse() * _chi.global_position
+	# in questo piano l'anta chiusa sta su +X e ruota verso +Y qualunque sia `verso`,
+	# cosi' angoli e distanze si scrivono una volta sola
+	var p := Vector2(loc.x, -loc.z * signf(verso))
+	var lunga := _lunghezza_anta()
+	if p.length() < 0.05 or p.length() > lunga + MARGINE:
+		return voluto                      # oltre la punta dell'anta: non lo tocca
+
+	# QUANTO DISTA DALL'ANTA, non a che angolo sta. Con l'angolo, un corpo a mezzo
+	# metro dal cardine ne sottende trentotto di gradi: dietro la porta, dalla parte
+	# opposta, risultava comunque "nel settore" e veniva spinto. La porta e' un
+	# segmento, e cio' che conta e' la distanza dal segmento.
+	var verso_anta := Vector2(cos(deg_to_rad(voluto)), sin(deg_to_rad(voluto)))
+	var vicino := verso_anta * clampf(p.dot(verso_anta), 0.0, lunga)
+	var distanza := p.distance_to(vicino)
+	var voglio := MARGINE + 0.03
+	if distanza >= voglio:
+		return voluto                      # l'anta gli passa accanto senza toccarlo
+	_contatto = p.length()
+
+	# LO SCOSTA PERPENDICOLARMENTE ALL'ANTA - e' la via piu' corta per uscirle di
+	# mezzo, ed e' anche come spinge una porta vera - e MAI PIU' IN FRETTA DI UNA
+	# CAMMINATA. Il tetto sulla velocita' e' l'intera correzione: lo spostamento
+	# totale resta quello che la geometria impone, ma smette di arrivare tutto in un
+	# fotogramma. `move_and_collide` e non uno spostamento diretto, perche' un muro
+	# alle spalle lo fermi invece di farlo attraversare.
+	var normale := (p - vicino).normalized() if distanza > 1e-4 else Vector2(-verso_anta.y, verso_anta.x)
+	var quanto := minf(voglio - distanza, SPINTA_MASSIMA * delta)
+	var fuori := chiusa.basis * Vector3(normale.x, 0.0, -normale.y * signf(verso))
+	_chi.move_and_collide(fuori * quanto)
+
 	# SE IL MURO HA FERMATO LA SPINTA, SI APRE DI MENO. In un locale stretto non
-	# c'è indietro dove andare, e insistere significherebbe far passare l'anta
-	# dentro chi la apre. L'anta si ferma prima di arrivargli addosso: è quello
-	# che si fa in un ripostiglio, e si legge come una porta che trova un
-	# ostacolo, non come un difetto.
-	var dopo := chiusa.affine_inverse() * corpo.global_position
-	var r2 := Vector2(dopo.x, dopo.z).length()
-	if r2 >= portata - 0.01:
-		return apertura_gradi
-	var a2 := atan2(-dopo.z * signf(verso), dopo.x)
-	# il mezzo angolo occupato dal corpo visto dal cardine, così l'anta si ferma
-	# a filo e non gli entra dentro
-	var mezzo := asin(clampf(MARGINE / maxf(r2, 0.05), 0.0, 1.0))
-	return clampf(rad_to_deg(a2 - mezzo), 0.0, apertura_gradi)
+	# c'e' indietro dove andare, e insistere significherebbe far passare l'anta
+	# dentro chi la apre. L'anta si ferma a filo: si legge come una porta che trova
+	# un ostacolo, non come un difetto. E siccome il conto si rifa' ogni fotogramma,
+	# appena ci si sposta la porta finisce la corsa da sola.
+	var dopo := chiusa.affine_inverse() * _chi.global_position
+	var q := Vector2(dopo.x, -dopo.z * signf(verso))
+	var r2 := q.length()
+	var a2 := rad_to_deg(atan2(q.y, q.x))
+	if r2 <= voglio:
+		return _angolo                     # gli sta addosso al cardine: l'anta non si muove
+	# l'angolo a cui l'anta gli arriva a filo: r * sin(scarto) = voglio
+	var mezzo := rad_to_deg(asin(clampf(voglio / r2, 0.0, 1.0)))
+	# L'anta si ferma dal lato da cui sta arrivando e non lo scavalca. E non TORNA
+	# indietro: se qualcuno si infila nel vano a porta gia' aperta, la porta resta
+	# dov'e' invece di richiudersegli addosso per rispettare un limite.
+	if voluto > _angolo:
+		return clampf(minf(voluto, a2 - mezzo), _angolo, apertura_gradi)
+	return clampf(maxf(voluto, a2 + mezzo), 0.0, _angolo)

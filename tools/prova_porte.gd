@@ -1,10 +1,16 @@
-## Banco delle porte: chi apre non deve prendersi l'anta in faccia.
+## Banco delle porte: l'anta non ti passa dentro, e non ti sparа indietro.
 ##
 ## Il difetto era visibile solo giocando - ci si mette davanti a una porta che si
-## apre verso di noi, si preme E, e l'anta ci passa dentro. Qui si mette un corpo
-## esattamente dove il giocatore si troverebbe (davanti al vano, dal lato verso
-## cui l'anta gira), si apre, e si controlla che sia finito FUORI dal settore che
-## l'anta spazza.
+## apre verso di noi, si preme E, e l'anta ci passa dentro. La prima cura scostava
+## chi era nel giro con un `move_and_collide` solo, e ne ha introdotto un secondo
+## altrettanto visibile: mezzo metro in un fotogramma, cioe' un teletrasporto.
+##
+## Qui si mette un corpo dove il giocatore si troverebbe, si apre, e si guarda la
+## rotazione FOTOGRAMMA PER FOTOGRAMMA controllando tre cose:
+##
+##   1. l'anta non compenetra mai il corpo, in nessun fotogramma;
+##   2. il corpo non viene mai spostato piu' in fretta di un passo di corsa;
+##   3. a fine corsa o e' fuori dal raggio dell'anta, o l'anta si e' fermata prima.
 ##
 ## Si prova anche il contrario, che e' meta' del valore del banco: un corpo dal
 ## lato opposto NON deve essere spostato, o ogni porta diventerebbe un pistone.
@@ -12,16 +18,39 @@
 ##     Godot --headless --script tools/prova_porte.gd --quit
 extends SceneTree
 
-## SERVE UN PASSO DI FISICA PRIMA DI PROVARE. `move_and_collide` chiede al server
-## fisico dove sta il corpo: appena istanziata la scena quel server non ha ancora
-## visto niente, il movimento non avviene e il banco accusa un difetto che non
-## c'e'. Due frame bastano.
-var _scena: Node3D = null
-var _corpo: CharacterBody3D = null
-var _giri := 0
+## Piu' di cosi' non e' scostare, e' sparare indietro. Un uomo che cammina fa 1,4
+## m/s: l'anta puo' spostarti come una camminata, non come una spinta.
+const VELOCITA_MASSIMA := 1.6
 
 ## mezza capsula piu' un dito: il corpo poggia sul pavimento, non ci affonda
 const ALTEZZA := 0.90
+
+## quanti fotogrammi si lascia girare l'anta prima di tirare le somme
+const CORSA := 120
+
+var _scena: Node3D = null
+var _corpo: CharacterBody3D = null
+var _porte: Array[Door] = []
+var _guasti: Array[String] = []
+
+var _giri := 0
+var _quale := 0
+var _fase := 0
+var _restano := 0
+var _chiusa := Transform3D()
+var _portata := 0.0
+var _prima := Vector3.ZERO
+
+## Dov'era il corpo il FOTOGRAMMA SCORSO. Non si puo' misurare uno spostamento
+## leggendo la posizione due volte nello stesso istante: il callback di questo
+## banco gira PRIMA dei nodi, quindi fra le due letture la porta non ha ancora
+## mosso niente e la velocita' risultava zero sempre. Il banco passava anche con
+## la spinta istantanea rimessa apposta - cioe' proprio col difetto che esiste per
+## trovare - e questo si vede solo iniettandolo.
+var _era := Vector3.ZERO
+
+## Quanto il corpo si e' mosso in tutta la corsa. Serve al terzo controllo.
+var _mosso := 0.0
 
 
 func _init() -> void:
@@ -39,61 +68,128 @@ func _init() -> void:
 	_corpo = corpo
 
 
-func _physics_process(_d: float) -> bool:
+## SERVE UN PASSO DI FISICA PRIMA DI PROVARE. `move_and_collide` chiede al server
+## fisico dove sta il corpo: appena istanziata la scena quel server non ha ancora
+## visto niente, il movimento non avviene e il banco accusa un difetto che non c'e'.
+func _physics_process(delta: float) -> bool:
 	_giri += 1
 	if _giri < 3:
 		return false
-	var scena := _scena
-	var corpo := _corpo
-	var provate := 0
-	var guasti: Array[String] = []
-	for nodo in scena.get_children():
-		var porta := nodo as Door
-		if porta == null:
-			continue
-		provate += 1
-		# a meta' anta, in mezzo al settore: e' dove si sta per premere E
-		var meta := deg_to_rad(porta.apertura_gradi * 0.5) * signf(porta.verso)
-		var chiusa := Transform3D(Basis(Vector3.UP, porta.rotation.y), porta.global_position)
-		# Basis(UP, theta) porta +X verso -Z, ed e' proprio la' che l'anta gira:
-		# il corpo "nel giro" va messo con l'angolo dello stesso segno del verso
-		var dentro: Vector3 = chiusa * (Basis(Vector3.UP, meta) * Vector3(0.55, 0.0, 0.0))
-		# la capsula sta ALTA MEZZA CAPSULA: a y=0 ne resta meta' dentro il
-		# pavimento, e un corpo compenetrato non si muove di un millimetro
-		_posa(corpo, Vector3(dentro.x, ALTEZZA, dentro.z))
-		porta.interacted.emit(corpo)
-		var dopo := chiusa.affine_inverse() * corpo.global_position
-		var raggio := Vector2(dopo.x, dopo.z).length()
-		# NON BASTA GUARDARE IL RAGGIO. In un locale stretto la spinta si ferma
-		# contro il muro e la porta si apre di meno: allora il corpo resta vicino
-		# al cardine ed e' comunque al sicuro, perche' l'anta non arriva fin li'.
-		# Quello che conta e' l'unica cosa che conta davvero - dove finisce la
-		# punta dell'anta rispetto a chi ha aperto.
-		var col := porta.get_node(^"Col") as CollisionShape3D
-		var lunga: float = (col.shape as BoxShape3D).size.x
-		var dopo2 := chiusa.affine_inverse() * corpo.global_position
-		var ang_corpo := atan2(-dopo2.z * signf(porta.verso), dopo2.x)
-		# l'angolo BERSAGLIO, non quello corrente: subito dopo l'interazione il
-		# tween non e' ancora partito e l'anta e' ancora chiusa - misurarla adesso
-		# farebbe passare il banco sempre, che e' peggio di non averlo.
-		var ang_anta := deg_to_rad(porta.get("_apertura_utile"))
-		var lontano := raggio > lunga + Door.MARGINE - 0.02
-		var mezzo := asin(clampf(Door.MARGINE / maxf(raggio, 0.05), 0.0, 1.0))
-		if not lontano and ang_anta > ang_corpo - mezzo + 0.01:
-			guasti.append("%s: l'anta arriva a %.0f gradi e chi ha aperto sta a %.0f"
-				% [porta.name, rad_to_deg(ang_anta), rad_to_deg(ang_corpo)])
-		# e chi sta dall'altra parte non si deve muovere di un millimetro
-		var fuori: Vector3 = chiusa * (Basis(Vector3.UP, -meta) * Vector3(0.55, 0.0, 0.0))
-		var prima := Vector3(fuori.x, ALTEZZA, fuori.z)
-		_posa(corpo, prima)
-		porta.interacted.emit(corpo)
-		if corpo.global_position.distance_to(prima) > 0.001:
-			guasti.append("%s: spinge anche chi sta dalla parte opposta" % porta.name)
+	if _porte.is_empty():
+		for nodo in _scena.get_children():
+			var p := nodo as Door
+			if p != null:
+				_porte.append(p)
+	if _quale >= _porte.size():
+		return _conclusione()
 
-	print("\nporte provate: %d, guasti: %d" % [provate, guasti.size()])
-	for g in guasti:
+	var porta := _porte[_quale]
+	match _fase:
+		0:
+			_apparecchia(porta, +1)      # nel settore che l'anta spazza
+			_fase = 1
+		1:
+			_sorveglia(porta, delta, true)
+			_restano -= 1
+			if _restano <= 0:
+				_bilancio(porta)
+				_apparecchia(porta, -1)  # dalla parte opposta
+				_fase = 2
+		2:
+			_sorveglia(porta, delta, false)
+			_restano -= 1
+			if _restano <= 0:
+				if _corpo.global_position.distance_to(_prima) > 0.01:
+					_guasti.append("%s: spinge anche chi sta dalla parte opposta"
+						% porta.name)
+				_quale += 1
+				_fase = 0
+	return false
+
+
+## Mette il corpo dove una persona sta davvero per premere E - da un lato o
+## dall'altro del battente - e interagisce.
+##
+## LE DUE POSIZIONI SI SCRIVONO PER ESTESO, non specchiando un angolo. Specchiando,
+## il corpo "dalla parte opposta" finiva a trentacinque centimetri dal filo
+## dell'anta chiusa: piu' vicino del margine, quindi la porta lo sfiorava chiudendosi
+## e il banco lo chiamava pistone. Non era un difetto della porta, era il banco che
+## metteva una persona addosso al battente e pretendeva che non la toccasse.
+## `lungo` e' la distanza dal cardine misurata sull'anta, `scarto` quella dal piano
+## della porta: positivo dalla parte verso cui si apre.
+func _apparecchia(porta: Door, dove: int) -> void:
+	var lungo := 0.45
+	var scarto := 0.42 if dove > 0 else -0.65
+	_chiusa = Transform3D(Basis(Vector3.UP, porta.get("_chiusa_y")), porta.global_position)
+	# in coordinate dell'anta chiusa +X e' il battente; la punta gira verso -Z per
+	# `verso` positivo, quindi lo scarto va contro il verso
+	var punto: Vector3 = _chiusa * Vector3(lungo, 0.0, -scarto * signf(porta.verso))
+	_prima = Vector3(punto.x, ALTEZZA, punto.z)
+	_posa(_corpo, _prima)
+	var col := porta.get_node(^"Col") as CollisionShape3D
+	_portata = (col.shape as BoxShape3D).size.x + Door.MARGINE
+	porta.interacted.emit(_corpo)
+	_era = Vector3.ZERO
+	_mosso = 0.0
+	_restano = CORSA
+
+
+## Un fotogramma di sorveglianza: nessuna compenetrazione, nessuno strappo.
+func _sorveglia(porta: Door, delta: float, nel_giro: bool) -> void:
+	var loc := _chiusa.affine_inverse() * _corpo.global_position
+	var raggio := Vector2(loc.x, loc.z).length()
+	var angolo := rad_to_deg(atan2(-loc.z * signf(porta.verso), loc.x))
+	var anta := rad_to_deg(porta.rotation.y - porta.get("_chiusa_y")) * signf(porta.verso)
+	if raggio < _portata - 0.01 and raggio > 0.05:
+		var mezzo := rad_to_deg(asin(clampf(Door.MARGINE / raggio, 0.0, 1.0)))
+		# meta' margine: il MARGINE e' l'aria che si vuole lasciare, non lo spessore
+		# del corpo - toccare a meta' margine non e' ancora compenetrare
+		if absf(angolo - anta) < mezzo * 0.5:
+			_guasti.append("%s: l'anta e' a %.0f gradi e il corpo a %.0f, si passano dentro"
+				% [porta.name, anta, angolo])
+	if nel_giro and _era != Vector3.ZERO:
+		var quanto := _corpo.global_position.distance_to(_era)
+		if quanto / maxf(delta, 0.001) > VELOCITA_MASSIMA:
+			_guasti.append("%s: scosta a %.1f m/s, che non e' un passo indietro"
+				% [porta.name, quanto / maxf(delta, 0.001)])
+		_mosso += quanto
+	_era = _corpo.global_position
+
+
+## A corsa finita: o il corpo e' fuori dalla portata dell'anta, o l'anta si e'
+## fermata prima di arrivargli addosso. In un locale stretto vale la seconda.
+func _bilancio(porta: Door) -> void:
+	var loc := _chiusa.affine_inverse() * _corpo.global_position
+	var raggio := Vector2(loc.x, loc.z).length()
+	var angolo := rad_to_deg(atan2(-loc.z * signf(porta.verso), loc.x))
+	var anta := rad_to_deg(porta.rotation.y - porta.get("_chiusa_y")) * signf(porta.verso)
+	print("  %-26s si apre a %2.0f gradi, il corpo scostato di %.2f m"
+		% [porta.name, anta, _mosso])
+
+	# LA PORTA SI DEVE ANCHE APRIRE. Fermarsi a filo di chi ha aperto e' la cura
+	# giusta quando dietro c'e' un muro, ed e' anche il modo perfetto di nascondere
+	# una spinta che non funziona piu': senza scostare nessuno l'anta si ferma a sei
+	# gradi e tutti i controlli di sicurezza passano, perche' una porta che non si
+	# apre non fa male a nessuno. Se non si e' aperta, allora il corpo si DEVE essere
+	# mosso - o contro un muro, o fuori dai piedi.
+	if anta < porta.apertura_gradi - 1.0 and _mosso < 0.02:
+		_guasti.append("%s: si ferma a %.0f gradi e non ha scostato nessuno"
+			% [porta.name, anta])
+
+	# e comunque l'anta non deve arrivare addosso a chi e' rimasto nel settore
+	if raggio > _portata - 0.02:
+		return
+	var mezzo := rad_to_deg(asin(clampf(Door.MARGINE / maxf(raggio, 0.05), 0.0, 1.0)))
+	if anta > angolo - mezzo + 0.5:
+		_guasti.append("%s: il corpo resta a %.2f m dal cardine e l'anta arriva a %.0f "
+			% [porta.name, raggio, anta] + "gradi, contro i %.0f del corpo" % angolo)
+
+
+func _conclusione() -> bool:
+	print("\nporte provate: %d, guasti: %d" % [_porte.size(), _guasti.size()])
+	for g in _guasti:
 		print("  " + g)
-	quit()
+	quit(1 if _guasti.size() > 0 else 0)
 	return true
 
 
@@ -101,9 +197,7 @@ func _physics_process(_d: float) -> bool:
 ##
 ## Scrivere `global_position` aggiorna il nodo, non il server: `move_and_collide`
 ## chiede al server, trova il corpo dove stava un istante prima e crede di
-## sbattere subito contro qualcosa. Fuori dal banco non si vede perche' fra un
-## fotogramma e l'altro la sincronizzazione avviene da sola - qui i sette
-## controlli stanno dentro lo stesso fotogramma.
+## sbattere subito contro qualcosa.
 func _posa(corpo: CharacterBody3D, dove: Vector3) -> void:
 	corpo.global_position = dove
 	corpo.force_update_transform()

@@ -11,10 +11,11 @@
 ; `project.godot`, sezione `layer_names/3d_physics`): il corpo sta su un layer
 ; suo perché il raggio dell'interazione, che cerca mondo e interagibili, non
 ; possa mai colpire il giocatore stesso.
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://world/player/player.gd" id="1_player"]
 [ext_resource type="PackedScene" path="res://world/interactables/interaction_prompt.tscn" id="2_prompt"]
+[ext_resource type="PackedScene" path="res://world/player/crosshair.tscn" id="3_crosshair"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.3
@@ -38,3 +39,5 @@ unique_name_in_owner = true
 
 [node name="InteractionPrompt" parent="." instance=ExtResource("2_prompt")]
 unique_name_in_owner = true
+
+[node name="Crosshair" parent="." instance=ExtResource("3_crosshair")]

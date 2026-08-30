@@ -26,3 +26,25 @@ build/
 # per comodità non deve entrare nel repository — sono i numeri di una serata di
 # prove, non del progetto.
 tuning_override.cfg
+
+# zip di ambientCG scaricati da tools/prendi_texture.py: si rifanno da soli
+tools/__texture_cache__/
+
+# --- prodotti rigenerabili: modelli e texture ---
+# I .glb pesano settanta megabyte perche' incorporano le texture, e li rifa' uno
+# script che sta qui dentro: committarli vuol dire aggiungere settanta megabyte
+# di blob NUOVI a ogni giro di ritocchi, e i giri sono decine al giorno. Stessa
+# ragione per le texture e i modelli scaricati - la SCELTA e' versionata
+# (`tools/prendi_texture.py`, `tools/prendi_modello.py`, i cinque `*_blender.py`),
+# il download no.
+#
+# Per rifare tutto: vedi assets/LEGGIMI.txt. Se un giorno servisse averli nel
+# repository - per chi non ha Blender - basta togliere queste righe.
+# Sotto assets/models finiscono anche i .import e le texture che Godot ESTRAE dai
+# .glb aprendoli: derivati di derivati, e non si torna indietro a mano.
+assets/models/
+assets/textures/
+
+# le cartelle __pycache__ dei moduli di tools/, che finiscono accanto a chi li importa
+__pycache__/
+*.pyc

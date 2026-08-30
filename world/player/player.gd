@@ -19,6 +19,17 @@
 ## (`target.origin = seat_xf.origin - target.basis * _cam.position`) presumendo
 ## che sia l'unica cosa che separa l'origine del corpo dall'occhio.
 ##
+## L'ACCOVACCIATA È L'UNICA ECCEZIONE, e va detta qui perché contraddice il
+## paragrafo sopra. Accovacciarsi ABBASSA l'occhio: non c'è modo di farlo senza
+## muovere `_cam.position.y`, e fingere il contrario sarebbe peggio che
+## dichiararlo. Restano vere le due cose che contano davvero: la camera non si
+## riparenta mai e non prende mai una trasformata globale propria — si muove solo
+## la sua `y` locale, fra `EYE_HEIGHT` e `CROUCH_EYE_HEIGHT`.
+##
+## E `set_enabled(false)` RIMETTE IN PIEDI prima di spegnersi, così l'aritmetica
+## di `desk_camera` legge sempre l'offset da fermo. Senza, sedersi al monitor da
+## accovacciati farebbe atterrare la camera 60 cm sotto il sedile.
+##
 ## DA QUELLA ARITMETICA DISCENDE UNA COSA CHE VA DETTA QUI, perché è dove
 ## qualcuno la cercherà. Il `Marker3D` `Seat` del CRT sta a 1,19 m da terra e
 ## l'occhio a 1,65 m sopra l'origine del corpo: per far atterrare la camera sul
@@ -40,6 +51,29 @@ extends CharacterBody3D
 ## atterrerà lì. Il centro del CRT deve quindi stare all'altezza occhi da seduto
 ## meno 9 cm — vedi le misure della stanza in `computer_room.tscn`.
 const EYE_HEIGHT := 1.65
+
+## Altezza dell'occhio da accovacciati. Sessanta centimetri sotto: abbastanza da
+## guardare sotto un tavolo e dietro un mobile, che è a cosa serve.
+const CROUCH_EYE_HEIGHT := 1.05
+
+## Altezza della capsula in piedi e accovacciati. La prima DEVE combaciare con
+## `player.tscn`, e `_ready()` lo verifica: se divergono, ci si alza dentro il
+## soffitto o non ci si passa sotto una porta.
+const STAND_HEIGHT := 1.8
+const CROUCH_HEIGHT := 1.1
+
+## Velocità verticale iniziale del salto. A 3,6 m/s con la gravità di progetto si
+## sale di 66 cm: quanto basta a vedere sopra un mobile, non tanto da scavalcarlo.
+## Un salto più alto trasformerebbe l'osservatorio in un posto da attraversare
+## saltando, che è l'opposto di come si vuole che si cammini.
+const JUMP_SPEED := 3.6
+
+## Metri al secondo da accovacciati.
+const CROUCH_SPEED := 1.1
+
+## Quanto in fretta l'occhio e la capsula scendono e salgono. Istantaneo darebbe
+## uno scatto; lento sembrerebbe di affondare nel pavimento.
+const CROUCH_LERP := 12.0
 
 ## Metri al secondo camminando. L'osservatorio è un posto dove si sta, e il passo
 ## lo dice — ma la stanza va anche attraversata, e farlo non deve annoiare.
@@ -90,7 +124,7 @@ const INTERACT_RANGE := 1.2
 ## il controllo torna: vedi `set_enabled()`.
 const OWN_ACTIONS: Array[StringName] = [
 	&"move_forward", &"move_back", &"move_left", &"move_right", &"interact",
-	&"sprint",
+	&"sprint", &"jump", &"crouch",
 ]
 
 ## Chi ha bisogno del giocatore lo trova per GRUPPO, mai per percorso di nodo né
@@ -101,8 +135,16 @@ const OWN_ACTIONS: Array[StringName] = [
 const GROUP := &"player"
 
 @onready var _cam: Camera3D = %Camera
+@onready var _forma: CollisionShape3D = $Collision
 @onready var _ray: RayCast3D = %InteractRay
 @onready var _prompt: InteractionPrompt = %InteractionPrompt
+## Il mirino: sta al centro e dice dove punta il raggio. Vedi `crosshair.gd`.
+##
+## PER PERCORSO E NON CON `%`: il nome unico si risolve nel PROPRIETARIO della
+## scena, e il proprietario di quel Control e' `crosshair.tscn`, non il
+## giocatore. Dichiararlo unico anche qui non basta - il risultato e' un
+## `%Mirino` che non esiste e un errore a ogni avvio.
+@onready var _mirino: Crosshair = $Crosshair/Mirino
 
 var _enabled := true
 
@@ -115,6 +157,9 @@ var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 
 
 ## L'interagibile che il giocatore sta guardando adesso, o null.
 var _focus: Interactable = null
+
+## Se il giocatore è accovacciato adesso.
+var _accovacciato := false
 
 
 func _ready() -> void:
@@ -138,6 +183,17 @@ func _ready() -> void:
 	# sarebbe usabile dalla stanza accanto. Ciò che colpisce e non è un
 	# `Interactable` non apre un prompt: fa da schermo, che è il suo mestiere.
 	_ray.collision_mask = Interactable.LAYER_WORLD | Interactable.LAYER_INTERACTABLE
+	# La capsula si DUPLICA prima di toccarla. Le risorse di una scena sono
+	# condivise fra le sue istanze: modificando quella originale, un secondo
+	# giocatore — o una scena di prova aperta di fianco — si accovaccerebbe
+	# insieme a questo.
+	_forma.shape = _forma.shape.duplicate()
+	var capsula := _forma.shape as CapsuleShape3D
+	if capsula == null:
+		push_error("[player] la collisione non è una capsula: l'accovacciata non funziona")
+	elif not is_equal_approx(capsula.height, STAND_HEIGHT):
+		push_error("[player] capsula alta %.3f, STAND_HEIGHT dice %.3f" % [
+			capsula.height, STAND_HEIGHT])
 	_capture_mouse()
 
 
@@ -182,6 +238,11 @@ func set_enabled(value: bool) -> void:
 		# `_mouse_free` non si tocca: registra ciò che ha chiesto LUI, e questo
 		# rilascio non è una sua richiesta.
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		# E SI RIMETTE IN PIEDI, subito e senza interpolazione: da qui in poi
+		# `desk_camera` fa aritmetica su `_cam.position`, e deve trovarci
+		# l'offset da fermo. Vedi l'intestazione.
+		_accovacciato = false
+		_applica_altezza(1.0)
 
 
 func is_enabled() -> bool:
@@ -248,10 +309,25 @@ func _physics_process(delta: float) -> void:
 	if not _enabled:
 		return
 
+	# ACCOVACCIATA. Si legge come stato continuo, come lo sprint, e ci si rialza
+	# solo se sopra la testa c'è posto: senza il controllo, alzarsi sotto una
+	# consolle incastra il giocatore dentro il piano.
+	var vuole_giu := _is_controlling() and Input.is_action_pressed(&"crouch")
+	if vuole_giu:
+		_accovacciato = true
+	elif _accovacciato and _c_e_spazio_sopra():
+		_accovacciato = false
+	_applica_altezza(clampf(CROUCH_LERP * delta, 0.0, 1.0))
+
 	if not is_on_floor():
 		velocity.y -= _gravity * delta
 	else:
 		velocity.y = 0.0
+		# SALTO. Solo da fermi in piedi e con i piedi per terra: saltare
+		# accovacciati vorrebbe dire alzarsi a mezz'aria dentro quello sotto cui
+		# ci si era infilati.
+		if _is_controlling() and not _accovacciato and Input.is_action_just_pressed(&"jump"):
+			velocity.y = JUMP_SPEED
 
 	var wish := Vector3.ZERO
 	if _is_controlling():
@@ -266,12 +342,44 @@ func _physics_process(delta: float) -> void:
 	# continuo («sto tenendo premuto»), non un evento. Letto per azione dichiarata
 	# come tutto il resto del movimento, mai per keycode grezzo.
 	var speed := sprint_speed if Input.is_action_pressed(&"sprint") else walk_speed
+	if _accovacciato:
+		speed = CROUCH_SPEED
 	var target := wish * speed
 	velocity.x = move_toward(velocity.x, target.x, ACCELERATION * delta)
 	velocity.z = move_toward(velocity.z, target.z, ACCELERATION * delta)
 
 	move_and_slide()
 	_set_focus(_look_at_interactable())
+
+
+## Porta capsula e occhio verso l'altezza voluta. `t` è quanto avvicinarsi in
+## questo tick: 1.0 ci arriva subito.
+func _applica_altezza(t: float) -> void:
+	var capsula := _forma.shape as CapsuleShape3D
+	if capsula == null:
+		return
+	var h_voluta := CROUCH_HEIGHT if _accovacciato else STAND_HEIGHT
+	var occhio_voluto := CROUCH_EYE_HEIGHT if _accovacciato else EYE_HEIGHT
+	capsula.height = lerpf(capsula.height, h_voluta, t)
+	# La capsula è centrata a metà della propria altezza, o abbassandola i piedi
+	# finirebbero sotto il pavimento invece che la testa sotto il soffitto.
+	_forma.position.y = capsula.height * 0.5
+	_cam.position.y = lerpf(_cam.position.y, occhio_voluto, t)
+
+
+## C'è abbastanza spazio sopra la testa per rialzarsi in piedi?
+##
+## Si guarda in su dal pavimento fino all'altezza da fermo: un raggio basta,
+## perché quello che blocca l'alzata è un piano orizzontale sopra la testa - una
+## consolle, un ripiano, un architrave - non un ostacolo di fianco.
+func _c_e_spazio_sopra() -> bool:
+	var spazio := get_world_3d().direct_space_state
+	var da := global_position + Vector3.UP * 0.1
+	var a := global_position + Vector3.UP * (STAND_HEIGHT + 0.05)
+	var domanda := PhysicsRayQueryParameters3D.create(da, a)
+	domanda.collision_mask = Interactable.LAYER_WORLD
+	domanda.exclude = [get_rid()]
+	return spazio.intersect_ray(domanda).is_empty()
 
 
 ## Cosa sto guardando. Il raggio parte dalla camera, quindi «guardare» e
@@ -306,6 +414,10 @@ func _set_focus(value: Interactable) -> void:
 			_prompt.show_prompt(_focus.prompt())
 		return
 	_focus = value
+	# Il mirino si apre e il prompt compare insieme, dallo STESSO punto: sono due
+	# facce della stessa notizia - «questo si puo' usare» - e tenerle in due posti
+	# e' il modo sicuro di vederle divergere.
+	_mirino.set_attivo(_focus != null)
 	if _focus == null:
 		_prompt.hide_prompt()
 	else:

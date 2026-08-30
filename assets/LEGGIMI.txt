@@ -1,0 +1,38 @@
+COME SI RIFANNO MODELLI E TEXTURE
+=================================
+
+Niente di quello che sta in assets/models e assets/textures e' nel repository:
+sono prodotti, e i loro produttori sono versionati. Si rifanno tutti da qui, in
+quest'ordine, e ci vogliono un paio di minuti.
+
+1. Le texture (da ambientCG, CC0):
+
+       python tools/prendi_texture.py
+
+2. I modelli presi da fuori (Poly Haven e OpenGameArt, CC0):
+
+       python tools/prendi_modello.py
+
+3. I modelli del gioco, uno per stanza (serve Blender 5):
+
+       "D:/programs/blender5/blender.exe" --background --python tools/osservatorio_blender.py
+       "D:/programs/blender5/blender.exe" --background --python tools/telescopio_blender.py
+       "D:/programs/blender5/blender.exe" --background --python tools/cupola_blender.py
+       "D:/programs/blender5/blender.exe" --background --python tools/arredi_blender.py
+       "D:/programs/blender5/blender.exe" --background --python tools/cucina_blender.py
+       "D:/programs/blender5/blender.exe" --background --python tools/divulgazione_blender.py
+       "D:/programs/blender5/blender.exe" --background --python tools/impianti_blender.py
+
+4. La scena navigabile, che li mette insieme:
+
+       python tools/gen_blockout.py
+
+Ogni passo controlla se stesso e si ferma con un messaggio se qualcosa non torna:
+arredi fuori dalla loro impronta, finestre tappate, muri con fessure, interruttori
+dentro un vano. Un passo che stampa e basta e' un passo andato bene.
+
+PERCHE' NON SONO NEL REPOSITORY. I .glb incorporano le texture e pesano insieme
+settanta megabyte; si rigenerano decine di volte al giorno mentre si sistemano le
+stanze, e ogni rigenerazione sarebbe un blob nuovo. La SCELTA e' versionata - quale
+asset, con quale tinta, per quale motivo, tutto dentro prendi_texture.py e
+prendi_modello.py - il download no.

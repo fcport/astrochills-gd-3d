@@ -29,7 +29,7 @@ from mathutils import Matrix, Vector
 QUI_ = os.path.dirname(os.path.abspath(__file__))
 if QUI_ not in sys.path:
     sys.path.insert(0, QUI_)
-from modellare import uv_a_scatola   # noqa: E402
+from modellare import uv_a_scatola, applica_texture   # noqa: E402
 
 # --- misure, dalla stessa fonte del resto ------------------------------------
 R = 2.50            # raggio della calotta: diametro 5,00 m (geometria.py, DOME_R)
@@ -287,24 +287,53 @@ bm_cavi.free()
 bpy.context.collection.objects.link(cavi)
 
 # materiali: il guscio chiaro, l'ossatura piu' scura, i cavi quasi neri
-def _mat(nome, colore, ruvido=0.6, metallo=0.0):
+def _mat(nome, colore, ruvido=0.6, metallo=0.0, texture=None):
+    """Il materiale, e per la calotta anche le mappe della lamiera.
+
+    LA CALOTTA SENZA TEXTURE E' LA TELA IDEALE PER IL BANDING, ed e' misurato: su
+    una superficie perfettamente liscia l'alone rosso si scalinava in fasce di
+    venti-quaranta pixel che differiscono di UN livello su 255. Il debanding le
+    dimezza ma non le toglie, perche' dithera mezzo livello e qui il gradiente e'
+    piu' lento di cosi'. Una lamiera vera ha grana e ammaccature: la variazione
+    della normale rompe le fasce con una cosa che c'e' davvero, invece di
+    mascherarle con del rumore. E una cupola di lamiera liscia come una biglia
+    non era comunque giusta.
+    """
     m = bpy.data.materials.new(nome)
     m.use_nodes = True
     p_ = m.node_tree.nodes["Principled BSDF"]
     p_.inputs["Base Color"].default_value = (*colore, 1.0)
     p_.inputs["Roughness"].default_value = ruvido
     p_.inputs["Metallic"].default_value = metallo
+    if texture is not None:
+        applica_texture(m, texture)
     return m
 
 
-for oggetto_, colore_, ruvido_, metallo_ in (
-        (calotta, (0.84, 0.84, 0.85), 0.75, 0.0),
-        (ossatura, (0.46, 0.46, 0.48), 0.55, 0.4),
-        (cavi, (0.13, 0.13, 0.14), 0.4, 0.7)):
-    oggetto_.data.materials.append(_mat(oggetto_.name, colore_, ruvido_, metallo_))
+for oggetto_, colore_, ruvido_, metallo_, tex_ in (
+        (calotta, (0.84, 0.84, 0.85), 0.75, 0.0, "Lamiera"),
+        (ossatura, (0.46, 0.46, 0.48), 0.55, 0.4, "Lamiera"),
+        (cavi, (0.13, 0.13, 0.14), 0.4, 0.7, None)):
+    oggetto_.data.materials.append(
+        _mat(oggetto_.name, colore_, ruvido_, metallo_, tex_))
 for oggetto_ in bpy.data.objects:
     if oggetto_.name.startswith("Portello") and not oggetto_.data.materials:
         oggetto_.data.materials.append(_mat(oggetto_.name, (0.72, 0.72, 0.74), 0.6, 0.2))
+
+# --- la calotta e' una sfera, non un poliedro --------------------------------
+# Senza shading liscio ognuno dei 48 anelli di latitudine ha una normale COSTANTE:
+# una lampada vicina lo illumina tutto uguale, e sulla cupola compaiono anelli
+# concentrici a gradino. Con la luce rossa, che vive su un canale solo, quei
+# gradini sono la cosa piu' visibile della stanza.
+# Trenta gradi: le facce della sfera stanno abbondantemente sotto e si fondono,
+# gli spigoli veri - il bordo della fenditura, i profili dell'ossatura - restano
+# vivi. Va fatto PRIMA di applicare le trasformazioni, altrimenti opera su una
+# selezione che non esiste ancora.
+bpy.ops.object.select_all(action="DESELECT")
+for oggetto_ in bpy.data.objects:
+    oggetto_.select_set(True)
+bpy.context.view_layer.objects.active = calotta
+bpy.ops.object.shade_smooth_by_angle(angle=math.radians(30.0))
 
 # --- origini nel centro della sfera, trasformazioni applicate ----------------
 for oggetto in bpy.data.objects:

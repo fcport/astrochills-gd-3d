@@ -48,6 +48,7 @@ USCITA = os.path.join(RADICE, "assets", "models", "impianti.glb")
 # di non avere la lampada.
 UNA_PLAFONIERA = os.path.join(RADICE, "assets", "models", "plafoniera.glb")
 APPLIQUE = os.path.join(RADICE, "assets", "models", "applique_rossa.glb")
+APPLIQUE_BIANCA = os.path.join(RADICE, "assets", "models", "applique_bianca.glb")
 RENDER = os.path.join(RADICE, "_bmad-output", "planning-artifacts", "gdds",
                       "gdd-astrochills-gd-3d-2026-08-24")
 # La plafoniera: 1,28 x 0,28, alta 9 cm. E' la misura di un apparecchio a due tubi
@@ -79,7 +80,7 @@ def plafoniera(diffusore="Neon"):
     scatola(diffusore, -a_ + d, a_ - d, 0.0, 0.038, -b_ + 0.012, b_ - 0.012)
 
 
-def applique():
+def applique(vetro="NeonRosso"):
     """L'apparecchio a parete della cupola: piastra, corpo e vetro rosso.
 
     NASCE ADDOSSATO AL MURO x=0 E SPORGE VERSO +X, con il centro del vetro a
@@ -100,7 +101,7 @@ def applique():
     for zl in (-l + 0.012, l - 0.024):                                 # fianchi
         scatola("Metallo", 0.020, 0.115, -a + 0.022, a - 0.022, zl, zl + 0.012)
     # il vetro rosso: e' la faccia che si accende, e sporge appena dal telaio
-    scatola("NeonRosso", 0.100, 0.128, -a + 0.020, a - 0.020,
+    scatola(vetro, 0.100, 0.128, -a + 0.020, a - 0.020,
             -l + 0.020, l - 0.020)
     # la gabbietta di protezione, due ferri in croce davanti al vetro
     for zl in (-0.026, 0.026):
@@ -169,6 +170,12 @@ pulisci()
 applique()
 finisci(morbidi=("Metallo",))
 esporta(APPLIQUE)
+pulisci()
+
+# la stessa, col vetro chiaro: sono le due di fuori, sopra la porta e sul piazzale
+applique(vetro="Neon")
+finisci(morbidi=("Metallo",))
+esporta(APPLIQUE_BIANCA)
 pulisci()   # e non una rimozione a mano: finisci() tiene i suoi bmesh in un
             # registro globale, e cancellare gli oggetti senza svuotarlo lascia
             # la seconda passata a lavorare su mesh che non esistono piu'

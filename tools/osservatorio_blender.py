@@ -115,8 +115,16 @@ def costruisci():
         # (x, y, z) di Godot -> (x, -z, y) di Blender
         # una rotazione attorno a Z di gioco e' attorno a -Y in Blender
         rotz = resto[0] if resto else 0.0
-        posa = (Matrix.Translation(Vector((cx, -cz, cy)))
-                @ (Matrix.Rotation(-rotz, 4, "Y") if abs(rotz) > 1e-9 else Matrix.Rotation(rot, 4, "X")))
+        roty = resto[1] if len(resto) > 1 else 0.0
+        # una rotazione attorno a Y di gioco e' attorno a Z in Blender, di segno
+        # opposto: la conversione (x, y, z) -> (x, -z, y) ribalta il verso
+        if abs(roty) > 1e-9:
+            giro = Matrix.Rotation(-roty, 4, "Z")
+        elif abs(rotz) > 1e-9:
+            giro = Matrix.Rotation(-rotz, 4, "Y")
+        else:
+            giro = Matrix.Rotation(rot, 4, "X")
+        posa = Matrix.Translation(Vector((cx, -cz, cy))) @ giro
         bmesh.ops.create_cube(bm, size=1.0, matrix=posa @ Matrix.Diagonal(Vector((sx, sz, sy, 1.0))))
 
     oggetti = []
@@ -228,7 +236,11 @@ def passerella_e_scala():
             bm.faces.new((giu[k], giu[k2], su[k2], su[k]))
 
     # --- parapetto: due correnti e i montanti, sui due bordi -----------------
-    for raggio, verso in ((r_est, +1), (r_int, -1)):
+    # SOLO IL BORDO ESTERNO. Quella interna proteggeva il pozzo centrale, che
+    # adesso e' pieno: e' sparita dalla collisione in geometria.py e deve sparire
+    # anche da qui, o resta una ringhiera che si vede e non si tocca - e in mezzo
+    # a un passaggio da un metro e cinque e' anche l'unica cosa in cui inciampare.
+    for raggio, verso in ((r_est, +1),):
         for quota in (calpestio + 0.50, calpestio + 1.00):
             for i in range(SETTORI):
                 a0 = 2 * math.pi * i / SETTORI
@@ -254,7 +266,7 @@ def passerella_e_scala():
                                                   calpestio + 0.50))))
 
     # --- la scala: alzate vere sopra la rampa di collisione -----------------
-    N_GRAD = 5
+    N_GRAD = 4
     alzata = DISL_RAMPA / N_GRAD
     pedata = LUNGO_RAMPA / N_GRAD
     piede_y = -(cz + r_est + LUNGO_RAMPA)
@@ -267,13 +279,29 @@ def passerella_e_scala():
         bmesh.ops.create_cube(bm, size=1.0, matrix=(
             Matrix.Translation(Vector((cx, y - pedata / 2, h - alzata / 2)))
             @ Matrix.Diagonal(Vector((1.00, 0.04, alzata, 1.0)))))
+    # IL CORRIMANO POGGIA SU QUALCOSA. Erano due tubi che partivano a 95 cm da
+    # terra e finivano in aria: nessun montante sotto, appesi al niente. Un
+    # corrimano e' l'ultima cosa a cui ci si aggrappa, e vederlo sospeso e' la
+    # differenza fra una scala e un disegno di una scala.
+    H_CORRIMANO = 0.95
     for lato in (-1, 1):
-        a = Vector((cx + lato * 0.52, piede_y, 0.95))
-        b_ = Vector((cx + lato * 0.52, piede_y + LUNGO_RAMPA, DISL_RAMPA + 0.95))
+        x = cx + lato * 0.52
+        a = Vector((x, piede_y, H_CORRIMANO))
+        b_ = Vector((x, piede_y + LUNGO_RAMPA, DISL_RAMPA + H_CORRIMANO))
         d = b_ - a
         bmesh.ops.create_cone(
             bm, cap_ends=True, cap_tris=False, segments=8, radius1=0.022, radius2=0.022,
             depth=d.length, matrix=Matrix.Translation((a + b_) / 2) @ d.to_track_quat("Z", "Y").to_matrix().to_4x4())
+        # i montanti: a terra, a meta' rampa e in cima, ognuno lungo quanto serve
+        # per arrivare dal gradino che ha sotto al corrimano che ha sopra
+        for t in (0.0, 0.5, 1.0):
+            y = piede_y + LUNGO_RAMPA * t
+            sotto = DISL_RAMPA * t
+            altezza = H_CORRIMANO
+            bmesh.ops.create_cone(
+                bm, cap_ends=True, cap_tris=False, segments=8,
+                radius1=0.024, radius2=0.024, depth=altezza,
+                matrix=Matrix.Translation(Vector((x, y, sotto + altezza / 2))))
 
     bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-5)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])

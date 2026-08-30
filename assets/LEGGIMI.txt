@@ -27,6 +27,16 @@ quest'ordine, e ci vogliono un paio di minuti.
 
        python tools/gen_blockout.py
 
+5. IL REIMPORT, E NON E' FACOLTATIVO:
+
+       Godot_v4.7.2-stable_win64.exe --headless --editor --quit --path .
+
+   Avviare il gioco NON reimporta i .glb cambiati: usa quelli in .godot/imported,
+   che restano quelli di prima. Si gioca con il modello vecchio credendo di
+   giocare con quello nuovo, e non lo dice nessuno - ci ho perso mezza giornata
+   dando la colpa alle ombre mentre in scena c'era una cupola sfaccettata gia'
+   sostituita.
+
 Ogni passo controlla se stesso e si ferma con un messaggio se qualcosa non torna:
 arredi fuori dalla loro impronta, finestre tappate, muri con fessure, interruttori
 dentro un vano. Un passo che stampa e basta e' un passo andato bene.

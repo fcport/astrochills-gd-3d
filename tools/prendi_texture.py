@@ -63,6 +63,14 @@ SET = {
                "La plastica avorio degli interruttori. Stesso asset della plastica dei\n"
                "calcolatori ma con un'altra tinta: il beige di un monitor del 1999 e\n"
                "l'avorio di una placca non sono lo stesso colore."),
+    "libri": ("Fabric062", (198, 196, 190),
+              "Tela da rilegatura per i dorsi dei libri. Sugli scaffali c'erano"
+              " parallelepipedi a tinta piatta: da un metro leggevano come un motivo"
+              " geometrico, non come una libreria. La tela si tinge NEUTRA apposta -"
+              " il colore di ogni dorso arriva dal materiale e moltiplica la mappa,"
+              " cosi' otto colori diversi condividono una trama sola."),
+    "carta": ("Paper004", (222, 214, 196),
+              "Carta ingiallita: i volumi coricati, i registri, i fogli sui banchi."),
     "plastica": ("Plastic010", (207, 191, 148),
                  "Plastica beige dei calcolatori. L'asset e' grigio neutro e viene tinto:\n"
                  "il beige dei computer del 1999 non e' un colore qualsiasi, e' quello che\n"

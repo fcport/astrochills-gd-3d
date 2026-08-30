@@ -35,7 +35,8 @@ from mathutils import Matrix, Vector
 QUI_ = os.path.dirname(os.path.abspath(__file__))
 if QUI_ not in sys.path:
     sys.path.insert(0, QUI_)
-from modellare import uv_a_scatola   # noqa: E402
+from modellare import uv_a_scatola, applica_texture   # noqa: E402
+from geometria import H_PASS, SP_PASS   # noqa: E402
 
 QUI = os.path.dirname(os.path.abspath(__file__))
 RADICE = os.path.dirname(QUI)
@@ -55,9 +56,36 @@ D_FUOCO, L_FUOCO = 0.11, 0.26
 
 COLORI = {
     "Pilastro": (0.62, 0.61, 0.58), "Montatura": (0.82, 0.82, 0.80),
-    "Tubo": (0.09, 0.15, 0.33), "Collari": (0.07, 0.07, 0.08),
+    # IL TUBO E' AZZURRO CHIARO, NON BLU NOTTE. A 0,09 di rosso, sotto la luce
+    # rossa della cupola - che e' la luce con cui questo strumento si guarda per
+    # meta' del gioco - il tubo restituiva il nove per cento di quello che
+    # riceveva: una sagoma nera in mezzo alla stanza. Non era un difetto di
+    # illuminazione, era il colore: un blu non ha niente da riflettere di una
+    # luce rossa. Schiarito resta azzurro a luce bianca e si legge al rosso.
+    "Tubo": (0.44, 0.50, 0.64), "Collari": (0.16, 0.16, 0.18),
     "Guide": (0.70, 0.71, 0.72), "Cella": (0.10, 0.10, 0.11),
     "Ottica": (0.16, 0.17, 0.19),
+}
+
+
+# Che mappa porta ognuno, e con che scala. Il telescopio non ha una texture sua e
+# non deve averla: e' fatto di lamiera verniciata (il tubo, la montatura, il
+# pilastro) e di metallo lavorato (guide, collari, cella, ottica), che sono
+# esattamente i due set che l'edificio usa gia'.
+#
+# LA SCALA E' PICCOLA PERCHE' L'OGGETTO E' PICCOLO. Il tubo e' lungo un metro e
+# mezzo: con la ripetizione da 1,20 m della carpenteria ci starebbe una passata
+# sola di trama, che non e' una superficie, e' una macchia.
+# TUTTO DAL SET DELLA CARPENTERIA, e non da quello delle plafoniere. La lamiera
+# delle plafoniere e' verniciata SCROSTATA: sul tubo leggeva come ruggine e sulla
+# montatura come granito. Uno strumento ottico viene tenuto - si spolvera, non si
+# lascia scrostare - e quello che deve avere e' la grana di una verniciatura a
+# fuoco, non l'usura di un apparecchio da esterno.
+MAPPE = {
+    "Pilastro":  ("metallo", 0.55), "Montatura": ("metallo", 0.40),
+    "Tubo":      ("metallo", 0.35), "Collari":   ("metallo", 0.25),
+    "Guide":     ("metallo", 0.30), "Cella":     ("metallo", 0.28),
+    "Ottica":    ("metallo", 0.22),
 }
 
 
@@ -70,6 +98,15 @@ def materiale(nome):
     p.inputs["Base Color"].default_value = (*COLORI[nome], 1.0)
     p.inputs["Roughness"].default_value = 0.45 if nome in ("Tubo", "Guide") else 0.7
     p.inputs["Metallic"].default_value = 0.6 if nome in ("Guide", "Ottica") else 0.1
+    # la mappa MOLTIPLICA il colore invece di sostituirlo: la lamiera scaricata e'
+    # bianca sporca, e collegata cosi' com'e' farebbe il tubo bianco. Il blu di un
+    # telescopio degli anni Settanta e' meta' di quello che lo fa leggere come tale.
+    if nome in MAPPE:
+        # metallico solo l'ottica e le guide, e comunque non dalla mappa: il resto
+        # e' verniciato, e la vernice non riflette come uno specchio. Con la mappa
+        # collegata il telescopio era una sagoma nera anche a luce rossa accesa.
+        applica_texture(m, nome, tinta=COLORI[nome], set_texture=MAPPE[nome],
+                        metallico=False)
     return m
 
 
@@ -85,7 +122,11 @@ def scatola(bm, dimensioni, matrice):
 def oggetto(nome, bm, genitore=None, posizione=(0, 0, 0)):
     bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-5)
     malla = bpy.data.meshes.new(nome)
-    uv_a_scatola(bm)
+    # LA SCALA DELLA TEXTURE SI CUOCE QUI, non nel materiale: il glTF porta la
+    # trasformazione delle UV solo come estensione, e non tutti gli importatori la
+    # rispettano. Con la scala di serie (un metro per ripetizione) sul tubo ci
+    # starebbe una passata sola di trama, che e' una macchia, non una lamiera.
+    uv_a_scatola(bm, MAPPE.get(nome, (None, 1.0))[1])
     bm.to_mesh(malla)
     bm.free()
     malla.materials.append(materiale(nome))
@@ -198,7 +239,12 @@ for o in bpy.data.objects:
 bpy.context.view_layer.update()
 problemi = []
 CUPOLA_R, CUPOLA_BASE, COLMO = 2.50, 3.38, 3.38 + 2.50
-PASSERELLA = 0.99
+# LA QUOTA VIENE DA geometria.py, non e' ribattuta qui. Scritta a mano valeva 0,99
+# mentre l'impalcato sta a 0,59: quaranta centimetri di scarto, e il controllo
+# dell'oculare girava contro il numero sbagliato dicendo che era tutto a posto.
+# E' la regola del progetto - una misura, una fonte - ed era violata proprio dove
+# stava il difetto che si sentiva camminando.
+PASSERELLA = H_PASS + SP_PASS / 2
 
 punti = [o.matrix_world @ v.co for o in bpy.data.objects if o.type == "MESH" for v in o.data.vertices]
 raggio_max = max(math.hypot(p.x, p.y) for p in punti)

@@ -1590,3 +1590,140 @@ di attesa e di notte. Aggancia il pilastro 2 senza inventare nulla, e la lampada
 (registro SISTEMARE) è già lì. **Decisa il 30 agosto 2026: si fa.** Vedi D-065 — la cupola ha la plafoniera rossa
 e nasce spenta. Quello che resta aperto e' se accendere la luce sbagliata debba
 *costare* qualcosa: quella e' una domanda di design, non di impianto.
+
+---
+
+### D-081 — In un `.tscn` la matrice si legge per RIGHE
+
+I dodici numeri di `Transform3D` in un file di scena sono le **righe** della base. La
+colonna X — l'asse che il modello segue — è `(r0[0], r1[0], r2[0])`, non la prima terna.
+Averla letta per colonne ha montato al contrario ogni apparecchio su un muro orientato
+lungo Z: le due applique esterne finivano **dentro** l'edificio (lente a z 9,47 dentro il
+muro, faretto a 9,38 in sala) e la rossa della cupola finiva **fuori**, con la lampada a
+z −0,40 sulla facciata nord.
+
+**Il difetto non si presentava come "montata al contrario".** Si presentava come luce che
+attraversa i muri, e su quella ho speso mezza giornata di bias delle ombre, sfocature e
+atlanti. Non attraversava niente: la lampada era già dall'altra parte. Una diagnosi
+sbagliata sopravvive finché il sintomo resta plausibile.
+
+La stessa firma ha colpito una porta sola — quella fra corridoio e divulgazione, l'unica su
+muro verticale. Sulle porte orizzontali `dz` è zero e il segno non si vede: **la metà che
+funziona nasconde la metà rotta**, che in questo progetto è la terza volta.
+
+`verifica_orientamenti()` rilegge il `.tscn` scritto e confronta ogni asse con quello
+dichiarato in `geometria.py`.
+
+### D-082 — Le chiavi dentro `[rendering]` non ripetono la sezione
+
+`use_debanding`, l'atlante delle ombre a 8192, i quadranti, il limite di luci per oggetto:
+scritti come `rendering/anti_aliasing/...` **dentro** la sezione `[rendering]`, diventano
+`rendering/rendering/...`. Godot li registra, non protesta, e non li legge mai. Per tre
+sessioni ho riferito acceso quello che era spento — e ho controllato ogni volta il file,
+mai il motore:
+
+    prima:  DEBANDING false  ATLANTE 4096  q3 4
+    dopo:   DEBANDING true   ATLANTE 8192  q3 3
+
+**Un'impostazione si verifica chiedendola a chi la usa.** `ProjectSettings.get_setting()`
+in un `--script` di tre righe costa dieci secondi e avrebbe risparmiato una giornata.
+
+### D-083 — `omni_attenuation` è un ESPONENTE, non uno smorzamento
+
+Vale `distanza^(-attenuation)`. Alzarlo per "spegnere" una lampada la rende più forte, e in
+modo violento: a sette centimetri da un muro `0,07^(-3,5)` vale undicimila, contro i
+duecento di un normale inverso del quadrato. Abbassare l'energia di mille volte contro un
+guadagno di undicimila lascia una lampada accesa — ed è quello che si vedeva alle spie degli
+interruttori, tre giri di seguito, mentre io continuavo ad alzare l'esponente.
+
+Corollario sul rosso della cupola: **il nucleo bianco non veniva dalla potenza ma
+dall'esponente**. Sceso a 1,5 il centro cala di più della metà e il campo lontano sale — la
+stanza si illumina invece di avere un punto bruciato e il resto scuro.
+
+### D-084 — Gli anelli concentrici si misurano, non si guardano
+
+Quattro cause raccontate, quattro rimedi applicati, tutte e quattro dedotte da una
+fotografia guardata a occhio. A occhio non si distingue una fascia di quantizzazione da un
+gradino d'ombra. `tools/scatto_cupola.gd` salva un fotogramma da un punto fisso e se ne
+leggono i pixel: **fasce di 20-40 pixel identici che differiscono di UN livello su 255** —
+quantizzazione, non ombre.
+
+Da lì i due rimedi veri: il debanding acceso davvero (D-082) e la calotta con la texture
+della lamiera. Una superficie perfettamente liscia è la tela ideale per il banding, perché
+il gradiente non ha niente che lo interrompa; la grana di una lamiera lo rompe con una cosa
+che c'è davvero invece di mascherarlo. Sulla cupola la fascia più lunga è passata da 41
+pixel a 13.
+
+### D-085 — Un modello che ne importa un altro va ricostruito dopo
+
+`osservatorio.glb` incorpora `cupola.glb` e `telescopio.glb` al momento della costruzione.
+Rifatta la cupola con lo shading liscio, reimportata da Godot, in gioco continuava a girare
+quella sfaccettata — e io davo la colpa alle ombre. `verifica_freschezza()` confronta le
+date e lo dice.
+
+---
+
+### D-086 — Avviare il gioco non reimporta i modelli
+
+Godot reimporta i `.glb` cambiati solo in una passata da **editor**. Avviando la
+scena si usa quello che sta in `.godot/imported`, che resta il vecchio — senza un errore,
+senza un avviso. Ho ricostruito la cupola con lo shading liscio, l'ho vista scritta su
+disco, e in gioco continuava a girare quella sfaccettata mentre davo la colpa alle ombre.
+
+La sequenza di ricostruzione ha adesso un quinto passo obbligatorio in `assets/LEGGIMI.txt`:
+
+    Godot --headless --editor --quit --path .
+
+E `verifica_freschezza()` copre il caso gemello: `osservatorio.glb` incorpora `cupola.glb`
+e `telescopio.glb` al momento della costruzione, quindi rifare il pezzo senza rifare il
+contenitore lascia in gioco il pezzo vecchio.
+
+### D-087 — La passerella si rifà, non si toglie
+
+Quattro difetti, una causa sola: `aggiungi()` non sapeva ruotare attorno a Y. L'anello era
+sedici scatole **allineate agli assi** su una circonferenza — copriva l'arco dove correva
+dritto e lo lasciava scoperto in diagonale. `verifica_passerella()` percorre la mezzeria
+ogni due gradi: con la geometria vecchia trova **40 punti su 180 sospesi nel vuoto**.
+
+E la larghezza che conta non è quella dell'impalcato ma **quella netta fra gli ostacoli**:
+0,85 meno due parapetti da 7 cm fa 0,71 contro una capsula da 0,60, cioè undici centimetri
+di gioco. L'impalcato è passato a 1,05 e il parapetto interno è sparito — non per far
+posto, ma perché non ha più niente da proteggere: il pozzo centrale è pieno fino a filo
+del calpestio. Una ringhiera davanti a un muro è solo una cosa contro cui incastrarsi.
+
+**Il numero sbagliato era uno solo, e stava fuori dalla sua fonte.** `telescopio_blender.py`
+teneva `PASSERELLA = 0.99` scritto a mano mentre `geometria.py` dice 0,59: il controllo
+dell'oculare girava contro il numero sbagliato e approvava.
+
+### D-088 — Una porta non cambia verso per far comodo
+
+I cardini stanno da una parte sola, e girarli secondo dove sta il giocatore renderebbe
+l'ingresso una porta che si apre verso l'interno — che è esattamente quello che una via di
+fuga non può fare. Chi apre una porta verso di sé fa un passo indietro: lo fa la porta per
+lui, spingendolo fuori dal settore spazzato con `move_and_collide`, così un muro alle
+spalle lo ferma invece di farlo attraversare.
+
+Dove il muro c'è davvero — il magazzino è largo 1,55 — la spinta si ferma prima, e allora
+**la porta si apre di meno**, fermandosi a filo di chi l'ha aperta.
+
+`tools/prova_porte.gd` lo verifica su tutte e sette, e prova anche il contrario: un corpo
+dal lato opposto non deve muoversi di un millimetro, o ogni porta diventa un pistone.
+
+### D-089 — Il nero non era un materiale, era il controluce
+
+Passerella, ringhiera e telescopio erano sagome nere anche a luce rossa accesa. Ho seguito
+la pista del metallico — una lamiera verniciata con la mappa metallica collegata diventa
+uno specchio, e uno specchio in una stanza senza niente da riflettere è nero — e **non era
+quella**: misurato, il metallico effettivo era già zero. La correzione resta perché era
+sbagliata comunque, ma la causa era la disposizione: le due lampade rosse stavano
+tutte e due sui muri in fondo, quindi chi entrava aveva la luce in faccia e la platea
+davanti. Una terza applique sul muro d'ingresso, e si vede.
+
+Il tubo restava scuro dopo, e lì il colpevole era il colore: albedo blu (0,09 di rosso)
+sotto una luce rossa pura restituisce il nove per cento. Schiarito.
+
+**Il banco di misura mentiva.** `scatto_cupola.gd` accendeva le rosse in `_init`, ma
+`LightSwitch._ready()` riapplica il proprio stato alle lampade e dentro `_init` di una
+`SceneTree` quel ready arriva dopo: ogni scatto misurava una stanza al buio credendo di
+misurarla accesa. Uno strumento di misura si verifica prima di credergli — è la stessa
+lezione di D-082, e l'ho imparata due volte nello stesso giorno.

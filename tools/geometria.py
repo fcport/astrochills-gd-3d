@@ -88,7 +88,11 @@ APERTURA_PORTE = {
     "cucina":              ("a", -1),   # dentro la cucina
     "corridoio -> spazio": ("b", +1),   # verso lo spazio divulgazione: il corridoio e' stretto
     "pc -> corridoio":     ("a", -1),   # dentro il controllo pc, per non ostruire il corridoio
-    "magazzino":           ("a", -1),   # verso la sala: il magazzino e' largo 1,55
+    # DENTRO IL MAGAZZINO. Si apriva verso la sala perche' il locale e' largo
+    # 1,55, ma l'anta ne misura 0,90 e ruotando si appoggia al muro di fianco:
+    # ci sta. Una porta di ripostiglio che si apre addosso a chi passa nel
+    # disimpegno e' peggio di una che ruba mezzo metro dentro.
+    "magazzino":           ("a", +1),   # dentro il magazzino
     "bagno":               ("b", +1),   # dentro il bagno
     "disimpegno":          ("a", +1),   # dentro il disimpegno
 }
@@ -104,10 +108,21 @@ CUPOLA = (5.2, 5.0)                     # centro in pianta
 # di chi ci sta in piedi arriva a 2,30, cioe' esattamente all'oculare; a 0,90 ci
 # si doveva chinare di quaranta centimetri. E la scala scende da 1,25 a 0,77 m di
 # sviluppo, liberando la fascia verso il muro dove prima si saliva schiacciati.
-R_PASS, W_PASS, H_PASS = 2.8 * K, 0.85, 0.50   # 0,50 + mezzo impalcato = 0,59 di calpestio
+# 1,05 DI LARGHEZZA, NON 0,85. Con 0,85 e un parapetto per lato restavano 0,71 di
+# passaggio netto contro una capsula da 0,60: undici centimetri di gioco in tutto,
+# e camminandoci ci si incastrava contro la ringhiera al primo scarto. Il numero da
+# guardare non e' la larghezza dell'impalcato, e' quello che resta fra i parapetti.
+# La capsula del giocatore, da world/player/player.tscn: e' la misura contro cui si
+# valuta ogni passaggio, e sta qui perche' i controlli la usano.
+CAPSULA = 0.60
+R_PASS, W_PASS, H_PASS = 2.8 * K, 1.05, 0.50   # 0,50 + mezzo impalcato = 0,59 di calpestio
 SP_PASS = 0.18                          # spessore dell'impalcato
 DISL_RAMPA = H_PASS + SP_PASS / 2       # si sale al PIANO DI CALPESTIO, non alla quota nominale
-LUNGO_RAMPA = 0.75        # 38 gradi, con margine sotto il floor_max_angle di 45
+# 1,10 e non 0,75. A 0,75 la rampa saliva a 38 gradi e i gradini disegnati sopra
+# venivano da quindici centimetri di pedata: una scala a pioli, non una scala. A
+# 1,10 la pendenza scende a 28 gradi e la pedata a ventidue - e il piede resta
+# comunque a un metro dal muro della sala.
+LUNGO_RAMPA = 1.10
 
 
 def scalati():
@@ -292,9 +307,13 @@ def blocchi_edificio():
     _R = DOME_R
     blocchi = []
 
-    def aggiungi(cx, cy, cz, sx, sy, sz, nome, rot_x=0.0, rot_z=0.0):
+    def aggiungi(cx, cy, cz, sx, sy, sz, nome, rot_x=0.0, rot_z=0.0, rot_y=0.0):
+        # ROT_Y SERVE A UN ANELLO. Senza, una passerella circolare si puo' fare solo
+        # con scatole allineate agli assi messe su una circonferenza: dove l'anello
+        # corre in diagonale la scatola non lo copre, e restano buchi e scalini che
+        # camminandoci si sentono tutti. E' esattamente il difetto che c'era.
         if sx > 0.01 and sy > 0.01 and sz > 0.01:
-            blocchi.append((cx, cy, cz, sx, sy, sz, nome, rot_x, rot_z))
+            blocchi.append((cx, cy, cz, sx, sy, sz, nome, rot_x, rot_z, rot_y))
 
     # ---------------------------------------------------------------- muri con aperture
     for i, (x0, z0, x1, z1) in enumerate(MURI):
@@ -391,11 +410,19 @@ def blocchi_edificio():
     # ---------------------------------------------------------------- passerella anulare + pilastro
     import math
     CX, CZ = 5.2 * K, 5.0 * K
-    N = 16
+    # L'IMPALCATO E' FATTO DI CONCI TANGENTI, non di scatole allineate agli assi.
+    # Ogni settore e' largo W_PASS in senso radiale (X locale) e lungo la corda in
+    # senso tangenziale (Z locale), e il blocco si gira di rot_y. Ventiquattro
+    # settori: la freccia dell'arco resta sotto il centimetro, quindi il calpestio
+    # e' piano davvero e non a scodella.
+    N = 24
+    corda = 2 * math.pi * R_PASS / N
     for k in range(N):
         ang = 2 * math.pi * k / N
+        # X locale radiale: la tangente e' l'angolo + 90 gradi
         aggiungi(CX + R_PASS * math.cos(ang), H_PASS, CZ + R_PASS * math.sin(ang),
-                 W_PASS, SP_PASS, 2 * math.pi * R_PASS / N + 0.25, "Pass%d" % k)
+                 W_PASS, SP_PASS, corda + 0.06, "Pass%d" % k,
+                 rot_y=-(ang + math.pi / 2.0))
 
     # IL PARAPETTO HA UNA COLLISIONE, e non e' un dettaglio di comodo.
     # Senza, si attraversa la ringhiera e si cade nel vuoto centrale: li' sotto
@@ -410,17 +437,38 @@ def blocchi_edificio():
         scarto = math.atan2(math.sin(ang - VARCO_ANG), math.cos(ang - VARCO_ANG))
         if abs(scarto) <= VARCO_MEZZO:
             continue          # il varco della scala resta aperto, o non si sale
-        corda = 2 * math.pi / N_PAR
-        for raggio, nome in ((R_PASS - W_PASS / 2, "ParapettoInt"), (R_PASS + W_PASS / 2, "ParapettoEst")):
-            larghezza = raggio * corda + 0.10
-            # il box si allinea grossolanamente all'arco: a 24 settori basta
-            sx = max(0.10, abs(larghezza * math.sin(ang))) + 0.06
-            sz = max(0.10, abs(larghezza * math.cos(ang))) + 0.06
-            aggiungi(CX + raggio * math.cos(ang), calpestio + 0.50, CZ + raggio * math.sin(ang),
-                     sx, 1.00, sz, nome)
+        passo = 2 * math.pi / N_PAR
+        # IL PARAPETTO INTERNO NON C'E' PIU', e non e' un taglio per far posto:
+        # non ha piu' niente da proteggere. Serviva contro il pozzo centrale - 81
+        # cm di altezza libera da cui non si risaliva - e quel pozzo adesso e'
+        # pieno fino a filo del calpestio dall'ottagono della montatura. Una
+        # ringhiera davanti a un muro e' solo una cosa contro cui incastrarsi.
+        for raggio, nome in ((R_PASS + W_PASS / 2, "ParapettoEst"),):
+            # TANGENTE ANCHE QUESTO. Prima la scatola si allineava "grossolanamente"
+            # all'arco allargandosi sui due assi: sui settori a 45 gradi diventava
+            # un quadrato che sporgeva sul calpestio da una parte e lasciava il
+            # vuoto dall'altra. Con rot_y la sezione e' quella vera, sei centimetri.
+            aggiungi(CX + raggio * math.cos(ang), calpestio + 0.50,
+                     CZ + raggio * math.sin(ang),
+                     0.07, 1.00, raggio * passo + 0.04, nome,
+                     rot_y=-(ang + math.pi / 2.0))
 
-    # e il telescopio si tocca: prima ci si passava attraverso
-    aggiungi(CX, 1.60, CZ, 0.85, 1.30, 0.85, "Montatura")
+    # IL VUOTO CENTRALE SI RIEMPIE, ed e' la risposta a due difetti insieme.
+    # Con la sola scatola della montatura si camminava DENTRO il tubo - che e'
+    # inclinato e passa proprio all'altezza di chi sta sulla passerella - e
+    # entrandoci lo si vedeva da dentro. E sotto restava il pozzo centrale, alto
+    # ottantuno centimetri: chi ci cadeva non ne usciva.
+    # Un ottagono (due scatole a 45 gradi l'una dall'altra) riempie il cerchio
+    # interno fino a filo del calpestio: dalla passerella lo strumento si guarda,
+    # non ci si entra.
+    # Il lato del quadrato inscritto vale il raggio per radice di due: cosi'
+    # l'ottagono tocca il bordo interno del calpestio negli otto vertici e rientra
+    # di ventotto centimetri a meta' faccia - una rientranza in cui una capsula da
+    # sessanta non entra.
+    _r_int = R_PASS - W_PASS / 2
+    _lato = _r_int * math.sqrt(2.0)
+    for _g in (0.0, math.pi / 4.0):
+        aggiungi(CX, 1.30, CZ, _lato, 2.60, _lato, "Montatura", rot_y=_g)
     # montatura fissa: pilastro nel pavimento + tubo del telescopio.
     # Erano un nodo scritto a mano che pescava la mesh con idx[dims[0]], cioe' "la prima
     # dimensione della lista": si prendeva il blocco piu' sottile esistente - il recinto,
@@ -915,8 +963,8 @@ GIRATE_PLAFONIERA = ("pc", "cucina")
 # minuti. In una sala telescopio o si sta al rosso o si sta al buio - e il buio e'
 # lo stato normale, perche' la luce riflessa dalle stanze accanto basta a muoversi.
 # Accendere il rosso e' un gesto, accendere il bianco non e' proprio possibile.
-LUCI_ROSSE = ("cupola1", "cupola2")
-PARTE_SPENTA = ("cupola1", "cupola2")
+LUCI_ROSSE = ("cupola1", "cupola2", "cupola3")
+PARTE_SPENTA = ("cupola1", "cupola2", "cupola3")
 H_PLAFONIERA = 2.72     # sotto l'intradosso: la plafoniera e' alta 12 cm e pende poco
 # 1,45 e non 1,10. L'altezza vera di un interruttore italiano e' 1,10, ma
 # l'occhio del giocatore sta a 1,65 e il raggio di interazione parte dalla camera
@@ -943,10 +991,37 @@ H_APPLIQUE = 2.05
 LUCE_MONITOR = (ARREDI_PC[0][1] + 0.65,
                 ARREDI_PC[0][5] + 0.27,
                 (ARREDI_PC[4][2] + ARREDI_PC[4][4]) / 2.0)
+# (nome, x, z, nx, nz, quota). Le esterne stanno piu' in alto, sopra l'architrave.
 APPLIQUE = [
-    ("cupola1", 2.60, 0.10, 0.0, +1.0),    # muro nord, sopra il varco della scala
-    ("cupola2", 0.10, 3.20, +1.0, 0.0),    # muro ovest
+    ("cupola1", 2.60, 0.10, 0.0, +1.0, H_APPLIQUE),   # muro nord, sopra il varco
+    ("cupola2", 0.10, 3.20, +1.0, 0.0, H_APPLIQUE),   # muro ovest
+    # LA TERZA, ED E' QUELLA CHE FA VEDERE QUALCOSA. Con due sole lampade, tutte e
+    # due sui muri in fondo, chi entra dal corridoio ha la luce IN FACCIA e la
+    # passerella, la ringhiera e il telescopio davanti: erano sagome nere sopra un
+    # muro rosso, e non perche' fossero scuri - erano controluce. Questa sta sul
+    # muro da cui si entra e li illumina dalla parte di chi guarda.
+    ("cupola3", 2.20, 6.40, 0.0, -1.0, H_APPLIQUE),   # muro sud, sopra l'ingresso in sala
+    # LE DUE DI FUORI. Leggerissime, e non e' una scelta di resa: sono le luci di
+    # servizio di un OSSERVATORIO, e una lampada forte davanti alla porta
+    # brucerebbe l'adattamento al buio di chi esce - lo stesso motivo per cui
+    # dentro la cupola si sta al rosso. Servono a non inciampare sui gradini
+    # tornando all'auto, non a illuminare il prato.
+    # z 9,60 e non 9,50: qui si da' la FACCIA del muro, non il suo asse - come per
+    # le due della cupola. Sull'asse la piastra resta annegata dentro l'intonaco.
+    # NON SOPRA UN'APERTURA. Erano a 10,60 e 14,60: la prima esattamente sullo
+    # stipite dell'ingresso (il vano va da 10,00 a 11,20), la seconda in mezzo alla
+    # finestra della divulgazione (14,50-16,50). Una lampada puntiforme davanti a
+    # un buco illumina la stanza di dentro, e da dentro erano due macchie bianche
+    # senza spiegazione. Il muro fa ombra, il vano no. Lo controlla
+    # verifica_applique().
+    ("esterno_porta", 11.90, 9.60, 0.0, +1.0, 2.42),  # accanto all'ingresso, dal lato
+                                                      # opposto a dove sbatte l'anta
+    ("esterno_sud",   17.60, 9.60, 0.0, +1.0, 2.42),  # sul piazzale, oltre la finestra
 ]
+
+# Le due esterne non hanno comando e non lo avranno: una luce di servizio davanti
+# a una porta sta accesa tutta la notte, ed e' il motivo per cui esiste.
+SEMPRE_ACCESE = ("esterno_porta", "esterno_sud")
 
 
 def punti_luce():
@@ -955,7 +1030,7 @@ def punti_luce():
 
 
 def punti_applique():
-    """(nome, x, z, nx, nz) in metri reali: le luci a parete."""
+    """(nome, x, z, nx, nz, quota) in metri reali: le luci a parete."""
     return list(APPLIQUE)
 
 
@@ -1075,7 +1150,7 @@ INTERRUTTORI_LIBERI = [
     #
     # Questa resta perche' la cupola non ha porte: ci si entra dal varco, e un
     # varco non ha stipiti su cui mettere una placca.
-    ("cupola", 5.20, 4.10, -1.0, 0.0, ("cupola1", "cupola2")),
+    ("cupola", 5.20, 4.10, -1.0, 0.0, ("cupola1", "cupola2", "cupola3")),
 ]
 
 
@@ -1097,7 +1172,105 @@ def luci_senza_comando():
     for (_n, _x, _z, _nx, _nz, gruppo) in INTERRUTTORI_LIBERI:
         comandate.update(gruppo)
     tutte = [n for (_x, _z, n) in PUNTI_LUCE] + [a[0] for a in APPLIQUE]
-    return [n for n in tutte if n not in comandate]
+    return [n for n in tutte if n not in comandate and n not in SEMPRE_ACCESE]
+
+
+def verifica_passerella(passo_gradi=2.0, franco=0.12):
+    """L'anello si cammina tutto, senza buchi e senza scalini.
+
+    E' il controllo che mancava, e il difetto lo si sentiva solo camminandoci: la
+    passerella era fatta di scatole ALLINEATE AGLI ASSI messe su una
+    circonferenza, quindi copriva l'anello dove l'arco era orizzontale o
+    verticale e lo lasciava scoperto in diagonale. Qui si percorre la mezzeria
+    ogni due gradi e si chiede che ogni punto stia dentro almeno un concio, con
+    `franco` di margine dal bordo - il piede non cammina sullo spigolo.
+
+    Si controlla anche che tutti i conci abbiano lo stesso calpestio: uno di
+    quota diversa e' uno scalino, e un CharacterBody3D non fa step-up.
+    """
+    import math as _m
+    conci = [b for b in blocchi_edificio() if b[6].startswith("Pass")]
+    problemi = []
+    if not conci:
+        return ["  PASSERELLA ASSENTE       nessun concio di impalcato"]
+    quote = set(round(b[1] + b[4] / 2.0, 3) for b in conci)
+    if len(quote) > 1:
+        problemi.append("  IMPALCATO A SCALINI      calpestii diversi: %s"
+                        % sorted(quote))
+    CXp, CZp = 5.2 * K, 5.0 * K
+    passi = int(360.0 / passo_gradi)
+    scoperti = 0
+    for i in range(passi):
+        ang = 2 * _m.pi * i / passi
+        px = CXp + R_PASS * _m.cos(ang)
+        pz = CZp + R_PASS * _m.sin(ang)
+        coperto = False
+        for (cx, cy, cz, sx, sy, sz, _n, _rx, _rz, ry) in conci:
+            # nel sistema del concio: si disfa la rotazione attorno a Y
+            dx, dz = px - cx, pz - cz
+            c, sn = _m.cos(-ry), _m.sin(-ry)
+            lx = dx * c + dz * sn
+            lz = -dx * sn + dz * c
+            if abs(lx) <= sx / 2 - franco and abs(lz) <= sz / 2 - franco:
+                coperto = True
+                break
+        if not coperto:
+            scoperti += 1
+    if scoperti:
+        problemi.append("  BUCHI NELL'ANELLO        %d punti su %d della mezzeria "
+                        "non poggiano su nessun concio" % (scoperti, passi))
+    # E CI SI DEVE PASSARE. La larghezza che conta non e' quella dell'impalcato ma
+    # quella che resta fra gli ostacoli: parapetti da una parte, il pieno centrale
+    # dall'altra. La capsula del giocatore e' larga 0,60, e sotto i venti
+    # centimetri di gioco camminare diventa incastrarsi.
+    ostacoli = [b for b in blocchi_edificio() if b[6].startswith("Parapetto")]
+    dentro = R_PASS - W_PASS / 2.0
+    fuori_r = R_PASS + W_PASS / 2.0
+    for b in ostacoli:
+        r = _m.hypot(b[0] - CXp, b[2] - CZp)
+        mezzo = b[3] / 2.0 if b[3] < b[5] else b[5] / 2.0
+        if r > R_PASS:
+            fuori_r = min(fuori_r, r - mezzo)
+        else:
+            dentro = max(dentro, r + mezzo)
+    netto = fuori_r - dentro
+    # TRENTA CENTIMETRI DI GIOCO, non venti. Con venti la configurazione vecchia -
+    # 0,85 di impalcato e un parapetto per lato - passava per un centimetro, e
+    # camminandoci ci si incastrava lo stesso: un margine che approva il difetto
+    # che deve trovare e' peggio di nessun margine.
+    if netto < CAPSULA + 0.30:
+        problemi.append("  PASSAGGIO STRETTO        fra gli ostacoli restano %.2f m, "
+                        "la capsula ne misura %.2f" % (netto, CAPSULA))
+    return problemi
+
+
+def verifica_applique(franco=0.45):
+    """Un'applique non va davanti a un buco.
+
+    Il muro fa ombra, il vano no: una lampada piazzata sopra una porta o in mezzo
+    a una finestra illumina la stanza dall'altra parte, e da li' non si capisce da
+    dove venga quella luce. E' esattamente quello che era successo alle due
+    esterne, sistemate sullo stipite dell'ingresso e in mezzo alla finestra della
+    divulgazione. `franco` e' quanto muro pieno deve restare fra la lampada e il
+    bordo del vano: meno di mezzo metro e il cono la lambisce comunque.
+    """
+    _, aperture, _, _, _, _ = scalati()
+    problemi = []
+    for (nome, ax, az, anx, _anz, _q) in APPLIQUE:
+        lungo_x = abs(anx) < 0.5          # la normale e' su Z: il muro corre lungo X
+        p = ax if lungo_x else az
+        fisso = az if lungo_x else ax
+        for (px_, pz, w, o, _t, nap) in aperture:
+            if (o == "h") != lungo_x:
+                continue
+            # la faccia dell'applique sta mezzo spessore fuori dall'asse del muro
+            if abs((pz if lungo_x else px_) - fisso) > SP / 2 + 0.02:
+                continue
+            a, b = (px_, px_ + w) if lungo_x else (pz, pz + w)
+            if a - franco < p < b + franco:
+                problemi.append("  APPLIQUE SUL VANO        %s a %.2f: l'apertura %s "
+                                "va da %.2f a %.2f" % (nome, p, nap, a, b))
+    return problemi
 
 
 def verifica_interruttori(aria=0.03):

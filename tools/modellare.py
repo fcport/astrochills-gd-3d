@@ -75,7 +75,10 @@ METALLICI = ("Metallo", "Inox", "Rame", "Ferro")
 # mappa al Base Color e' giusto. Non qui: il vetro rosso della cupola usa la stessa
 # plastica opalina del diffusore bianco, e collegata cosi' com'e' lo faceva
 # diventare bianco - la trama e' la stessa, il colore no.
-TINTI = ("NeonRosso",)
+# I dorsi stanno qui per la stessa ragione: una tela sola, otto colori. Senza,
+# la libreria diventa una fila di volumi tutti dello stesso beige.
+TINTI = ("NeonRosso", "LibroRosso", "LibroBlu", "LibroVerde", "LibroCrema",
+         "Tessuto", "Carta")
 
 
 # Set di texture: nome del materiale -> (cartella in assets/textures, METRI PER
@@ -108,6 +111,16 @@ TEXTURE = {
     "Neon":         ("diffusore", 0.32),
     "NeonRosso":    ("diffusore", 0.32),
     "Avorio":       ("placca", 0.22),
+    # I DORSI. Sei centimetri per ripetizione, non uno: un dorso e' largo tre
+    # centimetri, e con la scala di un mobile la trama della tela non ci starebbe
+    # dentro nemmeno una volta - si vedrebbe una sfumatura, non un tessuto. A dodici
+    # si intravedeva; a sei la tela si legge come tela su un dorso da un metro.
+    "LibroRosso":   ("libri", 0.06),
+    "LibroBlu":     ("libri", 0.06),
+    "LibroVerde":   ("libri", 0.06),
+    "LibroCrema":   ("libri", 0.06),
+    "Tessuto":      ("libri", 0.30),
+    "Carta":        ("carta", 0.22),
 }
 RADICE_TEX = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                           "assets", "textures")
@@ -129,7 +142,7 @@ def _immagine(cartella, nome_file):
     return img
 
 
-def applica_texture(m, nome):
+def applica_texture(m, nome, tinta=None, set_texture=None, metallico=None):
     """Attacca le mappe al Principled, se il materiale ha un set dichiarato.
 
     Solo i cinque canali che il glTF sa portare: baseColor, roughness, metallic,
@@ -139,12 +152,26 @@ def applica_texture(m, nome):
     La normale e' la NormalGL e non la NormalDX: con quella sbagliata l'illuminazione
     risulta scavata al contrario, e non si capisce guardando una texture ferma.
     """
-    if nome not in TEXTURE:
+    # `set_texture` e `tinta` servono a chi ha una tavolozza propria - il
+    # telescopio ce l'ha, con i suoi Tubo/Montatura/Collari che qui non esistono.
+    # Senza, quei materiali non avrebbero mai una mappa: aggiungerli a TEXTURE
+    # significherebbe portare in questo file i nomi di un modello che non e' suo.
+    if set_texture is None and nome not in TEXTURE:
         return False
-    cartella = TEXTURE[nome][0]
+    cartella = (set_texture or TEXTURE[nome])[0]
     # .get e non [nome]: questa funzione la chiama anche osservatorio_blender, che
     # ha una sua tavolozza e non passa da COLORI. Serve solo per i TINTI.
-    c = COLORI.get(nome, (1.0, 1.0, 1.0))
+    c = tinta if tinta is not None else COLORI.get(nome, (1.0, 1.0, 1.0))
+    moltiplica = tinta is not None or nome in TINTI
+    # LA MAPPA METALLICA SI COLLEGA SOLO A CHI E' METALLO DAVVERO, e per un po'
+    # non e' stato cosi'. Il set "metallo" e' Metal032, un metallo nudo: la sua
+    # mappa metallica vale uno dappertutto. Collegata a una LAMIERA VERNICIATA -
+    # la passerella, la ringhiera, la scala, il tubo del telescopio - li rende
+    # specchi; e uno specchio in una stanza senza niente da riflettere e' NERO.
+    # Sono i pezzi che si vedevano come sagome nere anche a luce rossa accesa.
+    # La vernice e' un dielettrico: metallico zero, e la luce la prende tutta.
+    if metallico is None:
+        metallico = nome in METALLICI
     nt = m.node_tree
     bsdf = nt.nodes["Principled BSDF"]
 
@@ -161,7 +188,7 @@ def applica_texture(m, nome):
             nm.location = (-350, y)
             nt.links.new(nm.inputs["Color"], t.outputs["Color"])
             nt.links.new(bsdf.inputs["Normal"], nm.outputs["Normal"])
-        elif ingresso == "Base Color" and nome in TINTI:
+        elif ingresso == "Base Color" and moltiplica:
             mix = nt.nodes.new("ShaderNodeMix")
             mix.data_type = "RGBA"
             mix.blend_type = "MULTIPLY"
@@ -175,7 +202,8 @@ def applica_texture(m, nome):
 
     collega("color.jpg", "Base Color", "sRGB", 400)
     collega("roughness.jpg", "Roughness", "Non-Color", 100)
-    collega("metallic.jpg", "Metallic", "Non-Color", -200)
+    if metallico:
+        collega("metallic.jpg", "Metallic", "Non-Color", -200)
     collega("normal.jpg", "Normal", "Non-Color", -500)
     return True
 
@@ -210,7 +238,10 @@ def materiale(nome):
         m.use_backface_culling = False
     if nome == "Spia":
         b.inputs["Emission Color"].default_value = (1.0, 0.42, 0.06, 1.0)
-        b.inputs["Emission Strength"].default_value = 4.0
+        # 1,0 e non 4,0: a quattro il puntino andava oltre il punto di bianco del
+        # tonemapping e si vedeva ARANCIONE BRUCIATO, cioe' bianco. Deve dire dove
+        # sta la placca, non fare luce - quella, pochissima, la fa la sua lampada.
+        b.inputs["Emission Strength"].default_value = 1.0
         b.inputs["Roughness"].default_value = 0.25
     if nome == "Insegna":
         # il pannello luminoso di un distributore: acceso anche quando la sala e' spenta

@@ -639,6 +639,54 @@ def verifica_ingombri(margine=0.40):
     return problemi
 
 
+def verifica_angoli():
+    """Dove due muri finiscono nello stesso punto, l'angolo dev'essere pieno.
+
+    IL DIFETTO CHE L'HA FATTO SCRIVERE. Un muro va da asse ad asse e ha spessore SP
+    centrato sull'asse: nell'angolo fra due muri che finiscono entrambi li', il
+    quadrato di SP/2 per SP/2 dalla parte esterna non lo copre nessuno dei due.
+    Restava un intaglio di dieci centimetri alto quanto il muro, in otto angoli su
+    ventiquattro incroci - tre dentro e cinque sulla facciata.
+
+    Nessuno degli altri controlli lo vedeva, e non e' un caso: `verifica_fessure`
+    cerca l'aria fra il muro e cio' che gli sta SOPRA, `verifica_raccordi` gli
+    scalini fra pavimenti, `verifica_ingombri` cio' che sborda. Questo e' un pezzo
+    di spigolo che manca, e da dentro non si legge come un buco - ci si vede
+    attraverso solo di sguincio - ma come uno scalino nell'angolo. Che e'
+    esattamente come mi e' stato descritto: "molti muri non fanno un angolo a 90
+    ma quasi un gradino".
+
+    Si guardano i quattro quadranti attorno a ogni incrocio, e si segnala quello
+    vuoto che ha pieni tutti e due i vicini: quello e' un angolo, non una fine.
+    """
+    pieni = [(b[0] - b[3] / 2.0, b[2] - b[5] / 2.0, b[0] + b[3] / 2.0, b[2] + b[5] / 2.0)
+             for b in blocchi if b[6].startswith("M") and not b[6].startswith("Mont")]
+
+    def coperto(px, pz):
+        return any(x0 - 0.001 <= px <= x1 + 0.001 and z0 - 0.001 <= pz <= z1 + 0.001
+                   for (x0, z0, x1, z1) in pieni)
+
+    incroci = {}
+    for (x0, z0, x1, z1) in MURI:
+        for capo in ((round(x0, 3), round(z0, 3)), (round(x1, 3), round(z1, 3))):
+            incroci[capo] = incroci.get(capo, 0) + 1
+    problemi = []
+    for (px, pz), quanti in sorted(incroci.items()):
+        if quanti < 2:
+            continue
+        for sx in (-1, 1):
+            for sz in (-1, 1):
+                cx, cz = px + sx * SP / 4, pz + sz * SP / 4
+                if coperto(cx, cz):
+                    continue
+                if coperto(px - sx * SP / 4, cz) and coperto(cx, pz - sz * SP / 4):
+                    problemi.append("  ANGOLO INTAGLIATO in (%.2f, %.2f): manca il quadrante"
+                                    " %s%s, e l'angolo legge come uno scalino"
+                                    % (px, pz, "+x" if sx > 0 else "-x",
+                                       "+z" if sz > 0 else "-z"))
+    return problemi
+
+
 def verifica_fessure(tolleranza=0.02, passo=0.5):
     """Fra la cima di un muro perimetrale e cio' che gli sta sopra non ci deve
     essere aria.
@@ -856,7 +904,7 @@ _tetti = [(b[0]-b[3]/2, b[2]-b[5]/2, b[0]+b[3]/2, b[2]+b[5]/2)
 _ing = (verifica_ingombri() + verifica_raccordi() + verifica_ante()
         + verifica_trappole() + verifica_arredi() + verifica_interruttori()
         + verifica_applique() + verifica_passerella()
-        + verifica_fessure()
+        + verifica_fessure() + verifica_angoli()
         + verifica_freschezza()
         + verifica_orientamenti(io.open(out, encoding="utf-8").read()))
 if _ing:

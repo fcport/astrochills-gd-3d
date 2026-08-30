@@ -1914,3 +1914,31 @@ quando ha ragione.
 
 Validato iniettando i due difetti — uno script toccato dopo il suo modello, un modello
 cambiato e non reimportato — e guardandoli comparire.
+
+### D-099 — Un angolo fra due muri non è la somma di due muri
+
+Un muro va da asse ad asse ed è spesso SP centrato sull'asse. Dove due muri
+**finiscono entrambi** nello stesso punto, il quadrato di SP/2 × SP/2 dalla parte
+esterna dell'angolo non lo copre nessuno dei due: resta un intaglio di dieci
+centimetri alto quanto il muro. Otto angoli su ventiquattro incroci — tre dentro,
+cinque sulla facciata.
+
+Non si legge come un buco: ci si vede attraverso solo di sguincio, e da dentro l'angolo
+sembra fatto a scalino invece che a spigolo. È esattamente come mi è stato descritto:
+«molti muri non fanno un angolo a 90 ma quasi un gradino».
+
+Nessuno degli altri controlli lo vedeva, e non per distrazione: `verifica_fessure` cerca
+l'aria fra il muro e ciò che gli sta **sopra**, `verifica_raccordi` gli scalini fra
+pavimenti, `verifica_ingombri` ciò che sborda dalla sagoma. Questo è un pezzo di spigolo
+che manca in **pianta**, e non somigliava a nessuno dei difetti già noti.
+
+La cura è allungare ogni muro di mezzo spessore **su quell'estremo e solo lì**: il pezzo
+in più cade dentro l'ingombro del muro che gli sta di traverso, quindi non sporge da
+nessuna parte. Dove invece un muro ne **incrocia** un altro senza finirci — la T di un
+tramezzo — l'angolo è già pieno, e allungare farebbe spuntare un moncone nella stanza di
+là. La distinzione fra «due muri finiscono qui» e «uno passa e l'altro finisce» è tutto
+il contenuto della correzione.
+
+`verifica_angoli` guarda i quattro quadranti attorno a ogni incrocio e segnala quello
+vuoto che ha pieni tutti e due i vicini — perché quello è un angolo, non una fine.
+Validato riaprendo gli angoli: ne trova otto, e con la cura zero.

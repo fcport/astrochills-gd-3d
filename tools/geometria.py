@@ -328,10 +328,36 @@ def blocchi_edificio():
             blocchi.append((cx, cy, cz, sx, sy, sz, nome, rot_x, rot_z, rot_y))
 
     # ---------------------------------------------------------------- muri con aperture
+    # GLI ANGOLI VANNO CHIUSI. Un muro va da asse ad asse e ha spessore SP centrato
+    # sull'asse: dove due muri FINISCONO nello stesso punto, il quadrato di SP/2 per
+    # SP/2 dalla parte esterna dell'angolo non lo copre nessuno dei due e resta un
+    # intaglio alto quanto il muro. Non e' una fessura fra due stanze - non ci si
+    # vede attraverso - e' un pezzo di spigolo che manca: da dentro l'angolo non
+    # legge come uno spigolo a novanta gradi ma come uno scalino di dieci centimetri.
+    #
+    # Si allunga ogni muro di mezzo spessore SU QUELL'ESTREMO E SOLO LI'. Il pezzo in
+    # piu' cade dentro l'ingombro del muro che gli sta di traverso, quindi non sporge
+    # da nessuna parte: riempie il quadrante che mancava e basta. Dove invece un muro
+    # ne INCROCIA un altro senza finirci - la T di un tramezzo - l'angolo e' gia'
+    # pieno, e allungare farebbe spuntare un moncone nella stanza di la'.
+    _capi = {}
+    for (x0, z0, x1, z1) in MURI:
+        for capo in ((round(x0, 3), round(z0, 3)), (round(x1, 3), round(z1, 3))):
+            _capi[capo] = _capi.get(capo, 0) + 1
+
     for i, (x0, z0, x1, z1) in enumerate(MURI):
         orizz = abs(z1 - z0) < 0.001
         a, b = (min(x0, x1), max(x0, x1)) if orizz else (min(z0, z1), max(z0, z1))
         fisso = z0 if orizz else x0
+
+        def _capo(v, _o=orizz, _f=fisso):
+            return (round(v, 3), round(_f, 3)) if _o else (round(_f, 3), round(v, 3))
+
+        # gli estremi da usare per il PIENO. Le aperture restano contate su a e b:
+        # allungando anche quelli, una porta a filo dell'angolo entrerebbe in un muro
+        # che non e' il suo.
+        a_est = a - SP / 2 if _capi.get(_capo(a), 0) >= 2 else a
+        b_est = b + SP / 2 if _capi.get(_capo(b), 0) >= 2 else b
         ap = [(p, p + w, t) for (px_, pz, w, o, t, _nm) in APERTURE
               if (o == "h") == orizz and abs((pz if orizz else px_) - fisso) < 0.01
               for p in [px_ if orizz else pz]
@@ -353,7 +379,7 @@ def blocchi_edificio():
         # sempre a H.
         giu = 0.35 if i < len(PERIMETRO) else 0.0
         h_muro, y_muro = H_TETTO + giu, (H_TETTO - giu) / 2.0
-        cur = a
+        cur = a_est
         for (p0, p1, t) in ap:
             if p0 > cur + 0.01:
                 aggiungi_seg = (cur, p0)
@@ -361,8 +387,8 @@ def blocchi_edificio():
                 if orizz: aggiungi(m, y_muro, fisso, L, h_muro, SP, "M%d" % i)
                 else:     aggiungi(fisso, y_muro, m, SP, h_muro, L, "M%d" % i)
             cur = p1
-        if b > cur + 0.01:
-            m, L = (cur + b) / 2.0, b - cur
+        if b_est > cur + 0.01:
+            m, L = (cur + b_est) / 2.0, b_est - cur
             if orizz: aggiungi(m, y_muro, fisso, L, h_muro, SP, "M%d" % i)
             else:     aggiungi(fisso, y_muro, m, SP, h_muro, L, "M%d" % i)
         # architravi e parapetti

@@ -73,6 +73,103 @@ DA_OGA = {
 }
 
 
+# Sketchfab: cartella -> (zip atteso, pagina, autore, licenza, credito, perche')
+#
+# QUI IL DOWNLOAD NON SI PUO' AUTOMATIZZARE, ed e' l'unico caso in tutto il progetto.
+# L'API di RICERCA di Sketchfab e' aperta - e' cosi' che questo modello e' stato
+# trovato - ma quella di DOWNLOAD vuole un account autenticato: nessuna chiave da
+# mettere in un file, va cliccato da un browser con la sessione aperta. Quindi la
+# SCELTA resta versionata qui come tutte le altre, e a mancare e' solo il file.
+#
+# Le tre alternative scaricabili sono state aperte e MISURATE prima di scartarle,
+# non guardate in anteprima:
+#   * Dobson CC0 (OpenGameArt, Light Game Studio): 310 facce, dieci oggetti chiamati
+#     "Cylinder.003" - un assemblaggio di primitive, meno di quello che avevamo a mano.
+#   * Rifrattore CC-BY 3.0 (OpenGameArt, cptx032): 924 triangoli e NESSUN materiale,
+#     ed e' un cannocchiale da appassionato su treppiede fotografico.
+#   * Poly Haven non ha telescopi (interrogata l'API), Poly Pizza risponde 401 senza chiave.
+A_MANO = {
+    "telescopio_riflettore": (
+        "reflector_telescope.zip",
+        "https://sketchfab.com/3d-models/reflector-telescope-62549e8c60d24ee5adb2a01a2c226a03",
+        "GhInko", "CC-BY-4.0",
+        'This work is based on "Reflector telescope" '
+        "(https://sketchfab.com/3d-models/reflector-telescope-62549e8c60d24ee5adb2a01a2c226a03) "
+        "by GhInko (https://sketchfab.com/GhInko) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "Newtoniano su montatura equatoriale TEDESCA con contrappeso, 13.272 facce,"
+        " texturizzato. E' l'unico dei candidati che sia lo strumento giusto: in una"
+        " cupola non ci sta un cannocchiale su treppiede, ci sta un tubo su una"
+        " montatura fissata a un pilastro. E la sua montatura e' gia' tarata per la"
+        " nostra latitudine - l'asse polare misurato sta a 43 gradi, Montegrimano e'"
+        " a 43,9: si raddrizza di un grado, non si reinventa."),
+}
+
+# Le texture arrivano a 4096: dentro il .glb della stanza sarebbero ventidue megabyte
+# per un oggetto solo, e il tubo si guarda da un metro. Si riducono a 1K, e si tiene
+# quello che serve - il metallico NON serve, vedi telescopio_blender.py.
+LATO_RIDOTTO = 1024
+
+
+def prendi_a_mano(cartella):
+    zip_atteso, pagina, autore, licenza, credito, perche = A_MANO[cartella]
+    fuori = os.path.join(DEST, cartella)
+    archivio = os.path.join(DEST, "_da_scaricare", zip_atteso)
+    if not os.path.exists(os.path.join(fuori, "scene.gltf")):
+        if not os.path.exists(archivio):
+            print("MANCA %s." % cartella)
+            print("  Sketchfab consegna i file solo a un account autenticato,")
+            print("  quindi questo passo e' a mano:")
+            print("    1. apri %s" % pagina)
+            print("    2. Download 3D Model -> glTF")
+            print("    3. lascia lo zip in %s" % os.path.dirname(archivio))
+            print("  poi rilancia questo script.")
+            return False
+        os.makedirs(fuori, exist_ok=True)
+        with zipfile.ZipFile(archivio) as z:
+            z.extractall(fuori)
+    riduci(os.path.join(fuori, "textures"))
+    righe = ["%s da Sketchfab (%s)" % (cartella, pagina),
+             "Autore: %s. Licenza: %s - L'ATTRIBUZIONE E' OBBLIGATORIA." % (autore, licenza),
+             "", "Credito da riportare ovunque il modello sia distribuito:", credito,
+             "", perche,
+             "", "Scaricato a mano: l'API di download di Sketchfab vuole un account.",
+             "Le texture sono state ridotte a %d px da prendi_modello.py;" % LATO_RIDOTTO,
+             "gli originali a 4096 restano nello zip.", ""]
+    io.open(os.path.join(fuori, "FONTE.txt"), "w", encoding="utf-8").write("\n".join(righe))
+    print("%-26s pronto (Sketchfab, %s: attribuzione obbligatoria)" % (cartella, licenza))
+    return True
+
+
+def riduci(cartella_texture):
+    """Porta le mappe a LATO_RIDOTTO e le rinomina come tutte le altre del progetto."""
+    from PIL import Image
+    if not os.path.isdir(cartella_texture):
+        return
+    lavori = []
+    for n in os.listdir(cartella_texture):
+        b = n.lower()
+        if b.endswith(("_basecolor.png", "_diffuse.png")):
+            lavori.append((n, "color.jpg", None))
+        elif b.endswith("_normal.png"):
+            lavori.append((n, "normal.png", None))
+        elif b.endswith("_metallicroughness.png"):
+            # nel glTF la rugosita' e' il canale VERDE e la metallicita' il BLU:
+            # si estrae il verde, il blu si butta.
+            lavori.append((n, "roughness.jpg", 1))
+    for sorgente, destino, canale in lavori:
+        fuori = os.path.join(cartella_texture, destino)
+        if os.path.exists(fuori):
+            continue
+        im = Image.open(os.path.join(cartella_texture, sorgente))
+        if canale is not None:
+            im = im.convert("RGB").split()[canale].convert("L")
+        im = im.convert("L" if canale is not None else "RGB")
+        im = im.resize((LATO_RIDOTTO, LATO_RIDOTTO), Image.LANCZOS)
+        im.save(fuori, quality=92)
+        print("    %s -> %s (%d px)" % (sorgente, destino, LATO_RIDOTTO))
+
+
 def prendi_oga(cartella):
     urls, pagina, autore, licenza, perche = DA_OGA[cartella]
     if isinstance(urls, str):
@@ -129,11 +226,14 @@ def prendi(slug):
 
 
 if __name__ == "__main__":
-    for s in (sys.argv[1:] or (sorted(MODELLI) + sorted(DA_OGA))):
+    for s in (sys.argv[1:] or (sorted(MODELLI) + sorted(DA_OGA) + sorted(A_MANO))):
         if s in MODELLI:
             prendi(s)
         elif s in DA_OGA:
             prendi_oga(s)
+        elif s in A_MANO:
+            if not prendi_a_mano(s):
+                sys.exit(1)
         else:
             print("sconosciuto: %s" % s)
             sys.exit(1)

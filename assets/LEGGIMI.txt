@@ -13,11 +13,22 @@ quest'ordine, e ci vogliono un paio di minuti.
 
        python tools/prendi_modello.py
 
-3. I modelli del gioco, uno per stanza (serve Blender 5):
+   Uno solo non si scarica da solo: il telescopio sta su Sketchfab, che consegna i
+   file soltanto a un account autenticato. Lo script dice cosa cliccare e dove
+   lasciare lo zip; il resto - spacchettare, ridurre le texture, scrivere il
+   FONTE.txt - lo fa lui. E' CC-BY: il credito sta in CREDITI.md, e va tenuto.
 
-       "D:/programs/blender5/blender.exe" --background --python tools/osservatorio_blender.py
+3. I modelli del gioco, uno per stanza (serve Blender 5).
+
+   L'ORDINE CONTA: osservatorio.glb INCORPORA cupola.glb e telescopio.glb, quindi va
+   fatto per ultimo. Rifatto per primo si porta dentro le versioni vecchie degli
+   altri due, il file e' nuovo di data e il contenuto no - e in partita si vede il
+   telescopio di ieri. Il controllo di freschezza in gen_blockout.py se ne accorge,
+   ma tanto vale non provocarlo:
+
        "D:/programs/blender5/blender.exe" --background --python tools/telescopio_blender.py
        "D:/programs/blender5/blender.exe" --background --python tools/cupola_blender.py
+       "D:/programs/blender5/blender.exe" --background --python tools/osservatorio_blender.py
        "D:/programs/blender5/blender.exe" --background --python tools/arredi_blender.py
        "D:/programs/blender5/blender.exe" --background --python tools/cucina_blender.py
        "D:/programs/blender5/blender.exe" --background --python tools/divulgazione_blender.py

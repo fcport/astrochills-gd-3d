@@ -29,11 +29,24 @@ func _init() -> void:
 	scena.add_child(cam)
 	# in mezzo alla sala telescopio, all'altezza dell'occhio, verso il muro ovest
 	# illuminato dall'applique rossa: e' dove gli anelli si vedono meglio
-	cam.position = Vector3(2.60, 1.65, 5.90)
-	cam.rotation_degrees = Vector3(-6, 0, 0)
+	# il punto di ripresa si puo' spostare senza toccare il file: serve guardare la
+	# stessa stanza da posti diversi - da terra, dalla passerella, all'oculare - e un
+	# solo punto fisso costringeva a modificare lo strumento di misura ogni volta.
+	cam.position = _numeri("SCATTO_DA", Vector3(2.60, 1.65, 5.90))
+	cam.rotation_degrees = _numeri("SCATTO_VERSO", Vector3(-6, 0, 0))
 	cam.fov = 55.0
 	cam.current = true
 
+
+
+func _numeri(chiave: String, difetto: Vector3) -> Vector3:
+	var s := OS.get_environment(chiave)
+	if s.is_empty():
+		return difetto
+	var p := s.split(",")
+	if p.size() != 3:
+		return difetto
+	return Vector3(float(p[0]), float(p[1]), float(p[2]))
 
 
 func _process(_d: float) -> bool:

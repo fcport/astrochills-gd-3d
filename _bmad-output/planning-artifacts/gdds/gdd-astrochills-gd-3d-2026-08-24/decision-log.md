@@ -1727,3 +1727,95 @@ sotto una luce rossa pura restituisce il nove per cento. Schiarito.
 `SceneTree` quel ready arriva dopo: ogni scatto misurava una stanza al buio credendo di
 misurarla accesa. Uno strumento di misura si verifica prima di credergli — è la stessa
 lezione di D-082, e l'ho imparata due volte nello stesso giorno.
+
+### D-090 — Il telescopio si prende da fuori, e montarlo è un mestiere diverso dal modellarlo
+
+Fatto a mano era cinquanta fra cilindri e scatole, ed era la cosa più brutta della stanza:
+un tubo liscio senza un bullone. Le minuzie — viti, collari, manopole, cavi flessibili —
+sono esattamente quello che fa leggere uno strumento come uno strumento, e non si
+modellano in una serata.
+
+I candidati scaricabili li ho **aperti e misurati**, non guardati in anteprima: il Dobson
+CC0 di OpenGameArt è 310 facce di primitive chiamate `Cylinder.003`, il rifrattore CC-BY è
+924 triangoli senza materiali su un treppiede fotografico, Poly Haven non ha telescopi e
+Poly Pizza vuole una chiave. Quello giusto — newtoniano su equatoriale tedesca, 13.272
+facce, texturizzato — sta su Sketchfab, la cui API di ricerca è aperta e quella di
+download no: **è l'unico asset del progetto che va scaricato a mano**, e `A_MANO` in
+`prendi_modello.py` tiene versionata la scelta anche se il file non lo è.
+
+È CC-BY, e questa è la prima licenza del progetto che chiede qualcosa. `assets/models/` è
+gitignorato, quindi un credito scritto in un `FONTE.txt` lì dentro non viaggerebbe col
+gioco: da qui `CREDITI.md` in radice.
+
+Montarlo non è modellarlo. Il treppiede si butta — in una cupola lo strumento sta su un
+pilastro di cemento — e la gerarchia si ricostruisce, perché il modello arriva come
+cinquantacinque oggetti piatti in una lista: è una scultura, non una macchina.
+
+### D-091 — Gli assi di una montatura si misurano, non si leggono dai nomi
+
+I pezzi si chiamano `Xaxis`, `Yaxis`, `Load`, `Main`: nomi parlanti, e fidarsene sarebbe
+stato comodo. L'analisi delle componenti principali dei vertici dice invece **dove punta
+davvero ogni pezzo**, e i numeri sono usciti perfetti: asse di declinazione ortogonale al
+polare a meno di 1e-4, le due rette incidenti a mezza unità, asse polare a 43,2 gradi
+contro i 43,9 di Montegrimano — sette decimi, si raddrizza.
+
+Da lì la divisione in fermo / ascensione retta / declinazione, con due controlli che la
+verificano invece di darla per buona: ogni pezzo del file dev'essere nominato in un
+gruppo (se il modello cambia, la costruzione si ferma invece di lasciare un pezzo per
+terra), e ogni pezzo dichiarato solidale al tubo deve stare dalla parte del tubo rispetto
+all'asse di declinazione — che è la definizione di equatoriale tedesca.
+
+**Il pilastro va sotto l'incrocio degli assi, non sotto la colonna.** Sembra la stessa
+cosa e non lo è: l'asse polare è inclinato, e il punto attorno a cui la testa gira sta
+ventun centimetri di lato. Centrando la colonna, tutto ciò che ruota spazzava un cerchio
+scentrato di altrettanto — e sfondava la passerella.
+
+### D-092 — Le quattro rotazioni sono quattro nodi, e zero è il riposo
+
+`Polo` e `Declinazione` portano solo l'orientamento degli assi; `AssePolare` e `AsseDec`
+ruotano solo attorno al proprio Z. Con orientamento e rotazione sullo stesso nodo sarebbe
+l'ordine degli angoli di Eulero a decidere il risultato, e inseguire diventerebbe un
+problema di convenzioni invece che una rotazione sola.
+
+**La posa si applica dopo aver appeso le mesh ai perni.** Prima non si vedeva:
+`matrix_parent_inverse` viene calcolata sul genitore com'è in quel momento e annulla
+esattamente la rotazione che il genitore aveva già. Costruito nell'altro ordine il
+telescopio restava a riposo qualunque angolo si scrivesse, e nessuno se ne accorgeva
+perché il riposo è a sua volta una posa sensata. Ne segue il contratto per l'inseguimento:
+**AssePolare e AsseDec a zero danno il telescopio in posizione di riposo.**
+
+### D-093 — Non «urta o non urta», ma fino a che altezza può scendere
+
+Il primo controllo sulla passerella vietava allo strumento di sporgere sopra l'anello a
+qualunque quota sotto i due metri e mezzo, e sbagliava la domanda: la passerella **esiste**
+per arrivare all'oculare, quindi il telescopio ci deve passare vicino per forza. Il difetto
+vero è solido contro solido — il tubo dentro l'impalcato o il parapetto.
+
+E anche così la risposta binaria non serve: combinando le due rotazioni il tubo copre la
+sfera intera, e a puntamenti bassi la culatta scende e si allarga. Urta sempre, in ogni
+cupola, anche in quelle vere. Il numero che conta è **il puntamento più basso a cui resta
+libero** — 26 gradi — che non è un difetto ma un dato di progetto: l'altezza sotto la quale
+in questo osservatorio non si osserva, e che l'inseguimento dovrà rispettare.
+
+Si misura la **distanza**, non si risponde sì/no. Con una soglia si arriva sempre allo
+stesso vicolo: il numero passa o non passa e non si sa di quanto, e per tre giri di seguito
+ho stretto e allargato un margine credendo di spostare il telescopio mentre spostavo solo
+la mia soglia.
+
+Nello stesso giro sono saltati fuori tre numeri della passerella ribattuti a mano qui
+dentro — 0,975, 1,825, 0,99 — e **nessuno dei tre era più vero**: l'anello era stato
+allargato a 1,05 e abbassato a 0,59, e il controllo continuava a dire che andava tutto bene
+misurando una passerella che non esisteva. Ora arrivano da `geometria.py`, come tutto il
+resto.
+
+### D-094 — La mappa metallica di un modello scaricato si stacca, sempre
+
+Il 93% della superficie del telescopio è dichiarata metallica a 0,93. Dentro una cupola
+dove non c'è niente da riflettere, quello è il modo esatto in cui un oggetto diventa nero —
+lo stesso difetto che avevo già corretto sul telescopio fatto a mano, che arriva gratis con
+ogni modello preso da fuori perché chi lo ha fatto lo guardava in uno studio con
+un'illuminazione a 360 gradi. Metallico costante a 0,2: la vernice a fuoco di uno strumento
+riflette un poco, uno specchio no.
+
+Le texture arrivano a 4096 e diventano 1K: ventidue megabyte dentro il `.glb` della stanza,
+per un tubo che si guarda da un metro.

@@ -1040,7 +1040,7 @@ tonemap_white = 3.0
 size = Vector3(0.386, 0.420, 0.430)
 
 [sub_resource type="QuadMesh" id="q_monitor"]
-size = Vector2(0.304, 0.228)
+size = Vector2(0.309, 0.274)
 
 [node name="Blockout" type="Node3D"]
 script = ExtResource("24_postazione")

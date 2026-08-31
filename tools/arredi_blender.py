@@ -30,8 +30,8 @@ import importlib   # noqa: E402
 for _m in ("geometria", "modellare"):
     if _m in sys.modules:
         importlib.reload(sys.modules[_m])
-from geometria import (ARREDI_PC, CASSA_MONITOR, IMMAGINE_MONITOR,   # noqa: E402
-                       VETRO_MONITOR, verifica_arredi, V_SILL)
+from geometria import (ARREDI_PC, CASSA_MONITOR, VETRO_MONITOR,   # noqa: E402
+                       verifica_arredi, V_SILL)
 from modellare import (barra, bm_di, cilindro, cilindro_orizz, esporta,   # noqa: E402
                        finisci, lampada, materiale, posa_modello, prepara_render,
                        prisma, pulisci, scatola, scatola_inclinata, verifica_impronte)
@@ -229,13 +229,6 @@ def verifica_postazione(posati, tolleranza=0.005):
               ["vetro fronte x", "vetro centro y", "vetro centro z",
                "vetro larghezza", "vetro altezza"])
 
-    # e l'immagine deve starci dentro: se sborda, il quad copre la cornice del tubo
-    if (IMMAGINE_MONITOR[0] > vx[2] - vn[2] + 1e-6
-            or IMMAGINE_MONITOR[1] > vx[1] - vn[1] + 1e-6):
-        problemi.append("  POSTAZIONE        l'immagine (%.3f x %.3f) e' piu' grande del "
-                        "vetro (%.3f x %.3f): sborderebbe sulla cassa"
-                        % (IMMAGINE_MONITOR[0], IMMAGINE_MONITOR[1],
-                           vx[2] - vn[2], vx[1] - vn[1]))
     return problemi
 
 

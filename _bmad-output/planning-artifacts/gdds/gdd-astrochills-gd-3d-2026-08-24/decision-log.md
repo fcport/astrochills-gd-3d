@@ -3367,3 +3367,58 @@ quella finestra non ha il vsync e ne macina cinquecento al secondo. Ha fotografa
 camera a metà corsa e ha riferito `seduti: false` con la testa a 14 cm dal sedile, cioè
 ha dato per rotta una postazione che funzionava. Adesso aspetta il fatto — `is_seated` —
 con un limite di tre secondi. Tre passate di fila: 0,0 mm.
+
+## D-159 — Due schermi non possono coincidere: quindi ne resta uno
+
+Federico, guardando: *«lo vedete solo, vero che il monitor, quello dietro e quello
+davanti non coincidono? non mi sto drogando»*. Non si stava drogando.
+
+**C'erano davvero due rettangoli.** Il quad dell'immagine era 4:3 — 30,4 × 22,8 — e il
+vetro del tubo no: 30,9 × 27,4, quasi quadrato, perché è un modello preso da fuori e
+misurato, non disegnato attorno al viewport. Restavano ventitré millimetri di mesh del
+modello scoperti sopra e sotto, illuminati dalle luci della stanza: **un secondo schermo
+dietro il primo**.
+
+E i due non potevano coincidere, per un motivo che nessuna misura in metri avrebbe mai
+mostrato. Da seduti la camera guarda in basso di 22 gradi: ventitré millimetri in cima
+al tubo stanno a 42,4 cm dall'occhio e ventitré in fondo a 50,8, e la faccia è inclinata
+di 34 gradi rispetto al raggio in basso e di 8 in alto. **Le due bande uguali
+proiettavano 56 pixel sopra e 19 sotto.** Simmetriche nel modello, tre a uno sullo
+schermo.
+
+**La misura che ha deciso è stata una sagoma magenta.** Con lo shader acceso i bordi
+sono curvi, sfumati e vignettati, e non si distingue un quad fuori posto dalla curvatura
+del tubo. Dipinto di magenta piatto — `SAGOMA=1` in `tools/prova_postazione.gd` — si
+vede in un colpo dove cade il rettangolo: a 30,4 × 22,8 gli angoli in alto arrivavano a
+toccare la cornice della cassa mentre in basso restava un dito di scuro; **a misura
+piena del vetro, 30,9 × 27,4, riempie il foro esattamente**, senza sbordare da nessuna
+parte. Il foro della cassa e il vetro sono la stessa apertura, e nessuno dei due lo
+sapeva.
+
+**Quindi il quad è il vetro, e la cornice la disegna lo shader.** Le tre vie erano:
+
+1. *stirare l'immagine* fino a riempire il vetro — allunga ogni carattere del 18%, ed è
+   testo che si deve leggere;
+2. *rimpicciolire il quad* al 4:3 — è quello che c'era, e lascia scoperto il secondo
+   rettangolo;
+3. *far disegnare la cornice all'immagine stessa*.
+
+La terza. `crt.gdshader` aveva già una maschera che annerisce tutto ciò che cade fuori
+dal vetro curvato: adesso quella maschera delimita l'IMMAGINE dentro il vetro, non il
+vetro dentro il quad. La cornice è fatta della stessa cosa dell'immagine, sullo stesso
+oggetto, e con `unshaded` è nera davvero — nessuna luce la tocca. **Due rettangoli che
+non possono scollarsi perché sono uno.**
+
+**Il rapporto non si dichiara: si calcola**, come le scanline e per la stessa ragione.
+`crt_screen.gd` legge la misura del quad e quella del viewport e ne ricava `image_scale`
+nel proprio `_ready()`. Chi cambierà il tubo, o la risoluzione quando D-011 verrà
+sciolta, non deve ricordarsi che questo file esiste. Con un tubo 4:3 e un viewport 4:3
+viene (1, 1), cioè il comportamento di prima esatto: il monitor del mondo vecchio non si
+è accorto di niente.
+
+**Resta una scelta, e non è mia.** Le bande nere ci sono perché il tubo è 1,13 e
+l'immagine 1,33. Sparirebbero cambiando la risoluzione del viewport al rapporto del
+vetro — che è precisamente la decisione che D-011 vuole presa *insieme al rifacimento
+del monitor e prima* delle sette fasi mancanti. Finché quella è aperta, le bande
+restano, e sono la cosa giusta: un'immagine che non riempie il tubo è un CRT, un
+carattere allungato del 18% è un difetto.

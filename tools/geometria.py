@@ -1432,12 +1432,18 @@ CASSA_MONITOR = (5.550, 0.960, 2.000, 0.386, 0.420, 0.430)
 # Il tubo e' bombato: la x e' il punto piu' avanzato, e ai bordi il vetro rientra
 # di tredici millimetri.
 VETRO_MONITOR = (5.741, 0.978, 2.000, 0.309, 0.274)
-# L'IMMAGINE E' MENO DEL VETRO, e questa invece e' una decisione. Il vetro e' quasi
-# quadrato (30,9 x 27,4) e l'immagine e' 4:3, come il viewport del CRT: presa a
-# tutta larghezza restano ventitre millimetri sopra e sotto. Non sono un errore -
-# sono la maschera nera attorno all'immagine, che su un tubo vero c'e' sempre.
-# Stirare l'immagine per riempire il vetro allungherebbe ogni carattere del 18%.
-IMMAGINE_MONITOR = (0.304, 0.228)
+# IL QUAD DELLO SCHERMO E' IL VETRO INTERO, e non un rettangolo 4:3 dentro di
+# esso. Ci ho provato: il vetro e' quasi quadrato, l'immagine e' 4:3, e un quad
+# 4:3 lascia scoperta la mesh del modello attorno - un secondo rettangolo,
+# illuminato dalle luci della stanza. Da seduti, con la camera inclinata di 22
+# gradi, i due non possono coincidere: ventitre millimetri di banda sopra e
+# ventitre sotto proiettano tre volte piu' spessa quella in alto, e si legge come
+# uno schermo storto dentro un altro schermo.
+#
+# A misura piena il quad riempie il foro della cassa esattamente - provato
+# guardando, con il quad dipinto di magenta - e la cornice nera la disegna lo
+# shader del CRT, sullo stesso oggetto e con gli stessi pixel. Vedi
+# crt/shaders/crt.gdshader e crt/crt_screen.gd, che il rapporto lo calcolano.
 # Dove va la testa di chi si siede: quanto AVANTI al vetro e quanto SOPRA il suo
 # centro. Il beccheggio del sedile non si dichiara, si calcola da questi due
 # numeri - un marcatore che punta altrove che al proprio vetro e' il difetto che

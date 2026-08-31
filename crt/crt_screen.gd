@@ -38,6 +38,38 @@ func _ready() -> void:
 	# campionamento regge.
 	mat.set_shader_parameter("scanline_count", float(_viewport.size.y) * 0.5)
 
+	# QUANTO DEL VETRO OCCUPA L'IMMAGINE, e si deriva anche questo: un tubo non ha
+	# il rapporto che decidi tu. Quello della sala di controllo e' 30,9 x 27,4 cm
+	# — quasi quadrato, perche' e' un modello preso da fuori e misurato, non
+	# disegnato attorno al viewport — e l'immagine e' 4:3. Se il quad e' il vetro e
+	# l'immagine e' 4:3, qualcosa deve stare fra le due.
+	#
+	# LE DUE VIE SCARTATE. Stirare l'immagine fino a riempire il vetro allunga ogni
+	# carattere del 18%, ed e' testo che si deve leggere. Rimpicciolire il quad
+	# fino al 4:3 lascia scoperta la mesh del modello dietro, che e' un secondo
+	# rettangolo illuminato dalle luci della stanza: da seduti, con la camera
+	# inclinata di 22 gradi, i due non possono coincidere — banda spessa sopra e
+	# niente sotto, ed e' il difetto che ha fatto dire «quello dietro e quello
+	# davanti non coincidono».
+	#
+	# Cosi' invece il quad E' il vetro, e la cornice la disegna lo shader: stesso
+	# oggetto, stessi pixel, nera davvero perche' lo shader e' `unshaded`.
+	#
+	# SI CALCOLA E NON SI DICHIARA, per la stessa ragione delle scanline: chi
+	# cambia il tubo o la risoluzione del viewport non deve ricordarsi di venire
+	# qui. Con un tubo 4:3 e un viewport 4:3 viene (1, 1), cioe' il vecchio
+	# comportamento esatto.
+	var quad := _mesh.mesh as QuadMesh
+	if quad != null and quad.size.y > 0.0 and _viewport.size.y > 0:
+		var vetro := quad.size.x / quad.size.y
+		var immagine := float(_viewport.size.x) / float(_viewport.size.y)
+		var scala := Vector2.ONE
+		if immagine > vetro:
+			scala.y = vetro / immagine     # vetro piu' alto: bande sopra e sotto
+		elif immagine < vetro:
+			scala.x = immagine / vetro     # vetro piu' largo: bande ai lati
+		mat.set_shader_parameter("image_scale", scala)
+
 	Events.screen_registered.emit(self)
 
 

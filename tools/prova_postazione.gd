@@ -101,6 +101,23 @@ func _process(_d: float) -> void:
 		# della cassa e' illuminato da tutto il resto, e la differenza dice quanta ne
 		# aggiunge il monitor. A occhio una cassa beige illuminata e una bruciata sono
 		# tutte e due "chiare".
+		# SAGOMA=1 dipinge il quad di magenta piatto. Serve a vedere DOVE CADE il
+		# rettangolo dell'immagine rispetto al foro della cassa: con lo shader acceso
+		# i bordi sono curvi, sfumati e vignettati, e non si sa piu' se un margine
+		# storto e' il quad fuori posto o la curvatura del tubo.
+		# QUAD=<larghezza>,<altezza> rimisura il vetro senza rigenerare la scena:
+		# serve a provare una misura prima di scriverla in geometria.py.
+		var q := OS.get_environment("QUAD")
+		if not q.is_empty():
+			var n := q.split(",")
+			var m2 := (vetro.get_node("%ScreenMesh") as MeshInstance3D).mesh as QuadMesh
+			m2.size = Vector2(float(n[0]), float(n[1]))
+		if not OS.get_environment("SAGOMA").is_empty():
+			var sm := vetro.get_node("%ScreenMesh") as MeshInstance3D
+			var piatto := StandardMaterial3D.new()
+			piatto.albedo_color = Color(1, 0, 1)
+			piatto.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			sm.set_surface_override_material(0, piatto)
 		var e := OS.get_environment("LUCE")
 		if not e.is_empty():
 			var l := _scena.get_node_or_null("LuceMonitor") as OmniLight3D

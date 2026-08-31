@@ -17,8 +17,7 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        LUCI_ROSSE, PARTE_SPENTA, punti_applique,
                        H_APPLIQUE, NOME_LOCALE, LUCE_MONITOR, SEMPRE_ACCESE,
                        H_INTERRUTTORE, L_PLACCA, A_PLACCA, SP_PLACCA,
-                       CASSA_MONITOR, VETRO_MONITOR, IMMAGINE_MONITOR,
-                       SEDILE_MONITOR)
+                       CASSA_MONITOR, VETRO_MONITOR, SEDILE_MONITOR)
 
 MURI, APERTURE, PAVIMENTI, SOFFITTI, SALA, (_CX, _CZ) = scalati()
 _R = DOME_R
@@ -306,9 +305,12 @@ def tscn():
               # dell'interazione sbatte, e senza non c'e' nessun prompt.
               '[sub_resource type="BoxShape3D" id="s_monitor"]',
               'size = Vector3(%.3f, %.3f, %.3f)' % CASSA_MONITOR[3:], '',
-              # L'immagine: un quad 4:3 appoggiato un millimetro davanti al vetro.
+              # Il vetro: un quad della misura ESATTA del tubo, un millimetro davanti
+              # alla sua faccia piu' avanzata e un millimetro dietro il bordo della
+              # cassa, che quindi lo inquadra da se'. La cornice nera attorno
+              # all'immagine 4:3 la disegna lo shader del CRT, non questa mesh.
               '[sub_resource type="QuadMesh" id="q_monitor"]',
-              'size = Vector2(%.3f, %.3f)' % IMMAGINE_MONITOR, '',
+              'size = Vector2(%.3f, %.3f)' % VETRO_MONITOR[3:], '',
               # IL COPIONE DELLA POSTAZIONE STA SULLA RADICE, ed e' l'unico script
               # di questa scena che non sia un interagibile: sedersi non e' una
               # proprieta' del monitor, e' una sequenza fra il monitor, il corpo del
@@ -918,8 +920,8 @@ def tscn():
               'unique_name_in_owner = true',
               'transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, %.3f, %.3f, %.3f)'
               % (_vx - _cx, VETRO_MONITOR[1] - _cy, VETRO_MONITOR[2] - _cz), '',
-              # L'immagine e' 4:3 e il vetro no: il quad della sotto-scena e' fatto
-              # per un altro tubo, e qui va rimisurato sul nostro.
+              # Il quad della sotto-scena e' fatto per un altro tubo (0,32 x 0,24):
+              # qui va rimisurato sul nostro, che e' 30,9 x 27,4.
               '[node name="ScreenMesh" parent="Monitor/CrtScreen" index="1"]',
               'mesh = SubResource("q_monitor")', '',
               '[node name="Seat" parent="Monitor/CrtScreen" index="2"]',

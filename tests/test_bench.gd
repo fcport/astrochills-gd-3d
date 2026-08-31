@@ -138,7 +138,7 @@ func _check_honest_shutter() -> void:
 	print("   dal .tres: motor_speed = %.4f corsa/s" % src.motor_speed)
 
 	var fermo := DomeInput.new()
-	fermo.motor_on = false
+	fermo.command = 0
 	fermo.aperture = 0.5
 	fermo.seconds_running = 0.0
 	var v_fermo := src.sample(fermo, 0.016)
@@ -146,7 +146,7 @@ func _check_honest_shutter() -> void:
 		% [v_fermo, "" if is_zero_approx(v_fermo) else "   <-- ATTESO: 0, il battente sta fermo"])
 
 	var acceso := DomeInput.new()
-	acceso.motor_on = true
+	acceso.command = 1
 	acceso.aperture = 0.5
 	acceso.seconds_running = 12.0
 	var a := src.sample(acceso, 0.016)
@@ -180,6 +180,36 @@ func _check_honest_shutter() -> void:
 		resta = clampf(resta + src.sample(fermo, passo) * passo, 0.0, 1.0)
 	print("   un secondo a comando lasciato: %.4f (partiva da 0,5)%s"
 		% [resta, "" if is_equal_approx(resta, 0.5) else "   <-- ATTESO: fermo dov'era"])
+
+	# LA CHIUSURA, che è l'altra metà del quadro. Va provata a parte e non dedotta
+	# dal segno: una sorgente che restituisse la stessa velocità POSITIVA con il
+	# comando a -1 aprirebbe premendo «chiudi», e nessuna delle righe qui sopra se
+	# ne accorgerebbe.
+	var giu := DomeInput.new()
+	giu.command = -1
+	giu.aperture = 1.0
+	var v_giu := src.sample(giu, passo)
+	print("   comando di chiusura: %+.4f%s"
+		% [v_giu, "" if v_giu < 0.0 else "   <-- ATTESO: negativa, il battente torna"])
+	var chiude := 1.0
+	var t_chiusura := 0.0
+	while chiude > 0.0 and t_chiusura < 120.0:
+		giu.aperture = chiude
+		chiude = clampf(chiude + src.sample(giu, passo) * passo, 0.0, 1.0)
+		t_chiusura += passo
+	print("   corsa intera di ritorno: %.2f s%s"
+		% [t_chiusura, "" if absf(t_chiusura - secondi) < 0.2
+			else "   <-- nota: diversa dall'andata"])
+
+	# I DUE PULSANTI INSIEME NON MUOVONO NIENTE. È l'interblocco dei quadri veri, e
+	# il posto in cui si decide è la FASE (`get_axis` restituisce 0), non qui: la
+	# sorgente riceve già il verso. Si collauda che uno zero resti uno zero.
+	var interblocco := DomeInput.new()
+	interblocco.command = 0
+	interblocco.aperture = 0.5
+	var v_inter := src.sample(interblocco, passo)
+	print("   verso 0 (due pulsanti insieme): %+.4f%s"
+		% [v_inter, "" if is_zero_approx(v_inter) else "   <-- ATTESO: 0"])
 
 
 func _check_honest_drift() -> void:

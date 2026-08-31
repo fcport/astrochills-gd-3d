@@ -405,7 +405,7 @@ imparato abbastanza da sapere che ciò che vede è impossibile.
 
 | # | Fase | Il gesto | Parametri e punteggio | Come si rompe |
 |---|---|---|---|---|
-| 1 | **Apertura della cupola** | dal pannello sul PC: si tiene premuto il comando e il motore fa scorrere i battenti; si lascia e si ferma dov'è | nessun punteggio: si passa o si ripete | il pannello dice APERTA e in cupola i battenti non si sono mossi. Oppure si aprono da soli, mentre guardi altrove |
+| 1 | **Apertura della cupola** | dal pannello sul PC, due pulsanti a uomo presente: SU apre, GIÙ chiude, il motore va finché tieni il dito e si ferma dov'è appena lo lasci. Si esce solo a cupola aperta | nessun punteggio: si passa o si ripete | il pannello dice APERTA e in cupola i battenti non si sono mossi. Oppure si aprono da soli, mentre guardi altrove |
 | 2 | **Livellamento** | tre viti, la bolla d'aria va portata dentro il cerchio; se esageri da un lato devi compensare dall'altro | dalla distanza finale della bolla dal centro | la bolla non sta ferma: si sposta da sola mentre la guardi |
 | 3 | **Bilanciamento** | sposti i contrappesi sull'asse finché il telescopio resta fermo in ogni posizione | dalla deriva residua alla prova di rilascio | il telescopio tende sempre nella stessa direzione, ovunque metti i pesi |
 | 4 | **Allineamento polare** | metodo della deriva: osservi una stella nel reticolo, correggi azimuth e altitudine, aspetti, riosservi | 0 a **0,2 arcmin/s** di deriva, 100 a deriva nulla; media su **8 secondi reali** perché non si possa truccare correggendo un istante prima di chiudere | la stella deriva in direzioni impossibili. Poi non è una stella |

@@ -45,6 +45,9 @@ const FUORI := "user://cupola.png"
 ## sonda della postazione, e la correzione è la stessa.
 const LIMITE := 12.0
 
+## Quanti secondi si tiene premuto il pulsante di chiusura, per vedere se serve.
+const SAGGIO_CHIUSURA := 2.0
+
 ## `Node` e non `Node3D`: in partita la scena caricata è `main.tscn`, la cui radice
 ## è un `Node` semplice — il mondo 3D vive dentro il suo SubViewport. Tipizzarla
 ## come `Node3D` faceva morire la sonda all'assegnazione, prima di misurare.
@@ -58,6 +61,8 @@ var _fase_vera: Phase
 var _partita := false
 var _premuto := false
 var _ultimo_secondo := 0
+var _richiuso := false
+var _da_dove := 0.0
 
 
 func _ready() -> void:
@@ -159,6 +164,18 @@ func _process(d: float) -> void:
 		_conto = 0
 		var lastre := _lastre(s)
 		print("[cupola] apertura %.2f raggiunta in %.2f s" % [_bersaglio, _tempo])
+		# PRIMA DI CHIUDERE LA FASE, SI PROVA L'ALTRO PULSANTE. Che la cupola si
+		# richiuda non si deduce dal segno di un numero: si tiene premuto GIU' due
+		# secondi e si guarda dove va il battente. Poi si riapre, perche' la fase
+		# non lascia uscire a cupola chiusa.
+		if (_fase_vera != null or _partita) and not _richiuso:
+			print("[cupola] adesso tengo premuto CHIUDI per %.0f s" % SAGGIO_CHIUSURA)
+			_da_dove = s.aperture()
+			Input.action_release(&"dome_open")
+			Input.action_press(&"dome_close")
+			_fase = 5
+			_tempo = 0.0
+			return
 		if _fase_vera != null or _partita:
 			# Il comando si lascia e si preme INVIO, come farebbe il giocatore: è
 			# l'ultimo anello, e senza di lui «la fase finisce» resterebbe una cosa
@@ -187,6 +204,24 @@ func _process(d: float) -> void:
 		_fessura(lastre, "da aperta")
 		if fermo > 0:
 			print("[cupola] %d LASTRE FERME: il battente non le ha mosse" % fermo)
+		return
+
+	# Il saggio di chiusura: due secondi di pulsante, e si guarda.
+	if _fase == 5:
+		_tempo += d
+		if _tempo < SAGGIO_CHIUSURA:
+			return
+		var s5 := DomeShutter.find_in(get_tree())
+		var sceso := _da_dove - s5.aperture()
+		print("[cupola] chiudendo per %.1f s: da %.3f a %.3f (scesa di %.3f)%s"
+			% [SAGGIO_CHIUSURA, _da_dove, s5.aperture(), sceso,
+				"" if sceso > 0.05 else "   <-- NON SI RICHIUDE"])
+		Input.action_release(&"dome_close")
+		Input.action_press(&"dome_open")
+		_richiuso = true
+		_fase = 1
+		_tempo = 0.0
+		_ultimo_secondo = 99
 		return
 
 	if _fase == 2 and _conto > 6:

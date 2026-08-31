@@ -48,7 +48,8 @@ var _font: SystemFont
 
 var _aperture := 0.0
 var _speed := 0.0
-var _motor := false
+## Il verso del motore: +1 apre, -1 chiude, 0 fermo.
+var _motor := 0
 var _open := false
 
 
@@ -60,7 +61,7 @@ func _ready() -> void:
 
 
 ## Unico ingresso della vista. La fase chiama questo e basta.
-func set_readout(aperture: float, speed: float, motor: bool, open: bool) -> void:
+func set_readout(aperture: float, speed: float, motor: int, open: bool) -> void:
 	_aperture = aperture
 	_speed = speed
 	_motor = motor
@@ -81,14 +82,20 @@ func _draw_header() -> void:
 	_text(Vector2(MARGIN, 29), _state(), DIM, 12)
 
 
-## Lo stato in una parola, come lo direbbe il quadro: fermo chiuso, in corsa,
-## fermo a metà, fermo aperto. «STOPPED» a metà corsa non è un guasto ed è scritto
-## in modo da non sembrarlo: il battente è dove l'hai lasciato.
+## Lo stato in una parola, come lo direbbe il quadro: fermo chiuso, in corsa in un
+## verso o nell'altro, fermo a metà, fermo aperto.
+##
+## «STOPPED» a metà corsa non è un guasto ed è scritto in modo da non sembrarlo: il
+## battente è dove l'hai lasciato. E APERTURA e CHIUSURA sono due parole diverse
+## perché sono due cose diverse: con una parola sola — «in movimento» — chi ha
+## sbagliato pulsante lo scoprirebbe solo guardando la barra scendere.
 func _state() -> String:
+	if _motor > 0 and _speed > 0.0:
+		return "OPENING"
+	if _motor < 0 and _speed < 0.0:
+		return "CLOSING"
 	if _open:
 		return "OPEN"
-	if _motor and _speed > 0.0:
-		return "MOTOR RUNNING"
 	if _aperture <= 0.0:
 		return "CLOSED"
 	return "STOPPED AT %d%%" % _percent()
@@ -107,7 +114,7 @@ func _draw_section() -> void:
 	# 1,5·PI; la fessura si apre simmetrica attorno a lui.
 	var half := SLIT_HALF * clampf(_aperture, 0.0, 1.0)
 	var zenith := PI * 1.5
-	var colore := FG if _motor else DIM
+	var colore := FG if _motor != 0 else DIM
 	draw_arc(DOME_CENTER, DOME_RADIUS, PI, zenith - half, 32, colore, 3.0)
 	draw_arc(DOME_CENTER, DOME_RADIUS, zenith + half, TAU, 32, colore, 3.0)
 
@@ -137,12 +144,20 @@ func _draw_bar() -> void:
 
 func _draw_footer() -> void:
 	_text(Vector2(MARGIN, 176), "APERTURE %3d%%" % _percent(), FG, 12)
-	# La riga dei comandi dice UNA cosa sola alla volta: finché la cupola non è
-	# aperta l'unico comando è il motore, e INVIO non farebbe niente. Mostrare un
-	# tasto che non risponde è il modo più veloce per far credere che il pannello
-	# sia rotto.
-	var comandi := "ENTER CONTINUE" if _open else "HOLD SPACE TO OPEN"
-	_text(Vector2(MARGIN, 189), comandi, DIM, 12)
+	# I DUE PULSANTI CI SONO SEMPRE, e INVIO solo quando risponde. Mostrare un tasto
+	# che non fa niente è il modo più veloce per far credere che il pannello sia
+	# rotto — e per la stessa ragione, quando INVIO manca, il pannello DICE perché
+	# invece di lasciare il posto vuoto: senza quella riga, chi ha richiuso la cupola
+	# resterebbe seduto a premere INVIO su una macchina muta.
+	_text(Vector2(MARGIN, 189), "HOLD UP OPEN   DOWN CLOSE", DIM, 12)
+	var coda := "ENTER CONTINUE" if _open else "OPEN FULLY TO CONTINUE"
+	_text(Vector2(DESIGN_SIZE.x - 8 - _larghezza(coda), 176), coda,
+		FG if _open else FAINT, 12)
+
+
+## Quanto è larga una scritta, per allinearla a destra.
+func _larghezza(s: String) -> float:
+	return _font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
 
 
 func _percent() -> int:

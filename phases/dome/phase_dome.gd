@@ -5,11 +5,17 @@
 ## in gioco non si tocca ancora. La cupola invece ha un motore e un pannello, e il
 ## pannello sta sul PC — cioè esattamente dove il giocatore è già seduto.
 ##
-## COMANDO A UOMO PRESENTE, e non è una scelta di comodo: le cupole vere si aprono
-## tenendo premuto, perché un battente da qualche quintale che si muove da solo
-## mentre nessuno guarda è un modo di rompere un telescopio. Tenere premuto è
-## anche l'idioma già stabilito dalla fase polare — «le viti si girano, non si
-## scattano» — e per la stessa ragione: è il gesto di una fase che vuole calma.
+## DUE PULSANTI A UOMO PRESENTE, come sul quadro vero: SU apre, GIÙ chiude, e il
+## motore va solo finché tieni il dito. Non è una scelta di comodo: le cupole si
+## comandano così perché un battente da qualche quintale che si muove da solo
+## mentre nessuno guarda è un modo di rompere un telescopio. Tenere premuto è anche
+## l'idioma già stabilito dalla fase polare — «le viti si girano, non si scattano»
+## — e per la stessa ragione: è il gesto di una fase che vuole calma.
+##
+## SI PUÒ ANCHE RICHIUDERE, e non è una simmetria gratuita: una cupola che si apre
+## e basta è una cerniera. Il secondo pulsante è quello che si preme quando
+## arrivano le nuvole — e per adesso serve almeno a disfare un gesto sbagliato,
+## che è il minimo che un comando debba concedere.
 ##
 ## COSA VEDE IL GIOCATORE, E DOVE. Sul CRT vede il pannello: la corsa, la
 ## percentuale, lo spicchio di cielo che si allarga fra i due battenti. In cupola,
@@ -112,7 +118,7 @@ func _process(delta: float) -> void:
 	_truth_input.aperture = _aperture
 
 	_report()
-	_screen.set_readout(_aperture, _speed, _truth_input.motor_on, is_open())
+	_screen.set_readout(_aperture, _speed, _truth_input.command, is_open())
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -121,6 +127,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	# configurazione diventerebbe un esito plausibile, scritto nel save.
 	if _done or truth == null:
 		return
+	# SI ESCE SOLO A CUPOLA APERTA, e il pannello lo dice invece di limitarsi a non
+	# rispondere. Non è un capriccio della procedura: da qui in poi la notte punta,
+	# mette a fuoco ed espone, e con il tubo sotto un guscio chiuso sono tre fasi
+	# che si giocano contro un coperchio.
 	if is_open() and event.is_action_pressed(&"dome_confirm"):
 		_finish()
 
@@ -146,12 +156,16 @@ func aperture() -> float:
 
 
 func _read_command(delta: float) -> void:
-	var pressed := Input.is_action_pressed(&"dome_open")
+	# `get_axis` E NON DUE `if`: tenendo premuti tutti e due i pulsanti restituisce
+	# esattamente 0, che è l'interblocco che i quadri veri hanno — il motore non
+	# decide da solo chi dei due ha ragione, sta fermo. Scritto con due `if` in fila
+	# vincerebbe l'ultimo che ho battuto a tastiera, cioè il caso.
+	var verso := signi(roundi(Input.get_axis(&"dome_close", &"dome_open")))
 	# Il cronometro del motore si azzera quando il comando si stacca, e cresce solo
 	# mentre gira: è la stessa contabilità di `seconds_since_correction`, al
 	# contrario. Nessuna sorgente dell'MVP lo legge (vedi `DomeInput`).
-	_truth_input.seconds_running = (_truth_input.seconds_running + delta) if pressed else 0.0
-	_truth_input.motor_on = pressed
+	_truth_input.seconds_running = (_truth_input.seconds_running + delta) if verso != 0 else 0.0
+	_truth_input.command = verso
 
 
 ## Dice al mondo dove sta il battente, se si è mosso abbastanza da valere la pena.

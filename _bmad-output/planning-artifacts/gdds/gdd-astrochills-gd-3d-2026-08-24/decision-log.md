@@ -3713,3 +3713,42 @@ montano il blockout da solo per provare una cosa alla volta. Metterci dentro una
 riscrittura della postazione nello stesso commit che cambia il mondo sotto i piedi sarebbe
 stato un modo di non sapere più quale delle due cose ha rotto cosa. Sta scritto in testa a
 quel file, com'è e perché.
+
+## D-165 — Il quadro della cupola ha due pulsanti
+
+**31 agosto 2026.** «Dal PC devi darmi l'opzione di aprire e chiudere la cupola.» Aveva
+ragione, e la prima stesura aveva una scusa sola: la fase serviva ad aprire, quindi apriva.
+
+**Una cupola che si apre e basta non è una cupola: è una cerniera.** Il quadro adesso ha i
+due pulsanti che ha un quadro vero — **SU apre, GIÙ chiude** — tutti e due a uomo presente,
+tutti e due che si fermano dove li lasci.
+
+**Il comando smette di essere un interruttore e diventa un VERSO.** `DomeInput.motor_on`
+(booleano) è diventato `command` (+1, 0, −1), e `HonestShutter` restituisce
+`motor_speed × verso`. È il cambio che rende la chiusura una proprietà del meccanismo
+invece di un caso speciale nella fase: una sorgente bugiarda che un giorno volesse far
+chiudere la cupola da sola non deve inventarsi niente, le basta restituire un numero
+negativo.
+
+**Tenere premuti tutti e due i pulsanti vale zero,** ed è l'interblocco che i quadri veri
+hanno. Si ottiene con `Input.get_axis`, non con due `if` in fila: con due `if` vincerebbe
+l'ultimo che ho battuto a tastiera, cioè il caso.
+
+**Si esce ancora solo a cupola aperta, e adesso il pannello DICE perché.** Da lì in poi la
+notte punta, mette a fuoco ed espone: con il tubo sotto un guscio chiuso sono tre fasi
+giocate contro un coperchio. Prima INVIO semplicemente non rispondeva; adesso al suo posto
+c'è scritto `OPEN FULLY TO CONTINUE`, perché un tasto che tace è indistinguibile da una
+macchina rotta.
+
+**APERTURA e CHIUSURA sono due parole diverse sul display,** e non per pedanteria: con una
+parola sola — «in movimento» — chi ha sbagliato pulsante lo scoprirebbe solo guardando la
+barra scendere.
+
+**Provato aprendo, chiudendo e riaprendo in partita vera:** apertura piena a 6,76 s, due
+secondi di pulsante GIÙ portano da 1,000 a 0,680 — cioè 0,32, esattamente due secondi alla
+velocità del motore — riapertura in 2,01 s, INVIO, fase chiusa con 100 e `polar` montata.
+Il banco misura anche la corsa di ritorno: 6,25 s, la stessa dell'andata.
+
+**Iniettato il difetto che i due controlli esistono per prendere** — una sorgente che
+ignora i comandi negativi — e gridano tutti e due: la sonda «NON SI RICHIUDE», il banco
+«ATTESO: negativa, il battente torna».

@@ -1,8 +1,13 @@
 ## La sorgente onesta della fase della cupola: il battente fa quello che gli dici.
 ##
-## L'aggettivo nel nome dice se e come mente (NFR23). Questa non mente: finché il
-## comando è premuto il motore va, alla sua velocità, sempre la stessa; appena lo
-## lasci si ferma dov'è.
+## L'aggettivo nel nome dice se e come mente (NFR23). Questa non mente: finché un
+## comando è premuto il motore va, nel verso che gli hai dato, alla sua velocità,
+## sempre la stessa; appena lo lasci si ferma dov'è.
+##
+## STESSA VELOCITÀ NEI DUE VERSI, e non è una semplificazione pigra: è un motore
+## solo, con una riduzione sola, e a chiudere fa la strada che ha fatto ad aprire.
+## Se un giorno la chiusura dovrà essere più lenta — per sicurezza, come su certe
+## cupole — sarà un secondo numero in questo file, non un caso speciale nella fase.
 ##
 ## FUNZIONE PURA DI `input`, ed è un requisito, non uno stile. Nessuno stato
 ## interno, `delta` mai usato: `sample(i, 0.016)` e `sample(i, 0.99)` danno lo
@@ -21,8 +26,8 @@ extends DomeTruthSource
 @export var motor_speed: float = 0.16
 
 
-## A comando premuto il battente corre; lasciato, sta fermo. Non c'è nient'altro,
-## ed è precisamente il punto: tutto quello che il giocatore vede sul pannello è
-## l'integrale di questa riga.
+## A comando premuto il battente corre nel verso chiesto; lasciato, sta fermo. Non
+## c'è nient'altro, ed è precisamente il punto: tutto quello che il giocatore vede
+## sul pannello è l'integrale di questa riga.
 func sample(input: DomeInput, _delta: float) -> float:
-	return motor_speed if input.motor_on else 0.0
+	return motor_speed * float(signi(input.command))

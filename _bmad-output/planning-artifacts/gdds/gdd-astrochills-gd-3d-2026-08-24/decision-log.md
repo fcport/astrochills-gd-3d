@@ -3269,3 +3269,25 @@ guarda il fronte, e si misurava contando i vertici a filo del muro. Qui il front
 già giusto a 90 gradi: quello che il verso decideva era se un pezzo si LEGGE, e questo
 non lo dice nessun conteggio. Lo dice guardare l'oggetto da dove lo guarderà il
 giocatore.
+
+## D-157 — L'ambiente non è il ripiego della luce indiretta
+
+Tolta la lampada di rimbalzo (D-153), avevo alzato l'ambiente notturno da 0,035 a 0,11
+per recuperare qualcosa delle ombre. Guardando una sala spenta: **troppo**. E i numeri
+dicono perché, meglio di quanto lo dica l'occhio.
+
+| | colonna del lavabo (in ombra, stanza accesa) | sala divulgazione (spenta) |
+|---|---|---|
+| ambiente 0,035 | 63,3 | 4,37 |
+| ambiente 0,11 | 66,8 | 7,86 |
+
+**+3,5 di qua e +3,5 di là.** È uno scambio alla pari, e alla pari nel verso sbagliato:
+la luce ambientale non distingue fra un'ombra dentro una stanza illuminata e una stanza
+spenta — schiarisce tutte e due allo stesso modo, e la seconda è quella che deve
+restare nera. In più la media sottostima quello che si vede: su una parete grande e
+piatta tre livelli di azzurro uniforme si notano benissimo, e il nero diventa latte.
+
+Rimesso a 0,035. Resta il debito, scritto per intero: la colonna sotto il catino e il
+sottopiano della consolle stanno a 63 su 255 invece che a 92, e l'unico strumento che
+alza il primo numero senza alzare il secondo è la luce indiretta calcolata. Non c'è una
+terza via: una luce finta attraversa i muri, l'ambiente schiarisce anche il buio.

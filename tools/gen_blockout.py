@@ -290,7 +290,7 @@ def tscn():
     righe += ['[sub_resource type="Environment" id="env"]',
               'background_mode = 1', 'background_color = Color(0.004, 0.005, 0.010, 1)',
               'ambient_light_source = 2', 'ambient_light_color = Color(0.26, 0.32, 0.48, 1)',
-              'ambient_light_energy = 0.11',
+              'ambient_light_energy = 0.035',
               'tonemap_mode = 3', 'tonemap_exposure = 1.0', 'tonemap_white = 3.0', '',
               '[node name="Blockout" type="Node3D"]', '',
               '[node name="WorldEnvironment" type="WorldEnvironment" parent="."]',
@@ -491,10 +491,17 @@ def tscn():
             # e un edificio con i muri trasparenti.
             #
             # Il rimedio vero e' la luce indiretta calcolata (VoxelGI), che e' una
-            # decisione sull'atmosfera di tutto il gioco e non su una lampada. Nel
-            # frattempo l'ambiente notturno sale da 0,035 a 0,11: alza le ombre di
-            # tre livelli invece di ventotto, ma non attraversa niente perche' non
-            # viene da nessun punto.
+            # decisione sull'atmosfera di tutto il gioco e non su una lampada.
+            #
+            # E L'AMBIENTE NON E' UN RIPIEGO: PROVATO E RIMESSO COM'ERA. Alzarlo da
+            # 0,035 a 0,11 sembrava il rimedio a portata di mano, e i numeri dicono
+            # che e' uno scambio alla pari nel verso sbagliato: la colonna del
+            # lavabo sale di 3,5 livelli su 255, e la sala divulgazione al buio sale
+            # esattamente di 3,5. La luce ambientale non distingue fra un'ombra
+            # dentro una stanza illuminata e una stanza spenta - schiarisce tutte e
+            # due allo stesso modo, e la seconda e' quella che deve restare nera.
+            # Su una parete grande e piatta tre livelli di azzurro uniforme si
+            # vedono benissimo: il nero diventa latte.
             # -- com'era, per memoria:
             # una seconda luce nello stesso punto, debole e
             # SENZA OMBRE. Non serve a illuminare di piu', serve a far si' che quello
@@ -1336,7 +1343,7 @@ print("scritto %s  -  %d blocchi, %d dimensioni distinte" % (out, len(blocchi), 
 # ambientale mentre nel .tscn restava a 0,45. Qui si rilegge il file scritto e si
 # controlla che i valori che contano ci siano davvero.
 _scritto = io.open(out, encoding="utf-8").read()
-_attesi = [("ambient_light_energy = 0.11", "la luce ambientale della notte"),
+_attesi = [("ambient_light_energy = 0.035", "la luce ambientale della notte"),
            ("tonemap_mode = 3", "il tonemapping ACES"),
            ("shadow_normal_bias = 0.45", "i bias delle ombre delle plafoniere"),
            ('locale = "la cucina"', "il nome del locale nel prompt"),

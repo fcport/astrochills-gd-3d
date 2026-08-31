@@ -2635,3 +2635,42 @@ capire qualcosa. Togliendo il tetto sulla spinta (`SPINTA_MASSIMA`) il banco con
 passare: perché il freno che conta davvero è l'altro, quello che **rallenta l'anta**
 quando sta scostando qualcuno. Tolto quello, 176 guasti, le nuove ante comprese
 (*«Anta_pensile_bagno: scosta a 2,0 m/s»*). Rimesso, zero.
+
+## D-133 — L'arretramento dalle piastrelle diventa una regola
+
+Il fianco sud dell'armadio era **dentro le piastrelle**, come lo erano stati la schiena
+del pensile e poi il suo fianco ovest. Tre volte lo stesso difetto, corretto tre volte
+una faccia alla volta, e ogni volta la metà giusta nascondeva la metà rotta.
+
+Adesso lo fa `geometria.impronta_utile()`: **ogni** lato di un'impronta che coincide con
+un muro della stanza si arretra dello spessore della piastrella. Un lato che *non* tocca
+il muro non si arretra — se l'impronta dichiara un mobile staccato, quello stacco è
+voluto. Non resta una faccia da dimenticare.
+
+Nello stesso giro **i cardini delle ante hanno smesso di essere scritti a mano**. Erano
+numeri uguali in due posti — la tabella delle ante e il modellatore della cassa — e
+bastava spostare l'armadio di quattro centimetri per staccargli l'anta, il giorno in cui
+nessuno guarda quella tabella. Adesso `ante_mobili()` li calcola dall'impronta: si
+dichiara solo quello che dall'impronta non si ricava (da che parte guarda il fronte,
+quante ante, di che tipo, fra che quote).
+
+## D-134 — Il termosifone non può crescere, e i due limiti sono misurati
+
+Richiesto più grande. Può crescere del 6% e non di più, e **i due muri contro cui va a
+sbattere sono stati misurati, non temuti**:
+
+- **verso est** c'è l'anta dell'armadio, che aperta arriva a *x = 7,226*: oltre 7,20 il
+  radiatore glielo mette davanti;
+- **verso ovest** c'è il passaggio fra il lavabo e il radiatore. A `x0 = 6,08` il
+  controllo delle sacche dice *«0,01 m² non raggiungibili a piedi»*; a **6,14** tace. Fra
+  i due c'è il mezzo centimetro che separa una stanza percorribile da un angolo murato.
+
+E siccome `posa_modello` scala tutto insieme, senza larghezza non c'è altezza. Quello che
+restava era **alzarlo**: un ghisa a colonne sta su mensole, non per terra. Dieci
+centimetri di stacco portano la sua cima da 0,67 a **0,81** — che da un metro si vede
+molto più di sei centimetri di larghezza, ed è anche giusto.
+
+**Il controllo delle sacche adesso dice anche DOVE.** *«0,01 m² non raggiungibili»* è un
+numero che non si può andare a guardare: costringe a rifare a mano il conto della griglia
+per sapere in che angolo cercare. Con le coordinate ci si va, e in questo caso è servito
+a capire in tre tentativi qual era il limite invece di indovinarlo.

@@ -731,32 +731,70 @@ def pezzi_anta(a):
 #
 # Le coordinate sono quelle del bagno, cioe' METRI DI GIOCO gia' scalati: il
 # modello del bagno si innesta nella scena senza trasformazione, quindi qui e in
-# `ARREDI_BAGNO` si parla la stessa lingua. Ogni cardine sta sul filo del mobile che
-# il modellatore disegna, e se uno dei due si muove l'anta si stacca: e' il motivo
-# per cui i numeri stanno QUI, di fianco all'arredo, e non dentro il generatore.
+# `ARREDI_BAGNO` si parla la stessa lingua.
 #
-#  nome, cardine (x, z), direzione dell'anta chiusa, dove va la PUNTA aprendo,
-#  larghezza, altezza, quota della base, spessore, tipo, apertura in gradi
+# IL CARDINE NON SI SCRIVE: SI CALCOLA DALL'IMPRONTA. Scritto a mano, era un numero
+# uguale in due posti - qui e nel modellatore che disegna la cassa - e due numeri
+# uguali in due posti diventano due numeri diversi al primo che ne muove uno. Basta
+# spostare l'armadio di quattro centimetri per staccargli l'anta, e il giorno che
+# succede nessuno guarda questa tabella. Qui si dichiara solo quello che
+# dall'impronta non si ricava: DA CHE PARTE guarda il fronte, quante ante, di che
+# tipo, e fra che quote.
 #
-# L'APERTURA E' MISURATA, non scelta: la stampa `tools/prova_ante.gd`, che prova la
+# L'APERTURA E' MISURATA, non scelta: la stampa `tools/prova_porte.gd`, che prova la
 # sagoma di ogni anta grado per grado contro tutto il resto della stanza. Novanta
 # dove ci stanno; meno dove qualcosa e' nel giro, e allora il numero dice CHE COSA -
 # perche' un'anta che si ferma a meta' senza motivo scritto, fra un anno, sembra un
 # difetto.
-ANTE_MOBILI = [
-    # il pensile sopra il lavabo: cardine nell'angolo, si apre verso la stanza.
-    # LA X E' 5,012 E NON 5,00 per la stessa ragione per cui la Z e' arretrata: sul
-    # muro ovest c'e' il rivestimento, spesso dodici millimetri, e a 5,00 il fianco
-    # del mobile resta DENTRO le piastrelle. Il difetto si vedeva da meta' stanza -
-    # la fuga passava attraverso il legno - ed era stato corretto solo sulla schiena.
-    ("pensile bagno", (5.012, 6.911), (1.0, 0.0), (0.0, 1.0),
-     0.588, 0.600, 1.450, 0.018, "specchio", 90.0),
-    # l'armadio di lamiera, due ante che si aprono a libro dal centro
-    ("armadio bagno 1", (7.659, 8.512), (0.0, 1.0), (-1.0, 0.0),
-     0.433, 1.700, 0.125, 0.018, "lamiera", 90.0),
-    ("armadio bagno 2", (7.659, 9.388), (0.0, -1.0), (-1.0, 0.0),
-     0.433, 1.700, 0.125, 0.018, "lamiera", 90.0),
+#
+#  arredo, dove guarda il fronte, quante ante, da che capo il cardine (conta solo
+#  per l'anta singola), tipo, quota della base, cima, spessore, quanto si lascia
+#  davanti alle maniglie, apertura in gradi
+MOBILI_CON_ANTE = [
+    ("Pensile", "sud",   1, "a", "specchio", 1.450, 2.050, 0.018, 0.000, 90.0),
+    ("Armadio", "ovest", 2, "a", "lamiera",  0.125, 1.825, 0.018, 0.070, 90.0),
 ]
+
+# La fessura ai due capi di una fila di ante e quella fra un'anta e l'altra. Ai capi
+# serve piu' larga: li' l'anta gira contro il fianco del mobile, e a filo ci
+# sfregherebbe dentro.
+FUGA_CAPO, FUGA_MEZZO = 0.012, 0.005
+
+# Lo spessore del rivestimento del bagno. STA QUI e non solo nel modellatore perche'
+# non e' un dettaglio di disegno: chi calcola dove cade il cardine di un'anta deve
+# saperlo quanto chi disegna la cassa a cui quell'anta e' attaccata.
+SPESS_PIASTRELLA = 0.012
+
+
+def impronta_utile(nome):
+    """L'impronta di un arredo del bagno, ARRETRATA dove tocca un muro.
+
+    Un mobile addossato a un muro piastrellato non parte dal filo del muro: parte
+    dal filo della piastrella, dodici millimetri piu' in dentro. Sembra niente e non
+    lo e' - a filo muro la fuga passa DENTRO il mobile, e si vede da mezza stanza.
+
+    QUESTO DIFETTO E' STATO CORRETTO TRE VOLTE, UNA FACCIA ALLA VOLTA: prima la
+    schiena del pensile, poi il suo fianco ovest, poi il fianco sud dell'armadio.
+    Ogni volta la meta' corretta nascondeva la meta' rotta, e ogni volta sembrava
+    finita. Adesso l'arretramento lo fa la regola su OGNI lato che tocchi un muro, e
+    non resta una faccia da dimenticare.
+
+    Un lato che NON tocca il muro non si arretra: se l'impronta dichiara un mobile
+    staccato dalla parete, quello stacco e' voluto e va rispettato.
+    """
+    impronte = {n: (a, b, c, d, e) for (n, a, b, c, d, e) in ARREDI_BAGNO}
+    x0, z0, x1, z1, h = impronte[nome]
+    rx0, rz0, rx1, rz1 = SALA_BAGNO[0]
+    e = 1e-6
+    if abs(x0 - rx0) < e:
+        x0 += SPESS_PIASTRELLA
+    if abs(x1 - rx1) < e:
+        x1 -= SPESS_PIASTRELLA
+    if abs(z0 - rz0) < e:
+        z0 += SPESS_PIASTRELLA
+    if abs(z1 - rz1) < e:
+        z1 -= SPESS_PIASTRELLA
+    return (x0, z0, x1, z1, h)
 
 
 def ante_mobili():
@@ -768,13 +806,44 @@ def ante_mobili():
     tutti, che e' esattamente quello che si vuole.
     """
     ante = []
-    for (nome, (px, pz), (dx, dz), (ax, az), L, HA, quota, T, tipo, apre) in ANTE_MOBILI:
-        ante.append({
-            "nome": nome, "perno": (px, quota, pz),
-            "direzione": (dx, 0.0, dz), "normale": (ax, 0.0, az),
-            "larghezza": L, "altezza": HA, "spessore": T,
-            "quota": quota, "tipo": tipo, "apertura": apre,
-        })
+    for (arredo, fronte, quante, capo, tipo, base, cima, T, sporge, apre) in MOBILI_CON_ANTE:
+        x0, z0, x1, z1, _h = impronta_utile(arredo)
+        # il piano del fronte, la direzione in cui l'anta si apre, e lungo quale
+        # asse corre la fila delle ante
+        piano, normale, lungo, asse = {
+            "sud":   (z1, (0.0, 1.0), (x0, x1), "x"),
+            "nord":  (z0, (0.0, -1.0), (x0, x1), "x"),
+            "ovest": (x0, (-1.0, 0.0), (z0, z1), "z"),
+            "est":   (x1, (1.0, 0.0), (z0, z1), "z"),
+        }[fronte]
+        nx, nz = normale
+        # il cardine sta in mezzo allo spessore dell'anta, e l'anta sta appena
+        # dentro il fronte: a filo, meno lo spazio lasciato alle maniglie
+        dentro = sporge + T / 2.0
+        fisso = piano - (nx if asse == "z" else nz) * dentro
+        a0, a1 = lungo
+        if quante == 1:
+            tratti = [(a0, a1, capo)]
+        else:
+            meta = (a0 + a1) / 2.0
+            tratti = [(a0 + FUGA_CAPO, meta - FUGA_MEZZO, "a"),
+                      (meta + FUGA_MEZZO, a1 - FUGA_CAPO, "b")]
+        for k, (b0, b1, da) in enumerate(tratti):
+            perno_lungo = b0 if da == "a" else b1
+            segno = 1.0 if da == "a" else -1.0
+            nome = arredo.lower() + " bagno"
+            if quante > 1:
+                nome += " %d" % (k + 1)
+            if asse == "x":
+                perno, direzione = (perno_lungo, base, fisso), (segno, 0.0, 0.0)
+            else:
+                perno, direzione = (fisso, base, perno_lungo), (0.0, 0.0, segno)
+            ante.append({
+                "nome": nome, "perno": perno, "direzione": direzione,
+                "normale": (nx, 0.0, nz), "larghezza": b1 - b0,
+                "altezza": cima - base, "spessore": T,
+                "quota": base, "tipo": tipo, "apertura": apre,
+            })
     return ante
 
 
@@ -942,8 +1011,14 @@ ARREDI_BAGNO = [
     # locale tecnico - detersivi, ricambi, il camice - che e' quello che in un posto
     # cosi' sta davvero in bagno.
     # 7,58 e non 7,65: le maniglie a bastone sporgono cinque centimetri dall'anta,
-    # e l'impronta deve contenere quello che si tocca, non la cassa
-    ("Armadio",     7.58, 8.50, 8.15, 9.40, 1.85),
+    # e l'impronta deve contenere quello che si tocca, non la cassa.
+    # E NON ARRIVA AL MURO SUD. Ci arrivava, ed erano due difetti in uno: il fianco
+    # finiva dentro le piastrelle - `impronta_utile` adesso lo arretrerebbe da solo -
+    # ma soprattutto un armadio incastrato nell'angolo contro il muro della finestra
+    # sembra murato. Spostato di sei centimetri a nord: restano cinque centimetri di
+    # luce fra il fianco e la piastrella, che e' quanto basta perche' si legga come
+    # un mobile appoggiato li' invece che costruito li'.
+    ("Armadio",     7.58, 8.44, 8.15, 9.34, 1.85),
     # parete ovest: il lavabo con lo specchio e la mensola sopra, tutto in una
     # impronta sola - sono un pezzo unico per chi ci sbatte contro
     ("Lavabo",      5.00, 8.15, 5.60, 8.90, 1.90),
@@ -957,7 +1032,23 @@ ARREDI_BAGNO = [
     # profondo tredici centimetri e sta staccato dal muro di quattro, o non ci
     # passa la mano per pulirci dietro. Con quindici le colonne uscivano
     # dall'impronta.
-    ("Termo",       6.20, 9.20, 7.20, 9.40, 0.75),
+    # PIU' LARGA DEL VANO, e la larghezza e' quella che comanda: `posa_modello`
+    # scala sull'altezza e poi rimpicciolisce finche' l'ingombro in pianta ci sta,
+    # e su questo radiatore vince sempre la pianta. Con un metro netto usciva alto
+    # 67 cm, cioe' un radiatore da bagnetto.
+    #
+    # E PIU' DI COSI' NON PUO' CRESCERE, in nessuna delle due direzioni, ed e' stato
+    # misurato invece che temuto:
+    #   * verso EST c'e' l'anta dell'armadio, che aperta arriva a 7,226: oltre 7,20
+    #     il radiatore glielo mette davanti;
+    #   * verso OVEST c'e' il passaggio fra il lavabo e il radiatore, e a 6,08 si
+    #     chiude. Il controllo delle sacche lo dice - "0,01 m2 non raggiungibili
+    #     a piedi" - e a 6,14 tace: fra i due c'e' il mezzo centimetro che separa
+    #     una stanza percorribile da un angolo murato.
+    # Quello che resta e' ALZARLO. Un ghisa a colonne sta su mensole, non per terra,
+    # e dieci centimetri di stacco portano la sua cima da 0,67 a 0,81 - che e' il
+    # numero che si vede da un metro, molto piu' della larghezza.
+    ("Termo",       6.14, 9.20, 7.20, 9.40, 0.85),
     # il portasciugamani a muro, fra la porta e il lavabo
     ("Portasalv",   5.00, 7.30, 5.12, 7.95, 1.30),
 ]
@@ -1121,7 +1212,15 @@ def verifica_stanza(sala, elenco, raggio=0.32, passo=0.05):
                 vis.add((a, b)); coda.append((a, b))
     if len(vis) < len(partenze):
         persi = (len(partenze) - len(vis)) * passo * passo
-        problemi.append("  SACCA ISOLATA     %.2f m2 di pavimento non raggiungibili a piedi" % persi)
+        # DOVE, non solo quanto. "0,01 m2 non raggiungibili" e' un numero che non si
+        # puo' andare a guardare: costringe a rifare a mano il conto della griglia
+        # per sapere in che angolo cercare. Con le coordinate ci si va e si vede.
+        fuori = [centro(i, j) for (i, j) in partenze if (i, j) not in vis]
+        dove = "  ".join("%.2f,%.2f" % c for c in fuori[:4])
+        if len(fuori) > 4:
+            dove += " e altre %d" % (len(fuori) - 4)
+        problemi.append("  SACCA ISOLATA     %.2f m2 di pavimento non raggiungibili a piedi"
+                        % persi + " (in %s)" % dove)
     return problemi
 
 

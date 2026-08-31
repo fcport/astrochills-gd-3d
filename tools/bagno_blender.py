@@ -58,7 +58,8 @@ import importlib   # noqa: E402
 for _m in ("geometria", "modellare"):
     if _m in sys.modules:
         importlib.reload(sys.modules[_m])
-from geometria import ANTE_MOBILI, ARREDI_BAGNO, SALA_BAGNO, W_SILL   # noqa: E402
+from geometria import (ante_mobili, ARREDI_BAGNO, impronta_utile,   # noqa: E402
+                       SALA_BAGNO, SPESS_PIASTRELLA, W_SILL)
 from modellare import (COLORI, cilindro, cilindro_orizz, esporta,   # noqa: E402
                        finisci, raddrizza_normali, usa_le_ridotte,
                        lampada, posa_modello, prepara_render, pulisci, scatola,
@@ -83,7 +84,10 @@ FINESTRA = (6.20, 7.20)
 # quegli anni, ed e' anche l'altezza a cui l'occhio di chi sta in piedi lo incontra.
 RIV = 1.60
 LIST = 0.08
-SPESS = 0.012      # lo spessore della piastrella, che si vede solo di taglio
+# lo spessore della piastrella, che si vede solo di taglio. LETTO da geometria
+# invece che riscritto: con questo numero li' si calcola di quanto arretrare i
+# mobili addossati, e due copie dello stesso millimetro sono una copia di troppo.
+SPESS = SPESS_PIASTRELLA
 SPORGE = 0.010     # di quanto il listello esce dal filo del rivestimento
 
 # I sanitari presi da fuori: cartella dentro assets/models/esterni -> (impronta,
@@ -120,6 +124,13 @@ SANITARI = [
 # render (bagno-termo.png). A zero la valvola cade verso la porta, cioe' dalla parte
 # da cui la si vede entrando; a 180 finisce nell'angolo cieco sotto la finestra.
 GRADI_TERMO = 0.0
+
+# Quanto sta staccato da terra. Un radiatore di ghisa non poggia sul pavimento:
+# sta su mensole a muro, e sotto ci passa lo spazzolone. E' anche l'unico modo
+# che gli resta di sembrare piu' grande: la larghezza e' bloccata fra il passaggio
+# davanti al lavabo e l'anta dell'armadio, e senza larghezza non c'e' altezza -
+# `posa_modello` scala tutto insieme.
+STACCO_TERMO = 0.10
 
 # Chi arriva bianco di fabbrica e va portato all'eta' degli altri. Il water e il
 # lavabo no: quelli si sono trovati gia' segnati, ed e' meglio lo sporco vero di
@@ -194,9 +205,8 @@ def armadio():
     sa), le maniglie VERTICALI a bastone, e lo zoccolo che lo stacca dal pavimento
     bagnato. Senza quei tre, una scatola grigia e' una scatola grigia.
     """
-    _xi, z0, x1, z1, alto = IMPRONTE["Armadio"]
+    _xi, z0, x1, z1, alto = impronta_utile("Armadio")
     x0 = filo_anta("armadio bagno 1")[0]   # dove batte l'anta: la cassa sta dietro
-    x1 = x1 - SPESS         # e la schiena si ferma sulla piastrella, non dentro
     zoccolo = 0.10
     M = "Armadietto"
     # LA CASSA, E GLI ASSI VANNO GUARDATI DUE VOLTE. L'armadio e' addossato alla
@@ -238,8 +248,10 @@ def filo_anta(nome):
 
     Torna la coppia (x, z) del piano; si usa la componente che serve.
     """
-    for (n, (px, pz), _d, (ax, az), _L, _HA, _q, T, _t, _ap) in ANTE_MOBILI:
-        if n == nome:
+    for a in ante_mobili():
+        if a["nome"] == nome:
+            (px, _py, pz), (ax, _ay, az) = a["perno"], a["normale"]
+            T = a["spessore"]
             return (px - ax * T / 2.0, pz - az * T / 2.0)
     raise KeyError("anta sconosciuta: %s" % nome)
 
@@ -257,15 +269,13 @@ def pensile():
     vedrebbe il pieno. Fianchi, schiena, cielo, fondo e un ripiano - che e' anche
     l'unica cosa che rende l'apertura interessante.
 
-    IL MURO NON E' NE' A z0 NE' A x0: li' c'e' la piastrella. Il rivestimento e'
-    spesso poco piu' di un centimetro, e il pensile partiva dal filo del muro su
-    tutti e due i lati - in gioco si vedeva la fuga passare attraverso il legno. La
-    schiena era gia' stata arretrata; il fianco contro il muro ovest no, e il
-    difetto e' rimasto a meta'.
+    IL MURO NON E' NE' A z0 NE' A x0: li' c'e' la piastrella - ma quell'arretramento
+    non si fa piu' qui. Lo fa `geometria.impronta_utile()`, su ogni lato che tocchi
+    un muro, perche' fatto a mano e' stato dimenticato tre volte di fila: prima la
+    schiena, poi il fianco ovest, poi il fianco sud dell'armadio.
     """
-    x0, z0, x1, z1, alto = IMPRONTE["Pensile"]
+    x0, z0, x1, z1, alto = impronta_utile("Pensile")
     basso, cima = 1.45, alto
-    z0, x0 = z0 + SPESS, x0 + SPESS
     zf = filo_anta("pensile bagno")[1]
     S = 0.018
     M = "LegnoTeche"
@@ -356,7 +366,8 @@ def termosifone():
         mancanti.append("Termo (il termosifone) - manca %s" % via)
         print("  Termo    SEGNAPOSTO: il modello non c'e' ancora")
         return
-    pezzi = posa_modello(via, IMPRONTE["Termo"], gradi=GRADI_TERMO)
+    pezzi = posa_modello(via, IMPRONTE["Termo"], gradi=GRADI_TERMO,
+                         appoggio=STACCO_TERMO)
     girate = raddrizza_normali(pezzi)
     if girate:
         print("  Termo    %d facce avevano la normale al contrario" % girate)

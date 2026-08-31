@@ -2423,3 +2423,41 @@ combaciano.
 Vale come voce perché è il difetto di misura più insidioso di questa sessione: non
 un controllo che tace, ma un controllo che **grida su codice sano**. Costa la stessa
 fiducia.
+
+## D-123 — Il colore non sta sempre in una mappa
+
+Il lavabo di ricambio arriva **senza texture**: tre materiali a tinta piatta e
+nessuna immagine. `pareggia_ceramica.py`, che lavora sui file delle mappe, non aveva
+niente da correggere — e il pareggio sarebbe semplicemente non avvenuto, in silenzio.
+
+Il caso senza mappa è però anche il più facile: il colore di base non è un fattore che
+moltiplica qualcosa, è **il** colore, e glielo si scrive. Con due accortezze:
+
+- **Qual è la ceramica fra i tre materiali**: quello con più facce. Il corpo di un
+  lavabo ha dieci volte i triangoli del suo rubinetto.
+- **Il bianco va convertito in lineare.** I 212 sono in sRGB, Blender lavora in
+  lineare: scritti tali e quali darebbero una ceramica molto più chiara. È lo stesso
+  scarto di fattore 2,4 che fece uscire l'anta del magazzino a metà della tinta del
+  suo telaio.
+
+**E metallicità a zero su tutto.** In glTF `metallicFactor` vale 1.0 se non è
+dichiarato, e due dei tre materiali non lo dichiarano: sarebbero arrivati metallici
+pieni e lisci come specchi, cioè neri in una stanza chiusa. **Quinta volta** che
+questo progetto ci inciampa.
+
+## D-124 — Un controllo che salta quello che non sa misurare
+
+`ceramiche_pari()` verificava il bianco leggendo `color.jpg`, e se il file non c'era
+faceva `continue`. Col lavabo nuovo — che di mappe non ne ha — controllava **due
+sanitari su tre e dichiarava pari anche il terzo**.
+
+È la forma più educata di controllo inutile: non sbaglia la misura, semplicemente non
+la fa, e il verde che stampa è indistinguibile da quello di una verifica vera. Adesso
+se la mappa non c'è il bianco si legge dal materiale del corpo e si riconverte in
+sRGB. Validato per iniezione: pareggiando il lavabo a 150 invece che a 212, il
+controllo lo accusa.
+
+**Tre modi di sbagliare, tutti visti oggi**: un controllo che tace (D-119, il peso), un
+controllo che grida su codice sano (D-122, la conversione doppia), e un controllo che
+salta il caso che non sa gestire. L'ultimo è il più difficile da notare, perché
+assomiglia a un successo.

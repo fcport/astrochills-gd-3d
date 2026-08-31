@@ -109,7 +109,17 @@ SANITARI = [
 # `tools/pareggia_ceramica.py` sulle mappe, dove si puo' anche schiarire.
 INVECCHIARE = ()
 
+# Il bianco a cui stanno tutte le ceramiche, letto da chi lo decide invece che
+# ricopiato: due numeri uguali in due file diventano due numeri diversi.
+BIANCO = float(__import__("re").search(
+    r"^BERSAGLIO = ([\d.]+)",
+    io.open(os.path.join(QUI, "pareggia_ceramica.py"), encoding="utf-8").read(),
+    __import__("re").M).group(1))
+
 mancanti = []
+
+# I pezzi di ogni sanitario montato, per poterne misurare il bianco alla fine.
+MONTATI = {}
 
 
 # --- il guscio: piastrelle, listello, pavimento ------------------------------
@@ -341,6 +351,59 @@ def lavabo_segnaposto():
     # il miscelatore lo mette rubinetto_lavabo(), che serve anche al modello vero
 
 
+def bianco_ceramica(pezzi, su255):
+    """Porta al bianco voluto un sanitario che il colore ce l'ha NEL MATERIALE.
+
+    Non tutti i modelli portano una mappa: questo lavabo ha tre materiali a tinta
+    piatta e nessuna texture, quindi `pareggia_ceramica.py` - che lavora sui file
+    delle mappe - non ha niente da correggere. Il pareggio va fatto qui, e per
+    fortuna e' anche piu' semplice: senza mappa il colore di base non e' un fattore
+    che moltiplica qualcosa, e' IL colore, e glielo si scrive.
+
+    QUAL E' LA CERAMICA FRA I TRE. Quello con piu' facce: il corpo di un lavabo ha
+    dieci volte i triangoli del suo rubinetto. Gli altri sono rubinetteria e restano
+    del loro colore.
+
+    E IL BIANCO SI CONVERTE IN LINEARE. Blender lavora in lineare e i 212 su 255
+    sono in sRGB: scritti tali e quali darebbero una ceramica molto piu' chiara del
+    dovuto. E' lo stesso scarto - fattore 2,4 - che ha gia' fatto uscire l'anta del
+    magazzino a meta' della tinta del suo telaio.
+
+    METALLICITA' A ZERO SU TUTTO, e qui non e' pignoleria. In glTF `metallicFactor`
+    vale 1.0 se non e' dichiarato, e due dei tre materiali di questo lavabo non lo
+    dichiarano: arriverebbero metallici pieni e lisci come uno specchio. In una
+    stanza chiusa senza niente da riflettere, uno specchio e' NERO - il difetto piu'
+    ricorrente di questo progetto, e questa e' la quinta volta.
+    """
+    c = su255 / 255.0
+    lineare = (c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4)
+    conta = {}
+    for o in pezzi:
+        if o.type != "MESH" or o.data is None:
+            continue
+        for slot in o.material_slots:
+            if slot.material is not None:
+                conta[slot.material] = conta.get(slot.material, 0) + len(o.data.polygons)
+    if not conta:
+        return
+    corpo = max(conta, key=conta.get)
+    for m in conta:
+        if not m.use_nodes:
+            continue
+        for n in m.node_tree.nodes:
+            if n.type != "BSDF_PRINCIPLED":
+                continue
+            n.inputs["Metallic"].default_value = 0.0
+            if m is corpo and not n.inputs["Base Color"].is_linked:
+                n.inputs["Base Color"].default_value = (lineare, lineare, lineare, 1.0)
+                n.inputs["Roughness"].default_value = 0.25
+            else:
+                # la rubinetteria: senza metallicita' serve un po' di ruvidezza, o
+                # resta una plastica grigia troppo lucida
+                r = n.inputs["Roughness"]
+                r.default_value = max(0.30, r.default_value)
+
+
 def ingiallisci(pezzi, tinta):
     """Da' vent'anni a una ceramica che arriva nuova di fabbrica.
 
@@ -405,10 +468,15 @@ def sanitari():
         bocciato = os.path.exists(os.path.join(ESTERNI, cartella, "DA_SOSTITUIRE.txt"))
         if os.path.exists(via) and not bocciato:
             pezzi = posa_modello(via, (x0, z0, x1, z1, alto), gradi=gradi)
+            MONTATI[quale] = pezzi
             # LE MAPPE RIDOTTE, e la metallicita' a zero. Una ceramica non e' un
             # metallo: la mappa metallicRoughness dei sanitari, presa com'e', la
             # farebbe specchiare, e in un bagno chiuso lo specchio e' nero.
-            usa_le_ridotte(pezzi, os.path.dirname(via), metallico=0.0)
+            fatte = usa_le_ridotte(pezzi, os.path.dirname(via), metallico=0.0)
+            if fatte == 0:
+                # nessuna mappa da sostituire: il colore sta nel materiale, e il
+                # pareggio va fatto li'
+                bianco_ceramica(pezzi, BIANCO)
             if quale in INVECCHIARE:
                 ingiallisci(pezzi, COLORI["CeramicaVecchia"])
                 print("  %-8s dal modello scaricato, invecchiato qui" % quale)
@@ -416,15 +484,19 @@ def sanitari():
                 print("  %-8s dal modello scaricato" % quale)
         else:
             fatti[quale]()
+            # IL RUBINETTO SOLO COL SEGNAPOSTO. Il modello scaricato il suo
+            # miscelatore ce l'ha, e aggiungerne un secondo ne lascerebbe due nello
+            # stesso foro. Serviva col lavabo precedente, che arrivava senza.
+            if quale == "Lavabo":
+                rubinetto_lavabo(0.86)
             if bocciato:
+                print("  %-8s SEGNAPOSTO: il modello scaricato e' stato bocciato" % quale)
                 mancanti.append("%s (%s) - il modello scaricato e' stato BOCCIATO, "
                                 "vedi %s/DA_SOSTITUIRE.txt" % (quale, come_si_chiama,
                                                                cartella))
             else:
+                print("  %-8s SEGNAPOSTO: il modello non c'e' ancora" % quale)
                 mancanti.append("%s (%s) - manca %s" % (quale, come_si_chiama, via))
-        if quale == "Lavabo":
-            rubinetto_lavabo(0.80 if os.path.exists(via) else 0.86)
-            print("  %-8s SEGNAPOSTO: il modello non c'e' ancora" % quale)
 
 
 def prova_ingiallisci():
@@ -502,6 +574,35 @@ def quanto_e_chiara(mappa):
     return somma / max(1, n) * 255.0
 
 
+def bianco_del_materiale(pezzi):
+    """Il bianco di un sanitario che il colore ce l'ha nel materiale, riportato a 255.
+
+    Si guarda il materiale del CORPO - quello con piu' facce, come in
+    `bianco_ceramica` - e si riconverte il suo colore da lineare a sRGB, che e' la
+    scala in cui parlano tutti gli altri numeri di questo controllo.
+    """
+    conta = {}
+    for o in pezzi:
+        if o.type != "MESH" or o.data is None:
+            continue
+        for slot in o.material_slots:
+            if slot.material is not None:
+                conta[slot.material] = conta.get(slot.material, 0) + len(o.data.polygons)
+    if not conta:
+        return None
+    m = max(conta, key=conta.get)
+    if not m.use_nodes:
+        return None
+    for n in m.node_tree.nodes:
+        if n.type != "BSDF_PRINCIPLED" or n.inputs["Base Color"].is_linked:
+            continue
+        c = sum(n.inputs["Base Color"].default_value[:3]) / 3.0
+        c = max(0.0, min(1.0, c))
+        srgb = (c * 12.92 if c <= 0.0031308 else 1.055 * (c ** (1.0 / 2.4)) - 0.055)
+        return srgb * 255.0
+    return None
+
+
 def ceramiche_pari():
     """I sanitari montati devono essere lo STESSO bianco.
 
@@ -523,12 +624,19 @@ def ceramiche_pari():
 
     guai = []
     for (cartella, quale, _g, _a, _n) in SANITARI:
+        if quale not in MONTATI:
+            continue                     # segnaposto: e' roba nostra, gia' pari
         mappa = os.path.join(ESTERNI, cartella, "textures", "color.jpg")
-        if not os.path.exists(mappa):
-            continue
-        if os.path.exists(os.path.join(ESTERNI, cartella, "DA_SOSTITUIRE.txt")):
-            continue                     # gia' bocciato, e gia' detto
-        grigio = quanto_e_chiara(mappa)
+        if os.path.exists(mappa):
+            grigio = quanto_e_chiara(mappa)
+        else:
+            # SENZA MAPPA IL BIANCO STA NEL MATERIALE, e va misurato li'. Il primo
+            # controllo saltava questi - `continue` se non c'era il file - e con il
+            # lavabo nuovo, che di mappe non ne ha, verificava due sanitari su tre
+            # dichiarando pari anche il terzo.
+            grigio = bianco_del_materiale(MONTATI[quale])
+            if grigio is None:
+                continue
         print("  %-8s ceramica a %.0f su 255" % (quale, grigio))
         if abs(grigio - bersaglio) > 10.0:
             guai.append("%s: la ceramica sta a %.0f invece dei %.0f degli altri - "

@@ -113,9 +113,8 @@ A_MANO = {
         "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
         "Lavabo a semicolonna con bacino rettangolare arrotondato e miscelatore"
         " monocomando: la forma di serie di un lavabo italiano degli anni Novanta."
-        "
-
-IL SECONDO TENTATIVO. Il primo era un 'Old Dirty Pedestal Sink': forma"
+        "\n\nIL SECONDO TENTATIVO. Il primo era un 'Old Dirty Pedestal Sink':"
+        " forma"
         " giusta, ma la sua ceramica stava a 130 su 255 contro i 212 degli altri due"
         " sanitari e le piastrelle pulite. Non era vecchio, era sporco - e le due"
         " cose non sono la stessa. In un osservatorio in funzione i sanitari sono"

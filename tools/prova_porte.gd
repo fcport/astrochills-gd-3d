@@ -332,8 +332,14 @@ func _quanto_girano() -> void:
 			var t := Transform3D(Basis(Vector3.UP, y0 + deg_to_rad(g) * signf(porta.verso)),
 				porta.global_position)
 			par.transform = t * col.transform
-			if not spazio.intersect_shape(par, 1).is_empty():
+			var urto := spazio.intersect_shape(par, 1)
+			if not urto.is_empty():
 				libera = g - 1.0
+				# CHI la ferma, non solo a quanti gradi. Senza il nome si sa che
+				# qualcosa non va e non si sa dove guardare - ed e' costato tre
+				# tentativi buttati su un montante che non era il colpevole.
+				var chi: Node = urto[0]["collider"]
+				print("      (ferma da %s)" % (chi.name if chi != null else "?"))
 				break
 			g += 1.0
 		print("  %-26s gira libera fino a %3.0f gradi (si ferma a %.0f)"

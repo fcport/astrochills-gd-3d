@@ -3480,3 +3480,61 @@ vertice, provandolo rimettendo i 13 mm (*«a r2 0.89 il franco è −0,3 mm»*).
 tolleranza fra due cose che non devono coesistere: il giorno che il modello del tubo
 cambia, quel numero è di nuovo sbagliato e nessuno se lo ricorda. Tolto il vetro, il quad
 può permettersi la misura vera.
+
+## D-161 — Il telaio della porta non esisteva per la fisica
+
+Federico: *«se passo davanti a una porta la cui luce dietro è accesa, quindi porta
+chiusa, mi si resetta»*. Vero, e la causa non era nell'adattamento.
+
+`world/player/luce_prossimita.gd` decide se è buio **chiedendo alle lampade**: per
+ognuna, quanta ne arriva qui e se da qui si vede. La seconda metà è un raggio, e un
+raggio che non incontra quello che dovrebbe è invisibile — la lampada torna a contare,
+l'adattamento si azzera, e si vede solo l'effetto, mai la causa.
+
+**Il telaio morde otto centimetri di vano su ogni lato e sopra il battente, e in gioco
+era mesh e basta.** Lo dice `blocchi_infissi()` stesso, in cima: *«il blockout vuole i
+vani VUOTI, per poterci passare. Gli infissi servono al modello, non alla camminata»*.
+Era vero, ed è la stessa forma di errore che questo progetto raccoglie da settimane: una
+frase giusta il giorno che è stata scritta, sopravvissuta al giorno in cui il buio è
+diventato una cosa che si misura.
+
+**Misurato**, mettendo il giocatore su una griglia di settanta punti attorno a ogni porta
+chiusa con una sola stanza accesa: il raggio verso la plafoniera attraversava il piano
+della porta a **2,059 m** — fra la cima dell'anta (2,02) e quella del vano (2,10) — e a
+1,930 con scostamento 0,925, cioè oltre il bordo libero dell'anta. Sopra il battente e di
+fianco: le due strade che il telaio dovrebbe chiudere.
+
+**La prima cura ha rotto le porte**, e vale la pena scriverlo. Dati i montanti interi, il
+banco delle porte è passato da 118 gradi liberi a 41: il battente ci sbatteva dentro. Il
+motivo, coi conti, perché ci ho sbagliato due volte: l'anta ruota attorno a un asse che
+sta a **metà del suo spessore** — non sulla faccia, come una porta vera — quindi
+aprendosi una parte di lei finisce dietro il piano del cardine. Un punto a distanza `x`
+dal cardine e scostamento `z` ci finisce quando `z·sin(a) > x·cos(a)`, cioè **solo se `z`
+è positivo**: solo la faccia dal lato verso cui la porta si apre. E dopo la rotazione il
+suo scostamento, `x·sin(a) + z·cos(a)`, è positivo anche lui.
+
+**Dietro il cardine l'anta sta sempre dalla parte dell'apertura, a ogni angolo.** Quindi
+il montante è solido nella metà opposta, e lì l'anta non arriva mai. Il buco che resta non
+lascia passare niente: un raggio che attraversa il muro deve percorrere tutta la
+profondità del telaio, e per restare in quella metà dovrebbe uscire di lato — finendo
+nell'anta, che è solida, o nella muratura.
+
+**Il vetro non diventa solido, ed è il punto della funzione.** Una finestra deve lasciar
+passare la luna: dare un solido al vetro spegnerebbe la luna dentro casa, scambiando un
+difetto con un altro. Passano solo i telai, che sono legno.
+
+**Provato per iniezione, come si deve.** Con i telai: 0 perdite, 5565 raggi fermati, porte
+libere fino a 113-118 gradi contro i 90 di apertura. Senza: **29 perdite**. E la sonda
+stessa ha dato un falso «zero» per due giri prima che me ne accorgessi — non partiva
+affatto, un errore di sintassi, e stampava zero perché non stampava niente. Un controllo
+che tace non è un controllo che passa.
+
+**Una cosa in più che adesso il banco dice:** *chi* ferma l'anta, non solo a quanti gradi.
+Senza il nome si sa che qualcosa non va e non si sa dove guardare, ed è costato tre
+tentativi buttati su un montante che non era il colpevole.
+
+**Resta scritta l'asimmetria dell'adattamento**, che non è un difetto ma va saputa: la
+lampada di prossimità cade in un quarto di secondo e risale in trenta secondi. Qualunque
+spiraglio momentaneo — un raggio che passa per un istante — costa mezzo minuto di buio. È
+la ragione per cui una perdita di pochi centimetri si nota tanto, ed è anche la ragione
+per cui vale la pena chiuderle tutte invece di ammorbidire la soglia.

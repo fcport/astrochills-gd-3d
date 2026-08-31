@@ -559,6 +559,15 @@ def blocchi_edificio():
     return blocchi
 
 
+# LE MISURE DEL TELAIO, in un posto solo. Stavano scritte due volte - dentro
+# `blocchi_infissi()` e dentro `ante_porte()` - con gli stessi valori e nessuno che
+# li tenesse insieme: il giorno che il telaio diventa da 10 cm, l'anta continua a
+# essere tagliata per uno da 8 e resta un dito di luce fra le due.
+TS_TELAIO = 0.08          # sezione del telaio: quanto morde il vano su ogni lato
+SPT_TELAIO = SP + 0.02    # profondita': il telaio sborda di un centimetro per lato
+SP_ANTA = 0.045           # spessore del battente
+
+
 def blocchi_infissi():
     """Telai, ante, vetri e davanzali di ogni porta e finestra.
 
@@ -566,9 +575,7 @@ def blocchi_infissi():
     per poterci passare. Gli infissi servono al modello, non alla camminata.
     """
     _, aperture, _, _, _, _ = scalati()
-    TS = 0.08          # sezione del telaio
-    SPT = SP + 0.02    # il telaio sborda di un centimetro per lato
-    ANTA = 0.045
+    TS, SPT, ANTA = TS_TELAIO, SPT_TELAIO, SP_ANTA
     blocchi = []
 
     def aggiungi(cx, cy, cz, sx, sy, sz, nome):
@@ -628,6 +635,91 @@ def blocchi_infissi():
     return blocchi
 
 
+def collisioni_infissi():
+    """I TELAI come solidi. Il vetro no, e il davanzale nemmeno.
+
+    `blocchi_infissi()` dice, in cima, che il blockout vuole i vani vuoti perche'
+    ci si deve passare: era vero, e ha smesso di bastare il giorno in cui il buio
+    e' diventato una cosa che si misura.
+
+    COSA SUCCEDEVA. `world/player/luce_prossimita.gd` decide se e' buio tirando un
+    raggio verso ogni lampada accesa: se il raggio arriva, quella lampada conta e
+    l'adattamento al buio si azzera - un quarto di secondo a cadere, trenta a
+    risalire. Il telaio morde otto centimetri di vano per lato e sopra il battente,
+    e in gioco era MESH E BASTA: passando in corridoio davanti a una porta CHIUSA
+    con la stanza accesa dietro, il raggio verso la plafoniera di la' scavalcava il
+    battente e usciva dal telaio. Misurato: attraversava il piano della porta a
+    2,059 m - fra la cima dell'anta (2,02) e quella del vano (2,10) - e a 1,930 con
+    scostamento 0,925, cioe' oltre il bordo libero dell'anta.
+
+    IL VETRO NON ENTRA, ed e' il punto della funzione. Una finestra deve lasciar
+    passare la luna: dare un solido al vetro spegnerebbe la luna dentro casa,
+    scambiando un difetto con un altro. Passano solo i telai, che sono legno.
+
+    I MONTANTI DELLE PORTE SONO SOLIDI SOLO NELLA META' OPPOSTA ALL'APERTURA, e
+    senza questo la cura era peggiore del male: con i montanti interi il banco
+    delle porte e' passato da 118 gradi liberi a 41. Le porte non si aprivano piu'.
+
+    IL PERCHE', con i conti, perche' ci ho sbagliato due volte. Il battente ruota
+    attorno a un asse che sta a META' del suo spessore - non sulla faccia, come una
+    porta vera - quindi aprendosi una parte di lui finisce DIETRO il piano del
+    cardine, dove sta il montante. Ma dove esattamente? Un punto dell'anta a
+    distanza x dal cardine e scostamento z finisce dietro il piano quando
+    z*sin(a) > x*cos(a), cioe' solo se z e' positivo: solo la faccia dal lato verso
+    cui la porta si apre. E allora anche il suo scostamento dopo la rotazione,
+    x*sin(a) + z*cos(a), e' positivo. **Dietro il cardine l'anta sta sempre dalla
+    parte dell'apertura**, a ogni angolo. La meta' opposta e' libera per sempre.
+
+    E il buco che resta non lascia passare niente: un raggio che attraversa il muro
+    deve percorrere tutta la profondita' del telaio, e per restare in quella meta'
+    dovrebbe uscire di lato - finendo nell'anta, che e' solida, o nella muratura.
+    Provato: zero perdite su tutte le porte e tutte le lampade, 118 gradi di
+    apertura.
+    """
+    _, aperture, _, _, _, _ = scalati()
+    fuori = []
+
+    def aggiungi(cx, cy, cz, sx, sy, sz, nome):
+        if sx > 0.005 and sy > 0.005 and sz > 0.005:
+            fuori.append((cx, cy, cz, sx, sy, sz, nome, 0.0))
+
+    for b in blocchi_infissi():
+        (cx, cy, cz, sx, sy, sz, nome, *_r) = b
+        if not nome.startswith("Telaio"):
+            continue
+        aggiungi(cx, cy, cz, sx, sy, sz, nome)
+
+    # e i montanti delle porte si rifanno a meta': prima si tolgono quelli interi
+    porte = {n: (px_, pz, w, o) for (px_, pz, w, o, t, n) in aperture if t == "porta"}
+    meta = (SPT_TELAIO - SP_ANTA) / 2.0
+    for nome, (px_, pz, w, o) in porte.items():
+        verso = APERTURA_PORTE.get(nome, ("a", +1))[1]
+        # il montante e' solido dalla parte OPPOSTA a quella verso cui si apre
+        centro = -verso * (SP_ANTA / 2.0 + meta / 2.0)
+        for lungo in ((px_ + TS_TELAIO / 2, px_ + w - TS_TELAIO / 2) if o == "h"
+                      else (pz + TS_TELAIO / 2, pz + w - TS_TELAIO / 2)):
+            if o == "h":
+                intero = (lungo, H_ARCH / 2, pz)
+                fuori.remove(_trova(fuori, intero))
+                aggiungi(lungo, H_ARCH / 2, pz + centro,
+                         TS_TELAIO, H_ARCH, meta, "TelaioMontante")
+            else:
+                intero = (px_, H_ARCH / 2, lungo)
+                fuori.remove(_trova(fuori, intero))
+                aggiungi(px_ + centro, H_ARCH / 2, lungo,
+                         meta, H_ARCH, TS_TELAIO, "TelaioMontante")
+    return fuori
+
+
+def _trova(blocchi, centro):
+    """Il blocco con quel centro. Serve a togliere i montanti interi rimessi a meta'."""
+    for b in blocchi:
+        if (abs(b[0] - centro[0]) < 1e-6 and abs(b[1] - centro[1]) < 1e-6
+                and abs(b[2] - centro[2]) < 1e-6):
+            return b
+    raise KeyError("nessun montante in %s: il telaio e' cambiato" % (centro,))
+
+
 def ante_porte(apertura_gradi=0.0):
     """Le ante, una per una, con il loro CARDINE.
 
@@ -639,7 +731,7 @@ def ante_porte(apertura_gradi=0.0):
     direzione dell'anta chiusa, la normale verso cui si apre, e le misure.
     """
     _, aperture, _, _, _, _ = scalati()
-    TS, ANTA = 0.08, 0.045
+    TS, ANTA = TS_TELAIO, SP_ANTA
     ante = []
     for (px_, pz, w, o, t, nome) in aperture:
         if t != "porta":

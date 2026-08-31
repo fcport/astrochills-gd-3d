@@ -6,7 +6,8 @@ import os
 import re as _re
 
 from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP, H_DOME_BASE, DOME_R, DOME_H,
-                       blocchi_edificio, DISL_RAMPA, ante_porte, verifica_ante, verifica_trappole,
+                       blocchi_edificio, collisioni_infissi,
+                       DISL_RAMPA, ante_porte, verifica_ante, verifica_trappole,
                        pezzi_anta, arredi, verifica_arredi,
                        ante_mobili, pezzi_anta_mobile,
                        scalati, verifica_aperture, verifica_copertura,
@@ -34,6 +35,12 @@ def aggiungi(cx, cy, cz, sx, sy, sz, nome, rot_x=0.0, rot_z=0.0, rot_y=0.0):
         blocchi.append((cx, cy, cz, sx, sy, sz, nome, rot_x, rot_z, rot_y))
 
 blocchi.extend(blocchi_edificio())
+# I TELAI SONO SOLIDI, e non per camminarci contro: per fermare i raggi con cui
+# `luce_prossimita.gd` chiede alle lampade se si vedono. Un telaio di mesh lascia
+# passare la plafoniera della stanza accanto sopra il battente chiuso. Vedi
+# `geometria.collisioni_infissi()`, che spiega perche' il vetro non entra.
+for (_cx, _cy, _cz, _sx, _sy, _sz, _nome, *_r) in collisioni_infissi():
+    aggiungi(_cx, _cy, _cz, _sx, _sy, _sz, _nome)
 # Gli arredi entrano come SOLA COLLISIONE, come i muri: la forma la da' il modello
 # controllo_pc.glb, che nasce dalle stesse impronte.
 blocchi.extend(arredi())

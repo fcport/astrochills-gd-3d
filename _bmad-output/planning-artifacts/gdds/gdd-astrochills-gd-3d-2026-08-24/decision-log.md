@@ -2593,6 +2593,15 @@ Il piano su cui batte l'anta lo legge `filo_anta()` dalla stessa tabella che gen
 nodo in gioco, invece di riscriverlo: cassa e anta le disegnano due programmi diversi, e
 un numero scritto due volte prima o poi diventa due numeri.
 
+**E l'armadio resta fatto in casa.** Erano stati cercati due candidati su Sketchfab — un
+*Old Locker* di lamiera con specchio sull'anta, e un *Medical Cabinet* da laboratorio con
+ante a vetro — e la scelta è stata tenere quello che c'è. Le ragioni reggono anche a
+freddo: il primo è arrugginito e ha lo specchio crepato, cioè ricadrebbe nell'errore già
+fatto una volta (*vecchio non vuol dire sporco*); il secondo è un mobile diverso, e
+ante a vetro in una stanza al buio sono un problema noto. In più un modello scaricato è
+comunque una mesh sola: le sue ante andrebbero **tolte** e rifatte qui, quindi il
+download avrebbe portato solo la texture, non il meccanismo.
+
 **E il fianco del pensile era ancora dentro le piastrelle.** Il difetto era stato
 corretto solo sulla schiena; sul muro ovest il mobile partiva da 5,00 mentre il
 rivestimento arriva a 5,012. La metà corretta nascondeva la metà rotta — la quarta volta

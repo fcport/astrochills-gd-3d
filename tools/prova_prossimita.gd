@@ -26,11 +26,23 @@
 extends SceneTree
 
 ## Quanti fotogrammi si lascia assestare la scena dopo aver mosso il giocatore o
-## toccato la lampada. L'illuminazione di Godot non è istantanea.
-## Quaranta e non otto. La lampada non salta al suo valore: `luce_prossimita.gd` ce
-## la porta scorrendo, in poco piu' di un terzo di secondo. Con otto fotogrammi il
-## banco fotografava a meta' salita e leggeva numeri che nel gioco non esistono.
-const ASSESTO := 40
+## toccato la lampada.
+##
+## NON È UN NUMERO SCRITTO QUI: si ricava da quanto la lampada ci mette davvero a
+## salire. Prima era otto, quando la salita durava un terzo di secondo — il banco
+## fotografava a metà salita e leggeva numeri che nel gioco non esistevano. Poi la
+## salita è diventata di tre secondi, per dare l'idea dell'occhio che si abitua, e un
+## quaranta scritto a mano avrebbe rifatto lo stesso sbaglio in silenzio: infatti l'ha
+## rifatto, e il banco ha accusato «una lampada di là dal muro la smorza» mentre la
+## lampada stava soltanto ancora salendo. Chi rallenta la lampada non deve venire a
+## ricordarsi di questo file.
+## La costante si legge DALLO SCRIPT, non dalla classe: `class_name` vive nella
+## cache che scrive l'editor, e un banco lanciato con `--script` su un progetto
+## appena clonato quella cache non ce l'ha.
+static func assesto() -> int:
+	var s: GDScript = load("res://world/player/luce_prossimita.gd")
+	var lenta: float = s.get_script_constant_map()["SI_ABITUA"]
+	return int(60.0 / lenta * 1.25) + 10
 
 ## A che distanze dal muro si misura. La prima è «ci sono quasi addosso», l'ultima
 ## è «è in fondo alla stanza e deve restare nera».
@@ -372,7 +384,7 @@ func _sistema() -> void:
 	elif _spia != null:
 		_spia.current = false
 		(_corpo.get_node("Camera") as Camera3D).current = true
-	_attesa = ASSESTO
+	_attesa = assesto()
 
 
 ## Legge il centro dell'inquadratura. Non un pixel solo: undici per undici, mediati.

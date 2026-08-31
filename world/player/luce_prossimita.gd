@@ -19,10 +19,13 @@
 ## ovunque, quindi la domanda è se da qui si vede il cielo. Un raggio verso la sua
 ## direzione, e se incontra il tetto sei al chiuso.
 ##
-## E NON SI ACCENDE DI SCATTO. Il conto si rifà dieci volte al secondo, ma l'energia
-## ci arriva scorrendo: attraversare la soglia di una stanza illuminata non deve
-## essere un lampo. Chi entra in una stanza buia vede la lampada crescere nel tempo
-## in cui l'occhio si sarebbe abituato comunque.
+## E CI METTE, SALENDO. Il conto si rifà dieci volte al secondo, ma l'energia ci
+## arriva scorrendo, e in salita ci mette più di tre secondi: è il tempo in cui un
+## occhio si abitua al buio. Entrando in una stanza spenta non si vede subito quel
+## che si ha accanto — lo si vede emergere. In discesa invece un quarto di secondo,
+## perché all'abbagliamento ci si adatta subito, e perché una lampada che ci
+## mettesse tre secondi a spegnersi lascerebbe vedere il proprio alone entrando in
+## una stanza accesa.
 class_name LuceProssimita
 extends OmniLight3D
 
@@ -40,10 +43,19 @@ const CHIARO := 0.30
 ## abbastanza per una cosa che cambia camminando, e sono dieci raggi, non mille.
 const OGNI := 0.1
 
-## Quanto in fretta l'energia raggiunge il valore voluto, in frazioni dell'energia
-## piena al secondo. Tre significa poco più di un terzo di secondo per accendersi
-## da zero: si nota che cambia, non si vede scattare.
-const RIPRESA := 3.0
+## Quanto in fretta la lampada SALE, in frazioni dell'energia piena al secondo.
+## Zero virgola trenta sono più di tre secondi per accendersi del tutto, ed è lento
+## apposta: è il tempo in cui un occhio vero si abitua al buio. Entrando in una
+## stanza spenta non si vede subito quel che si ha accanto — lo si vede emergere, e
+## quel ritardo è la cosa che rende il buio un posto invece che un difetto.
+const SI_ABITUA := 0.30
+
+## Quanto in fretta SCENDE. Un quarto di secondo, cioè più di dieci volte la
+## salita, e l'asimmetria è quella dell'occhio vero: al buio ci si abitua piano, alla
+## luce si è abbagliati subito. Ma qui è anche una necessità — la lampada deve
+## sparire *prima* che tu abbia il tempo di vedere il tuo alone su una parete
+## illuminata, che è il difetto per cui esiste tutto questo file.
+const ABBAGLIA := 4.0
 
 ## Ogni quanto si ricontano le lampade della scena. Non ogni fotogramma: cambiano
 ## quando qualcuno ne aggiunge una, cioè mai durante una partita.
@@ -72,7 +84,8 @@ func _process(delta: float) -> void:
 		_t = 0.0
 		var f := clampf((_altrui() - BUIO) / (CHIARO - BUIO), 0.0, 1.0)
 		_voluta = _piena * (1.0 - f)
-	light_energy = move_toward(light_energy, _voluta, _piena * RIPRESA * delta)
+	var quanto := SI_ABITUA if _voluta > light_energy else ABBAGLIA
+	light_energy = move_toward(light_energy, _voluta, _piena * quanto * delta)
 
 
 ## Quanta luce di ALTRI arriva dove sta la lampada.

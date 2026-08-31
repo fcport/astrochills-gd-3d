@@ -2153,3 +2153,31 @@ che verifica un'altra cosa.
 **E il banco aspetta.** `ASSESTO` è passato da 8 fotogrammi a 40: l'energia adesso ci
 arriva scorrendo, e a otto fotogrammi il banco fotografava a metà salita, leggendo
 numeri che nel gioco non esistono.
+
+## D-109 — La lampada sale in tre secondi e scende in un quarto
+
+**Richiesta.** «Sarebbe bello se ci mettesse di più: dà l'idea degli occhi che si
+abituano al buio.» È giusta anche fisiologicamente, e va fatta **asimmetrica**:
+l'occhio si adatta al buio in minuti e all'abbagliamento in un istante.
+
+**Decisione.** `SI_ABITUA = 0,30` (poco più di tre secondi per accendersi del tutto),
+`ABBAGLIA = 4,0` (un quarto di secondo per spegnersi). Entrando in una stanza spenta
+non si vede subito quel che si ha accanto: lo si vede emergere.
+
+**La discesa rapida non è solo fisiologia, è necessità.** Una lampada che ci mettesse
+tre secondi a spegnersi lascerebbe vedere il proprio alone entrando in una stanza
+accesa — cioè il difetto di D-107, ripreso dalla porta di servizio.
+
+## D-110 — L'attesa del banco non è più un numero scritto a mano
+
+`ASSESTO` valeva 8 quando la lampada saliva in un terzo di secondo; è diventato 40; e
+alla prima salita da tre secondi il banco ha **accusato un guasto che non c'era** —
+«una lampada di là dal muro la smorza» — mentre la lampada stava soltanto ancora
+salendo. Un errore nella direzione giusta, per una volta, ma solo per fortuna: un
+banco che fotografa a metà transitorio può altrettanto facilmente dare per buono un
+difetto.
+
+Adesso l'attesa si calcola da `SI_ABITUA`, letta dallo script della lampada. Chi la
+rallenta non deve venire a ricordarsi del banco. La costante si legge dal `GDScript`
+caricato e non dal `class_name`: quel nome vive nella cache che scrive l'editor, e un
+banco lanciato con `--script` su un progetto appena clonato quella cache non ce l'ha.

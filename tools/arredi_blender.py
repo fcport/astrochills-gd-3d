@@ -30,7 +30,8 @@ import importlib   # noqa: E402
 for _m in ("geometria", "modellare"):
     if _m in sys.modules:
         importlib.reload(sys.modules[_m])
-from geometria import ARREDI_PC, verifica_arredi, V_SILL   # noqa: E402
+from geometria import (ARREDI_PC, CASSA_MONITOR, IMMAGINE_MONITOR,   # noqa: E402
+                       VETRO_MONITOR, verifica_arredi, V_SILL)
 from modellare import (barra, bm_di, cilindro, cilindro_orizz, esporta,   # noqa: E402
                        finisci, lampada, materiale, posa_modello, prepara_render,
                        prisma, pulisci, scatola, scatola_inclinata, verifica_impronte)
@@ -94,7 +95,7 @@ def consolle():
     scatola("Metallo", x0 + 0.02, x1, 0.0, 0.02, z0, z1)                # piedini
 
 
-def postazione(zc, accesa):
+def postazione(zc):
     """Il monitor a tubo, la tastiera e il cavo.
 
     IL MONITOR NON E' PIU' NOSTRO. Il nostro era una cassa rastremata con cornice,
@@ -127,15 +128,22 @@ def postazione(zc, accesa):
     # la cassa. Il monitor sta a 5,7 cm dal muro, che e' dove sta un monitor.
     posati = posa_modello(MONITOR, (x0 + 0.00, zc - 0.24, x0 + 0.50, zc + 0.24, 0.42),
                           gradi=0.0, appoggio=y_piano)
-    # lo schermo acceso: in partita ci andra' il display vero, qui basta che si veda
-    # che e' acceso, ed e' l'unica luce propria della stanza
+    # IL VETRO SI SPEGNE, e non e' un passo indietro: e' il passo per cui il tubo
+    # era stato preso. Fino a ieri lo schermo era `Acceso` - fosforo verde emissivo,
+    # un adesivo luminoso - perche' non c'era altro modo di far leggere il monitor
+    # come acceso. Adesso il display vero c'e': il generatore del blockout monta un
+    # quad davanti a questo vetro e ci proietta il `SubViewport` del CRT.
+    #
+    # Quello che resta sotto e' la MASCHERA: il bordo nero che su un tubo vero sta
+    # attorno all'immagine, e che si vede perche' il vetro e' quasi quadrato e
+    # l'immagine e' 4:3. Lasciarlo emissivo darebbe una cornice verde luminosa
+    # attorno allo schermo, cioe' il difetto al posto del pezzo.
     for o in posati:
         if o.type != "MESH":
             continue
         if "screen" in o.name.lower():
-            if accesa:
-                o.data.materials.clear()
-                o.data.materials.append(materiale("Acceso"))
+            o.data.materials.clear()
+            o.data.materials.append(materiale("Schermo"))
         else:
             # la cassa arriva grigia: le si mette la nostra plastica beige, che e'
             # la stessa della tastiera e della torre - e il beige data la stanza
@@ -157,6 +165,78 @@ def postazione(zc, accesa):
                  gradi=0.0, appoggio=y_piano, tieni=TASTIERA)
     cilindro("Gomma", x0 + 0.06, zc + 0.17, 0.10, y_piano - 0.05, 0.008, 8)
     return posati
+
+
+def verifica_postazione(posati, tolleranza=0.005):
+    """La cassa e il vetro sono dove `geometria.py` dice che sono.
+
+    PERCHE' ESISTE. Il generatore del blockout monta l'interagibile e lo schermo
+    vivo su due terne di numeri scritte a mano in `geometria.py`: dove sta la
+    cassa (per la collisione, cioe' per il raggio che cerca il monitor) e dove sta
+    il vetro (per il quad che ci proietta il `SubViewport`). Quei numeri non
+    discendono dalla pianta - discendono dal modello, che `posa_modello` scala
+    finche' entra nell'impronta - e il generatore non apre il .glb: non puo'
+    accorgersi da solo se il modello si e' spostato.
+
+    COSA SUCCEDE SENZA. Basta cambiare l'impronta del monitor di due centimetri -
+    ed e' successo tre giorni fa, quando e' arretrato per far posto alla tastiera -
+    perche' il quad resti dov'era: lo schermo galleggia davanti al tubo, oppure ci
+    sprofonda dentro e sparisce a meta'. Nessuno dei due difetti nomina la sua
+    causa, e tutti e due si vedono solo sedendosi.
+
+    Il controllo confronta le MISURE, non i nomi: non importa come l'importatore
+    glTF abbia chiamato gli oggetti.
+    """
+    problemi = []
+
+    def in_gioco(o):
+        """L'ingombro di un oggetto in coordinate di gioco: (min, max) di x, y, z."""
+        pt = [o.matrix_world @ Vector(c) for c in o.bound_box]
+        # Blender -> gioco: la x resta x, la z di Blender e' l'alto, la y va cambiata di segno
+        return ([min(p.x for p in pt), min(p.z for p in pt), min(-p.y for p in pt)],
+                [max(p.x for p in pt), max(p.z for p in pt), max(-p.y for p in pt)])
+
+    mesh = [o for o in posati if o.type == "MESH"]
+    vetri = [o for o in mesh if "screen" in o.name.lower()]
+    casse = [o for o in mesh if o not in vetri]
+    if not vetri or not casse:
+        return ["  POSTAZIONE        il monitor non ha un vetro e una cassa distinti: "
+                "%s" % ", ".join(o.name for o in mesh)]
+
+    def confronta(atteso, mis, etichette):
+        for valore, misurato, che in zip(atteso, mis, etichette):
+            if abs(valore - misurato) > tolleranza:
+                problemi.append(
+                    "  POSTAZIONE        %s: geometria.py dice %.3f, il modello da' %.3f "
+                    "(%.0f mm). Aggiorna la costante." % (che, valore, misurato,
+                                                          abs(valore - misurato) * 1000))
+
+    # la cassa: centro e lati dell'ingombro di tutto il tubo, vetro compreso
+    mn = [min(in_gioco(o)[0][i] for o in mesh) for i in range(3)]
+    mx = [max(in_gioco(o)[1][i] for o in mesh) for i in range(3)]
+    confronta(CASSA_MONITOR,
+              [(mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, (mn[2] + mx[2]) / 2,
+               mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]],
+              ["cassa centro x", "cassa centro y", "cassa centro z",
+               "cassa lato x", "cassa lato y", "cassa lato z"])
+
+    # il vetro: la faccia PIU' AVANZATA (il tubo e' bombato), il centro e la misura
+    vn = [min(in_gioco(o)[0][i] for o in vetri) for i in range(3)]
+    vx = [max(in_gioco(o)[1][i] for o in vetri) for i in range(3)]
+    confronta(VETRO_MONITOR,
+              [vx[0], (vn[1] + vx[1]) / 2, (vn[2] + vx[2]) / 2,
+               vx[2] - vn[2], vx[1] - vn[1]],
+              ["vetro fronte x", "vetro centro y", "vetro centro z",
+               "vetro larghezza", "vetro altezza"])
+
+    # e l'immagine deve starci dentro: se sborda, il quad copre la cornice del tubo
+    if (IMMAGINE_MONITOR[0] > vx[2] - vn[2] + 1e-6
+            or IMMAGINE_MONITOR[1] > vx[1] - vn[1] + 1e-6):
+        problemi.append("  POSTAZIONE        l'immagine (%.3f x %.3f) e' piu' grande del "
+                        "vetro (%.3f x %.3f): sborderebbe sulla cassa"
+                        % (IMMAGINE_MONITOR[0], IMMAGINE_MONITOR[1],
+                           vx[2] - vn[2], vx[1] - vn[1]))
+    return problemi
 
 
 def sedia(nome, verso_x=-1.0):
@@ -386,7 +466,7 @@ def minutaglia():
 pulisci()
 consolle()
 _s = IMPRONTE["Sedia1"]
-_monitor = postazione((_s[1] + _s[3]) / 2, True)
+_monitor = postazione((_s[1] + _s[3]) / 2)
 # 180 gradi: come nasce guarda dalla parte opposta, e girata cosi' finiva rivolta
 # alla finestra invece che alla consolle
 _sedia = posa_modello(SEDIA_UFFICIO, IMPRONTE["Sedia1"], gradi=270.0)
@@ -403,6 +483,7 @@ for o in oggetti:
 
 # --- controlli ---------------------------------------------------------------
 problemi = list(verifica_arredi())
+problemi += verifica_postazione(_monitor)
 
 problemi += verifica_impronte(
     oggetti + _sedia + _monitor,

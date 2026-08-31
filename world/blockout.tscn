@@ -20,6 +20,9 @@
 [ext_resource type="Texture2D" path="res://assets/textures/metallo/normal.jpg" id="17_met_n"]
 [ext_resource type="Texture2D" path="res://assets/textures/metallo/roughness.jpg" id="18_met_r"]
 [ext_resource type="PackedScene" path="res://assets/models/porta_magazzino.glb" id="23_pmag"]
+[ext_resource type="Script" path="res://world/desk_station.gd" id="24_postazione"]
+[ext_resource type="Script" path="res://world/interactables/crt_monitor.gd" id="25_crt"]
+[ext_resource type="PackedScene" path="res://crt/crt_screen.tscn" id="26_vetro"]
 
 [sub_resource type="BoxMesh" id="m_0"]
 size = Vector3(0.018, 0.018, 0.032)
@@ -1033,7 +1036,14 @@ tonemap_mode = 3
 tonemap_exposure = 1.0
 tonemap_white = 3.0
 
+[sub_resource type="BoxShape3D" id="s_monitor"]
+size = Vector3(0.386, 0.420, 0.430)
+
+[sub_resource type="QuadMesh" id="q_monitor"]
+size = Vector2(0.304, 0.228)
+
 [node name="Blockout" type="Node3D"]
+script = ExtResource("24_postazione")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("env")
@@ -2607,8 +2617,8 @@ material_override = SubResource("mat_vetro_est")
 
 [node name="LuceMonitor" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.950, 1.020, 2.000)
-light_energy = 0.45
-light_color = Color(0.24, 0.72, 0.36, 1)
+light_energy = 0.14
+light_color = Color(0.876, 1.0, 0.931, 1)
 light_specular = 0.10
 omni_range = 2.4
 omni_attenuation = 1.6
@@ -3072,6 +3082,24 @@ material_override = SubResource("mat_metallo")
 [node name="Col" type="CollisionShape3D" parent="Anta_armadio_bagno_2"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.216, 0.850, 0)
 shape = SubResource("s_68")
+
+[node name="Monitor" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.550, 0.960, 2.000)
+script = ExtResource("25_crt")
+prompt_text = "Usa il monitor"
+
+[node name="Col" type="CollisionShape3D" parent="Monitor"]
+shape = SubResource("s_monitor")
+
+[node name="CrtScreen" parent="Monitor" instance=ExtResource("26_vetro")]
+unique_name_in_owner = true
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.192, 0.018, 0.000)
+
+[node name="ScreenMesh" parent="Monitor/CrtScreen" index="1"]
+mesh = SubResource("q_monitor")
+
+[node name="Seat" parent="Monitor/CrtScreen" index="2"]
+transform = Transform3D(1, 0, 0, 0, 0.92541, 0.37898, 0, -0.37898, 0.92541, 0, 0.172, 0.420)
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.850, 0.000, 8.500)

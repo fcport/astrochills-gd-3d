@@ -3291,3 +3291,79 @@ Rimesso a 0,035. Resta il debito, scritto per intero: la colonna sotto il catino
 sottopiano della consolle stanno a 63 su 255 invece che a 92, e l'unico strumento che
 alza il primo numero senza alzare il secondo è la luce indiretta calcolata. Non c'è una
 terza via: una luce finta attraversa i muri, l'ambiente schiarisce anche il buio.
+
+## D-158 — La consolle smette di essere un mobile: ci si siede
+
+Il monitor della sala di controllo era arredo. Adesso è una **postazione**: `E` ci si
+siede, la camera scivola avanti mezzo secondo stringendo il campo da 55 a 42 gradi, il
+vetro si accende, `E` ci si rialza.
+
+Il meccanismo non è nuovo — `crt/crt_screen.gd`, `crt/desk_camera.gd` e
+`world/interactables/crt_monitor.gd` esistono dalla storia 1.3 — ma viveva soltanto in
+`world/observatory.tscn`, il mondo vecchio fatto di scatole. Nel blockout la consolle
+aveva porte, interruttori e ante, e un monitor che non faceva niente.
+
+**Tre numeri sono una misura e non una decisione**, ed è l'eccezione di `geometria.py`.
+Dove sta la cassa del tubo e dove sta il vetro non discendono dalla pianta: discendono
+dal modello, che `posa_modello` scala finché entra nell'impronta. Solo Blender sa dove
+sia finito il vetro. Stanno in `geometria.py` lo stesso, perché il generatore deve
+poterli leggere anche a modelli assenti — `assets/models/` è fuori da git — e un
+generatore che si ferma perché manca un `.glb` non genera più niente. Ma non sono un
+atto di fede: `verifica_postazione()` li rimisura a ogni passata di `arredi_blender.py`
+e si ferma a mezzo centimetro di scarto. Provato spostando il vetro di due centimetri:
+*«geometria.py dice 5.721, il modello dà 5.741 (20 mm)»*.
+
+**L'immagine è meno del vetro, e quella invece è una decisione.** Il tubo è quasi
+quadrato — 30,9 × 27,4 — e l'immagine è 4:3 come il viewport. Presa a tutta larghezza
+restano ventitré millimetri sopra e sotto: non sono un errore, sono la **maschera nera**
+che su un tubo vero c'è sempre. L'alternativa era stirare l'immagine per riempire il
+vetro, cioè allungare ogni carattere del 18%.
+
+**Il beccheggio del sedile non si scrive: si calcola.** `SEDILE_MONITOR` dice quanto la
+testa sta avanti al vetro (42 cm) e quanto sopra il suo centro (17,2 cm); l'angolo esce
+da quei due numeri. È l'unico modo di non rifare il difetto che `crt/desk_camera.gd`
+racconta per esteso — il marcatore col modulo giusto e il segno invertito, che ha
+inquadrato metà schermo per due storie. Misurato: la testa atterra sul sedile a **0,0
+mm**, l'immagine occupa **28,2 gradi su 42 di campo, il 67%**.
+
+**Spegnere il fosforo ha lasciato in piedi la sua ombra.** Il vetro del modello era
+`Acceso` — verde emissivo, un adesivo luminoso — e la luce finta che gli stava davanti
+ne copiava il colore, (0,24 0,72 0,36) a energia 0,45. Messo il display vero, l'adesivo
+è diventato la maschera nera, e la luce ha continuato a imitare una cosa che non c'era
+più: cassa beige verde fluo, e la maschera a 48 111 49, cioè una **cornice verde
+luminosa attorno all'immagine**.
+
+Il colore nuovo è misurato sul vetro con la sonda: 156 178 166, che normalizzato è
+(0,88 1,00 0,93) — a due centesimi il `tint` dichiarato in `crt/shaders/crt.gdshader`.
+I due numeri si sono incontrati da soli. L'energia l'ha scelta la misura, non l'occhio:
+
+| energia | maschera | cassa |
+|---|---|---|
+| 0,00 | 38 31 16 | 189 144 68 (il fondo, solo la plafoniera) |
+| 0,14 | 77 90 77 | 224 214 168 |
+| 0,26 | 103 123 112 | 236 233 201 |
+
+A 0,26 la maschera esce a 123 contro i 178 dello schermo — 1,4 a 1, e a quel punto non
+è più una cornice. A 0,14 il rapporto è 2 a 1. A occhio una cassa illuminata e una
+bruciata sono tutte e due «chiare».
+
+**Il debito è dichiarato, non nascosto.** `world/desk_station.gd` è una seconda copia
+della sequenza che `main.gd` fa da marzo: là è intrecciata con l'orchestratore della
+notte — si siede solo se c'è una fase, avverte la notte, apre terminale e BBS — e qui
+non c'è nessuna notte. Due copie di una verità sola invecchiano male. Quando il gioco
+traslocherà nel blockout devono tornare una sola, e il file destinato a sopravvivere è
+quello che non conosce la notte. Nel frattempo una guardia impedisce che si pestino i
+piedi: `desk_station` si monta solo se il blockout è la scena che sta girando.
+
+**E lo schermo non mostra ancora niente**, perché non c'era niente da mostrare: nel
+blockout non gira nessuna fase. Si vede il grigio-verde di un tubo acceso senza segnale,
+che è esattamente ciò che una postazione senza programma deve sembrare. Il contenuto
+dipende da D-011 — la risoluzione del CRT va fissata prima di scrivere le sette fasi
+mancanti — e quella resta aperta.
+
+**Una sonda che contava fotogrammi non era una misura.** `tools/prova_postazione.gd`
+aspettava sessanta fotogrammi «perché mezzo secondo a 60 fps sono trenta»: solo che
+quella finestra non ha il vsync e ne macina cinquecento al secondo. Ha fotografato la
+camera a metà corsa e ha riferito `seduti: false` con la testa a 14 cm dal sedile, cioè
+ha dato per rotta una postazione che funzionava. Adesso aspetta il fatto — `is_seated` —
+con un limite di tre secondi. Tre passate di fila: 0,0 mm.

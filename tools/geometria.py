@@ -1405,6 +1405,49 @@ H_APPLIQUE = 2.05
 LUCE_MONITOR = (ARREDI_PC[0][1] + 0.65,
                 ARREDI_PC[0][5] + 0.27,
                 (ARREDI_PC[4][2] + ARREDI_PC[4][4]) / 2.0)
+
+# --- LA POSTAZIONE AL MONITOR ------------------------------------------------
+# Dove sta la cassa del tubo e dove sta il vetro, in metri di gioco. Servono al
+# generatore del blockout per montarci sopra l'interagibile e lo schermo vivo.
+#
+# QUESTI NUMERI NON DISCENDONO DALLA PIANTA, ed e' l'eccezione di questo file.
+# Tutto il resto qui dentro e' una decisione: dove passa un muro, quanto e' alta
+# una consolle. Questi sono una MISURA: il tubo e' un modello preso da fuori,
+# `posa_modello` lo scala finche' entra nell'impronta, e dove finisca il vetro lo
+# sa solo Blender. Stanno qui lo stesso perche' il generatore deve poterli leggere
+# anche a modelli assenti - `assets/models/` e' fuori da git e si rigenera - e un
+# generatore che si ferma perche' manca un .glb non genera piu' niente.
+#
+# E NON SONO UN ATTO DI FEDE: `arredi_blender.py` li rimisura a ogni passata e si
+# ferma se il modello si e' spostato di piu' di mezzo centimetro. Un numero
+# ricopiato a mano che nessuno ricontrolla e' il modo in cui questo progetto ha
+# gia' sbagliato tre volte - il monitor sfasato di venti centimetri, la lampada di
+# rimbalzo, lo `shadow_blur` scritto due volte.
+#
+# (centro x, centro y, centro z, lato x, lato y, lato z) dell'ingombro del tubo.
+# E' la collisione, cioe' cio' che il raggio dell'interazione cerca: senza, il
+# monitor non ha prompt perche' il raggio non trova niente da colpire.
+CASSA_MONITOR = (5.550, 0.960, 2.000, 0.386, 0.420, 0.430)
+# (x della faccia anteriore, centro y, centro z, larghezza, altezza) del vetro.
+# Il tubo e' bombato: la x e' il punto piu' avanzato, e ai bordi il vetro rientra
+# di tredici millimetri.
+VETRO_MONITOR = (5.741, 0.978, 2.000, 0.309, 0.274)
+# L'IMMAGINE E' MENO DEL VETRO, e questa invece e' una decisione. Il vetro e' quasi
+# quadrato (30,9 x 27,4) e l'immagine e' 4:3, come il viewport del CRT: presa a
+# tutta larghezza restano ventitre millimetri sopra e sotto. Non sono un errore -
+# sono la maschera nera attorno all'immagine, che su un tubo vero c'e' sempre.
+# Stirare l'immagine per riempire il vetro allungherebbe ogni carattere del 18%.
+IMMAGINE_MONITOR = (0.304, 0.228)
+# Dove va la testa di chi si siede: quanto AVANTI al vetro e quanto SOPRA il suo
+# centro. Il beccheggio del sedile non si dichiara, si calcola da questi due
+# numeri - un marcatore che punta altrove che al proprio vetro e' il difetto che
+# `crt/desk_camera.gd` racconta per esteso.
+#
+# 42 cm e' la distanza a cui l'immagine occupa i due terzi dell'inquadratura da
+# seduti (FOV 42 gradi). Il centro del vetro sta a 0,98 e l'occhio a 1,15: si
+# guarda in basso di 22 gradi, che e' quanto si guardava in basso nel 1999 con un
+# tubo su una scrivania da 75.
+SEDILE_MONITOR = (0.42, 0.172)
 # (nome, x, z, nx, nz, quota). Le esterne stanno piu' in alto, sopra l'architrave.
 APPLIQUE = [
     ("cupola1", 2.60, 0.10, 0.0, +1.0, H_APPLIQUE),   # muro nord, sopra il varco

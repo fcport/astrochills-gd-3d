@@ -16,7 +16,9 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        luci_senza_comando, comandate_da, GIRATE_PLAFONIERA,
                        LUCI_ROSSE, PARTE_SPENTA, punti_applique,
                        H_APPLIQUE, NOME_LOCALE, LUCE_MONITOR, SEMPRE_ACCESE,
-                       H_INTERRUTTORE, L_PLACCA, A_PLACCA, SP_PLACCA)
+                       H_INTERRUTTORE, L_PLACCA, A_PLACCA, SP_PLACCA,
+                       CASSA_MONITOR, VETRO_MONITOR, IMMAGINE_MONITOR,
+                       SEDILE_MONITOR)
 
 MURI, APERTURE, PAVIMENTI, SOFFITTI, SALA, (_CX, _CZ) = scalati()
 _R = DOME_R
@@ -114,6 +116,14 @@ def tscn():
              # gira ha bisogno di un nodo con l'origine sul cardine, e dentro
              # osservatorio.glb girerebbe l'edificio.
              '[ext_resource type="PackedScene" path="res://assets/models/porta_magazzino.glb" id="23_pmag"]',
+             # LA POSTAZIONE AL MONITOR. Il tubo e' arredo e sta dentro
+             # controllo_pc.glb; quello che sta qui e' cio' che l'arredo non puo'
+             # essere: la collisione che il raggio dell'interazione cerca, il vetro
+             # vivo su cui il gioco disegna, e il posto dove va la testa di chi si
+             # siede. Il modello non sa niente di tutto questo, e non deve.
+             '[ext_resource type="Script" path="res://world/desk_station.gd" id="24_postazione"]',
+             '[ext_resource type="Script" path="res://world/interactables/crt_monitor.gd" id="25_crt"]',
+             '[ext_resource type="PackedScene" path="res://crt/crt_screen.tscn" id="26_vetro"]',
              '']
     dims = sorted(set((round(b[3], 3), round(b[4], 3), round(b[5], 3)) for b in blocchi)
                   | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
@@ -292,7 +302,19 @@ def tscn():
               'ambient_light_source = 2', 'ambient_light_color = Color(0.26, 0.32, 0.48, 1)',
               'ambient_light_energy = 0.035',
               'tonemap_mode = 3', 'tonemap_exposure = 1.0', 'tonemap_white = 3.0', '',
-              '[node name="Blockout" type="Node3D"]', '',
+              # La cassa del tubo come solido: e' cio' contro cui il raggio
+              # dell'interazione sbatte, e senza non c'e' nessun prompt.
+              '[sub_resource type="BoxShape3D" id="s_monitor"]',
+              'size = Vector3(%.3f, %.3f, %.3f)' % CASSA_MONITOR[3:], '',
+              # L'immagine: un quad 4:3 appoggiato un millimetro davanti al vetro.
+              '[sub_resource type="QuadMesh" id="q_monitor"]',
+              'size = Vector2(%.3f, %.3f)' % IMMAGINE_MONITOR, '',
+              # IL COPIONE DELLA POSTAZIONE STA SULLA RADICE, ed e' l'unico script
+              # di questa scena che non sia un interagibile: sedersi non e' una
+              # proprieta' del monitor, e' una sequenza fra il monitor, il corpo del
+              # giocatore e la sua testa. Vedi world/desk_station.gd.
+              '[node name="Blockout" type="Node3D"]',
+              'script = ExtResource("24_postazione")', '',
               '[node name="WorldEnvironment" type="WorldEnvironment" parent="."]',
               'environment = SubResource("env")', '']
     usati = {}
@@ -641,9 +663,40 @@ def tscn():
     righe += ['[node name="LuceMonitor" type="OmniLight3D" parent="."]',
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
               % (LUCE_MONITOR[0], LUCE_MONITOR[1], LUCE_MONITOR[2]),
-              # bassa: un CRT da 14 pollici a fosfori verdi illumina una scrivania,
-              # non una stanza. Piu' su leggeva come un faro dentro il mobile.
-              'light_energy = 0.45', 'light_color = Color(0.24, 0.72, 0.36, 1)',
+              # IL COLORE NON E' PIU' IL FOSFORO, ED E' LA CONSEGUENZA DEL VETRO VERO.
+              # Fino a ieri lo schermo era un adesivo emissivo verde saturo, e questa
+              # luce ne era la copia: stesso colore, (0,24 0,72 0,36). Adesso sul vetro
+              # c'e' il `SubViewport` del CRT, e quello che emette e' MISURABILE -
+              # misurato da seduti, con la sonda: 156 178 166 su 255. Cioe' un
+              # grigio-verde pallidissimo, non un fosforo.
+              #
+              # Con il verde saturo addosso, la cassa beige diventava verde fluo e la
+              # MASCHERA NERA attorno all'immagine usciva a 48 111 49: una cornice verde
+              # luminosa attorno allo schermo, che e' il difetto al posto del pezzo.
+              #
+              # Normalizzato sul canale piu' alto il colore misurato e' (0,88 1,00 0,93),
+              # che e' - a due centesimi - il `tint` dichiarato in crt/shaders/crt.gdshader:
+              # il vetro del tubo. I due numeri si sono incontrati da soli, ed e' il segno
+              # che la luce adesso descrive la stessa cosa che si vede.
+              #
+              # 0,14 E NON 0,45, e il numero e' stato SCELTO MISURANDO, non a occhio -
+              # a occhio una cassa beige illuminata e una bruciata sono tutte e due
+              # "chiara". Tre passate della sonda, guardando la maschera nera (che deve
+              # restare la cornice dell'immagine) e la cassa:
+              #     energia   maschera        cassa
+              #       0,00    38 31 16    189 144 68   (il fondo: solo la plafoniera)
+              #       0,14    77 90 77    224 214 168
+              #       0,26   103 123 112  236 233 201  (cassa bruciata, cornice sparita)
+              # A 0,26 la maschera esce a 123 contro i 178 dello schermo: 1,4 a 1, e a
+              # quel punto non e' piu' una cornice. A 0,14 il rapporto e' 2 a 1 e la
+              # cornice si legge. Un colore quasi bianco ha luminanza 0,97 contro 0,59
+              # del verde saturo: a parita' di energia illumina una volta e mezzo tanto,
+              # ed e' per questo che il numero vecchio non poteva restare.
+              #
+              # QUANDO LE FASI AVRANNO UN CONTENUTO questo numero andra' rifatto, e va
+              # detto adesso: un campo grigio pieno e del testo verde su nero non
+              # emettono la stessa luce. Si rimisura con tools/prova_postazione.gd.
+              'light_energy = 0.14', 'light_color = Color(0.876, 1.0, 0.931, 1)',
               'light_specular = 0.10',
               'omni_range = 2.4', 'omni_attenuation = 1.6',
               'shadow_normal_bias = 0.05', 'shadow_bias = 0.02',
@@ -833,6 +886,45 @@ def tscn():
         righe += ['[node name="Col" type="CollisionShape3D" parent="%s"]' % nome,
                   'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, 0)' % (L / 2, HA / 2),
                   'shape = SubResource("s_%d")' % idx[(round(L, 3), round(HA, 3), round(T, 3))], '']
+
+    # --- il monitor: interagibile, con dentro il vetro vivo -------------------
+    # Il nodo sta al CENTRO della cassa, cosi' la collisione non ha bisogno di uno
+    # scostamento e chi legge la scena vede subito dov'e' il tubo.
+    _cx, _cy, _cz = CASSA_MONITOR[:3]
+    # IL VETRO GUARDA VERSO +X, cioe' verso chi siede: la rotazione di 90 gradi
+    # attorno alla verticale porta il +Z del quad (la sua normale) su +X. La stessa
+    # rotazione serve DUE volte, e per questo sta sul padre e non sul quad: gira
+    # anche il `Seat`, che quindi si sposta AVANTI al vetro invece che di fianco, e
+    # fa guardare a -X chi si siede.
+    _vx = VETRO_MONITOR[0] + 0.001    # un millimetro, il gioco minimo contro lo z-fighting
+    # Il beccheggio del sedile NON si dichiara: si calcola da quanto sta avanti e
+    # quanto sta sopra. Un marcatore che punta altrove che al proprio vetro e' il
+    # difetto che `crt/desk_camera.gd` racconta per esteso - modulo giusto, segno
+    # sbagliato - e l'unico modo di non rifarlo e' non scrivere l'angolo a mano.
+    _avanti, _sopra = SEDILE_MONITOR
+    _t = -_m.atan2(_sopra, _avanti)
+    _co, _si = _m.cos(_t), _m.sin(_t)
+    righe += ['[node name="Monitor" type="StaticBody3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
+              % (_cx, _cy, _cz),
+              'script = ExtResource("25_crt")',
+              'prompt_text = "Usa il monitor"', '',
+              '[node name="Col" type="CollisionShape3D" parent="Monitor"]',
+              'shape = SubResource("s_monitor")', '',
+              '[node name="CrtScreen" parent="Monitor" instance=ExtResource("26_vetro")]',
+              # `unique_name_in_owner` perche' `crt_monitor.gd` cerca `%CrtScreen`.
+              # Qui il proprietario e' la radice del blockout e non una sotto-scena:
+              # provato, il nome unico si risolve lo stesso da un figlio della radice.
+              'unique_name_in_owner = true',
+              'transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, %.3f, %.3f, %.3f)'
+              % (_vx - _cx, VETRO_MONITOR[1] - _cy, VETRO_MONITOR[2] - _cz), '',
+              # L'immagine e' 4:3 e il vetro no: il quad della sotto-scena e' fatto
+              # per un altro tubo, e qui va rimisurato sul nostro.
+              '[node name="ScreenMesh" parent="Monitor/CrtScreen" index="1"]',
+              'mesh = SubResource("q_monitor")', '',
+              '[node name="Seat" parent="Monitor/CrtScreen" index="2"]',
+              'transform = Transform3D(1, 0, 0, 0, %.5f, %.5f, 0, %.5f, %.5f, 0, %.3f, %.3f)'
+              % (_co, -_si, _si, _co, _sopra, _avanti), '']
 
     righe += ['[node name="Player" parent="." instance=ExtResource("1_player")]',
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, 0.000, %.3f)' % (21.7 * K, 17.0 * K), '', '',
@@ -1352,7 +1444,16 @@ _attesi = [("ambient_light_energy = 0.035", "la luce ambientale della notte"),
            # sala di controllo e' rimasta senza la sua unica luce propria senza che
            # niente si lamentasse. Un valore che conta si controlla NEL FILE.
            ('[node name="LuceMonitor" type="OmniLight3D"', "la luce del monitor"),
-           ('[node name="Luce_esterno_porta"', "le applique esterne")]
+           ('[node name="Luce_esterno_porta"', "le applique esterne"),
+           # LA POSTAZIONE, per la stessa ragione della luce qui sopra e con lo
+           # stesso precedente: sono tre nodi che si tengono per mano, e due di
+           # loro sono silenziosi se il terzo sparisce. Senza il copione sulla
+           # radice il monitor ha il prompt e non fa niente; senza il vetro il
+           # monitor si monta e mostra una scatola nera; senza il monitor nessuno
+           # dei due esiste, e l'unico sintomo e' una consolle muta.
+           ('script = ExtResource("24_postazione")', "il copione della postazione"),
+           ('[node name="Monitor" type="StaticBody3D"', "il monitor interagibile"),
+           ('instance=ExtResource("26_vetro")', "il vetro vivo del CRT")]
 _mancanti = ["  MANCA NEL .tscn   %s (%s)" % (t, perche)
              for (t, perche) in _attesi if t not in _scritto]
 if _mancanti:

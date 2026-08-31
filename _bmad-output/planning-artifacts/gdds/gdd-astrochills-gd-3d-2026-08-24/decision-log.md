@@ -2753,3 +2753,41 @@ controllo elenca tutti e otto i modelli da rifare; rimessa la data vera, tace.
 visti tutti e tre: **tacere** (il peso da 33 MB), **gridare su codice sano** (la doppia
 conversione di colore), e **saltare il caso che non sa trattare** (le ceramiche senza
 mappa). Questo era il primo.
+
+## D-138 — I sanitari erano giusti, sbagliato era il righello
+
+*«Sia il bidet che il cesso che il lavandino sono MICROSCOPICI.»* Misurati, non lo erano:
+water **0,78** di altezza, lavabo **0,86**, bidet **0,52** — i numeri veri, al centimetro.
+
+A mentire erano **le piastrelle del muro**. La mappa contiene dieci piastrelle per lato e
+la ripetizione era a **0,75 m**: ogni piastrella veniva **7,5 cm**, cioè un mosaico. E le
+piastrelle non sono un dettaglio di texture, sono **il righello della stanza**: non si
+giudica a occhio quanto è grande un water, si contano le piastrelle che gli stanno
+dietro. Sbagliato il righello di due volte e mezzo, sanitari di misura esatta leggono
+come giocattoli.
+
+Portate a **2,00 m di ripetizione**, cioè 20×20 — il rivestimento di un bagno italiano di
+quegli anni. Il pavimento da 1,20 a 1,80: piastrelle da 30 invece che da 20.
+
+## D-139 — Scrivere zero in un ingresso collegato non fa niente
+
+Corretto il righello, è saltata fuori la cosa vera: **il bidet era grigio-oliva accanto a
+un water bianco.** Ed era il difetto ricorrente di questo progetto, alla settima
+comparsa — il metallo che in una stanza chiusa riflette il nero.
+
+`usa_le_ridotte(..., metallico=0.0)` esiste apposta per impedirlo, e **non faceva niente**.
+Scriveva `default_value = 0` sull'ingresso Metallic; ma quell'ingresso era **COLLEGATO**
+al canale blu della mappa metallicRoughness, e in Blender un ingresso collegato ignora il
+suo `default_value`. Nessun errore, nessun avviso: la riga che doveva togliere la
+metallicità la lasciava esattamente dov'era. Adesso stacca il filo *prima* di scrivere il
+valore.
+
+**E il controllo che c'era guardava la cosa sbagliata.** `ceramiche_pari` diceva 212 su
+255 per tutti e tre i sanitari — il numero giusto, misurato bene — perché misura la
+**mappa colore**, mentre a scurire il bidet era il metallico. Un controllo che guarda la
+cosa sbagliata è muto quanto un controllo che non c'è, e questo pezzo ha avuto per tre
+sessioni due controlli e zero coperture.
+
+`niente_metallo_addosso()` guarda adesso **il filo oltre al valore**, perché è il filo che
+decide. Validato iniettando il difetto: rimessa la vecchia riga, accusa water e bidet per
+nome; rimessa quella giusta, tace.

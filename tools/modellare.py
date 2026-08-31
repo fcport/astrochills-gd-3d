@@ -206,8 +206,22 @@ TEXTURE = {
     # IL BAGNO. 0,75 a muro: la texture porta cinque piastrelle per lato, quindi
     # ognuna viene 15 cm - il formato del rivestimento di allora. A terra 1,20 su
     # quattro piastrelle fa 30 cm, che e' la piastrella da pavimento di quegli anni.
-    "PiastrelleMuro": ("piastrelle-muro", 0.75),
-    "PiastrellePav":  ("piastrelle-pavimento", 1.20),
+    # DUE METRI, NON SETTANTACINQUE, e la differenza e' fra un bagno e un modellino.
+    # La mappa contiene DIECI piastrelle per lato: a 0,75 m di ripetizione ogni
+    # piastrella veniva 7,5 cm, cioe' un mosaico. Il rivestimento di un bagno
+    # italiano degli anni Novanta e' da 20x20, e a due metri di ripetizione e'
+    # esattamente quello.
+    #
+    # E NON E' UN DETTAGLIO DI TEXTURE: e' il righello della stanza. Non si giudica
+    # a occhio quanto e' grande un water, si giudica CONTANDO le piastrelle che gli
+    # stanno dietro - e con le piastrelle sbagliate di due volte e mezzo, sanitari
+    # di misura giusta al centimetro leggevano come giocattoli. I sanitari erano
+    # misurati - water 0,78, lavabo 0,86, cioe' i numeri veri - e sembravano
+    # microscopici lo stesso.
+    "PiastrelleMuro": ("piastrelle-muro", 2.00),
+    # sei per lato: 1,80 fa piastrelle da 30 cm, che e' il gres di un bagno di
+    # servizio di allora. A 1,20 erano da 20, cioe' di nuovo troppo piccole.
+    "PiastrellePav":  ("piastrelle-pavimento", 1.80),
     # il listello e' un motivo solo in una tessera quadrata, e la fascia e' alta
     # otto centimetri: una ripetizione, una losanga.
     "Listello":       ("listello", 0.08),
@@ -824,8 +838,24 @@ def usa_le_ridotte(pezzi, cartella, metallico=None):
                 break
         if metallico is not None:
             for n in m.node_tree.nodes:
-                if n.type == "BSDF_PRINCIPLED":
-                    n.inputs["Metallic"].default_value = metallico
+                if n.type != "BSDF_PRINCIPLED":
+                    continue
+                # PRIMA SI STACCA IL FILO, POI SI SCRIVE IL VALORE - e per tre
+                # sessioni qui c'era solo la seconda meta'. In Blender un ingresso
+                # COLLEGATO ignora il suo `default_value`: scriverci zero non fa
+                # niente e non da' errore. La metallicita' dei sanitari continuava
+                # ad arrivare dal canale BLU della loro mappa metallicRoughness,
+                # cioe' esattamente da dove questa riga doveva toglierla.
+                #
+                # Il bidet usciva grigio-oliva accanto a un water bianco, e il
+                # controllo del bianco diceva 212 su 255 per tutti e due: misurava
+                # la MAPPA COLORE, che era giusta, mentre a scurirlo era il
+                # metallico. Un controllo che guarda la cosa sbagliata e' muto
+                # quanto un controllo che non c'e'.
+                ing = n.inputs["Metallic"]
+                for filo in list(ing.links):
+                    m.node_tree.links.remove(filo)
+                ing.default_value = metallico
     return sostituite
 
 

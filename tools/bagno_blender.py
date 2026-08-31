@@ -815,6 +815,49 @@ def bianco_del_materiale(pezzi):
     return None
 
 
+def niente_metallo_addosso():
+    """Nessuna ceramica deve essere metallica, e nessuno deve dirlo con un FILO.
+
+    IL CONTROLLO CHE MANCAVA. `ceramiche_pari` misura la mappa colore e diceva 212
+    su 255 per tutti e tre i sanitari - il numero giusto, misurato bene - mentre in
+    gioco il bidet usciva grigio-oliva accanto a un water bianco. Non era il colore:
+    era la METALLICITA', che continuava ad arrivare dal canale blu della mappa
+    metallicRoughness perche' `usa_le_ridotte` scriveva zero in un ingresso
+    COLLEGATO, dove il valore non conta niente.
+
+    Un controllo che guarda la cosa sbagliata e' muto quanto un controllo che non
+    c'e', e per tre sessioni questo pezzo ha avuto due controlli e zero coperture.
+
+    Si guarda il FILO oltre al valore, perche' e' il filo che decide.
+    """
+    problemi = []
+    for quale, pezzi in sorted(MONTATI.items()):
+        visti = set()
+        for o in pezzi:
+            if o.type != "MESH" or o.data is None:
+                continue
+            for m in o.data.materials:
+                if m is None or m.name in visti or not m.use_nodes:
+                    continue
+                visti.add(m.name)
+                for n in m.node_tree.nodes:
+                    if n.type != "BSDF_PRINCIPLED":
+                        continue
+                    ing = n.inputs["Metallic"]
+                    if ing.links:
+                        problemi.append(
+                            "%s: la metallicita' di %s arriva da una MAPPA (%s). In "
+                            "una stanza chiusa un metallo riflette il nero: la "
+                            "ceramica esce scura, e il controllo del bianco non se "
+                            "ne accorge perche' guarda il colore."
+                            % (quale, m.name, n.inputs["Metallic"].links[0].from_node.type))
+                    elif ing.default_value > 0.05:
+                        problemi.append("%s: %s ha metallicita' %.2f, e una ceramica "
+                                        "non e' un metallo"
+                                        % (quale, m.name, ing.default_value))
+    return problemi
+
+
 def ceramiche_pari():
     """I sanitari montati devono essere lo STESSO bianco.
 
@@ -878,7 +921,7 @@ oggetti = finisci(morbidi=("Ceramica", "CeramicaVecchia", "Cromo", "Radiatore"))
 # si sovrappongono a ogni sanitario addossato al muro - cioe' a tutti - e il
 # controllo degli arredi si riempirebbe di guasti inventati.
 GUSCIO = ("PiastrelleMuro", "PiastrellePav", "Listello")
-problemi = _prova + ceramiche_pari() + verifica_impronte(
+problemi = _prova + ceramiche_pari() + niente_metallo_addosso() + verifica_impronte(
     [o for o in oggetti if o.name not in GUSCIO],
     [(x0, z0, x1, z1) for (x0, z0, x1, z1, _h) in IMPRONTE.values()])
 

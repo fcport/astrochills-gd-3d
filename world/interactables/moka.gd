@@ -197,7 +197,12 @@ func _start_brewing() -> void:
 	# punto, invece di ereditare i livelli lasciati indietro.
 	_reset_sound_levels()
 	_brew_timer.start()
-	_sound.play()
+	# Il borbottio e' un tono continuo sintetizzato: passa dall'interruttore di
+	# `ToniSegnaposto`. Il rituale della moka resta intero — timer, tween, burst
+	# finale — e il giorno in cui il campione vero prendera' il posto dell'onda
+	# quadra, questa riga torna a suonare senza che nient'altro cambi.
+	if ToniSegnaposto.continui():
+		_sound.play()
 	if _rise != null and _rise.is_valid():
 		_rise.kill()
 	# Il `Tween` sale per la durata dell'attesa: «il suono sale». Segue `Engine.time_scale`

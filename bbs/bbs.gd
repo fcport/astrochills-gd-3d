@@ -265,8 +265,12 @@ func _play_beep() -> void:
 
 
 ## Se c'è un'uscita audio VERA. In headless (cancello, banco, import) il driver è `Dummy`:
-## un suono avviato che l'engine spegne a forza lascia un WARNING. Gemello di
-## `DomeActivity._audio_is_audible`.
+## un suono avviato che l'engine spegne a forza lascia un WARNING.
+##
+## RESTA QUI, e non passa da `world/toni_segnaposto.gd` dove i suoi gemelli sono
+## confluiti: `bbs/` non dipende da `world/`, e non è il caso di aprire quella porta
+## per due righe. E non passa comunque dall'interruttore dei toni continui: il beep
+## e la portante del modem durano un istante — sono fra i suoni che restano accesi.
 func _audio_is_audible() -> bool:
 	return DisplayServer.get_name() != "headless"
 

@@ -76,3 +76,18 @@ signal item_purchased(id: StringName)
 ## Ogni PRESENTAZIONE è un fatto — inclusa la riapertura di *chiudi ed esplora* — non
 ## ogni menu distinto: chi conta somma le presentazioni.
 signal photo_menu_opened()
+
+## DOVE STA IL BATTENTE DELLA CUPOLA, 0 chiusa, 1 tutta aperta.
+##
+## È UN FATTO E NON UN COMANDO, e la distinzione è tutta la ragione per cui il
+## segnale sta qui. La fase 1 vive in `phases/`, la cupola in `world/`, e le due
+## cartelle non si nominano a vicenda: la fase dice ad alta voce dov'è arrivata la
+## corsa, e chi in giro per il mondo ha un battente lo mette lì. Il giorno in cui
+## la cupola la aprirà un interruttore in loco, o un temporizzatore, o un upgrade,
+## quel qualcosa dirà lo stesso fatto e il mondo risponderà senza sapere chi è
+## stato — è la stessa proprietà per cui `sequence_started` non porta più la chiave
+## della fase.
+##
+## PORTA LA POSIZIONE E NON «APERTA/CHIUSA»: il battente si vede muovere, e un
+## booleano lo farebbe scattare. Chi ascolta insegue il valore.
+signal dome_aperture_changed(fraction: float)

@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="HonestShutter" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://phases/dome/sources/honest_shutter.gd" id="1_honest"]
+
+[resource]
+resource_local_to_scene = true
+script = ExtResource("1_honest")
+motor_speed = 0.16

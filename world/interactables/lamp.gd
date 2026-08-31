@@ -229,7 +229,7 @@ func _enter_broken() -> void:
 	# prima del primo scatto del neon.
 	_flicker_left = randf_range(FLICKER_HOLD_MIN, FLICKER_HOLD_MAX)
 	_light.light_energy = ENERGY_FLICKER_MAX
-	if _sound.stream != null and _audio_is_audible():
+	if _sound.stream != null and ToniSegnaposto.continui():
 		_sound.play()
 
 
@@ -244,18 +244,6 @@ func _enter_fixed() -> void:
 	set_process(false)
 	_sound.stop()
 	_light.light_energy = ENERGY_STABLE
-
-
-## Se c'è un'uscita audio VERA. In headless (cancello di verifica, banco, import) il driver
-## è `Dummy` e il display è `headless`: nessuno può sentire il ronzio, e un
-## `AudioStreamWAV` sintetizzato che sta suonando quando l'engine viene spento a forza
-## (`--quit-after`) lascia il proprio playback come istanza persa — un WARNING dell'engine,
-## non del nostro codice, che nessun `stop()`/`NOTIFICATION_PREDELETE` intercetta perché
-## avviene dentro il teardown dell'AudioServer. Non avviare un suono che nessuno ode non è
-## un ramo diegetico: è la stessa distinzione headless/finestra con cui il progetto già
-## decide se fare uno screenshot. In gioco (display reale) il ronzio suona normalmente.
-func _audio_is_audible() -> bool:
-	return DisplayServer.get_name() != "headless"
 
 
 ## Il lampeggio del neon rotto. Gira SOLO in BROKEN: `_start_changing` e `_enter_fixed`

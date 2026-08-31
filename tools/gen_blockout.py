@@ -131,6 +131,7 @@ def tscn():
              '[ext_resource type="Script" path="res://world/desk_station.gd" id="24_postazione"]',
              '[ext_resource type="Script" path="res://world/interactables/crt_monitor.gd" id="25_crt"]',
              '[ext_resource type="PackedScene" path="res://crt/crt_screen.tscn" id="26_vetro"]',
+             '[ext_resource type="Script" path="res://world/dome_shutter.gd" id="27_cupola"]',
              '']
     dims = sorted(set((round(b[3], 3), round(b[4], 3), round(b[5], 3)) for b in blocchi)
                   | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
@@ -374,6 +375,30 @@ def tscn():
     righe += ['[node name="Osservatorio" parent="." instance=ExtResource("2_modello")]', '',
               '[node name="Vetri" parent="Osservatorio" index="%d"]' % 28,
               'material_override = SubResource("mat_vetro_fin")', '',
+              # I BATTENTI DELLA CUPOLA (fase 1). I due portelli arrivano dal .glb
+              # come nodi separati dentro "Cupola", con l'origine NEL CENTRO DELLA
+              # SFERA: e' cupola_blender.py a metterceli, apposta, ed e' la ragione
+              # per cui basta ruotarli sul proprio asse X perche' scorrano sul
+              # guscio invece di staccarsene.
+              #
+              # NOVANTA GRADI, TUTTI E DUE, NELLO STESSO VERSO. E' uno scorrimento,
+              # non due ante che si aprono: i portelli coprono da 0 a 92 gradi di
+              # elevazione, e salendo di novanta finiscono ACCAVALLATI DALL'ALTRA
+              # PARTE dello zenit, scoprendo la fenditura per intero. Il verso
+              # positivo attorno alla X di Godot alza (il portello sta a -Z, e Rx
+              # porta -Z verso +Y): e' il verso giusto.
+              #
+              # PERCHE' NON SI APRONO ALLARGANDOSI, che sarebbe il gesto ovvio: il
+              # portello basso arriva gia' a -2 gradi, e i portelli scorrono a
+              # raggio 2,60 mentre il foro nel tetto ha raggio 2,50. Ruotandolo in
+              # giu' il portello basso non trova aria: trova la falda. Sopra lo
+              # zenit invece non c'e' niente, e i due possono accavallarsi.
+              '[node name="Cupola" type="Node3D" parent="."]',
+              'script = ExtResource("27_cupola")',
+              'leaves = Array[NodePath]([NodePath("../Osservatorio/Cupola/PortelloBasso"), '
+              'NodePath("../Osservatorio/Cupola/PortelloAlto")])',
+              'open_offset = Array[Vector3]([Vector3(0, 0, 0), Vector3(0, 0, 0)])',
+              'open_rotation_deg = Array[Vector3]([Vector3(90, 0, 0), Vector3(90, 0, 0)])', '',
               '[node name="ControlloPC" parent="." instance=ExtResource("4_arredi")]', '',
               '[node name="Cucina" parent="." instance=ExtResource("5_cucina")]', '',
               '[node name="Divulgazione" parent="." instance=ExtResource("6_divulg")]', '',
@@ -1472,7 +1497,11 @@ _attesi = [("ambient_light_energy = 0.035", "la luce ambientale della notte"),
            # dei due esiste, e l'unico sintomo e' una consolle muta.
            ('script = ExtResource("24_postazione")', "il copione della postazione"),
            ('[node name="Monitor" type="StaticBody3D"', "il monitor interagibile"),
-           ('instance=ExtResource("26_vetro")', "il vetro vivo del CRT")]
+           ('instance=ExtResource("26_vetro")', "il vetro vivo del CRT"),
+           # I BATTENTI: se il nodo sparisce, la fase 1 continua ad annunciare
+           # l'apertura sul bus e nessuno la ascolta. Nessun errore, nessun log:
+           # solo una cupola che resta chiusa mentre il pannello dice OPEN.
+           ('script = ExtResource("27_cupola")', "i battenti della cupola")]
 _mancanti = ["  MANCA NEL .tscn   %s (%s)" % (t, perche)
              for (t, perche) in _attesi if t not in _scritto]
 if _mancanti:

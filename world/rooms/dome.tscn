@@ -9,10 +9,16 @@
 ; pareti stanno all'apotema (2,3097 m dal centro), ruotate di 45 gradi l'una
 ; dall'altra; la parete a ovest (−x) NON c'e': e' l'ingresso a piedi dall'atrio.
 ;
-; LA FESSURA nel tetto e' aperta sul cielo: due lastre di tetto lasciano un varco
-; rettangolare al centro (z ∈ [−0,5, +0,5]), da cui — con l'unico WorldEnvironment
-; di observatory.tscn — si vede il cielo notturno. Non e' un buco decorativo: e' da
-; li' che il telescopio guarda e da li' che il giocatore alza gli occhi.
+; LA FESSURA nel tetto SI APRE, e non e' piu' un varco fisso: le due lastre partono
+; ACCOSTATE (cupola chiusa, si toccano sulla mezzeria) e si scostano di mezzo metro
+; per parte quando la fase 1 le comanda dal PC, lasciando il varco rettangolare da
+; 1,00 m (z ∈ [−0,5, +0,5]) da cui — con l'unico WorldEnvironment di
+; observatory.tscn — si vede il cielo notturno. Non e' un buco decorativo: e' da li'
+; che il telescopio guarda e da li' che il giocatore alza gli occhi.
+;
+; FINO ALLA FASE 1 IL VARCO ERA SEMPRE APERTO, ed era vero il giorno in cui e' stato
+; scritto: nessuno poteva aprirlo, quindi tanto valeva trovarlo aperto. Da quando la
+; cupola si apre, trovarla gia' aperta toglierebbe alla fase l'unica cosa che fa.
 ;
 ; IL TELESCOPIO segnaposto (tubo su treppiede) sta al centro, visibile da vicino. Dalla
 ; storia 3.5 ha VITA E FISICITA': `telescope.gd` gli fa inseguire lento il cielo mentre
@@ -36,6 +42,7 @@
 [ext_resource type="Shader" path="res://world/shaders/ps1.gdshader" id="1_ps1"]
 [ext_resource type="Script" path="res://world/telescope.gd" id="2_scope"]
 [ext_resource type="Script" path="res://world/dome_activity.gd" id="3_activity"]
+[ext_resource type="Script" path="res://world/dome_shutter.gd" id="4_shutter"]
 
 [sub_resource type="ShaderMaterial" id="MatFloor"]
 shader = ExtResource("1_ps1")
@@ -202,8 +209,28 @@ mesh = SubResource("BoxWall")
 shape = SubResource("ShapeWall")
 
 ; Tetto in due lastre: lasciano una fessura (z ∈ [−0,5, +0,5]) aperta sul cielo.
+; I BATTENTI DELLA CUPOLA (fase 1). Le due lastre di tetto NON sono piu' ferme con
+; la fessura aperta: partono accostate — z = +-1,05, profonde 2,1, si toccano sulla
+; mezzeria — e si scostano di mezzo metro per parte quando la fase al PC apre la
+; cupola, lasciando la fessura da 1,00 m da cui si vede il cielo. `dome_shutter.gd`
+; ascolta `Events.dome_aperture_changed` e non conosce nessuna fase.
+;
+; LA POSA IN SCENA E' LA CUPOLA CHIUSA, ed e' il perno di tutto il meccanismo: lo
+; scostamento e' dichiarato rispetto a dove la lastra sta qui. Spostare una lastra
+; nell'editor sposta anche la sua posizione da aperta, e le due non possono
+; divergere.
+;
+; SONO RAGGIUNTE PER `NodePath` e restano figlie della cupola: nel mondo modellato
+; i battenti vivranno dentro la scena importata dal .glb, dove non si possono
+; riappendere altrove. Il meccanismo e' lo stesso, cambia solo se traslano o ruotano.
+[node name="Shutter" type="Node3D" parent="."]
+script = ExtResource("4_shutter")
+leaves = Array[NodePath]([NodePath("../RoofNorth"), NodePath("../RoofSouth")])
+open_offset = Array[Vector3]([Vector3(0, 0, 0.5), Vector3(0, 0, -0.5)])
+open_rotation_deg = Array[Vector3]([Vector3(0, 0, 0), Vector3(0, 0, 0)])
+
 [node name="RoofNorth" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.5, 1.55)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.5, 1.05)
 collision_mask = 0
 
 [node name="Mesh" type="MeshInstance3D" parent="RoofNorth"]
@@ -214,7 +241,7 @@ mesh = SubResource("BoxRoof")
 shape = SubResource("ShapeRoof")
 
 [node name="RoofSouth" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.5, -1.55)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.5, -1.05)
 collision_mask = 0
 
 [node name="Mesh" type="MeshInstance3D" parent="RoofSouth"]

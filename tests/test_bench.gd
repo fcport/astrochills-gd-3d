@@ -24,6 +24,7 @@
 extends Node
 
 
+const SHUTTER_PATH := "res://phases/dome/sources/honest_shutter.tres"
 const HONEST_PATH := "res://phases/polar/sources/honest_drift.tres"
 const WANDERING_PATH := "res://phases/polar/sources/wandering_drift.tres"
 const CATALOG_PATH := "res://phases/targeting/sources/honest_catalog.tres"
@@ -63,6 +64,8 @@ func _load_source(path: String) -> Resource:
 func _ready() -> void:
 	print("")
 	print("=== BANCO DI COLLAUDO — Astrochill ===")
+	print("")
+	_check_honest_shutter()
 	print("")
 	_check_honest_drift()
 	print("")
@@ -119,6 +122,66 @@ func _ready() -> void:
 ## La sorgente onesta deve essere una funzione pura dell'input: stesso input,
 ## stesso output, `delta` irrilevante. È ciò che permette alla fase di tenersi il
 ## proprio orologio, ed è la metà onesta della differenza che `F9` mette in scena.
+## Il battente onesto della cupola (fase 1): deterministico, obbediente al comando,
+## e con una corsa intera che si MISURA invece di darla per buona.
+##
+## LA DURATA DELLA CORSA È IL CONTENUTO DI QUESTA FASE. `motor_speed` è un numero
+## nel .tres, e quanti secondi valga non si legge guardandolo: si integra come fa
+## la fase, con lo stesso morsetto e la stessa soglia di fine corsa. Un dito che
+## sbagliasse uno zero renderebbe la cupola apribile in mezzo secondo o in un
+## minuto, e il .tres continuerebbe a sembrare a posto.
+func _check_honest_shutter() -> void:
+	print("-- HonestShutter: il battente fa quello che il comando dice")
+	var src := _load_source(SHUTTER_PATH) as HonestShutter
+	if src == null:
+		return
+	print("   dal .tres: motor_speed = %.4f corsa/s" % src.motor_speed)
+
+	var fermo := DomeInput.new()
+	fermo.motor_on = false
+	fermo.aperture = 0.5
+	fermo.seconds_running = 0.0
+	var v_fermo := src.sample(fermo, 0.016)
+	print("   comando lasciato, a metà corsa: %+.4f%s"
+		% [v_fermo, "" if is_zero_approx(v_fermo) else "   <-- ATTESO: 0, il battente sta fermo"])
+
+	var acceso := DomeInput.new()
+	acceso.motor_on = true
+	acceso.aperture = 0.5
+	acceso.seconds_running = 12.0
+	var a := src.sample(acceso, 0.016)
+	var b := src.sample(acceso, 0.99)
+	print("   sample(i, 0.016) = %+.4f" % a)
+	print("   sample(i, 0.99 ) = %+.4f" % b)
+	print("   -> %s" % ("DETERMINISTICA" if is_equal_approx(a, b)
+		else "NON deterministica  <-- ATTESO: deterministica"))
+	if a <= 0.0:
+		print("   il comando premuto non apre  <-- ATTESO: velocità positiva")
+
+	# La corsa intera, integrata come la integra la fase: stesso morsetto, stessa
+	# soglia di fine corsa. Il passo è fisso perché una misura che dipende dal
+	# frame rate non è una misura.
+	var passo := 1.0 / 60.0
+	var apertura := 0.0
+	var secondi := 0.0
+	while apertura < PhaseDome.FULLY_OPEN and secondi < 120.0:
+		acceso.aperture = apertura
+		apertura = clampf(apertura + src.sample(acceso, passo) * passo, 0.0, 1.0)
+		secondi += passo
+	var fuori_mano := secondi < 3.0 or secondi > 15.0
+	print("   corsa intera tenendo premuto: %.2f s%s"
+		% [secondi, "   <-- nota: fuori dai 3-15 s di rituale" if fuori_mano else ""])
+
+	# E lasciando il comando a metà corsa il battente non deve più muoversi: è
+	# la metà del comando a uomo presente che il pannello promette.
+	var resta := 0.5
+	for _i in 60:
+		fermo.aperture = resta
+		resta = clampf(resta + src.sample(fermo, passo) * passo, 0.0, 1.0)
+	print("   un secondo a comando lasciato: %.4f (partiva da 0,5)%s"
+		% [resta, "" if is_equal_approx(resta, 0.5) else "   <-- ATTESO: fermo dov'era"])
+
+
 func _check_honest_drift() -> void:
 	print("-- HonestDrift: deve essere DETERMINISTICA")
 	var src := _load_source(HONEST_PATH) as HonestDrift
@@ -207,6 +270,7 @@ func _check_wandering_drift() -> void:
 ## trovava il catalogo, e concludeva che non era la sede giusta. Ogni sorgente
 ## nuova si aggiunge QUI dentro e in nessun altro posto.
 const SOURCE_PATHS := [
+	"res://phases/dome/sources/honest_shutter.tres",
 	"res://phases/polar/sources/honest_drift.tres",
 	"res://phases/polar/sources/wandering_drift.tres",
 	"res://phases/targeting/sources/honest_catalog.tres",

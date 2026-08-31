@@ -3538,3 +3538,101 @@ lampada di prossimità cade in un quarto di secondo e risale in trenta secondi. 
 spiraglio momentaneo — un raggio che passa per un istante — costa mezzo minuto di buio. È
 la ragione per cui una perdita di pochi centimetri si nota tanto, ed è anche la ragione
 per cui vale la pena chiuderle tutte invece di ammorbidire la soglia.
+
+## D-162 — La notte comincia aprendo la cupola
+
+**31 agosto 2026.** Le dieci fasi del GDD partono dal livellamento e dal bilanciamento:
+due gesti sulla montatura, cioè due cose che in gioco non si possono ancora fare, perché
+la montatura non si tocca. Federico chiede di cambiare l'ordine e di mettere per prima una
+fase **che si fa al computer**: aprire la cupola.
+
+**È la fase più giusta da fare per prima proprio perché non ha bisogno di niente.** Il
+pannello sta sul CRT, dove il giocatore è già seduto; il meccanismo esiste già nel modello
+(`cupola_blender.py` esporta `PortelloBasso` e `PortelloAlto` da marzo, con l'origine nel
+centro della sfera, apposta perché ruotino sul guscio); e il gesto è vero — una cupola si
+apre prima di osservare, sempre, ed è la prima cosa che si fa arrivando.
+
+**Comando a uomo presente.** Si tiene premuto e il motore va; si lascia e si ferma dov'è.
+Non è una scelta di comodo: le cupole vere si aprono così, perché un battente da qualche
+quintale che si muove mentre nessuno guarda è un modo di rompere un telescopio. Ed è anche
+l'idioma già stabilito dalla fase polare — «le viti si girano, non si scattano». Corsa
+intera: **6,25 secondi**, misurati dal banco integrando il `.tres` invece di fidarsi del
+numero (`motor_speed = 0,16` corsa/s).
+
+**Nessun punteggio, e dichiarato.** È il caso della fase 4 del GDD: «si passa o si
+ripete». Non c'è niente da fare bene o male, c'è solo da farlo, e inventare una metrica
+qui vorrebbe dire inventare una bravura che il gesto non contiene.
+
+**Come la fase parla alla cupola, che sta in una cartella che le è vietata.** `phases/`
+non può nominare `world/`. Il condotto è `Events.dome_aperture_changed(fraction)`, e porta
+un **fatto** — «l'apertura vale 0,37» — non un comando: la fase dice dov'è arrivata la
+corsa, e chi nel mondo ha un battente lo mette lì. Il giorno in cui la cupola la aprirà un
+interruttore in loco o un temporizzatore, quel qualcosa dirà lo stesso fatto e
+`world/dome_shutter.gd` non cambierà di una riga. È lo stesso verso di `sequence_started`.
+
+**Porta la POSIZIONE e non «aperta/chiusa»:** il battente si vede muovere, e un booleano
+lo farebbe scattare.
+
+**Un solo nodo per due cupole diverse, e servivano entrambe.** Il mondo in cui il gioco
+gira oggi (`main.tscn` → `observatory.tscn`) ha la cupola segnaposto: due lastre di tetto
+che **scorrono**. Il blockout ha quella modellata: due gusci che **ruotano** sul guscio.
+`dome_shutter.gd` dichiara per ogni battente uno scostamento in metri **e** uno in gradi, e
+li interpola tutti e due dalla posa di scena — che è la cupola CHIUSA. Un solo meccanismo
+avrebbe voluto dire riscrivere il file al trasloco.
+
+**Perché i portelli modellati non si aprono allargandosi**, che sarebbe il gesto ovvio. Il
+portello basso copre già da −2 gradi, e i portelli scorrono a raggio 2,60 mentre il foro
+nel tetto ha raggio 2,50: ruotandolo in giù non trova aria, trova la falda. Sopra lo zenit
+invece non c'è niente. Quindi **novanta gradi tutti e due nello stesso verso**: è uno
+scorrimento, non due ante, e i battenti finiscono accavallati dall'altra parte.
+
+**All'alba la cupola si chiude.** Senza, resterebbe aperta per sempre: la notte dopo la
+fase ricomincerebbe da un pannello che dice CLOSED con il cielo già in vista, e il
+giocatore avrebbe ragione a non credere più al pannello.
+
+**Provato per iniezione, su tutti e due i mondi.** Segnaposto: luce netta 0,000 m da
+chiusa, **1,000 m** da aperta. Modellato: i due gusci ruotano di 90,0 gradi e i loro
+baricentri percorrono 3,15 e 3,40 m. Con la corsa azzerata la sonda grida «2 LASTRE
+FERME»; con un `NodePath` sbagliato il nodo grida il percorso che non ha trovato.
+
+**La sonda misurava la cosa sbagliata, e lo diceva con sicurezza.** Prima versione:
+spostamento dell'ORIGINE del nodo. Per le lastre che scorrono va bene; per due gusci che
+ruotano attorno al proprio centro l'origine non si muove di un millimetro, e la sonda
+dichiarava fermi due portelli che si erano appena girati di un quarto di giro. Adesso
+misura il **baricentro della mesh**, che si muove in tutti e due i casi. È la terza volta
+in questo progetto che un controllo sbagliato è più pericoloso di nessun controllo.
+
+**E la luce netta si stampa solo quando vuol dire qualcosa.** Fra due gusci che ruotano
+sullo stesso sferoide la distanza è negativa sempre, prima e dopo: metterla in tabella
+sarebbe mettere in tabella una misura che non misura niente.
+
+**Cosa resta aperto, ed è la sola cosa che questa decisione non chiude.** Le fasi vivono
+al monitor, e il monitor con la notte sta in `main.tscn`, cioè nel vecchio osservatorio.
+Nel blockout la cupola vera si muove, ma non c'è ancora nessuno che gliela dica: manca la
+notte. **Il trasloco del mondo** — `main.tscn` che punta al blockout — è il passo che fa
+combaciare le due metà, ed è già in coda da prima di questa storia.
+
+## D-163 — I toni continui si spengono, i beep restano
+
+**31 agosto 2026, giudizio d'operatore: «il suono è un incubo».**
+
+Il ronzio della lampada, il cigolio della cupola, la montatura del telescopio, il
+borbottio della moka: quattro onde quadre generate in GDScript, nate come segnaposto —
+nessun asset d'arte, coerenti con un progetto che aspetta un pack. **Ognuna era
+ragionevole scritta da sola.** Tutte insieme, in loop, per un'ora di notte, non fanno un
+ambiente: fanno un'onda quadra continua sotto ogni cosa.
+
+**Si spengono quelle CONTINUE, non tutte.** I suoni brevi restano: il beep del terminale,
+quello della BBS, la portante del modem, il campanello di fine sequenza. Durano un
+istante, dicono che qualcosa è successo, e nessuno li tiene in testa. **Il problema non
+era il timbro, era la durata.**
+
+Un interruttore solo, `world/toni_segnaposto.gd`, e con lui è confluita la guardia
+`_audio_is_audible()` che stava ricopiata in quattro file — quella che impedisce di
+avviare un suono in headless, dove il driver è `Dummy` e un playback spento a forza lascia
+un WARNING che fa fallire il cancello di verifica. Quattro copie di una verità sola: una
+adesso.
+
+Si riaccende con `CONTINUI = true`, una riga. Il giorno in cui arriveranno i campioni veri
+ogni nodo ha già il proprio posto dove metterli — `_install_*_sound()` — e questo file
+sparisce con un `git rm`.

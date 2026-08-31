@@ -347,7 +347,7 @@ tornano. Le lire no: restano disponibili per sempre.
 
 #### La forma di una fase
 
-Una notte si svolge in **dieci fasi fisse, nell'ordine**, più due code (stacking e vendita)
+Una notte si svolge in **undici fasi fisse, nell'ordine**, più due code (stacking e vendita)
 che chiudono ogni foto. Ogni fase è una procedura reale dell'astrofotografia CCD del 1999,
 resa come schermata CRT o come gesto sulla strumentazione, e produce un **punteggio di
 qualità 0-100** che concorre al valore della foto.
@@ -363,25 +363,26 @@ Ogni fase ne consuma. I valori sotto sono il riferimento di progetto, da tarare 
 
 | # | Fase | Notte 1 | Notte 20 | Cosa la accorcia |
 |---|---|---|---|---|
-| 1 | Livellamento | 20 | **0** | livella motorizzata |
-| 2 | Bilanciamento | 20 | 2 | si impara: diventa una checklist |
-| 3 | Allineamento polare | **60** | 10 | software di polar align |
-| 4 | Accensione e collegamento PC | 15 | 2 | si impara entro la notte 2 |
-| 5 | Plate solving | 15 | 5 | plate-solver locale |
-| | **Setup — una volta a notte** | **130** | **19** | |
-| 6 | Targeting | 15 | 15 | **mai** |
-| 7 | Focus | 20 | 0 | focuser motorizzato con autofocus |
-| 8 | Dark e flat | 30 | 3 | libreria dark + flat panel |
-| 9 | Autoguida | 20 | 5 | autoguider OAG |
-| 10 | **Posa** | **40** | 40 | **mai** — la durata la sceglie il giocatore |
+| 1 | Apertura della cupola | 10 | 10 | **mai** — è il tempo del motore |
+| 2 | Livellamento | 20 | **0** | livella motorizzata |
+| 3 | Bilanciamento | 20 | 2 | si impara: diventa una checklist |
+| 4 | Allineamento polare | **60** | 10 | software di polar align |
+| 5 | Accensione e collegamento PC | 15 | 2 | si impara entro la notte 2 |
+| 6 | Plate solving | 15 | 5 | plate-solver locale |
+| | **Setup — una volta a notte** | **140** | **29** | |
+| 7 | Targeting | 15 | 15 | **mai** |
+| 8 | Focus | 20 | 0 | focuser motorizzato con autofocus |
+| 9 | Dark e flat | 30 | 3 | libreria dark + flat panel |
+| 10 | Autoguida | 20 | 5 | autoguider OAG |
+| 11 | **Posa** | **40** | 40 | **mai** — la durata la sceglie il giocatore |
 | — | Stacking | 15 | 15 | |
 | — | Vendita | 10 | 10 | |
 | | **Ciclo foto — ripetibile** | **150** | **88** | |
 
-**Cosa producono questi numeri.** Notte 1: setup più due foto occupano 430 minuti; ne
-restano 110, ai quali si sommano gli 80 delle due pose — **21 minuti reali di libertà su
-60**. Notte 20: setup più tre foto occupano 283 minuti; ne restano 257, più i 120 delle
-pose — **42 minuti reali su 60**. L'automazione raddoppia il tempo libero, e lo fa in modo
+**Cosa producono questi numeri.** Notte 1: setup più due foto occupano 440 minuti; ne
+restano 100, ai quali si sommano gli 80 delle due pose — **20 minuti reali di libertà su
+60**. Notte 20: setup più tre foto occupano 293 minuti; ne restano 247, più i 120 delle
+pose — **41 minuti reali su 60**. L'automazione raddoppia il tempo libero, e lo fa in modo
 leggibile dal giocatore.
 
 #### Le tre regole invarianti
@@ -400,23 +401,26 @@ silenziose e meditative (livellamento, allineamento polare), per ultime quelle t
 (plate solving, imaging). Quando arriva il turno delle fasi tecniche, il giocatore ha già
 imparato abbastanza da sapere che ciò che vede è impossibile.
 
-#### Le dieci fasi
+#### Le undici fasi
 
 | # | Fase | Il gesto | Parametri e punteggio | Come si rompe |
 |---|---|---|---|---|
-| 1 | **Livellamento** | tre viti, la bolla d'aria va portata dentro il cerchio; se esageri da un lato devi compensare dall'altro | dalla distanza finale della bolla dal centro | la bolla non sta ferma: si sposta da sola mentre la guardi |
-| 2 | **Bilanciamento** | sposti i contrappesi sull'asse finché il telescopio resta fermo in ogni posizione | dalla deriva residua alla prova di rilascio | il telescopio tende sempre nella stessa direzione, ovunque metti i pesi |
-| 3 | **Allineamento polare** | metodo della deriva: osservi una stella nel reticolo, correggi azimuth e altitudine, aspetti, riosservi | 0 a **0,2 arcmin/s** di deriva, 100 a deriva nulla; media su **8 secondi reali** perché non si possa truccare correggendo un istante prima di chiudere | la stella deriva in direzioni impossibili. Poi non è una stella |
-| 4 | **Accensione e collegamento PC** | sequenza nell'ordine giusto: montatura, camera di ripresa, camera di guida, software; l'ordine sbagliato non fa riconoscere i dispositivi | nessun punteggio: si passa o si ripete | il software riconosce dispositivi che non hai collegato, o non riconosce quelli collegati |
-| 5 | **Plate solving** | scatti una posa breve, il software confronta il campo col catalogo e dice dove stai puntando | dalla precisione del solving | ti dà coordinate che non esistono nel catalogo, o un oggetto che da lì, in quella stagione, non sarebbe visibile |
-| 6 | **Targeting** | apri il planetario, filtri per tipo, altezza sull'orizzonte, difficoltà, scegli il soggetto | nessun punteggio proprio: determina il moltiplicatore di valore e se la commessa è soddisfatta | nel planetario compare un oggetto che non è in nessun catalogo. Ha coordinate precise. È visibile stanotte |
-| 7 | **Focus** | muovi il focheggiatore finché le stelle sono punti minimi e non dischetti | dalla distanza dal punto di fuoco ottimale sulla curva a V | le stelle non vanno mai a fuoco del tutto. Oppure ci vanno, ma la forma che assumono non è quella di una stella |
-| 8 | **Dark e flat** | checklist: tappo, cinque dark; pannello illuminato, cinque flat; nell'ordine, senza saltare passi | dalla completezza e dall'ordine | i dark non sono neri: c'è qualcosa nelle immagini scattate col tappo |
-| 9 | **Autoguida** | calibri la guida, avvii il loop, osservi il grafico degli errori: due linee che devono stare basse e stabili | dall'errore RMS medio durante la posa | la guida insegue qualcosa. Ma non è la stella che hai selezionato |
-| 10 | **Posa** | imposti esposizione e numero di frame, avvii, la macchina lavora da sola | vedi sotto | i frame acquisiti sono più di quelli impostati. O meno. O la sequenza è finita ma sono passati tre minuti |
+| 1 | **Apertura della cupola** | dal pannello sul PC: si tiene premuto il comando e il motore fa scorrere i battenti; si lascia e si ferma dov'è | nessun punteggio: si passa o si ripete | il pannello dice APERTA e in cupola i battenti non si sono mossi. Oppure si aprono da soli, mentre guardi altrove |
+| 2 | **Livellamento** | tre viti, la bolla d'aria va portata dentro il cerchio; se esageri da un lato devi compensare dall'altro | dalla distanza finale della bolla dal centro | la bolla non sta ferma: si sposta da sola mentre la guardi |
+| 3 | **Bilanciamento** | sposti i contrappesi sull'asse finché il telescopio resta fermo in ogni posizione | dalla deriva residua alla prova di rilascio | il telescopio tende sempre nella stessa direzione, ovunque metti i pesi |
+| 4 | **Allineamento polare** | metodo della deriva: osservi una stella nel reticolo, correggi azimuth e altitudine, aspetti, riosservi | 0 a **0,2 arcmin/s** di deriva, 100 a deriva nulla; media su **8 secondi reali** perché non si possa truccare correggendo un istante prima di chiudere | la stella deriva in direzioni impossibili. Poi non è una stella |
+| 5 | **Accensione e collegamento PC** | sequenza nell'ordine giusto: montatura, camera di ripresa, camera di guida, software; l'ordine sbagliato non fa riconoscere i dispositivi | nessun punteggio: si passa o si ripete | il software riconosce dispositivi che non hai collegato, o non riconosce quelli collegati |
+| 6 | **Plate solving** | scatti una posa breve, il software confronta il campo col catalogo e dice dove stai puntando | dalla precisione del solving | ti dà coordinate che non esistono nel catalogo, o un oggetto che da lì, in quella stagione, non sarebbe visibile |
+| 7 | **Targeting** | apri il planetario, filtri per tipo, altezza sull'orizzonte, difficoltà, scegli il soggetto | nessun punteggio proprio: determina il moltiplicatore di valore e se la commessa è soddisfatta | nel planetario compare un oggetto che non è in nessun catalogo. Ha coordinate precise. È visibile stanotte |
+| 8 | **Focus** | muovi il focheggiatore finché le stelle sono punti minimi e non dischetti | dalla distanza dal punto di fuoco ottimale sulla curva a V | le stelle non vanno mai a fuoco del tutto. Oppure ci vanno, ma la forma che assumono non è quella di una stella |
+| 9 | **Dark e flat** | checklist: tappo, cinque dark; pannello illuminato, cinque flat; nell'ordine, senza saltare passi | dalla completezza e dall'ordine | i dark non sono neri: c'è qualcosa nelle immagini scattate col tappo |
+| 10 | **Autoguida** | calibri la guida, avvii il loop, osservi il grafico degli errori: due linee che devono stare basse e stabili | dall'errore RMS medio durante la posa | la guida insegue qualcosa. Ma non è la stella che hai selezionato |
+| 11 | **Posa** | imposti esposizione e numero di frame, avvii, la macchina lavora da sola | vedi sotto | i frame acquisiti sono più di quelli impostati. O meno. O la sequenza è finita ma sono passati tre minuti |
 
-> **[ASSUMPTION]** I criteri di punteggio delle fasi 1, 2, 5, 7, 8 e 9 sono proposti qui e
-> non ancora implementati: esistono solo le fasi 3, 6 e 10. *Cosa* si misura è deciso; le
+> **[ASSUMPTION]** I criteri di punteggio delle fasi 2, 3, 6, 8, 9 e 10 sono proposti qui e
+> non ancora implementati: esistono solo le fasi 1, 4, 7 e 11. La fase 1 costa dieci minuti
+> di notte sulla carta e sei secondi reali in gioco: il budget qui è intento di progetto, e
+> nessuna fase lo consuma ancora davvero. *Cosa* si misura è deciso; le
 > soglie numeriche si tarano quando la fase esiste.
 
 #### La posa, in dettaglio
@@ -526,7 +530,7 @@ modellata.
 - Sono l'**unico elemento non diegetico del gioco**, ed è una deroga consapevole: costa
   meno una deroga che un giocatore che non trova metà del contenuto.
 
-**2. Il foglio di procedura appeso al monitor.** Una checklist delle dieci fasi stampata ad
+**2. Il foglio di procedura appeso al monitor.** Una checklist delle undici fasi stampata ad
 ago, attaccata di lato al CRT, consultabile in qualsiasi momento. Insegna **la sequenza** —
 cosa viene dopo cosa, e perché quell'ordine — che è ciò che i prompt non possono spiegare.
 Diegetico al cento per cento e storicamente esatto: è ciò che chiunque avrebbe avuto
@@ -1023,7 +1027,7 @@ livello, e per una ragione che non è di traduzione.
 | Livello | Cosa comprende | Comportamento |
 |---|---|---|
 | **1 — La voce del gioco** | narrativa, log, lettere, giornali locali, descrizioni dei target, messaggi dei committenti, thread della BBS, negozio nel terminale, menu e impostazioni | **localizzato IT/EN** |
-| **2 — Le interfacce degli strumenti** | le dieci fasi, i campi delle schermate CRT, i messaggi di stato della strumentazione | **localizzato IT/EN**, con il gergo tecnico invariato (vedi sotto) |
+| **2 — Le interfacce degli strumenti** | le undici fasi, i campi delle schermate CRT, i messaggi di stato della strumentazione | **localizzato IT/EN**, con il gergo tecnico invariato (vedi sotto) |
 | **3 — Gli oggetti del mondo** | poster, insegne, targhe, etichette, avvisi appesi, la bacheca, le copertine delle riviste | **sempre in italiano**, dentro le texture |
 
 **Perché anche gli strumenti si traducono.** Le schermate CRT non sono atmosfera: sono

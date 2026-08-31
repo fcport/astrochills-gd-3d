@@ -80,7 +80,7 @@ func _ready() -> void:
 func _on_sequence_started() -> void:
 	_tracking = true
 	set_process(true)
-	if _hum.stream != null and _audio_is_audible():
+	if _hum.stream != null and ToniSegnaposto.continui():
 		_hum.play()
 
 
@@ -104,15 +104,6 @@ func _process(delta: float) -> void:
 	if not _tracking:
 		return
 	_tube.global_rotate(Vector3.UP, TRACK_RATE * delta)
-
-
-## Se c'è un'uscita audio VERA. In headless (cancello di verifica, banco, import) il
-## driver è `Dummy` e il display è `headless`: nessuno può sentire il ronzio, e un
-## `AudioStreamWAV` sintetizzato che sta suonando quando l'engine viene spento a forza
-## lascia il proprio playback come istanza persa — un WARNING dell'engine, non del
-## nostro codice. Non avviare un suono che nessuno ode. Gemello di `Lamp._audio_is_audible`.
-func _audio_is_audible() -> bool:
-	return DisplayServer.get_name() != "headless"
 
 
 ## Costruisce lo stream del ronzio in codice: nessun asset esterno (provvisorio,

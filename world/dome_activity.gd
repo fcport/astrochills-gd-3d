@@ -131,7 +131,7 @@ func _ready() -> void:
 	_install_creak_sound()
 	# Il cigolio è ambientale del posto: parte subito e resta finché la cupola c'è. NON
 	# è legato alla sequenza (a differenza del ronzio del telescopio).
-	if _creak.stream != null and _audio_is_audible():
+	if _creak.stream != null and ToniSegnaposto.continui():
 		_creak.play()
 
 
@@ -197,14 +197,6 @@ func _on_dwell_timeout() -> void:
 	if should_emit_started(_watching, gate_open):
 		Events.wait_activity_started.emit(ACTIVITY)
 		_watching = true
-
-
-## Se c'è un'uscita audio VERA. In headless (cancello, banco, import) il driver è `Dummy`:
-## nessuno può sentire il cigolio, e un suono avviato che l'engine spegne a forza lascia il
-## proprio playback come istanza persa — un WARNING dell'engine. Gemello di
-## `Lamp._audio_is_audible` e `Telescope._audio_is_audible`.
-func _audio_is_audible() -> bool:
-	return DisplayServer.get_name() != "headless"
 
 
 ## Costruisce lo stream del cigolio in codice: nessun asset esterno (provvisorio, coerente

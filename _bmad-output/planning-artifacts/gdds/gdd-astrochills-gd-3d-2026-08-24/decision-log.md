@@ -2365,3 +2365,61 @@ il difetto ricorrente di questo progetto: quarta volta.
 **Adesso il modellatore rilegge il file scritto e ne guarda il peso**: sopra i 20 MB
 fallisce, dicendo dove guardare. Validato per iniezione — togliendo la riduzione
 riporta 33,3 MB e si ferma.
+
+## D-120 — «Vecchio» non vuol dire «sporco», ed è stato l'errore
+
+**Correzione.** Il lavabo era «una vergogna schifosa», il bidet nero, e le piastrelle
+pulite stonavano con tutto. La causa è una sola, ed è a monte: chiesto un bagno
+d'epoca, ho cercato modelli *degradati*. Ma un osservatorio in funzione nel 1999 ha
+sanitari **puliti di forma datata**, non da rudere.
+
+**La direzione della cura conta.** Si poteva sporcare le piastrelle o pulire i
+sanitari, e non è simmetrico: sporcare tutto avrebbe trasformato un posto di lavoro in
+un edificio abbandonato, che è un altro gioco. Le piastrelle restano pulite e sono i
+sanitari ad allinearsi a loro. Il pavimento resta lievemente segnato: un pavimento si
+consuma più di un muro, e quella è la gerarchia naturale dell'usura, non un'incoerenza.
+
+**Il bidet nero era colpa mia.** Arrivava a 227 su 255 — l'unico dei tre già bianco —
+e D-116 lo invecchiava moltiplicandolo per una tinta calda: 186 con una dominante,
+cioè il più scuro dei tre. L'invecchiamento in casa è stato tolto.
+
+## D-121 — Tre ceramiche in una stanza devono essere lo stesso bianco
+
+**Il problema non era che uno fosse brutto: è che erano tre.** Misurati: bidet 227,
+water 174 con una dominante calda, lavabo 130. Nessuno sbagliato da solo; in una
+stanza sola la differenza non legge come «ceramiche di età diverse» ma come un errore.
+
+**E non si può schiarire nel materiale.** Il colore di base di un glTF è un *fattore*
+che moltiplica la mappa, e un fattore sta fra zero e uno: si scurisce, non si
+schiarisce. L'unico posto dove si schiarisce è la mappa, quindi
+`tools/pareggia_ceramica.py` riscrive quella — ripartendo sempre dall'originale
+scaricato, perché applicare due volte la correzione porterebbe al bianco assoluto e la
+seconda volta il numero misurato sarebbe già giusto.
+
+**La dominante si toglie per canale**, non con un fattore solo: il water arriva
+180/179/164, e scalando i tre canali insieme il giallo resta, solo più chiaro.
+
+**Chi sfora va sostituito, non corretto.** Il lavabo avrebbe richiesto 1,73× di
+schiarimento contro l'1,45 ammesso: oltre quella soglia le ombre dipinte dentro la
+texture diventano grigio uniforme e l'oggetto perde il volume. Lo strumento lo dice
+**e lo scrive su disco** — `DA_SOSTITUIRE.txt` — e il modellatore torna al segnaposto
+finché non arriva il buono. Un modello sbagliato che resta montato è peggio di un
+segnaposto: il segnaposto si vede che è provvisorio, il modello sbagliato sembra una
+scelta.
+
+## D-122 — La stessa immagine, misurata due volte, dava due numeri
+
+Il controllo che verifica il pareggio gira dentro Blender, dove PIL non c'è, e
+misurava **234** dove `pareggia_ceramica.py` misura **212** sulla stessa mappa:
+accusava due ceramiche perfettamente pareggiate.
+
+Due cause, cercate nell'ordine sbagliato. La prima ipotesi era il ridimensionamento a
+64×64 — `img.scale()` media in spazio lineare, e la media lineare riportata in sRGB
+viene più chiara — ma toglierlo non ha cambiato il numero. La vera causa era **una
+conversione applicata due volte**: i pixel arrivavano già nei valori del file e io li
+riconvertivo in sRGB. Forzando `Non-Color` e leggendoli così come sono, le due misure
+combaciano.
+
+Vale come voce perché è il difetto di misura più insidioso di questa sessione: non
+un controllo che tace, ma un controllo che **grida su codice sano**. Costa la stessa
+fiducia.

@@ -27,14 +27,14 @@ Il modello arriva col treppiede da campagna e senza gerarchia; qui viene montato
 pilastro e riarticolato sui due assi equatoriali da `tools/telescopio_blender.py`. La
 licenza permette le modifiche e l'uso commerciale, a patto del credito qui sopra.
 
-**Old Dirty Pedestal Sink** — il lavabo del bagno.
-Autore: [Renend Studio](https://sketchfab.com/RenendStudio).
-Fonte: <https://sketchfab.com/3d-models/4a9095d3540144c7bd8bcefe0de2a227>
+**Lavabo** — il lavabo a semicolonna del bagno.
+Autore: [Antonio Rossin](https://sketchfab.com/antoniorossin).
+Fonte: <https://sketchfab.com/3d-models/33cbd0ac6ae24bd292783a4e06fc4138>
 Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
 
-> This work is based on "Old Dirty Pedestal Sink - Low Poly / PBR"
-> (https://sketchfab.com/3d-models/4a9095d3540144c7bd8bcefe0de2a227)
-> by Renend Studio (https://sketchfab.com/RenendStudio) licensed under CC-BY-4.0
+> This work is based on "Lavabo"
+> (https://sketchfab.com/3d-models/33cbd0ac6ae24bd292783a4e06fc4138)
+> by Antonio Rossin (https://sketchfab.com/antoniorossin) licensed under CC-BY-4.0
 > (http://creativecommons.org/licenses/by/4.0/)
 
 **Game Ready - Dirty Old Toilet** — il water del bagno.

@@ -35,6 +35,7 @@ stanza da guardare, mentre un modellatore che si rifiuta di girare non lo e'.
 
 Produce assets/models/bagno.glb.
 """
+import io
 import math
 import os
 import sys
@@ -101,7 +102,12 @@ SANITARI = [
 # Chi arriva bianco di fabbrica e va portato all'eta' degli altri. Il water e il
 # lavabo no: quelli si sono trovati gia' segnati, ed e' meglio lo sporco vero di
 # chi li ha fatti che una tinta uniforme passata sopra.
-INVECCHIARE = ("Bidet",)
+# NESSUNO. C'era il bidet, e invecchiarlo e' stato un errore: arrivava a 227 su 255
+# - l'unico dei tre gia' bianco - e moltiplicarlo per una tinta calda lo ha portato a
+# 186 con una dominante, cioe' l'ha reso il piu' scuro dei tre. In una stanza sola tre
+# ceramiche devono essere lo STESSO bianco, e quel bianco lo pareggia
+# `tools/pareggia_ceramica.py` sulle mappe, dove si puo' anche schiarire.
+INVECCHIARE = ()
 
 mancanti = []
 
@@ -393,7 +399,11 @@ def sanitari():
     for (cartella, quale, gradi, alto, come_si_chiama) in SANITARI:
         via = os.path.join(ESTERNI, cartella, "scene.gltf")
         x0, z0, x1, z1, _h = IMPRONTE[quale]
-        if os.path.exists(via):
+        # BOCCIATO DA `pareggia_ceramica.py`: si torna al segnaposto. Un modello
+        # sbagliato che resta montato e' peggio di un segnaposto - il segnaposto si
+        # vede che e' provvisorio, il modello sbagliato sembra una scelta.
+        bocciato = os.path.exists(os.path.join(ESTERNI, cartella, "DA_SOSTITUIRE.txt"))
+        if os.path.exists(via) and not bocciato:
             pezzi = posa_modello(via, (x0, z0, x1, z1, alto), gradi=gradi)
             # LE MAPPE RIDOTTE, e la metallicita' a zero. Una ceramica non e' un
             # metallo: la mappa metallicRoughness dei sanitari, presa com'e', la
@@ -406,7 +416,12 @@ def sanitari():
                 print("  %-8s dal modello scaricato" % quale)
         else:
             fatti[quale]()
-            mancanti.append("%s (%s) - manca %s" % (quale, come_si_chiama, via))
+            if bocciato:
+                mancanti.append("%s (%s) - il modello scaricato e' stato BOCCIATO, "
+                                "vedi %s/DA_SOSTITUIRE.txt" % (quale, come_si_chiama,
+                                                               cartella))
+            else:
+                mancanti.append("%s (%s) - manca %s" % (quale, come_si_chiama, via))
         if quale == "Lavabo":
             rubinetto_lavabo(0.80 if os.path.exists(via) else 0.86)
             print("  %-8s SEGNAPOSTO: il modello non c'e' ancora" % quale)
@@ -448,6 +463,80 @@ def prova_ingiallisci():
     return esito
 
 
+def quanto_e_chiara(mappa):
+    """La luminosita' media di un'immagine, su 255 e IN sRGB.
+
+    Il Python di Blender non ha PIL, quindi si legge con Blender - e li' `pixels`
+    restituisce valori LINEARI, perche' e' quello che serve a un motore di render.
+    Mediare quelli e confrontarli con i numeri di `pareggia_ceramica.py`, che legge i
+    byte del file, darebbe due misure diverse della stessa immagine: la media di una
+    ceramica chiara scenderebbe di una quarantina di livelli e il controllo
+    accuserebbe un difetto che non c'e'. Ogni pixel si riporta in sRGB PRIMA di
+    mediare.
+
+    E NON SI RIDIMENSIONA L'IMMAGINE. Il primo tentativo la portava a 64x64 per
+    fare in fretta, e misurava 234 dove `pareggia_ceramica.py` misura 212 sulla
+    stessa mappa: `img.scale()` media in spazio LINEARE, e la media lineare di
+    valori sparsi, riportata in sRGB, viene piu' chiara della media dei valori sRGB.
+    Il controllo accusava due ceramiche perfettamente pareggiate. Si campiona invece
+    un pixel ogni cento, che e' altrettanto veloce e non tocca i valori.
+    """
+    import array
+    img = bpy.data.images.load(mappa, check_existing=False)
+    # NON-COLOR, E POI NESSUNA CONVERSIONE. Cosi' `pixels` restituisce i byte del
+    # file normalizzati, che e' esattamente quello che legge PIL dall'altra parte.
+    # Lasciandola in sRGB e riconvertendo a mano la stessa mappa misurava 234 invece
+    # di 212 - una conversione applicata due volte - e il controllo accusava due
+    # ceramiche perfettamente pareggiate.
+    img.colorspace_settings.name = "Non-Color"
+    w, h = img.size
+    buf = array.array("f", [0.0]) * (w * h * 4)
+    img.pixels.foreach_get(buf)
+    bpy.data.images.remove(img)
+    somma = 0.0
+    n = 0
+    for i in range(0, w * h, 97):
+        for c in buf[i * 4:i * 4 + 3]:
+            somma += max(0.0, min(1.0, c))
+            n += 1
+    return somma / max(1, n) * 255.0
+
+
+def ceramiche_pari():
+    """I sanitari montati devono essere lo STESSO bianco.
+
+    E' il controllo che nasce da una stanza in cui tre ceramiche prese da tre autori
+    stavano a 227, 174 e 130 su 255. Nessuna delle tre era sbagliata da sola: era
+    sbagliato averle insieme, e a occhio si vedeva solo che "qualcosa stona". Adesso
+    `tools/pareggia_ceramica.py` le porta tutte a un bianco solo, e questo controllo
+    verifica che ci siano rimaste - perche' un modello aggiunto domani, o uno
+    riscaricato che sovrascrive la mappa corretta, tornerebbe a stonare in silenzio.
+    """
+    # IL BERSAGLIO SI LEGGE DAL SORGENTE, non importando il modulo:
+    # `pareggia_ceramica.py` usa PIL, e il Python di Blender PIL non ce l'ha. Una
+    # riga di regex evita di duplicare il numero in due file, che e' il modo sicuro
+    # di ritrovarseli diversi fra sei mesi.
+    import re
+    sorgente = io.open(os.path.join(QUI, "pareggia_ceramica.py"),
+                       encoding="utf-8").read()
+    bersaglio = float(re.search(r"^BERSAGLIO = ([\d.]+)", sorgente, re.M).group(1))
+
+    guai = []
+    for (cartella, quale, _g, _a, _n) in SANITARI:
+        mappa = os.path.join(ESTERNI, cartella, "textures", "color.jpg")
+        if not os.path.exists(mappa):
+            continue
+        if os.path.exists(os.path.join(ESTERNI, cartella, "DA_SOSTITUIRE.txt")):
+            continue                     # gia' bocciato, e gia' detto
+        grigio = quanto_e_chiara(mappa)
+        print("  %-8s ceramica a %.0f su 255" % (quale, grigio))
+        if abs(grigio - bersaglio) > 10.0:
+            guai.append("%s: la ceramica sta a %.0f invece dei %.0f degli altri - "
+                        "rilancia tools/pareggia_ceramica.py"
+                        % (quale, grigio, bersaglio))
+    return guai
+
+
 # --- costruzione -------------------------------------------------------------
 pulisci()
 riveste()
@@ -469,7 +558,7 @@ oggetti = finisci(morbidi=("Ceramica", "CeramicaVecchia", "Inox"))
 # si sovrappongono a ogni sanitario addossato al muro - cioe' a tutti - e il
 # controllo degli arredi si riempirebbe di guasti inventati.
 GUSCIO = ("PiastrelleMuro", "PiastrellePav", "Listello")
-problemi = _prova + verifica_impronte(
+problemi = _prova + ceramiche_pari() + verifica_impronte(
     [o for o in oggetti if o.name not in GUSCIO],
     [(x0, z0, x1, z1) for (x0, z0, x1, z1, _h) in IMPRONTE.values()])
 

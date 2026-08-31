@@ -105,17 +105,21 @@ A_MANO = {
         " a 43,9: si raddrizza di un grado, non si reinventa."),
     "lavabo_bagno": (
         "lavabo_bagno.zip",
-        "https://sketchfab.com/3d-models/4a9095d3540144c7bd8bcefe0de2a227",
-        "Renend Studio", "CC-BY-4.0",
-        'This work is based on "Old Dirty Pedestal Sink - Low Poly / PBR" '
-        "(https://sketchfab.com/3d-models/4a9095d3540144c7bd8bcefe0de2a227) "
-        "by Renend Studio (https://sketchfab.com/RenendStudio) licensed under "
+        "https://sketchfab.com/3d-models/33cbd0ac6ae24bd292783a4e06fc4138",
+        "Antonio Rossin", "CC-BY-4.0",
+        'This work is based on "Lavabo" '
+        "(https://sketchfab.com/3d-models/33cbd0ac6ae24bd292783a4e06fc4138) "
+        "by Antonio Rossin (https://sketchfab.com/antoniorossin) licensed under "
         "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
-        "Lavabo ovale su semicolonna, 2.110 facce, con la ceramica INGIALLITA E"
-        " MACCHIATA. Prima c'era un lavabo della stessa forma ma bianco di fabbrica:"
-        " la forma e' meta' del lavoro, l'altra meta' e' che la ceramica abbia"
-        " vent'anni addosso. Un sanitario nuovo in un osservatorio del 1999 legge"
-        " come un rendering di catalogo, non come un bagno dove qualcuno lavora."),
+        "Lavabo a semicolonna con bacino rettangolare arrotondato e miscelatore"
+        " monocomando: la forma di serie di un lavabo italiano degli anni Novanta."
+        "
+
+IL SECONDO TENTATIVO. Il primo era un 'Old Dirty Pedestal Sink': forma"
+        " giusta, ma la sua ceramica stava a 130 su 255 contro i 212 degli altri due"
+        " sanitari e le piastrelle pulite. Non era vecchio, era sporco - e le due"
+        " cose non sono la stessa. In un osservatorio in funzione i sanitari sono"
+        " puliti di forma datata, non da rudere."),
     "bidet_bagno": (
         "bidet_bagno.zip",
         "https://sketchfab.com/3d-models/e52d1be9d7594dd39c8ae8e3dcab9cd5",

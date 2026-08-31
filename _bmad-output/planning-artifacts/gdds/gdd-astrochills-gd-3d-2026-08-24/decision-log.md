@@ -1985,3 +1985,58 @@ Nessuno dei due si vede leggendo il codice, e nemmeno guardando la porta: si ved
 misurando i pixel di anta, telaio e muro nello stesso scatto. Per farlo serviva poter
 guardare una stanza a luce rossa come la si guarda quando la si deve giudicare, e da lì
 `SCATTO_FARO` in `scatto_cupola.gd` — una lampada sulla camera.
+
+## D-102 — Le porte si aprono a 90°, e gli 80 erano una paura mai misurata
+
+**Contesto.** Giocando, le porte «non si aprono mai del tutto»: restano socchiuse.
+
+**Cosa c'era.** `apertura_gradi = 80.0`, con una motivazione scritta ma mai
+verificata — «una porta aperta a filo di muro sembra smontata». Nessuno aveva mai
+misurato *dove* l'anta sbatte davvero.
+
+**La misura.** Il banco adesso prova la sagoma dell'anta grado per grado contro
+tutta la scena (`intersect_shape`, box stretta di 2 cm per lato perché sfiorare il
+telaio non è sbattere). Nessuna porta tocca niente prima di **102°**; la più
+generosa arriva a 118. Gli ottanta gradi non proteggevano da nulla.
+
+**Decisione.** 90°. Resta un margine di dodici gradi sulla porta peggiore.
+
+**Perché è una voce di log.** Il numero da solo si cambia in un secondo; quello che
+vale è il controllo che adesso lo tiene onesto: alzarlo a 125 fa fallire il banco su
+tutte e sette. Un tetto d'apertura senza una misura dello spazio disponibile è un
+numero inventato, e c'è rimasto per mesi.
+
+## D-103 — Chi apre una porta in corridoio fa un passo indietro, non si appiattisce al muro
+
+**Contesto.** Tre porte su sette (magazzino, corridoio→spazio, disimpegno) si
+fermavano fra i 58 e i 68 gradi con chi le apre davanti, e sembravano rotte.
+
+**La causa.** La spinta di D-088 scosta **perpendicolarmente all'anta**, ed è la
+direzione giusta — è come spinge una porta vera. Ma `move_and_collide` non scivola:
+in corridoio, dopo mezzo metro c'è la parete opposta, la spinta muore lì e l'anta si
+ferma a filo. Funzionava in mezzo a una stanza e falliva esattamente dove serviva.
+
+**La cura.** Il residuo dell'urto si gira lungo il muro (`get_remainder().slide()`).
+Chi apre una porta in corridoio non si appiattisce contro la parete: fa un passo
+indietro *lungo* il corridoio, ed è quello che adesso succede. Corridoio→spazio passa
+da 66 a 90 gradi, disimpegno da 68 a 74. Il tetto di velocità non cambia: il residuo
+scivolato è più corto della spinta, quindi resta sotto `SPINTA_MASSIMA`.
+
+**Cosa NON è cambiato.** Il magazzino resta a 58 gradi con qualcuno piantato davanti:
+lì la spinta arriva quasi perpendicolare al muro e lo scivolamento non produce niente.
+È corretto così — davanti a una porta stretta che si apre verso di te, un passo di
+lato lo devi fare tu. Appena ti muovi la porta finisce da sola.
+
+## D-104 — Il banco non chiedeva alla porta di finire la corsa
+
+**Contesto.** `door.gd` promette dal commento che fermarsi a filo di chi apre è una
+*pausa* e non una posa: «il conto si rifà a ogni fotogramma, quindi appena ci si
+sposta la porta finisce di aprirsi da sola». Nessuno lo verificava.
+
+**Perché conta.** È la promessa che rende accettabile tutto il resto. Se fosse falsa,
+ogni porta stretta resterebbe socchiusa per sempre — cioè esattamente ciò che si
+vedeva giocando, e non avrei saputo distinguere le due cause.
+
+**Il controllo.** Dopo la corsa il banco toglie di mezzo il corpo e pretende che
+l'anta arrivi ad `apertura_gradi`. Validato iniettando la resa: basta spegnere il
+`_physics_process` quando l'anta è bloccata e tutte e sette si fermano a 8 gradi.

@@ -2571,7 +2571,7 @@ shadow_enabled = false
 [node name="Porta_ingresso" type="StaticBody3D" parent="."]
 transform = Transform3D(1.0000, 0, -0.0000, 0, 1, 0, 0.0000, 0, 1.0000, 10.080, 0.000, 9.500)
 script = ExtResource("3_door")
-apertura_gradi = 80.0
+apertura_gradi = 90.0
 verso = -1
 prompt_text = "Apri"
 
@@ -2602,7 +2602,7 @@ shape = SubResource("s_82")
 [node name="Porta_cucina" type="StaticBody3D" parent="."]
 transform = Transform3D(1.0000, 0, -0.0000, 0, 1, 0, 0.0000, 0, 1.0000, 8.880, 0.000, 4.100)
 script = ExtResource("3_door")
-apertura_gradi = 80.0
+apertura_gradi = 90.0
 verso = 1
 prompt_text = "Apri"
 
@@ -2618,7 +2618,7 @@ shape = SubResource("s_93")
 [node name="Porta_corridoio_a_spazio" type="StaticBody3D" parent="."]
 transform = Transform3D(0.0000, 0, 1.0000, 0, 1, 0, -1.0000, 0, 0.0000, 8.250, 0.000, 6.070)
 script = ExtResource("3_door")
-apertura_gradi = 80.0
+apertura_gradi = 90.0
 verso = -1
 prompt_text = "Apri"
 
@@ -2634,7 +2634,7 @@ shape = SubResource("s_93")
 [node name="Porta_pc_a_corridoio" type="StaticBody3D" parent="."]
 transform = Transform3D(1.0000, 0, -0.0000, 0, 1, 0, 0.0000, 0, 1.0000, 6.530, 0.000, 4.400)
 script = ExtResource("3_door")
-apertura_gradi = 80.0
+apertura_gradi = 90.0
 verso = 1
 prompt_text = "Apri"
 
@@ -2650,7 +2650,7 @@ shape = SubResource("s_85")
 [node name="Porta_magazzino" type="StaticBody3D" parent="."]
 transform = Transform3D(1.0000, 0, -0.0000, 0, 1, 0, 0.0000, 0, 1.0000, 3.755, 0.000, 6.500)
 script = ExtResource("3_door")
-apertura_gradi = 80.0
+apertura_gradi = 90.0
 verso = -1
 prompt_text = "Apri"
 
@@ -2746,7 +2746,7 @@ shape = SubResource("s_71")
 [node name="Porta_bagno" type="StaticBody3D" parent="."]
 transform = Transform3D(-1.0000, 0, -0.0000, 0, 1, 0, 0.0000, 0, -1.0000, 7.020, 0.000, 6.500)
 script = ExtResource("3_door")
-apertura_gradi = 80.0
+apertura_gradi = 90.0
 verso = 1
 prompt_text = "Apri"
 
@@ -2762,7 +2762,7 @@ shape = SubResource("s_85")
 [node name="Porta_disimpegno" type="StaticBody3D" parent="."]
 transform = Transform3D(1.0000, 0, -0.0000, 0, 1, 0, 0.0000, 0, 1.0000, 0.405, 0.000, 6.500)
 script = ExtResource("3_door")
-apertura_gradi = 80.0
+apertura_gradi = 90.0
 verso = -1
 prompt_text = "Apri"
 

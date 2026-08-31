@@ -40,9 +40,12 @@
 class_name Door
 extends Interactable
 
-## Quanto si spalanca. Ottanta gradi e non novanta: una porta aperta a filo di
-## muro sembra smontata, e questi dieci gradi la fanno leggere come una porta.
-@export var apertura_gradi: float = 80.0
+## Quanto si spalanca. NOVANTA, ed è una misura, non un gusto: il banco prova la
+## sagoma dell'anta grado per grado contro tutto il resto e la porta più stretta
+## gira libera fino a 102°. Ottanta erano un margine inventato per una paura — che
+## l'anta sparisse contro il muro — di cui nessuno aveva mai misurato il bisogno, e
+## in gioco si leggevano come una porta che non si apre mai del tutto.
+@export var apertura_gradi: float = 90.0
 
 ## Da che parte gira: +1 o -1 rispetto alla rotazione a battente chiuso. Lo
 ## scrive il generatore, che lo ricava dalla normale del muro.
@@ -214,7 +217,16 @@ func _fa_largo(voluto: float, delta: float) -> float:
 	var normale := (p - vicino).normalized() if distanza > 1e-4 else Vector2(-verso_anta.y, verso_anta.x)
 	var quanto := minf(voglio - distanza, SPINTA_MASSIMA * delta)
 	var fuori := chiusa.basis * Vector3(normale.x, 0.0, -normale.y * signf(verso))
-	_chi.move_and_collide(fuori * quanto)
+	var urto := _chi.move_and_collide(fuori * quanto)
+	if urto != null:
+		# CONTRO UN MURO NON CI SI FERMA: CI SI SCIVOLA LUNGO. Spingere solo di fianco
+		# funziona in mezzo a una stanza e fallisce proprio dove serve — in corridoio,
+		# dove dopo mezzo metro c'è la parete opposta e la spinta muore lì. L'anta si
+		# fermava a filo, e le tre porte strette restavano socchiuse a sessanta gradi.
+		# Chi apre una porta in corridoio non si appiattisce al muro: fa un passo
+		# INDIETRO lungo il corridoio. Il resto della spinta gira lungo il muro e fa
+		# esattamente quel passo.
+		_chi.move_and_collide(urto.get_remainder().slide(urto.get_normal()))
 
 	# SE IL MURO HA FERMATO LA SPINTA, SI APRE DI MENO. In un locale stretto non
 	# c'e' indietro dove andare, e insistere significherebbe far passare l'anta

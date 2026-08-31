@@ -80,6 +80,7 @@ func _physics_process(delta: float) -> bool:
 			var p := nodo as Door
 			if p != null:
 				_porte.append(p)
+		_quanto_girano()
 	if _quale >= _porte.size():
 		return _conclusione()
 
@@ -93,9 +94,17 @@ func _physics_process(delta: float) -> bool:
 			_restano -= 1
 			if _restano <= 0:
 				_bilancio(porta)
-				_apparecchia(porta, -1)  # dalla parte opposta
+				# ci si toglie di mezzo: da qui in poi niente la trattiene
+				_posa(_corpo, porta.global_position + Vector3(0.0, 30.0, 0.0))
+				_restano = CORSA
 				_fase = 2
 		2:
+			_restano -= 1
+			if _restano <= 0:
+				_finisce(porta)
+				_apparecchia(porta, -1)  # dalla parte opposta
+				_fase = 3
+		3:
 			_sorveglia(porta, delta, false)
 			_restano -= 1
 			if _restano <= 0:
@@ -203,3 +212,50 @@ func _posa(corpo: CharacterBody3D, dove: Vector3) -> void:
 	corpo.force_update_transform()
 	PhysicsServer3D.body_set_state(corpo.get_rid(),
 		PhysicsServer3D.BODY_STATE_TRANSFORM, corpo.global_transform)
+
+
+## L'ANTA DEVE FINIRE LA CORSA QUANDO CHI L'HA APERTA SI SPOSTA. Fermarsi a filo di
+## chi apre e' voluto - dietro c'e' un muro - ma e' voluto come una PAUSA, non come
+## una posa: la promessa scritta in `door.gd` e' che il conto si rifa' ogni
+## fotogramma. Se non fosse vera, ogni porta stretta resterebbe socchiusa per sempre
+## e sembrerebbe rotta, che e' esattamente come la si vede giocando.
+func _finisce(porta: Door) -> void:
+	var anta := rad_to_deg(porta.rotation.y - porta.get("_chiusa_y")) * signf(porta.verso)
+	if anta < porta.apertura_gradi - 1.0:
+		_guasti.append("%s: tolto di mezzo il corpo resta a %.0f gradi invece di %.0f"
+			% [porta.name, anta, porta.apertura_gradi])
+
+
+## Quanti gradi l'anta gira A VUOTO prima di sbattere in qualcosa.
+##
+## E' il tetto vero dell'apertura e NON si deduce dalla pianta: dipende da cosa nel
+## frattempo e' finito dietro la porta. Si prova la scatola dell'anta grado per
+## grado contro tutto il resto della scena - e la si stringe di due centimetri per
+## lato, perche' sfiorare il telaio non e' sbattere.
+func _quanto_girano() -> void:
+	var spazio := _scena.get_world_3d().direct_space_state
+	for porta in _porte:
+		var col := porta.get_node(^"Col") as CollisionShape3D
+		var box := col.shape as BoxShape3D
+		var prova := BoxShape3D.new()
+		prova.size = Vector3(box.size.x - 0.04, box.size.y - 0.04, box.size.z)
+		var par := PhysicsShapeQueryParameters3D.new()
+		par.shape = prova
+		par.exclude = [porta.get_rid(), _corpo.get_rid()]
+		var y0: float = porta.get("_chiusa_y")
+		var g := 0.0
+		var libera := 130.0
+		while g <= 130.0:
+			var t := Transform3D(Basis(Vector3.UP, y0 + deg_to_rad(g) * signf(porta.verso)),
+				porta.global_position)
+			par.transform = t * col.transform
+			if not spazio.intersect_shape(par, 1).is_empty():
+				libera = g - 1.0
+				break
+			g += 1.0
+		print("  %-26s gira libera fino a %3.0f gradi (si ferma a %.0f)"
+			% [porta.name, libera, porta.apertura_gradi])
+		if libera < porta.apertura_gradi:
+			_guasti.append("%s: si apre a %.0f gradi ma sbatte gia' a %.0f"
+				% [porta.name, porta.apertura_gradi, libera])
+	print("")

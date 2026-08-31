@@ -608,7 +608,7 @@ def tscn():
                   'transform = Transform3D(%.4f, 0, %.4f, 0, 1, 0, %.4f, 0, %.4f, %.3f, 0.000, %.3f)'
                   % (c, -s_, s_, c, px, pz),
                   'script = ExtResource("3_door")',
-                  'apertura_gradi = 80.0',
+                  'apertura_gradi = 90.0',
                   'verso = %d' % verso,
                   'prompt_text = "Apri"', '',
                   ]

@@ -3752,3 +3752,38 @@ Il banco misura anche la corsa di ritorno: 6,25 s, la stessa dell'andata.
 **Iniettato il difetto che i due controlli esistono per prendere** — una sorgente che
 ignora i comandi negativi — e gridano tutti e due: la sonda «NON SI RICHIUDE», il banco
 «ATTESO: negativa, il battente torna».
+
+## D-166 — Da seduti ci si guarda intorno, e la sedia gira
+
+**31 agosto 2026, suggerimento di Federico:** «se uno vuole vedere la cupola che si apre
+sarebbe bello poter muovere la visuale liberamente». Aveva colto una contraddizione che era
+nel disegno e che non avevo visto: **il comando è a uomo presente, quindi per aprire la
+cupola devi restare seduto; e da seduti la testa era inchiodata allo schermo.** L'unica
+cosa che il giocatore poteva vedere della fase 1 era una barra che si riempie.
+
+**La cupola dalla postazione SI VEDE**, ed è la ragione per cui questa correzione è piccola
+invece che grande: fra la sala di controllo e la sala del telescopio c'è una vetrata, e il
+monitor ci sta proprio davanti. Mancava solo poter alzare lo sguardo. Fotografato da
+seduti, testa a 6,16 · 1,15 · 2,00, imbardata 98°, alzata 32°: si vede la calotta con la
+sua ossatura e, dentro la fenditura, il cielo.
+
+**Imbardata sul corpo, beccheggio sulla testa,** identico a quando si è in piedi. E girare
+il corpo da seduti non sposta la testa di un millimetro: il marcatore del sedile sta dritto
+sopra l'origine del corpo, quindi ruotare attorno alla verticale è **esattamente una sedia
+girevole**. Non serve nessuna aritmetica in più.
+
+**Si torna com'era alzandosi, senza una riga apposta:** `_leave()` rimetteva già il corpo
+nella posa di prima e la testa al beccheggio di prima, che sono precisamente le due cose
+che il guardarsi intorno cambia.
+
+**Il cursore si ricattura sedendosi, e non c'è un tasto per liberarlo da seduti.** È una
+scelta: ESC da seduti è già il tasto che chiude il terminale e la BBS, e prenderlo qui
+vorrebbe dire rubarglielo — questo nodo è figlio di chi orchestra, e in `_unhandled_input`
+i figli passano prima. La via d'uscita è `E`: ci si alza, il controller torna acceso, e da
+lì ESC fa quel che ha sempre fatto. Due tasti invece di uno, in cambio di nessun conflitto.
+
+**Sensibilità e limite di beccheggio sono ricopiati da `world/player/player.gd`,** e la
+copia è deliberata: `crt/` non conosce `world/` — è un sistema generico che riceve un
+`Control` e non sa nemmeno di stare in un osservatorio. Importare il giocatore per due
+costanti aprirebbe una porta che la tabella dei confini tiene chiusa. Il giorno in cui la
+sensibilità diventerà un'impostazione, sarà un dato che arriva a tutti e due da fuori.

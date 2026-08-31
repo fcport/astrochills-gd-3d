@@ -63,6 +63,7 @@ var _premuto := false
 var _ultimo_secondo := 0
 var _richiuso := false
 var _da_dove := 0.0
+var _girato := false
 
 
 func _ready() -> void:
@@ -108,7 +109,12 @@ func _process(d: float) -> void:
 			print("[cupola] %-14s chiusa, baricentro a %s" % [n.name, _v(_ingombro(n).get_center())])
 		_fessura(lastre, "da chiusa")
 
-		_inquadra(lastre)
+		# IN PARTITA NON SI PIAZZA NESSUNA CAMERA LIBERA: si guarda con la testa del
+		# giocatore, seduto al suo posto. È l'unico modo di sapere se dalla
+		# postazione la cupola SI VEDE — che è la domanda, e a cui una camera messa
+		# dove fa comodo risponderebbe di sì sempre.
+		if OS.get_environment("PARTITA").is_empty():
+			_inquadra(lastre)
 		if not OS.get_environment("CHIUSA").is_empty():
 			_fase = 3
 			return
@@ -222,6 +228,20 @@ func _process(d: float) -> void:
 		_fase = 1
 		_tempo = 0.0
 		_ultimo_secondo = 99
+		return
+
+	if _fase == 2 and _conto > 6 and _partita and not _girato:
+		_girato = true
+		_conto = 0
+		# La testa gira verso la cupola, con lo stesso mestiere del mouse: imbardata
+		# sul corpo, beccheggio sulla camera.
+		var g := Player.find_in(get_tree())
+		var cam := g.camera()
+		var verso: Vector3 = _mezzo_battenti() - cam.global_position
+		g.rotation.y = atan2(-verso.x, -verso.z)
+		cam.rotation.x = atan2(verso.y, Vector2(verso.x, verso.z).length())
+		print("[cupola] la testa e' a %s e guarda la cupola: imbardata %.0f gradi, alzata %.0f"
+			% [_v(cam.global_position), rad_to_deg(g.rotation.y), rad_to_deg(cam.rotation.x)])
 		return
 
 	if _fase == 2 and _conto > 6:
@@ -443,6 +463,16 @@ func _lastre(s: DomeShutter) -> Array[Node3D]:
 		if n != null:
 			fuori.append(n)
 	return fuori
+
+
+## Il punto di mezzo fra i due battenti: il centro della cupola, in pratica.
+func _mezzo_battenti() -> Vector3:
+	var s := DomeShutter.find_in(get_tree())
+	var m := Vector3.ZERO
+	var lastre := _lastre(s)
+	for n in lastre:
+		m += n.global_position
+	return m / float(maxi(lastre.size(), 1))
 
 
 func _fine() -> void:

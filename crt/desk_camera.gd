@@ -17,6 +17,33 @@ signal left()
 const TRANSITION := 0.5
 const SEATED_FOV := 42.0
 
+## Da seduti ci si guarda intorno, e la sedia gira.
+##
+## PERCHÉ ESISTE. La cupola si comanda dal PC e si apre mentre tieni il dito sul
+## pulsante: chi vuole VEDERLA aprirsi non può alzarsi, perché alzandosi il motore
+## si ferma. Dalla postazione la cupola si vede — c'è una vetrata fra la sala di
+## controllo e la sala del telescopio — ma solo se si può alzare lo sguardo. Senza
+## questo, l'unica cosa che il giocatore vede della fase 1 è una barra che si
+## riempie.
+##
+## L'IMBARDATA VA SUL CORPO E IL BECCHEGGIO SULLA TESTA, come in piedi. E girare il
+## corpo da seduti non sposta la testa di un millimetro: il marcatore del sedile è
+## dritto sopra l'origine del corpo (`_cam.position` è una traslazione verticale
+## pura), quindi ruotare attorno a Y è esattamente una sedia girevole.
+##
+## SI TORNA COM'ERA ALZANDOSI, senza codice apposta: `_leave()` rimette il corpo
+## nella posa di prima e la testa al beccheggio di prima, che sono le stesse due
+## cose che il guardarsi intorno ha cambiato.
+##
+## I DUE NUMERI SONO RICOPIATI DA `world/player/player.gd`, e la copia è
+## deliberata: `crt/` non conosce `world/` — è un sistema generico che riceve un
+## `Control` e non sa nemmeno di stare in un osservatorio — e importare il
+## giocatore per due costanti aprirebbe una porta che la tabella dei confini tiene
+## chiusa. Se un giorno la sensibilità diventerà un'impostazione, sarà un dato che
+## arriva a tutti e due da fuori, non un file che ne importa un altro.
+const MOUSE_SENSITIVITY := 0.0022
+const PITCH_LIMIT := deg_to_rad(89.0)
+
 var is_seated := false
 
 var _player: Node3D
@@ -129,7 +156,40 @@ func _sit() -> void:
 
 	is_seated = true
 	_busy = false
+	# IL CURSORE SI RICATTURA, e va detto perché è un cambio di stato che il
+	# giocatore sente. Chi orchestra ha spento il controller per sedersi, e
+	# spegnendolo il giocatore libera il cursore (giustamente: chi non guarda più
+	# intorno non deve restare prigioniero della finestra). Da seduti si guarda
+	# intorno di nuovo, quindi il cursore serve catturato.
+	#
+	# NON C'È UN TASTO PER LIBERARLO DA SEDUTI, ed è una scelta e non una
+	# dimenticanza: ESC da seduti è già il tasto che chiude il terminale e la BBS, e
+	# prenderlo qui vorrebbe dire rubarglielo — questo nodo è figlio di chi
+	# orchestra, e in `_unhandled_input` i figli passano prima. La via d'uscita è
+	# `E`: ci si alza, il controller torna acceso, e da lì ESC fa quel che ha
+	# sempre fatto. Due tasti invece di uno, in cambio di nessun conflitto.
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	seated.emit()
+
+
+## Il mouse gira la testa, da seduti come in piedi.
+##
+## `_unhandled_input` e non `_input`: gli schermi del CRT — il terminale, la BBS,
+## le fasi — devono poter prendere quello che è loro prima che questo nodo ci metta
+## le mani. Un movimento del mouse non lo vuole nessuno di loro, e infatti arriva
+## sempre fin qui; una pressione di tasto invece sì, e non deve arrivarci.
+func _unhandled_input(event: InputEvent) -> void:
+	if not is_seated or _busy or _player == null or _cam == null:
+		return
+	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+		return
+	var motion := event as InputEventMouseMotion
+	if motion == null:
+		return
+	_player.rotate_y(-motion.relative.x * MOUSE_SENSITIVITY)
+	_cam.rotation.x = clampf(
+		_cam.rotation.x - motion.relative.y * MOUSE_SENSITIVITY,
+		-PITCH_LIMIT, PITCH_LIMIT)
 
 
 func _leave() -> void:

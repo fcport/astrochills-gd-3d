@@ -51,7 +51,7 @@ for _m in ("geometria", "modellare"):
         importlib.reload(sys.modules[_m])
 from geometria import ARREDI_BAGNO, SALA_BAGNO, W_SILL   # noqa: E402
 from modellare import (COLORI, cilindro, cilindro_orizz, esporta,   # noqa: E402
-                       finisci, usa_le_ridotte,
+                       finisci, raddrizza_normali, usa_le_ridotte,
                        lampada, posa_modello, prepara_render, pulisci, scatola,
                        verifica_impronte)
 
@@ -174,6 +174,7 @@ def armadio():
     """
     xi, z0, x1, z1, alto = IMPRONTE["Armadio"]
     x0 = xi + 0.07          # il filo dell'anta: i 7 cm davanti sono le maniglie
+    x1 = x1 - SPESS         # e la schiena si ferma sulla piastrella, non dentro
     zoccolo = 0.10
     M = "Armadietto"
     # LA CASSA, E GLI ASSI VANNO GUARDATI DUE VOLTE. L'armadio e' addossato alla
@@ -208,11 +209,11 @@ def armadio():
                     za + 0.062, zb - 0.062)
     # le maniglie a bastone, verticali, ai due lati della fuga
     for zz in (meta - 0.055, meta + 0.055):
-        cilindro("Inox", xa - 0.052, zz, 0.95, 1.28, 0.011, seg=8)
+        cilindro("Cromo", xa - 0.052, zz, 0.95, 1.28, 0.011, seg=8)
         for y in (0.95, 1.28):
-            cilindro_orizz("Inox", xa - 0.035, y, zz, "x", 0.035, 0.009)
+            cilindro_orizz("Cromo", xa - 0.035, y, zz, "x", 0.035, 0.009)
     # la serratura a chiave: un armadio di servizio si chiude
-    cilindro("Inox", xa - 0.006, meta - 0.12, 1.12, 1.13, 0.013, seg=10)
+    cilindro("Cromo", xa - 0.006, meta - 0.12, 1.12, 1.13, 0.013, seg=10)
 
 
 # --- il mobiletto e lo specchio ----------------------------------------------
@@ -220,6 +221,11 @@ def pensile():
     """Appeso al muro nord: noce scuro e anta a specchio. E' il pezzo della foto."""
     x0, z0, x1, z1, alto = IMPRONTE["Pensile"]
     basso, cima = 1.45, alto
+    # IL MURO NON E' A z0: LI' C'E' LA PIASTRELLA. Il rivestimento e' spesso poco piu'
+    # di un centimetro e il pensile partiva dal filo del muro, cioe' dentro le
+    # piastrelle - e in gioco si vedeva la fuga passare attraverso il fianco del
+    # mobile. Un pensile si appende SOPRA il rivestimento, non dentro.
+    z0 = z0 + SPESS
     zf = z1 - 0.004
     # cassa
     scatola("LegnoTeche", x0, x1, basso, cima, z0, z1)
@@ -231,40 +237,71 @@ def pensile():
                          (x0, basso, x0 + 0.05, cima), (x1 - 0.05, basso, x1, cima)):
         scatola("LegnoTeche", a, c, b, d, zf, zf + 0.014)
     # il pomello
-    cilindro_orizz("Inox", x1 - 0.10, (basso + cima) / 2, zf + 0.02, "z", 0.03, 0.012)
+    cilindro_orizz("Cromo", x1 - 0.10, (basso + cima) / 2, zf + 0.02, "z", 0.03, 0.012)
 
 
 def sopra_il_lavabo():
-    """Specchio, mensola e applique: il muro ovest sopra il lavabo."""
-    x0, z0, x1, z1, _alto = IMPRONTE["Lavabo"]
-    xf = x0 + SPESS + SPORGE
-    # lo specchio, con la cornice di alluminio
-    scatola("Specchio", xf, xf + 0.006, 1.05, 1.75, z0 + 0.04, z1 - 0.04)
-    for (a, b) in ((1.05, 1.075), (1.725, 1.75)):
-        scatola("Inox", xf, xf + 0.016, a, b, z0 + 0.03, z1 - 0.03)
-    for zz in (z0 + 0.04, z1 - 0.04):
-        scatola("Inox", xf, xf + 0.016, 1.05, 1.75, zz - 0.012, zz + 0.012)
-    # la mensola di cristallo sotto lo specchio, con i due reggi-mensola
-    scatola("Vetrina", xf, xf + 0.13, 0.99, 1.006, z0 + 0.03, z1 - 0.03)
-    for zz in (z0 + 0.08, z1 - 0.08):
-        scatola("Inox", xf, xf + 0.05, 0.975, 0.99, zz - 0.015, zz + 0.015)
-    # l'applique sopra lo specchio: carcassa e tubo, SPENTO come tutti gli altri
-    # diffusori del progetto (la faccia accesa sta nella scena, non nel modello)
-    # CERAMICA E NON LAMIERA. La lamiera di questo progetto e' quella verniciata e
-    # segnata delle plafoniere industriali: sopra uno specchio da bagno leggeva come
-    # un pezzo arrugginito. Un'applique da bagno e' metallo smaltato bianco liscio.
-    scatola("Ceramica", xf, xf + 0.075, 1.82, 1.90, z0 + 0.09, z1 - 0.09)
-    cilindro_orizz("Neon", xf + 0.045, 1.855, (z0 + z1) / 2, "z", z1 - z0 - 0.24, 0.016)
+    """Sopra il lavabo NON C'E' NIENTE, e ci sono voluti due giri per arrivarci.
+
+    Qui stavano uno specchio con la cornice, una mensola di cristallo, i suoi due
+    reggi-mensola e un'applique. Tutti e quattro tolti su richiesta, e la richiesta
+    ha ragione: e' il bagno di servizio di un osservatorio, non una stanza da bagno
+    di casa. I due reggi-mensola in particolare erano il sintomo - da un metro e
+    mezzo non si capiva cosa fossero, e un oggetto che non si riconosce e' un oggetto
+    che non serve.
+
+    Lo specchio in stanza c'e' lo stesso: e' l'anta del pensile.
+
+    La funzione resta, vuota, perche' la sua chiamata nella costruzione dice DOVE
+    guardare se un giorno sopra il lavabo dovra' tornarci qualcosa.
+    """
+    return
 
 
 def portasalviette():
+    """La barra e l'asciugamano piegato in due, che e' l'unico colore della stanza."""
     x0, z0, x1, z1, _alto = IMPRONTE["Portasalv"]
     xf = x0 + SPESS + SPORGE
+    barra = 1.22
     for zz in (z0 + 0.05, z1 - 0.05):
-        cilindro("Inox", xf + 0.04, zz, 1.05, 1.22, 0.010, seg=8)
-    cilindro_orizz("Inox", xf + 0.04, 1.22, (z0 + z1) / 2, "z", z1 - z0 - 0.10, 0.010)
-    # l'asciugamano piegato in due, che e' l'unica macchia di colore della stanza
-    scatola("Spugna", xf + 0.018, xf + 0.062, 0.86, 1.23, z0 + 0.10, z1 - 0.10)
+        cilindro("Cromo", xf + 0.04, zz, 1.05, barra, 0.010, seg=8)
+    cilindro_orizz("Cromo", xf + 0.04, barra, (z0 + z1) / 2, "z", z1 - z0 - 0.10,
+                   0.010, seg=10)
+    asciugamano(xf + 0.04, barra, (z0 + z1) / 2, z1 - z0 - 0.20)
+
+
+def asciugamano(x, barra, cz, largo):
+    """Un telo piegato sulla barra, NON una lastra.
+
+    Prima era una scatola: quattro centimetri di spessore, spigoli vivi, e da vicino
+    si vedeva un rettangolo verde appoggiato al muro. Un asciugamano appeso ha tre
+    cose che una scatola non ha, e sono tutte e tre geometria:
+
+      * LA PIEGA sopra la barra, che e' un mezzo tubo e non uno spigolo;
+      * DUE FALDE di lunghezza diversa - chi lo appende non le pareggia mai - e
+        quella davanti copre quella dietro;
+      * L'ONDA. Un telo appeso non e' piano: si gonfia dove pende e rientra dove il
+        peso lo tira. Qui sono cinque strisce con la faccia spostata di pochi
+        millimetri una dall'altra, ed e' quel poco che lo fa leggere come stoffa.
+    """
+    M = "Spugna"
+    sp = 0.008
+    # la piega sopra la barra
+    cilindro_orizz(M, x, barra, cz, "z", largo, 0.016, seg=10)
+    n = 5
+    passo = largo / n
+    for k in range(n):
+        za = cz - largo / 2 + passo * k
+        zb = za + passo - 0.002
+        # l'onda: le strisce si spostano avanti e indietro di pochi millimetri
+        onda = 0.006 * (1 if k % 2 == 0 else -1)
+        # davanti, piu' lunga
+        scatola(M, x - 0.016 + onda, x - 0.016 + onda + sp, 0.83, barra, za, zb)
+        # dietro, piu' corta e senza onda: sta appoggiata al muro
+        scatola(M, x + 0.010, x + 0.010 + sp, 0.90, barra, za, zb)
+    # il bordo inferiore, un filo piu' spesso: e' l'orlo cucito
+    scatola(M, x - 0.018, x - 0.018 + sp + 0.004, 0.83, 0.845,
+            cz - largo / 2, cz + largo / 2)
 
 
 def termosifone():
@@ -322,12 +359,12 @@ def termosifone():
 
     # LA VALVOLA e il detentore, uno per capo, e lo sfiato in cima. Sono i tre pezzi
     # che dicono che ci passa dentro dell'acqua.
-    cilindro("Inox", x0 + 0.02, zc, piede + 0.010, piede + 0.075, 0.020, seg=10)
-    cilindro_orizz("Inox", x0 - 0.01, piede + 0.018, zc, "x", 0.06, 0.014, seg=8)
-    cilindro("Inox", x0 + 0.02, zc, piede + 0.075, piede + 0.115, 0.026, seg=10)
-    cilindro("Inox", x1 - 0.02, zc, piede + 0.010, piede + 0.070, 0.018, seg=10)
-    cilindro_orizz("Inox", x1 + 0.01, piede + 0.018, zc, "x", 0.06, 0.014, seg=8)
-    cilindro_orizz("Inox", x1 - 0.03, cima - 0.010, zc, "x", 0.035, 0.010, seg=8)
+    cilindro("Cromo", x0 + 0.02, zc, piede + 0.010, piede + 0.075, 0.020, seg=10)
+    cilindro_orizz("Cromo", x0 - 0.01, piede + 0.018, zc, "x", 0.06, 0.014, seg=8)
+    cilindro("Cromo", x0 + 0.02, zc, piede + 0.075, piede + 0.115, 0.026, seg=10)
+    cilindro("Cromo", x1 - 0.02, zc, piede + 0.010, piede + 0.070, 0.018, seg=10)
+    cilindro_orizz("Cromo", x1 + 0.01, piede + 0.018, zc, "x", 0.06, 0.014, seg=8)
+    cilindro_orizz("Cromo", x1 - 0.03, cima - 0.010, zc, "x", 0.035, 0.010, seg=8)
 
 
 # --- i sanitari: da fuori se ci sono, segnaposto se no ------------------------
@@ -341,7 +378,7 @@ def wc_segnaposto():
     scatola("Bianco", x0 + 0.06, x1 - 0.14, 0.40, 0.43, z0 + 0.02, z1 - 0.02)
     # la cassetta appoggiata, che nel 1999 era ancora la norma
     scatola("CeramicaVecchia", x1 - 0.20, x1, 0.43, 0.80, z0 + 0.03, z1 - 0.03)
-    cilindro("Inox", x1 - 0.10, cz, 0.80, 0.82, 0.022, seg=10)
+    cilindro("Cromo", x1 - 0.10, cz, 0.80, 0.82, 0.022, seg=10)
 
 
 def bidet_segnaposto():
@@ -349,8 +386,8 @@ def bidet_segnaposto():
     cx, cz = (x0 + x1) / 2, (z0 + z1) / 2
     cilindro("CeramicaVecchia", cx + 0.03, cz, 0.0, 0.22, 0.09, seg=12, r2=0.14)
     cilindro("CeramicaVecchia", cx + 0.03, cz, 0.22, 0.40, 0.14, seg=12, r2=0.17)
-    cilindro("Inox", x1 - 0.07, cz, 0.40, 0.52, 0.018, seg=10)
-    cilindro_orizz("Inox", x1 - 0.13, 0.51, cz, "x", 0.09, 0.012)
+    cilindro("Cromo", x1 - 0.07, cz, 0.40, 0.52, 0.018, seg=10)
+    cilindro_orizz("Cromo", x1 - 0.13, 0.51, cz, "x", 0.09, 0.012)
 
 
 def rubinetto_lavabo(quota):
@@ -368,12 +405,12 @@ def rubinetto_lavabo(quota):
     x0, z0, x1, z1, _a = IMPRONTE["Lavabo"]
     cz = (z0 + z1) / 2
     xr = x0 + 0.10
-    cilindro("Inox", xr, cz, quota, quota + 0.15, 0.021, seg=10)
+    cilindro("Cromo", xr, cz, quota, quota + 0.15, 0.021, seg=10)
     # il becco sporge 14 cm sopra il bacino: a dieci restava dentro il bordo del
     # lavabo e da fermi davanti si vedeva solo il corpo del miscelatore
-    cilindro_orizz("Inox", xr + 0.075, quota + 0.145, cz, "x", 0.15, 0.013)
+    cilindro_orizz("Cromo", xr + 0.075, quota + 0.145, cz, "x", 0.15, 0.013)
     # la leva, inclinata all'indietro come sta una leva alzata a meta'
-    scatola("Inox", xr - 0.012, xr + 0.014, quota + 0.15, quota + 0.185,
+    scatola("Cromo", xr - 0.012, xr + 0.014, quota + 0.15, quota + 0.185,
             cz + 0.008, cz + 0.055)
 
 
@@ -510,6 +547,9 @@ def sanitari():
         if os.path.exists(via) and not bocciato:
             pezzi = posa_modello(via, (x0, z0, x1, z1, alto), gradi=gradi)
             MONTATI[quale] = pezzi
+            girate = raddrizza_normali(pezzi)
+            if girate:
+                print("  %-8s %d facce avevano la normale al contrario" % (quale, girate))
             # LE MAPPE RIDOTTE, e la metallicita' a zero. Una ceramica non e' un
             # metallo: la mappa metallicRoughness dei sanitari, presa com'e', la
             # farebbe specchiare, e in un bagno chiuso lo specchio e' nero.
@@ -699,7 +739,7 @@ termosifone()
 sanitari()
 
 _prova = prova_ingiallisci()
-oggetti = finisci(morbidi=("Ceramica", "CeramicaVecchia", "Inox", "Radiatore"))
+oggetti = finisci(morbidi=("Ceramica", "CeramicaVecchia", "Cromo", "Radiatore"))
 
 # IL GUSCIO NON HA IMPRONTA, ED E' GIUSTO COSI'. Rivestimento, listello e pavimento
 # non sono arredi: sono uno strato di un centimetro incollato a superfici che la
@@ -777,6 +817,11 @@ scatta("bagno.png", (5.90, 1.62, 8.80), (8.10, 0.75, 7.05), lente=24.0)
 scatta("bagno-lavabo.png", (6.60, 1.62, 8.10), (5.05, 1.20, 8.55), lente=24.0)
 # l'armadio e la finestra
 scatta("bagno-armadio.png", (5.60, 1.62, 7.20), (7.90, 1.10, 9.20), lente=22.0)
+# LA STESSA INQUADRATURA DELLO SCATTO IN GIOCO, per confrontare mela con mela: in
+# Godot dentro il catino del lavabo compare una striscia nera a spigolo vivo, e
+# finche' non si guarda lo stesso punto dallo stesso posto non si sa se e' un'ombra
+# del motore o un pezzo di mesh che manca.
+scatta("bagno-catino.png", (5.85, 1.30, 8.52), (4.98, 0.80, 8.52), lente=28.0)
 # il termosifone sotto la finestra, da vicino: le colonne di ghisa si devono contare
 scatta("bagno-termo.png", (6.10, 1.20, 8.30), (6.90, 0.45, 9.30), lente=30.0)
 # il listello da vicino: e' il pezzo che data la stanza, va guardato

@@ -104,6 +104,15 @@ COLORI = {
     # mette accanto. 0,62 lineare fa 205 in sRGB. E' lo stesso scarto di fattore 2,4
     # che fece uscire l'anta del magazzino a meta' della tinta del suo telaio.
     "Radiatore":      (0.62, 0.60, 0.55),
+    # IL CROMO DEL BAGNO, e non e' l'Inox del resto del progetto. `Inox` sta fra i
+    # METALLICI, con metallicita' 0,85: in una sala grande, con qualcosa da
+    # riflettere, funziona. In un bagno chiuso non c'e' niente da riflettere e un
+    # metallo liscio riflette il nero - la barra dell'asciugamano usciva marrone
+    # scuro, e i due reggi-mensola sopra il lavabo erano proprio quei "due cosi
+    # grigi" che non si capiva cosa fossero. Qui la metallicita' e' zero e il
+    # mestiere lo fa lo speculare: legge come cromo lucido senza dipendere
+    # dall'ambiente. Sesta volta che questa trappola si presenta.
+    "Cromo":          (0.72, 0.74, 0.76),
 }
 RUVIDEZZA = {"Metallo": 0.45, "Inox": 0.28, "Rame": 0.35, "Schermo": 0.12,
              "Acceso": 0.20, "Gomma": 0.75, "Ceramica": 0.25, "Smalto": 0.30,
@@ -117,7 +126,7 @@ RUVIDEZZA = {"Metallo": 0.45, "Inox": 0.28, "Rame": 0.35, "Schermo": 0.12,
              "CeramicaVecchia": 0.38,
              # un radiatore verniciato non specchia: 0,42 contro i 0,25 della
              # ceramica smaltata. E' quello che distingue la ghisa dalla porcellana
-             "Radiatore": 0.42}
+             "Radiatore": 0.42, "Cromo": 0.14}
 METALLICI = ("Metallo", "Inox", "Rame", "Ferro")
 # I materiali la cui texture va MOLTIPLICATA per il colore invece che sostituirlo.
 # Di norma il colore e' solo un ripiego per quando la texture manca, e collegare la
@@ -695,6 +704,42 @@ def posa_modello(percorso, impronta, gradi=0.0, riempi=1.0, appoggio=0.0,
         perno.location.z - (massimi[2] if appeso else minimi[2]) + appoggio)
     bpy.context.view_layer.update()
     return [perno] + nuovi
+
+
+def raddrizza_normali(pezzi):
+    """Rimette le normali verso fuori su un modello preso da fuori.
+
+    UN DIFETTO CHE SI VEDE SOLO IN GIOCO. Blender, davanti a una faccia vista dal
+    retro, gira lui la normale prima di illuminarla: un modello con le normali
+    sbagliate li' si vede benissimo. Godot no - con il culling disattivato la faccia
+    la disegna, ma la illumina con la normale che ha, cioe' rivolta dalla parte
+    opposta alla luce, e viene NERA.
+
+    Il lavabo del bagno aveva una striscia nera a spigolo vivo dentro il catino. In
+    Blender non c'era. Ho cercato prima nelle ombre - ammorbidendo le plafoniere,
+    che era giusto per altri motivi - e la striscia e' rimasta identica: un'ombra si
+    sarebbe sfumata. Quello che non cambia quando cambi la luce non e' un'ombra.
+
+    Torna quante facce ha dovuto girare, che e' il numero da guardare.
+    """
+    import bmesh as _bm
+    girate = 0
+    for o in pezzi:
+        if o.type != "MESH" or o.data is None:
+            continue
+        bm = _bm.new()
+        bm.from_mesh(o.data)
+        prima = sum(1 for f in bm.faces if f.normal.length_squared > 0)
+        _bm.ops.recalc_face_normals(bm, faces=bm.faces)
+        # si contano quelle che hanno cambiato verso confrontando con l'originale
+        for f_vecchia, f_nuova in zip(o.data.polygons, bm.faces):
+            if f_vecchia.normal.dot(f_nuova.normal) < 0:
+                girate += 1
+        bm.to_mesh(o.data)
+        bm.free()
+        o.data.update()
+        _ = prima
+    return girate
 
 
 def usa_le_ridotte(pezzi, cartella, metallico=None):

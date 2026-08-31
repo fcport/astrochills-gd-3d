@@ -2492,3 +2492,56 @@ ventiquattro livelli **più chiaro** dei sanitari invece che appena più scuro: 
 numeri finiscono nel Base Color di Blender, che è lineare, mentre i 212 dei sanitari
 sono in sRGB. 0,62 lineare fa 202. Stesso fattore 2,4 dell'anta del magazzino — e
 nessuno se ne accorge finché non li si mette accanto.
+
+## D-126 — Sopra il lavabo non c'è più niente
+
+Specchio, mensola di cristallo, i suoi due reggi-mensola e l'applique: tolti tutti e
+quattro su richiesta. I reggi-mensola erano il sintomo — «due cosi grigi che non si
+capisce cosa siano» — e un oggetto che da un metro e mezzo non si riconosce è un
+oggetto che non serve. È il bagno di servizio di un osservatorio, non una stanza da
+bagno di casa; lo specchio in stanza resta comunque, sull'anta del pensile.
+
+**E il pensile partiva dentro le piastrelle.** Il rivestimento è spesso poco più di un
+centimetro e il mobile era attaccato al filo del muro: in gioco si vedeva la fuga
+passare attraverso il suo fianco. Un pensile si appende *sopra* il rivestimento. Stessa
+correzione sulla schiena dell'armadio.
+
+## D-127 — L'asciugamano non è una lastra
+
+Era una scatola: quattro centimetri di spessore e spigoli vivi. Un telo appeso ha tre
+cose che una scatola non ha, e sono tutte geometria: **la piega** sopra la barra, che è
+un mezzo tubo e non uno spigolo; **due falde di lunghezza diversa**, perché chi lo
+appende non le pareggia mai; e **l'onda** — cinque strisce con la faccia spostata di
+pochi millimetri una dall'altra. È quel poco che lo fa leggere come stoffa.
+
+## D-128 — La striscia nera nel lavabo: tre ipotesi, e la terza era quella giusta
+
+Dentro il catino compariva una striscia nera a spigolo vivo che sembrava un pezzo di
+modello mancante. **In Blender non c'era.**
+
+1. *Ombra dura della plafoniera.* Le ombre sono state ammorbidite — `light_size = 0.35`,
+   perché una plafoniera è un rettangolo di plastica largo mezzo metro e non un punto —
+   e ha risolto l'acne sotto il rubinetto. La striscia è rimasta **identica**. Quello che
+   non cambia quando cambi la luce non è un'ombra.
+2. *Normali invertite.* Godot, col culling disattivato, disegna una faccia vista da
+   dietro ma la illumina con la normale che ha: viene nera. Blender invece la gira lui
+   prima di illuminarla, ed è per questo che lì non si vedeva niente. Il lavabo ne
+   aveva **5620** e il water 456: raddrizzate. La striscia è rimasta.
+3. *È un'ombra, ma di una superficie girata via dalla luce.* Il test decisivo è stato
+   illuminarla con una lampada in mano: sparisce. Quindi geometria sana, ombra vera.
+
+**Cosa si è fatto e cosa no.** Ogni plafoniera ha adesso una **lampada di rimbalzo** —
+una seconda luce nello stesso punto, debole e senza ombre, portata corta perché senza
+ombre attraversa i muri — che simula la luce riflessa dalle pareti. Il contrasto passa
+da 1:4,5 a 1:4,0. **Non basta**: alzando l'ambiente notturno di sei volte arriva solo a
+1:3,2, e quello sarebbe un prezzo troppo alto per il buio. Quella superficie è girata
+via da *tutte* le sorgenti, e l'unica cura piena è luce indiretta vera. Resta aperta.
+
+## D-129 — Sesta volta: il metallo che riflette il nero
+
+La barra dell'asciugamano usciva marrone scuro. `Inox` sta fra i materiali metallici,
+con metallicità 0,85: in una sala grande, con qualcosa da riflettere, funziona; in un
+bagno chiuso non c'è niente da riflettere e un metallo liscio riflette il nero.
+
+Il bagno usa adesso `Cromo`: metallicità zero, rugosità 0,14, il mestiere lo fa lo
+speculare. Legge come cromo lucido senza dipendere dall'ambiente.

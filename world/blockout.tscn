@@ -2091,6 +2091,17 @@ shadow_blur = 1.2
 shadow_normal_bias = 0.45
 shadow_bias = 0.09
 shadow_enabled = true
+light_size = 0.35
+shadow_blur = 1.6
+
+[node name="Rimbalzo" type="OmniLight3D" parent="Luce_pc/Accesa"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.30, 0)
+light_energy = 0.95
+light_color = Color(1, 0.96, 0.88, 1)
+omni_range = 4.0
+omni_attenuation = 1.6
+light_specular = 0.0
+shadow_enabled = false
 
 [node name="Bagliore" type="MeshInstance3D" parent="Luce_pc/Accesa"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.002, 0)
@@ -2121,6 +2132,17 @@ shadow_blur = 1.2
 shadow_normal_bias = 0.45
 shadow_bias = 0.09
 shadow_enabled = true
+light_size = 0.35
+shadow_blur = 1.6
+
+[node name="Rimbalzo" type="OmniLight3D" parent="Luce_corridoio/Accesa"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.30, 0)
+light_energy = 0.95
+light_color = Color(1, 0.96, 0.88, 1)
+omni_range = 4.0
+omni_attenuation = 1.6
+light_specular = 0.0
+shadow_enabled = false
 
 [node name="Bagliore" type="MeshInstance3D" parent="Luce_corridoio/Accesa"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.002, 0)
@@ -2151,6 +2173,17 @@ shadow_blur = 1.2
 shadow_normal_bias = 0.45
 shadow_bias = 0.09
 shadow_enabled = true
+light_size = 0.35
+shadow_blur = 1.6
+
+[node name="Rimbalzo" type="OmniLight3D" parent="Luce_cucina/Accesa"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.30, 0)
+light_energy = 0.95
+light_color = Color(1, 0.96, 0.88, 1)
+omni_range = 4.0
+omni_attenuation = 1.6
+light_specular = 0.0
+shadow_enabled = false
 
 [node name="Bagliore" type="MeshInstance3D" parent="Luce_cucina/Accesa"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.002, 0)
@@ -2181,6 +2214,17 @@ shadow_blur = 1.2
 shadow_normal_bias = 0.45
 shadow_bias = 0.09
 shadow_enabled = true
+light_size = 0.35
+shadow_blur = 1.6
+
+[node name="Rimbalzo" type="OmniLight3D" parent="Luce_divulg1/Accesa"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.30, 0)
+light_energy = 0.95
+light_color = Color(1, 0.96, 0.88, 1)
+omni_range = 4.0
+omni_attenuation = 1.6
+light_specular = 0.0
+shadow_enabled = false
 
 [node name="Bagliore" type="MeshInstance3D" parent="Luce_divulg1/Accesa"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.002, 0)
@@ -2211,6 +2255,17 @@ shadow_blur = 1.2
 shadow_normal_bias = 0.45
 shadow_bias = 0.09
 shadow_enabled = true
+light_size = 0.35
+shadow_blur = 1.6
+
+[node name="Rimbalzo" type="OmniLight3D" parent="Luce_divulg2/Accesa"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.30, 0)
+light_energy = 0.95
+light_color = Color(1, 0.96, 0.88, 1)
+omni_range = 4.0
+omni_attenuation = 1.6
+light_specular = 0.0
+shadow_enabled = false
 
 [node name="Bagliore" type="MeshInstance3D" parent="Luce_divulg2/Accesa"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.002, 0)
@@ -2241,6 +2296,17 @@ shadow_blur = 1.2
 shadow_normal_bias = 0.45
 shadow_bias = 0.09
 shadow_enabled = true
+light_size = 0.35
+shadow_blur = 1.6
+
+[node name="Rimbalzo" type="OmniLight3D" parent="Luce_divulg3/Accesa"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.30, 0)
+light_energy = 0.95
+light_color = Color(1, 0.96, 0.88, 1)
+omni_range = 4.0
+omni_attenuation = 1.6
+light_specular = 0.0
+shadow_enabled = false
 
 [node name="Bagliore" type="MeshInstance3D" parent="Luce_divulg3/Accesa"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.002, 0)
@@ -2271,6 +2337,17 @@ shadow_blur = 1.2
 shadow_normal_bias = 0.45
 shadow_bias = 0.09
 shadow_enabled = true
+light_size = 0.35
+shadow_blur = 1.6
+
+[node name="Rimbalzo" type="OmniLight3D" parent="Luce_bagno/Accesa"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.30, 0)
+light_energy = 0.95
+light_color = Color(1, 0.96, 0.88, 1)
+omni_range = 4.0
+omni_attenuation = 1.6
+light_specular = 0.0
+shadow_enabled = false
 
 [node name="Bagliore" type="MeshInstance3D" parent="Luce_bagno/Accesa"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.002, 0)
@@ -2301,6 +2378,17 @@ shadow_blur = 1.2
 shadow_normal_bias = 0.45
 shadow_bias = 0.09
 shadow_enabled = true
+light_size = 0.35
+shadow_blur = 1.6
+
+[node name="Rimbalzo" type="OmniLight3D" parent="Luce_magazzino/Accesa"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.30, 0)
+light_energy = 0.95
+light_color = Color(1, 0.96, 0.88, 1)
+omni_range = 4.0
+omni_attenuation = 1.6
+light_specular = 0.0
+shadow_enabled = false
 
 [node name="Bagliore" type="MeshInstance3D" parent="Luce_magazzino/Accesa"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.002, 0)
@@ -2331,6 +2419,17 @@ shadow_blur = 1.2
 shadow_normal_bias = 0.45
 shadow_bias = 0.09
 shadow_enabled = true
+light_size = 0.35
+shadow_blur = 1.6
+
+[node name="Rimbalzo" type="OmniLight3D" parent="Luce_disimp/Accesa"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.30, 0)
+light_energy = 0.95
+light_color = Color(1, 0.96, 0.88, 1)
+omni_range = 4.0
+omni_attenuation = 1.6
+light_specular = 0.0
+shadow_enabled = false
 
 [node name="Bagliore" type="MeshInstance3D" parent="Luce_disimp/Accesa"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.002, 0)

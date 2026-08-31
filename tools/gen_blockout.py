@@ -298,7 +298,7 @@ def tscn():
     nodo_luce = {}
 
     def gruppo_luce(nome, trasf, risorsa, spenta, luce, bagliore, pezzi,
-                    tipo="OmniLight3D"):
+                    tipo="OmniLight3D", rimbalzo=None):
         """Un apparecchio: modello sempre visibile, luce e bagliore commutabili.
 
         L'APPARECCHIO NON PROIETTA OMBRA. La sua lampada gli sta dentro, quindi si
@@ -324,7 +324,10 @@ def tscn():
         fuori += ['[node name="Accesa" type="Node3D" parent="Luce_%s"]' % nome]
         if spenta:
             fuori.append('visible = false')
-        fuori += ['', '[node name="L" type="%s" parent="%s"]' % (tipo, acceso)] + luce + [''] +                  ['[node name="Bagliore" type="MeshInstance3D" parent="%s"]' % acceso] + bagliore + ['']
+        fuori += ['', '[node name="L" type="%s" parent="%s"]' % (tipo, acceso)] + luce + ['']
+        if rimbalzo:
+            fuori += ['[node name="Rimbalzo" type="OmniLight3D" parent="%s"]' % acceso] + rimbalzo + ['']
+        fuori += ['[node name="Bagliore" type="MeshInstance3D" parent="%s"]' % acceso] + bagliore + ['']
         return fuori
 
     for lx, lz, ln in punti_luce():
@@ -375,11 +378,40 @@ def tscn():
              # LE OMBRE SERVONO A CAPIRE CHI COMANDA COSA: senza, la luce della
              # cucina attraversa il muro e illumina il corridoio, e premendo un
              # interruttore cambia mezzo edificio.
-             'shadow_enabled = true'],
+             'shadow_enabled = true',
+             # E SONO OMBRE DI PENOMBRA, NON LAME. Una plafoniera e' un rettangolo
+             # di plastica opalina largo mezzo metro, non un punto: le sue ombre
+             # sfumano nel giro di qualche centimetro. Con una sorgente puntiforme
+             # il bordo di un lavabo proiettava dentro il proprio catino una striscia
+             # NERA a spigolo vivo, e da mezzo metro non si leggeva come un'ombra -
+             # si leggeva come un pezzo mancante del modello. `light_size` da' alla
+             # lampada la sua dimensione vera e l'ombra torna a essere un'ombra.
+             'light_size = 0.35', 'shadow_blur = 1.6'],
             ['transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.002, 0)',
              'mesh = SubResource("mesh_diff")',
              'material_override = SubResource("mat_diff")'],
-            ["Lamiera", "Neon"])
+            ["Lamiera", "Neon"],
+            # LA LAMPADA DI RIMBALZO: una seconda luce nello stesso punto, debole e
+            # SENZA OMBRE. Non serve a illuminare di piu', serve a far si' che quello
+            # che sta in ombra non sia NERO ASSOLUTO. In una stanza vera la luce
+            # rimbalza sulle pareti e l'ombra sotto il bordo di un lavabo resta
+            # grigio chiara; qui l'ambiente notturno vale 0,035 e ogni ombra diventa
+            # un buco. Nel catino del lavabo si vedeva una striscia nera a spigolo
+            # vivo che sembrava un pezzo di modello mancante - e non lo era:
+            # illuminandola con una lampada in mano spariva.
+            #
+            # PORTATA CORTA, cinque metri contro undici. Senza ombre questa luce
+            # attraversa i muri, e a undici metri avrebbe schiarito mezzo edificio;
+            # a cinque, e a un sesto dell'energia, resta nella stanza.
+            rimbalzo=['transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.30, 0)',
+                      'light_energy = 0.95', 'light_color = Color(1, 0.96, 0.88, 1)',
+                      # QUATTRO METRI E CADUTA RAPIDA, e i due numeri vanno insieme.
+                      # A 0,34 di energia l'ombra nel catino saliva di sette livelli
+                      # su 255: non si vedeva la differenza. A 0,95 si vede, ma una
+                      # luce senza ombre a portata lunga esce dalla stanza: la
+                      # caduta a 1,6 la fa morire prima del muro.
+                      'omni_range = 4.0', 'omni_attenuation = 1.6',
+                      'light_specular = 0.0', 'shadow_enabled = false'])
 
     for (ln, ax, az, anx, anz, aq) in punti_applique():
         nodo_luce[ln] = "Luce_%s" % ln

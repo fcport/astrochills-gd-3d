@@ -52,6 +52,27 @@ SEDIA_UFFICIO = os.path.join(RADICE, "assets", "models", "esterni",
 # si vede sullo schermo lo comanda il gioco e la cassa no.
 MONITOR = os.path.join(RADICE, "assets", "models", "esterni",
                        "crt_monitor", "cctvcrt.blend")
+# La postazione retro: da qui si prendono SOLO la tastiera e il mouse. Il monitor
+# resta l'altro, perche' ha lo schermo staccato e questo no - e uno schermo che il
+# gioco non puo' comandare e' un adesivo.
+#
+# I NOMI NON SOPRAVVIVONO ALL'IMPORT: l'importatore glTF chiama gli oggetti come la
+# mesh, e qui si chiamano tutti `Object_<n>`. Si riconoscono dalla geometria e dal
+# POSTO. Il modello guarda verso +x, cioe' verso chi ci sta davanti, come la nostra
+# consolle: la tastiera e il mouse sono i due pezzi piu' avanti di tutti, appoggiati
+# al piano; fra i due, la tastiera ha 1.088 facce (i tasti) e il mouse 124.
+POSTAZIONE = os.path.join(RADICE, "assets", "models", "esterni",
+                          "postazione_retro", "scene.gltf")
+TASTIERA, MOUSE = "Object_4", "Object_9"
+TELEFONO = os.path.join(RADICE, "assets", "models", "esterni",
+                        "telefono_ufficio", "scene.gltf")
+# La carta e la cancelleria, CC0 da Poly Haven. Qui i nomi SOPRAVVIVONO all'import,
+# perche' chi ha fatto il set ha dato lo stesso nome alla mesh e al nodo: si possono
+# chiedere i pezzi per nome invece che riconoscerli dalla forma.
+BLOCCHI = os.path.join(RADICE, "assets", "models", "esterni",
+                       "office_notepads", "office_notepads_1k.gltf")
+CANCELLERIA = os.path.join(RADICE, "assets", "models", "esterni",
+                           "stationery_supplies", "stationery_supplies_1k.gltf")
 
 # --- i pezzi -----------------------------------------------------------------
 # Dove si siede: sotto questa fascia di Z, fra il piano e il pavimento, non ci va
@@ -116,20 +137,19 @@ def postazione(zc, accesa):
             o.data.materials.clear()
             o.data.materials.append(materiale("Plastica"))
 
-    # --- tastiera: la base a cuneo e i tasti veri ----------------------------
-    kx0, kx1 = x0 + 0.485, x0 + 0.655
-    kz0, kz1 = zc - 0.235, zc + 0.235
-    scatola("Plastica", kx0, kx1, y_piano, y_piano + 0.014, kz0, kz1)
-    scatola("Plastica", kx0, kx0 + 0.045, y_piano + 0.014, y_piano + 0.028, kz0, kz1)
-    RIGHE, COLONNE = 5, 16
-    px = (kx1 - kx0 - 0.024) / RIGHE
-    pz = (kz1 - kz0 - 0.020) / COLONNE
-    for r in range(RIGHE):
-        for c in range(COLONNE):
-            ky = y_piano + 0.014 + 0.014 * (RIGHE - 1 - r) / (RIGHE - 1.0)
-            scatola("Plastica", kx0 + 0.012 + r * px, kx0 + 0.012 + (r + 0.78) * px,
-                    ky, ky + 0.008,
-                    kz0 + 0.010 + c * pz, kz0 + 0.010 + (c + 0.80) * pz)
+    # --- LA TASTIERA VIENE DA FUORI, e prima era ottanta scatole ------------
+    # Gli ottanta tasti c'erano davvero - cinque righe per sedici colonne, con la
+    # base a cuneo - e da un metro erano ottanta scatole: un tasto vero ha la faccia
+    # concava, gli spigoli smussati e le file di altezza diversa, e sono tre cose
+    # che con le scatole non si fanno. E' la stessa lezione della porta del
+    # magazzino e del distributore di carta, per la terza volta.
+    #
+    # 0,45 DI LARGHEZZA E 0,18 DI PROFONDITA': la tastiera di un PC del 1999 e'
+    # quella, e il modello ha quasi esattamente quel rapporto - scalandolo sui due
+    # lati viene 1,50 e 1,51, cioe' non lo si sta stirando.
+    kz0, kz1 = zc - 0.225, zc + 0.225
+    posa_modello(POSTAZIONE, (x0 + 0.47, kz0, x0 + 0.65, kz1, 0.05),
+                 gradi=0.0, appoggio=y_piano, tieni=TASTIERA)
     cilindro("Gomma", x0 + 0.06, zc + 0.17, 0.10, y_piano - 0.05, 0.008, 8)
     return posati
 
@@ -278,25 +298,50 @@ def minutaglia():
     # calcolano, si guardano.
     zm = zs - 0.38
     scatola("Gomma", x0 + 0.48, x0 + 0.66, alt, alt + 0.004, zm - 0.09, zm + 0.09)
-    scatola("Plastica", x0 + 0.53, x0 + 0.61, alt + 0.004, alt + 0.032, zm - 0.045, zm + 0.045)
-    # il telefono: nel 1999 e' l'unico modo che ha questo posto di parlare con fuori
+    # IL MOUSE E' QUELLO DELLA POSTAZIONE RETRO, cioe' due tasti e il filo: quello
+    # fatto a mano era una scatola da otto per quattro, e un mouse e' l'oggetto piu'
+    # curvo che ci sia su una scrivania.
+    posa_modello(POSTAZIONE, (x0 + 0.525, zm - 0.036, x0 + 0.630, zm + 0.036, 0.05),
+                 gradi=0.0, appoggio=alt + 0.004, tieni=MOUSE)
+    # IL TELEFONO VIENE DA FUORI: nel 1999 e' l'unico modo che ha questo posto di
+    # parlare con l'esterno, e quello fatto a mano erano sei scatole - base, cornetta,
+    # forcella, tastierino - con addosso la plastica beige. Il modello ha la cornetta
+    # POSATA DI FIANCO invece che sulla forcella, e il filo a spirale che ne esce: e'
+    # il dettaglio che dice che qualcuno ha telefonato, e con le scatole non si fa.
+    #
+    # L'IMPRONTA NON SCALA SULL'ALTEZZA. L'ingombro verticale di questo pezzo lo fa
+    # il filo, che sale in un'ansa: passando l'altezza vera di un telefono il modello
+    # verrebbe grande la meta'. Si scala sulla PIANTA - trenta per trentadue, che e'
+    # un telefono da tavolo con la cornetta accanto - e l'altezza esce da se'.
     tz = zs + 0.85
-    scatola("Plastica", x0 + 0.10, x0 + 0.34, alt, alt + 0.055, tz - 0.11, tz + 0.11)
-    scatola("Plastica", x0 + 0.13, x0 + 0.23, alt + 0.055, alt + 0.075, tz - 0.09, tz + 0.09)
-    for dz in (-0.075, 0.075):
-        scatola("Plastica", x0 + 0.25, x0 + 0.33, alt + 0.055, alt + 0.085, tz + dz - 0.02, tz + dz + 0.02)
-    scatola("Plastica", x0 + 0.24, x0 + 0.34, alt + 0.085, alt + 0.105, tz - 0.10, tz + 0.10)
-    for k in range(4):
-        cilindro("Gomma", x0 + 0.08, tz + 0.08 - k * 0.012, alt + 0.02, alt + 0.03, 0.010, 8)
-    # il registro delle osservazioni, aperto, con la penna
+    posa_modello(TELEFONO, (x0 + 0.06, tz - 0.16, x0 + 0.36, tz + 0.16, 0.40),
+                 gradi=90.0, appoggio=alt)
+    # LA CARTA VIENE DA FUORI, e prima erano sette scatole piatte di colore "Carta".
+    # Un blocco di fogli non e' un parallelepipedo: i fogli non sono pari, dietro c'e'
+    # il cartone, la costa e' incollata in rosso. Sono le tre cose che dicono
+    # "qualcuno ci lavora", e sono le tre che con le scatole non si fanno.
+    #
+    # E QUI I FOGLI NON SONO TUTTI UGUALI, che era l'altro difetto: la pila di
+    # stampati erano cinque scatole identiche sfalsate di quattro millimetri, cioe'
+    # un motivo regolare - e niente su una scrivania e' regolare. Un blocco, due
+    # fogli sciolti girati di poco e un blocco giallo con la penna sopra.
     rz = zs + 1.15
-    scatola("Carta", x0 + 0.10, x0 + 0.52, alt, alt + 0.018, rz - 0.15, rz + 0.15)
-    scatola("Carta", x0 + 0.12, x0 + 0.50, alt + 0.018, alt + 0.021, rz - 0.14, rz + 0.14)
-    cilindro_orizz("Plastica", x0 + 0.31, alt + 0.026, rz - 0.02, "z", 0.14, 0.005, 8)
-    # una pila di stampati sull'angolo, e la tazza
-    for k in range(5):
-        scatola("Carta", x0 + 0.14, x0 + 0.44, alt + k * 0.006, alt + 0.005 + k * 0.006,
-                z1 - 0.52 + k * 0.004, z1 - 0.22 + k * 0.004)
+    posa_modello(BLOCCHI, (x0 + 0.12, rz - 0.145, x0 + 0.33, rz + 0.145, 0.06),
+                 gradi=0.0, appoggio=alt, tieni="yellow_pad")
+    posa_modello(CANCELLERIA, (x0 + 0.16, rz - 0.06, x0 + 0.30, rz + 0.06, 0.05),
+                 gradi=22.0, appoggio=alt + 0.010, tieni="pen_blue")
+    # la pila di stampati sull'angolo, con due fogli scappati di sopra
+    pz = z1 - 0.37
+    posa_modello(BLOCCHI, (x0 + 0.14, pz - 0.148, x0 + 0.35, pz + 0.148, 0.06),
+                 gradi=0.0, appoggio=alt, tieni="a4_stack")
+    for (pezzo, dx, dz, g) in (("a4_a", 0.030, 0.035, 7.0), ("a4_b", -0.020, -0.045, -11.0)):
+        posa_modello(BLOCCHI,
+                     (x0 + 0.14 + dx, pz + dz - 0.148, x0 + 0.35 + dx, pz + dz + 0.148, 0.06),
+                     gradi=g, appoggio=alt + 0.010, tieni=pezzo)
+    # il portapenne, che e' il pezzo che fa sembrare abitata una scrivania
+    cz = z1 - 0.72
+    posa_modello(CANCELLERIA, (x0 + 0.09, cz - 0.05, x0 + 0.19, cz + 0.05, 0.11),
+                 gradi=0.0, appoggio=alt, tieni="pencilcup")
     cilindro("Carta", x0 + 0.58, z1 - 0.32, alt, alt + 0.095, 0.038, 14)
     cilindro_orizz("Carta", x0 + 0.62, alt + 0.055, z1 - 0.32, "z", 0.035, 0.008, 8)
     # lampada da tavolo: base, stelo, braccio inclinato, paralume

@@ -3203,3 +3203,40 @@ affatto a cancellarne una in mezzo, anche se è quello che fa.
 `verifica_doppioni()` legge il testo **generato** e non il generatore: le due righe
 possono nascere a cinquanta righe di distanza, da due rami diversi, e finire comunque
 nello stesso nodo. Quello che conta è cosa arriva a Godot.
+
+## D-155 — Tastiera, mouse, telefono e carta smettono di essere scatole
+
+Della consolle erano fatti a mano, ed erano fatti bene: la tastiera aveva **ottanta
+tasti veri**, cinque righe per sedici colonne, con la base a cuneo; il telefono aveva
+base, forcella, tastierino e cornetta; la pila di stampati erano cinque fogli sfalsati.
+Tutti e tre da un metro erano scatole — e sono tre cose che con le scatole non si
+fanno:
+
+* **un tasto** ha la faccia concava, gli spigoli smussati e le file di altezza diversa;
+* **un mouse** è l'oggetto più curvo che ci sia su una scrivania;
+* **un blocco di fogli** non è un parallelepipedo: i fogli non sono pari, dietro c'è il
+  cartone, la costa è incollata in rosso.
+
+È la terza volta che la stessa lezione torna dopo la porta del magazzino e il
+distributore di carta, e ormai la regola è chiara: **la geometria si fa a mano quando è
+fatta di piani, e si prende da fuori quando è fatta di curve.**
+
+**Del PC retro si prendono SOLO tastiera e mouse.** Il monitor resta quello di prima,
+perché ha lo schermo staccato dalla cassa e questo no — e uno schermo che il gioco non
+può comandare è un adesivo. I nomi non sopravvivono all'import (sono tutti
+`Object_<n>`): i due pezzi si riconoscono dal **posto** — il modello guarda verso +x
+come la nostra consolle, e tastiera e mouse sono i due più avanti, appoggiati al piano
+— e fra loro dal conto delle facce, 1.088 contro 124.
+
+**Il telefono non si scala sull'altezza.** Il suo ingombro verticale lo fa il filo a
+spirale, che sale in un'ansa: passandogli l'altezza vera di un telefono verrebbe grande
+la metà. Si scala sulla pianta — trenta per trentadue, un telefono da tavolo con la
+cornetta accanto — e l'altezza esce da sé.
+
+**E i fogli non sono più tutti uguali**, che era l'altro difetto: cinque scatole
+identiche sfalsate di quattro millimetri sono un *motivo regolare*, e niente su una
+scrivania è regolare. Adesso c'è un blocco A4, due fogli scappati di sopra girati di
+pochi gradi, un blocco giallo con la penna sopra e il portapenne. La carta e la
+cancelleria sono CC0 (Poly Haven) e le scarica `prendi_modello.py` da solo; in quel set
+i nomi **sopravvivono** all'import, perché l'autore ha dato lo stesso nome alla mesh e
+al nodo, e i pezzi si possono chiedere per nome.

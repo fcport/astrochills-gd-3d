@@ -116,6 +116,33 @@ Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuz
 > by tobei (https://sketchfab.com/tobei) licensed under CC-BY-4.0
 > (http://creativecommons.org/licenses/by/4.0/)
 
+**Retro CRT Computer (1990s Desktop PC)** — la **tastiera** e il **mouse** della
+consolle. Del modello si prendono solo quei due pezzi: il monitor resta l'altro,
+perché ha lo schermo staccato dalla cassa e questo no — e uno schermo che il gioco non
+può comandare è un adesivo. La tastiera fatta a mano aveva ottanta tasti veri, cinque
+righe per sedici colonne, e da un metro erano ottanta scatole.
+Autore: [MadeByYeshe](https://sketchfab.com/MadeByYeshe).
+Fonte: <https://sketchfab.com/3d-models/retro-crt-computer-1990s-desktop-pc-ea9faf1298d24497b916c27a4ea38636>
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> This work is based on "Retro CRT Computer (1990s Desktop PC)"
+> (https://sketchfab.com/3d-models/retro-crt-computer-1990s-desktop-pc-ea9faf1298d24497b916c27a4ea38636)
+> by MadeByYeshe (https://sketchfab.com/MadeByYeshe) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
+**Phone** — il telefono della sala di controllo. Nel 1999 è l'unico modo che ha questo
+posto di parlare con l'esterno. Arriva con la **cornetta posata di fianco** invece che
+sulla forcella, e il filo a spirale che ne esce: è il dettaglio che dice che qualcuno
+ha telefonato, e con le scatole non si fa.
+Autore: [Schmoldt5000](https://sketchfab.com/Schmoldt5000).
+Fonte: <https://sketchfab.com/3d-models/phone-eaa0a0cbce964b2099b955f5ea241eee>
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> This work is based on "Phone"
+> (https://sketchfab.com/3d-models/phone-eaa0a0cbce964b2099b955f5ea241eee)
+> by Schmoldt5000 (https://sketchfab.com/Schmoldt5000) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
 ## Tutto il resto
 
 Gli altri modelli e tutte le texture sono **CC0**: nessuna attribuzione richiesta.

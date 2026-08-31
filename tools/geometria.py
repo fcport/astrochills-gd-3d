@@ -1034,8 +1034,8 @@ ARREDI_BAGNO = [
     # esatta legge come un water da bambini. Qui si sceglie di sbagliare la MISURA
     # invece che l'IMPRESSIONE: chi ci gioca non ha il metro in mano, e l'unica prova
     # che conta e' guardarli da dentro la stanza.
-    ("Wc",          7.37, 6.86, 8.15, 7.46, 1.02),
-    ("Bidet",       7.43, 7.70, 8.15, 8.16, 0.77),
+    ("Wc",          7.31, 6.84, 8.15, 7.48, 1.10),
+    ("Bidet",       7.39, 7.70, 8.15, 8.16, 0.83),
     # NIENTE DOCCIA. C'era, ed era la risposta sbagliata alla domanda «cosa ci metto
     # al posto della vasca»: qui non ci si lava, e' il bagno di servizio di un
     # osservatorio, non una camera d'albergo. Al suo posto un armadio di lamiera da
@@ -1052,7 +1052,7 @@ ARREDI_BAGNO = [
     ("Armadio",     7.58, 8.44, 8.15, 9.34, 1.85),
     # parete ovest: il lavabo con lo specchio e la mensola sopra, tutto in una
     # impronta sola - sono un pezzo unico per chi ci sbatte contro
-    ("Lavabo",      5.00, 8.10, 5.64, 8.96, 1.90),
+    ("Lavabo",      5.00, 8.06, 5.67, 8.96, 1.90),
     # muro nord, a OVEST della porta e non a est: il vano va da 5,80 a 7,10 e il
     # perno sta a 7,02, quindi l'anta spazza il quadrante verso ovest fino a 1,14 m.
     # Messo a est era addosso al cardine e il controllo l'ha preso in pieno.
@@ -1080,8 +1080,15 @@ ARREDI_BAGNO = [
     # e dieci centimetri di stacco portano la sua cima da 0,67 a 0,81 - che e' il
     # numero che si vede da un metro, molto piu' della larghezza.
     ("Termo",       6.14, 9.20, 7.20, 9.40, 0.85),
-    # il portasciugamani a muro, fra la porta e il lavabo
-    ("Portasalv",   5.00, 7.30, 5.12, 7.95, 1.30),
+    # IL DISTRIBUTORE DI CARTA, e prima era un portasciugamani. L'asciugamano era
+    # geometria buona - la piega sopra la barra, due falde di lunghezza diversa,
+    # l'onda del telo - con addosso una TINTA PIATTA: in `TEXTURE` non c'era la
+    # spugna, e da un metro leggeva come un cartoncino verde appeso a un filo. La
+    # via corta sarebbe stata cercare una texture di spugna; quella giusta e'
+    # chiedersi cosa ci sta davvero in un bagno di servizio di un osservatorio, e
+    # non e' un asciugamano di casa - e' il distributore di carta a muro, che e'
+    # lamiera verniciata, cioe' un materiale che questo progetto ha gia'.
+    ("Distributore", 5.00, 7.40, 5.13, 7.70, 1.44),
 ]
 
 SALA_PC = [(5.30, 0.10, 8.15, 4.30)]

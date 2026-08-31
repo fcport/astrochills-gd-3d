@@ -130,9 +130,9 @@ SPORGE = 0.010     # di quanto il listello esce dal filo del rivestimento
 # pianta sono state allargate INSIEME a questi numeri - `posa_modello` prende il
 # minore fra altezza e ingombro, e una sola delle due mosse non muove niente.
 SANITARI = [
-    ("wc_bagno",     "Wc",      90.0, 1.00, "il water"),
-    ("bidet_bagno",  "Bidet",  180.0, 0.75, "il bidet"),
-    ("lavabo_bagno", "Lavabo", 270.0, 1.04, "il lavabo a colonna"),
+    ("wc_bagno",     "Wc",      90.0, 1.08, "il water"),
+    ("bidet_bagno",  "Bidet",  180.0, 0.81, "il bidet"),
+    ("lavabo_bagno", "Lavabo", 270.0, 1.10, "il lavabo a colonna"),
 ]
 
 # IL TERMOSIFONE NON LO DECIDE `verso_sanitari.py`, e vale la pena dire perche'.
@@ -369,50 +369,57 @@ def sopra_il_lavabo():
     return
 
 
-def portasalviette():
-    """La barra e l'asciugamano piegato in due, che e' l'unico colore della stanza."""
-    x0, z0, x1, z1, _alto = IMPRONTE["Portasalv"]
-    xf = x0 + SPESS + SPORGE
-    barra = 1.22
-    for zz in (z0 + 0.05, z1 - 0.05):
-        cilindro("Cromo", xf + 0.04, zz, 1.05, barra, 0.010, seg=8)
-    cilindro_orizz("Cromo", xf + 0.04, barra, (z0 + z1) / 2, "z", z1 - z0 - 0.10,
-                   0.010, seg=10)
-    asciugamano(xf + 0.04, barra, (z0 + z1) / 2, z1 - z0 - 0.20)
+def distributore_carta():
+    """Il distributore di carta a muro, al posto dell'asciugamano.
 
+    QUI PRIMA C'ERA UN ASCIUGAMANO, ed era geometria buona: la piega sopra la barra
+    era un mezzo tubo, le falde erano due e di lunghezza diversa, e cinque strisce
+    sfalsate di sei millimetri gli davano l'onda di un telo appeso. Tutto vero, e
+    tutto invisibile - perche' sopra ci stava una TINTA PIATTA. `Spugna` non compare
+    in `TEXTURE`: niente trama, niente pelo, e da un metro quel telo leggeva come un
+    cartoncino verde appeso a un filo. E' l'errore opposto a quello della porta del
+    magazzino, dove si era fatto col rilievo quello che andava fatto con la vernice:
+    qui si era fatta con la piega la stoffa, che e' fatta di trama.
 
-def asciugamano(x, barra, cz, largo):
-    """Un telo piegato sulla barra, NON una lastra.
+    Cercare una texture di spugna sarebbe stata la via corta. Quella giusta e'
+    chiedersi cosa ci sta DAVVERO in un bagno di servizio di un osservatorio in
+    turno di notte: non l'asciugamano di casa, che qualcuno dovrebbe lavare, ma il
+    distributore di carta a muro. E' lamiera verniciata, cioe' lo stesso materiale
+    dell'armadio che gli sta a due metri, cioe' un materiale con una mappa vera.
 
-    Prima era una scatola: quattro centimetri di spessore, spigoli vivi, e da vicino
-    si vedeva un rettangolo verde appoggiato al muro. Un asciugamano appeso ha tre
-    cose che una scatola non ha, e sono tutte e tre geometria:
-
-      * LA PIEGA sopra la barra, che e' un mezzo tubo e non uno spigolo;
-      * DUE FALDE di lunghezza diversa - chi lo appende non le pareggia mai - e
-        quella davanti copre quella dietro;
-      * L'ONDA. Un telo appeso non e' piano: si gonfia dove pende e rientra dove il
-        peso lo tira. Qui sono cinque strisce con la faccia spostata di pochi
-        millimetri una dall'altra, ed e' quel poco che lo fa leggere come stoffa.
+    IL FRONTALE SPORGE DI QUINDICI MILLIMETRI dalla cassa, e non e' un vezzo: e' la
+    stessa ragione per cui il listello sporge di dieci. A filo sarebbe una scatola;
+    sporgendo prende una riga d'ombra tutt'intorno e diventa uno sportello che si
+    apre per ricaricarlo.
     """
-    M = "Spugna"
-    sp = 0.008
-    # la piega sopra la barra
-    cilindro_orizz(M, x, barra, cz, "z", largo, 0.016, seg=10)
-    n = 5
-    passo = largo / n
-    for k in range(n):
-        za = cz - largo / 2 + passo * k
-        zb = za + passo - 0.002
-        # l'onda: le strisce si spostano avanti e indietro di pochi millimetri
-        onda = 0.006 * (1 if k % 2 == 0 else -1)
-        # davanti, piu' lunga
-        scatola(M, x - 0.016 + onda, x - 0.016 + onda + sp, 0.83, barra, za, zb)
-        # dietro, piu' corta e senza onda: sta appoggiata al muro
-        scatola(M, x + 0.010, x + 0.010 + sp, 0.90, barra, za, zb)
-    # il bordo inferiore, un filo piu' spesso: e' l'orlo cucito
-    scatola(M, x - 0.018, x - 0.018 + sp + 0.004, 0.83, 0.845,
-            cz - largo / 2, cz + largo / 2)
+    x0, z0, x1, z1, _alto = IMPRONTE["Distributore"]
+    xf = X0 + SPESS                       # il filo della piastrella
+    corpo, fronte = 0.090, 0.015          # profondita' della cassa e dello sportello
+    # 1,42 IN CIMA E NON 1,55, e a dirlo e' stato il banco delle porte: l'anta del
+    # pensile parte da 1,45 e spazza questo tratto di muro fino a z 7,52, e col
+    # distributore piu' alto si fermava a 75 gradi invece di 90. E' lo stesso conto
+    # che farebbe chi lo avvita davvero, guardando l'anta del pensile aprirsi.
+    base, cima = 1.075, 1.420
+    za, zb = z0 + 0.015, z1 - 0.015
+    M = "Armadietto"
+    # la cassa
+    scatola(M, xf, xf + corpo, base + 0.055, cima, za, zb)
+    # il fondo rientra: e' lo scivolo da cui esce il foglio
+    scatola(M, xf, xf + corpo * 0.62, base, base + 0.055, za, zb)
+    # lo sportello, che sporge e lascia un risvolto di un centimetro per lato
+    scatola(M, xf + corpo, xf + corpo + fronte, base + 0.075, cima - 0.010,
+            za + 0.010, zb - 0.010)
+    # il cappello, un filo piu' largo della cassa: ci si posa la polvere
+    scatola(M, xf, xf + corpo + fronte, cima, cima + 0.012, za - 0.004, zb + 0.004)
+    # LA FERITOIA E' UN BUCO, cioe' un pezzo scuro incassato: senza, il fondo e' una
+    # lamiera cieca e l'oggetto non dice a cosa serve.
+    scatola("Gomma", xf + 0.018, xf + 0.052, base - 0.002, base + 0.004,
+            za + 0.030, zb - 0.030)
+    # i due fogli che sporgono dalla feritoia. Uno solo sembrerebbe disegnato: due,
+    # di lunghezza diversa, sembrano l'ultimo tirato male da chi e' passato prima.
+    for (dz, giu) in ((0.010, 0.075), (0.026, 0.048)):
+        scatola("Rotolo", xf + 0.026 + dz * 0.2, xf + 0.032 + dz * 0.2,
+                base - giu, base + 0.002, za + 0.045 + dz, zb - 0.045 + dz)
 
 
 def termosifone():
@@ -915,7 +922,7 @@ pavimento()
 armadio()
 pensile()
 sopra_il_lavabo()
-portasalviette()
+distributore_carta()
 termosifone()
 sanitari()
 

@@ -2861,3 +2861,65 @@ secondo giro: a 0,67 restava il fratello piccolo del water, a 0,75 sono una copp
 
 Il campo visivo resta com'è: cambiarlo è una decisione su tutto il gioco, non sul
 bagno.
+
+## D-142 — La colonna del lavabo erano due difetti, e uno solo era un difetto
+
+Sotto il catino c'era un cilindro grigio e ammaccato come una lattina schiacciata, in
+mezzo a una ceramica bianca. Sembrava una cosa sola. Erano due, e vanno separate
+prima di curarle.
+
+**L'ammaccatura era `raddrizza_normali`.** Un glTF non porta solo l'avvolgimento delle
+facce: porta le **normali di taglio scritte dall'autore**, ed è con quelle che la
+superficie si sfuma. Ribaltare l'avvolgimento lasciandole dov'erano non dà una faccia
+nera — dà una faccia **a chiazze**, che è peggio del nero perché sembra una texture
+sbagliata invece di un errore di geometria. Sul corpo del lavabo si giravano 5.620
+facce, e la semicolonna era quasi tutta lì dentro.
+
+Il primo rimedio è stato buttarle, quelle normali, e tornare allo sfumato calcolato: la
+colonna torna liscia, ma dentro il catino compare una fila di trattini scuri dove il
+modello ha facce complanari che l'autore aveva sfumato a mano. Il rimedio giusto era
+l'operazione giusta e basta: **la normale di una faccia girata è la sua, cambiata di
+segno**. Si legge prima, indicizzata per (faccia, vertice) — l'ordine dei *loop* dentro
+una faccia girata si rovescia, quello delle facce e dei vertici no — e si riscrive dopo.
+Colonna liscia, catino pulito.
+
+**Il grigio non era un difetto del modello, e il modo di saperlo è stato accendere una
+luce.** `SCATTO_FARO=30` da mezzo metro: la colonna **satura di bianco**. Materiale,
+metallicità e normali sono a posto — è il catino che le fa ombra, e in questa scena non
+c'è luce indiretta, quindi quello che sta in ombra scende all'ambiente e basta. In un
+bagno vero quella colonna la illuminano le piastrelle bianche tutt'intorno. Resta
+com'è: mettere un rimbalzo (VoxelGI, o l'ambiente alzato) è una decisione su tutta
+l'atmosfera del gioco, non sul lavabo, e va presa guardando le stanze buie.
+
+**Terzo:** la guardia in `finisci()` guardava `objects.active`, che sopravvive a chi
+l'ha reso attivo. A selezione vuota restava puntato sull'ultimo sanitario importato e
+`shade_smooth_by_angle` falliva col contesto sbagliato invece di essere saltato. È
+bastato togliere l'ultimo oggetto cromato dal bagno per piantare il modellatore. Adesso
+si conta quello che si è selezionato, che è la cosa che si voleva sapere.
+
+## D-143 — Il distributore di carta, al posto di un asciugamano senza stoffa
+
+L'asciugamano appeso era geometria buona: la piega sopra la barra era un mezzo tubo,
+le falde erano due e di lunghezza diversa, cinque strisce sfalsate di sei millimetri
+gli davano l'onda di un telo. Tutto vero e tutto invisibile, perché sopra ci stava una
+**tinta piatta**: `Spugna` non compare in `TEXTURE`. Da un metro leggeva come un
+cartoncino verde appeso a un filo.
+
+È l'errore speculare a quello della porta del magazzino, dove si era fatto col rilievo
+quello che andava fatto con la vernice: qui si era fatta con la piega la stoffa, che è
+fatta di trama.
+
+Cercare una texture di spugna era la via corta. Quella giusta è chiedersi cosa ci sta
+**davvero** in un bagno di servizio di un osservatorio in turno di notte: non
+l'asciugamano di casa, che qualcuno dovrebbe lavare, ma il distributore di carta a
+muro. Che è lamiera verniciata, cioè `Armadietto`, cioè lo stesso materiale
+dell'armadio a due metri — e una mappa vera ce l'ha già.
+
+Il frontale sporge di quindici millimetri dalla cassa per la stessa ragione per cui il
+listello sporge di dieci: a filo sarebbe una scatola, sporgendo prende una riga d'ombra
+e diventa uno sportello.
+
+**E sta a 1,42 e non a 1,55 perché l'ha detto il banco delle porte.** L'anta del
+pensile parte da 1,45 e spazza quel tratto di muro fino a z 7,52: col distributore più
+alto si fermava a 75 gradi invece di 90. È lo stesso conto che farebbe chi lo avvita
+davvero, guardando l'anta del pensile aprirsi.

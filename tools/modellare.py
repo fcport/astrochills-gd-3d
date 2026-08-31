@@ -582,11 +582,22 @@ def finisci(morbidi=()):
         oggetti.append(o)
     if morbidi:
         bpy.ops.object.select_all(action="DESELECT")
+        # L'ATTIVO NON DICE SE C'E' UNA SELEZIONE. La guardia qui guardava
+        # `objects.active`, che pero' sopravvive a chi l'ha reso attivo: dopo
+        # l'import di un sanitario resta puntato li' anche a selezione vuota, e
+        # l'operatore falliva col contesto sbagliato invece di essere saltato. Basta
+        # togliere un materiale morbido da una stanza - qui e' bastato sostituire il
+        # portasciugamani cromato con un distributore di lamiera - e il modellatore
+        # si pianta. Si conta quello che si e' scelto, che e' la cosa che si voleva
+        # sapere.
+        bpy.context.view_layer.objects.active = None
+        scelti = 0
         for o in oggetti:
             if o.name in morbidi:
                 o.select_set(True)
                 bpy.context.view_layer.objects.active = o
-        if bpy.context.view_layer.objects.active is not None:
+                scelti += 1
+        if scelti:
             bpy.ops.object.shade_smooth_by_angle(angle=math.radians(35.0))
     return oggetti
 
@@ -761,10 +772,20 @@ def raddrizza_normali(pezzi):
     la disegna, ma la illumina con la normale che ha, cioe' rivolta dalla parte
     opposta alla luce, e viene NERA.
 
-    Il lavabo del bagno aveva una striscia nera a spigolo vivo dentro il catino. In
-    Blender non c'era. Ho cercato prima nelle ombre - ammorbidendo le plafoniere,
-    che era giusto per altri motivi - e la striscia e' rimasta identica: un'ombra si
-    sarebbe sfumata. Quello che non cambia quando cambi la luce non e' un'ombra.
+    GIRARE UNA FACCIA VUOL DIRE GIRARE ANCHE LA SUA NORMALE D'AUTORE, e per due
+    sessioni questa meta' non c'era. Un glTF non porta solo l'avvolgimento: porta le
+    normali di taglio scritte da chi ha fatto il modello, ed e' con quelle che la
+    superficie si sfuma. Ribaltare l'avvolgimento lasciandole dov'erano non da' una
+    faccia nera - da' una faccia A CHIAZZE, e le chiazze sono peggio del nero perche'
+    sembrano una texture sbagliata invece di un errore di geometria. La semicolonna
+    del lavabo usciva ammaccata come una lattina schiacciata, e per due volte ha
+    avuto la colpa il materiale.
+
+    BUTTARLE NON BASTAVA. Il primo rimedio e' stato scartare le normali d'autore e
+    tornare allo sfumato calcolato: la colonna torna liscia, ma dentro il catino
+    compare una fila di trattini scuri dove il modello ha facce complanari che
+    l'autore aveva sfumato a mano. Quello che serve e' l'operazione giusta e basta:
+    la normale di una faccia girata e' la sua, cambiata di segno.
 
     Torna quante facce ha dovuto girare, che e' il numero da guardare.
     """
@@ -773,18 +794,35 @@ def raddrizza_normali(pezzi):
     for o in pezzi:
         if o.type != "MESH" or o.data is None:
             continue
+        me = o.data
+        # le normali d'autore, indicizzate per (faccia, vertice): l'ordine dei loop
+        # dentro una faccia girata si rovescia, quello delle facce e dei vertici no
+        aveva = getattr(me, "has_custom_normals", False)
+        prima = {}
+        if aveva:
+            angoli = me.corner_normals
+            for p in me.polygons:
+                for li in p.loop_indices:
+                    prima[(p.index, me.loops[li].vertex_index)] =                         Vector(angoli[li].vector)
         bm = _bm.new()
-        bm.from_mesh(o.data)
-        prima = sum(1 for f in bm.faces if f.normal.length_squared > 0)
+        bm.from_mesh(me)
+        bm.faces.ensure_lookup_table()
+        vecchie = [f.normal.copy() for f in bm.faces]
         _bm.ops.recalc_face_normals(bm, faces=bm.faces)
-        # si contano quelle che hanno cambiato verso confrontando con l'originale
-        for f_vecchia, f_nuova in zip(o.data.polygons, bm.faces):
-            if f_vecchia.normal.dot(f_nuova.normal) < 0:
-                girate += 1
-        bm.to_mesh(o.data)
+        capovolte = set(f.index for v, f in zip(vecchie, bm.faces)
+                        if v.dot(f.normal) < 0)
+        bm.to_mesh(me)
         bm.free()
-        o.data.update()
-        _ = prima
+        me.update()
+        if capovolte and aveva:
+            rifatte = []
+            for p in me.polygons:
+                segno = -1.0 if p.index in capovolte else 1.0
+                for li in p.loop_indices:
+                    rifatte.append(
+                        prima[(p.index, me.loops[li].vertex_index)] * segno)
+            me.normals_split_custom_set(rifatte)
+        girate += len(capovolte)
     return girate
 
 

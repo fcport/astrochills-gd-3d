@@ -1031,15 +1031,29 @@ def verifica_freschezza():
                 problemi.append("  MODELLO VECCHIO          %s e' piu' nuovo di %s: "
                                 "rifai %s" % (pezzo, contenitore, contenitore))
 
-    # 2. lo script e il modello che produce
+    # 2. lo script e il modello che produce - E ANCHE CIO' CHE LO SCRIPT LEGGE
+    #
+    # QUESTO CONTROLLO HA TACIUTO QUANDO SERVIVA, ed e' il modo peggiore in cui un
+    # controllo puo' sbagliare: quello silenzioso. Le porte interne sono state
+    # ristrette cambiando `geometria.py` - non i modellatori - e questo confronto
+    # guardava solo la data del MODELLATORE. Osservatorio.glb e' rimasto quello di
+    # sei ore prima: i vani nei muri larghi 1,30, le ante generate dalla scena
+    # larghe 0,90. In gioco si vedeva una porta stretta in un buco largo, con la
+    # luce che passava di fianco, e il controllo diceva che era tutto a posto.
+    #
+    # OGNI modellatore legge `geometria.py` e `modellare.py`: sono sorgenti dei loro
+    # modelli quanto lo script stesso, e vanno guardate come tale.
+    COMUNI = ("geometria.py", "modellare.py")
     for script, prodotto in SCRIVONO.items():
-        sorgente = data(qui, script)
         fuori = data(modelli, prodotto)
-        if sorgente is None or fuori is None:
+        if fuori is None:
             continue
-        if sorgente > fuori:
-            problemi.append("  MODELLO VECCHIO          %s e' cambiato dopo %s: "
-                            "rilancia %s" % (script, prodotto, script))
+        for sorgente_nome in (script,) + COMUNI:
+            sorgente = data(qui, sorgente_nome)
+            if sorgente is not None and sorgente > fuori:
+                problemi.append("  MODELLO VECCHIO          %s e' cambiato dopo %s: "
+                                "rilancia %s" % (sorgente_nome, prodotto, script))
+                break
 
     # 3. il modello e cio' che la scena legge davvero
     #

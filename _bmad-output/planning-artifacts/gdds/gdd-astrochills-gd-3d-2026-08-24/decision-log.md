@@ -2732,3 +2732,24 @@ centimetri, visibili solo ad anta aperta, avevano portato il `.glb` da 13,9 a **
 rotolo largo undici centimetri la mappa non si vede, si vede il colore. E la bottiglia,
 che era di vetro con alpha 0,06, dentro un mobile in ombra non si vedeva affatto: **un
 oggetto trasparente al buio non è un oggetto trasparente, è un oggetto assente.**
+
+## D-137 — Il controllo di freschezza guardava il file sbagliato
+
+Ristrette le porte, in gioco è comparsa un'anta stretta dentro un buco largo, con la
+luce che passava di fianco. Il modello del guscio — `osservatorio.glb`, che contiene i
+**vani nei muri** — era rimasto quello di sei ore prima, mentre le **ante** nascono nella
+scena e si erano già ristrette.
+
+`verifica_freschezza` esiste apposta per questo e **ha taciuto**, che è il modo peggiore
+in cui un controllo può sbagliare. Confrontava la data del `.glb` con quella del
+*modellatore*, e io non avevo toccato nessun modellatore: avevo cambiato `geometria.py`.
+Ogni modellatore legge `geometria.py` e `modellare.py`, e quelle sono sorgenti dei loro
+modelli quanto lo script stesso.
+
+Adesso le guarda. **Validato iniettando il difetto**: toccando `geometria.py` il
+controllo elenca tutti e otto i modelli da rifare; rimessa la data vera, tace.
+
+È il terzo modo in cui un controllo può essere inutile, e in questo progetto li ho ormai
+visti tutti e tre: **tacere** (il peso da 33 MB), **gridare su codice sano** (la doppia
+conversione di colore), e **saltare il caso che non sa trattare** (le ceramiche senza
+mappa). Questo era il primo.

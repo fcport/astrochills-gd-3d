@@ -27,6 +27,12 @@
 ;     viene illuminato ma non ne proietta nessuna, cioè resta una sagoma piatta —
 ;     e la forma di quello che hai accanto è tutto ciò che si voleva.
 ;
+; E SI SPEGNE DOVE C'È GIÀ LUCE. Da sola era utile e sbagliata: con la plafoniera
+; accesa la lampada continuava a lavorare, e avvicinandosi a una parete illuminata
+; compariva un alone che seguiva la testa. `luce_prossimita.gd` chiede alle lampade
+; della scena quanta luce arriva qui — e se da qui si vedono — e la spegne dove la
+; stanza è già illuminata. Il conto sta lì, non in questo file.
+;
 ; ENERGIA 0,3, e non è un numero scelto guardando. Tarata col banco
 ; `tools/prova_prossimita.gd`, che misura di quanto si alza una parete a varie
 ; distanze: +66 livelli a 70 cm, +22 a un metro e mezzo, zero da 2,5 in poi, e la
@@ -38,11 +44,12 @@
 ; `project.godot`, sezione `layer_names/3d_physics`): il corpo sta su un layer
 ; suo perché il raggio dell'interazione, che cerca mondo e interagibili, non
 ; possa mai colpire il giocatore stesso.
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://world/player/player.gd" id="1_player"]
 [ext_resource type="PackedScene" path="res://world/interactables/interaction_prompt.tscn" id="2_prompt"]
 [ext_resource type="PackedScene" path="res://world/player/crosshair.tscn" id="3_crosshair"]
+[ext_resource type="Script" path="res://world/player/luce_prossimita.gd" id="4_prossimita"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.3
@@ -62,6 +69,7 @@ unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.65, 0)
 
 [node name="Prossimita" type="OmniLight3D" parent="Camera"]
+script = ExtResource("4_prossimita")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.4, 0)
 light_color = Color(0.7, 0.76, 0.92, 1)
 light_energy = 0.3

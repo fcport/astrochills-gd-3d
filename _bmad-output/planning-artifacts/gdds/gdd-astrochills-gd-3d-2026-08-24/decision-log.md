@@ -2105,3 +2105,51 @@ schiarendo il fondo», e la fuga risponde all'energia in modo monotòno (+0,0 / 
 sceglie oggi la stanza accanto è profonda abbastanza che, all'energia scelta, la fuga
 non sia misurabile nemmeno a ombre spente: le ombre restano accese per la resa e
 perché in una stanza più stretta quel margine non c'è.
+
+## D-107 — La lampada di prossimità esiste solo dove è buio
+
+**Difetto visto giocando.** «Anche quando la luce c'è io emetto luce.» Avvicinandosi
+a una parete illuminata compariva un alone che segue la testa: il modo più rapido di
+ricordare a chi gioca che sta guardando un motore grafico. In una stanza accesa si
+deve vedere la stanza, non la propria luce riflessa addosso alle cose.
+
+**Come si decide se è buio.** Non leggendo lo schermo: la luminosità
+dell'inquadratura dipende da dove guardi, e girando la testa la lampada si
+accenderebbe e spegnerebbe da sola. Si chiede alle lampade — per ognuna, energia per
+la sua curva di caduta alla distanza del giocatore. È un conto esatto e costa dieci
+raggi ogni decimo di secondo.
+
+**Il raggio è metà del lavoro.** Una plafoniera accesa nella stanza accanto non
+illumina questa: senza quel controllo, il corridoio acceso lascerebbe al buio pesto
+chi è chiuso nel magazzino, cioè il difetto opposto e peggiore. La luna, che è una
+direzionale e illumina ovunque, si tratta allo stesso modo al contrario: da qui si
+vede il cielo, o c'è il tetto?
+
+**E scorre, non scatta.** `RIPRESA` porta l'energia al valore voluto in poco più di
+un terzo di secondo — attraversare la soglia di una stanza illuminata non deve essere
+un lampo.
+
+**Numeri.** Al buio la parete a 70 cm passa da 7 a 73 su 255; con la plafoniera
+accesa da 57,5 a 57,5, cioè zero. Con una plafoniera accesa **di là dal muro** torna
+a +66: la lampada non si lascia spegnere da una luce che da qui non si vede.
+
+## D-108 — Due controlli che passavano mentre il difetto c'era
+
+Il primo è nato dal difetto stesso: con la plafoniera accesa la lampada non deve
+alzare la parete di più di un livello e mezzo. Validato disattivando lo spegnimento —
+accusa +47,9, che è esattamente l'alone che si vedeva.
+
+**Il secondo è quello interessante, perché nasceva già rotto.** Il controllo
+simmetrico («una luce di là dal muro non deve smorzarla») confrontava con
+`ALZATA_MINIMA`. Togliendo dallo script il controllo dell'occlusione, la lampada
+scendeva **a metà** — 26 livelli invece di 66 — e il banco taceva, perché 26 è
+comunque sopra la soglia di «si vede qualcosa». Una stanza buia illuminata a metà
+perché il corridoio di là è acceso è lo stesso difetto, solo più educato. Adesso il
+confronto è con quanto quella stessa lampada alza al buio, alla stessa distanza.
+
+Un controllo che tollera metà del difetto non è un controllo lasco: è un controllo
+che verifica un'altra cosa.
+
+**E il banco aspetta.** `ASSESTO` è passato da 8 fotogrammi a 40: l'energia adesso ci
+arriva scorrendo, e a otto fotogrammi il banco fotografava a metà salita, leggendo
+numeri che nel gioco non esistono.

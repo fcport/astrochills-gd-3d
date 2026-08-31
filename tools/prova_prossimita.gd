@@ -27,7 +27,10 @@ extends SceneTree
 
 ## Quanti fotogrammi si lascia assestare la scena dopo aver mosso il giocatore o
 ## toccato la lampada. L'illuminazione di Godot non è istantanea.
-const ASSESTO := 8
+## Quaranta e non otto. La lampada non salta al suo valore: `luce_prossimita.gd` ce
+## la porta scorrendo, in poco piu' di un terzo di secondo. Con otto fotogrammi il
+## banco fotografava a meta' salita e leggeva numeri che nel gioco non esistono.
+const ASSESTO := 40
 
 ## A che distanze dal muro si misura. La prima è «ci sono quasi addosso», l'ultima
 ## è «è in fondo alla stanza e deve restare nera».
@@ -40,6 +43,12 @@ const ALZATA_MINIMA := 8.0
 ## Quanto può alzarsi il muro più lontano, su 255. È il controllo dell'atmosfera:
 ## il fondo della stanza deve restare esattamente com'era.
 const ALZATA_MASSIMA_LONTANO := 1.5
+
+## Quanto può alzarsi una parete quando LA PLAFONIERA È ACCESA, su 255. È il
+## controllo che è nato da un difetto visto giocando: la lampada lavorava anche a
+## luce accesa, e avvicinandosi a una parete illuminata compariva un alone che
+## seguiva la testa. In una stanza accesa la lampada non deve esistere.
+const ACCESA_MASSIMA := 1.5
 
 ## Quanto può alzarsi la parete VISTA DALL'ALTRA STANZA, su 255. La lampada non
 ## fa ombra — costa zero e a questa energia dovrebbe restare di qua dal muro. Questo
@@ -64,6 +73,12 @@ var _fuori := Vector3.ZERO
 ## La camera che guarda dall'ALTRA parte del muro. Non è un vezzo: la fuga di luce
 ## attraverso una parete è, per definizione, una cosa che dal lato illuminato non si
 ## vede. Serve stare dall'altra parte.
+## La plafoniera del locale in cui si misura, per la prova a luce accesa.
+var _plafoniera: Light3D = null
+
+## Una plafoniera che dal punto di misura non si vede: sta in un altro locale.
+var _altrove: Light3D = null
+
 var _spia: Camera3D = null
 var _oltre := Vector3.ZERO
 var _mira := Vector3.ZERO
@@ -121,6 +136,19 @@ func _prepara() -> void:
 	for d in DISTANZE:
 		_prese.append({"d": d, "accesa": false})
 		_prese.append({"d": d, "accesa": true})
+	# e la stessa parete con la plafoniera accesa: li' la lampada deve sparire
+	_plafoniera = _piu_vicina(_muro + _fuori * DISTANZE[0])
+	if _plafoniera != null:
+		_prese.append({"d": DISTANZE[0], "accesa": false, "illuminato": true})
+		_prese.append({"d": DISTANZE[0], "accesa": true, "illuminato": true})
+	# E IL RISCHIO OPPOSTO. Una lampada che si spegne dove c'e' luce si spegne anche
+	# dove la luce sta di la' dal muro, se nessuno controlla: il corridoio acceso
+	# lascerebbe al buio pesto chi e' chiuso nel magazzino. Si accende una plafoniera
+	# che da qui NON si vede e si pretende che qui non cambi niente.
+	_altrove = _dietro_un_muro(_muro + _fuori * DISTANZE[0])
+	if _altrove != null:
+		_prese.append({"d": DISTANZE[0], "accesa": false, "altrove": true})
+		_prese.append({"d": DISTANZE[0], "accesa": true, "altrove": true})
 	if _cerca_oltre():
 		_spia = Camera3D.new()
 		_spia.fov = 55.0
@@ -130,6 +158,40 @@ func _prepara() -> void:
 	print("muro di prova a (%.2f, %.2f, %.2f)" % [_muro.x, _muro.y, _muro.z])
 	_i = 0
 	_sistema()
+
+
+## La lampada della scena più vicina a un punto: è la plafoniera di quel locale.
+func _piu_vicina(punto: Vector3) -> Light3D:
+	var trovate: Array = []
+	_raccogli(_scena, trovate)
+	var meglio: Light3D = null
+	var quanto := 1e9
+	for L in trovate:
+		var d: float = punto.distance_to((L as Light3D).global_position)
+		if d < quanto:
+			quanto = d
+			meglio = L
+	return meglio
+
+
+func _raccogli(n: Node, dentro: Array) -> void:
+	if n is Light3D and not _corpo.is_ancestor_of(n):
+		dentro.append(n)
+	for f in n.get_children():
+		_raccogli(f, dentro)
+
+
+## Una lampada che da `punto` non si vede, perche' in mezzo c'e' un muro.
+func _dietro_un_muro(punto: Vector3) -> Light3D:
+	var spazio := _scena.get_world_3d().direct_space_state
+	var trovate: Array = []
+	_raccogli(_scena, trovate)
+	for L in trovate:
+		var q := PhysicsRayQueryParameters3D.create(punto, (L as Light3D).global_position)
+		q.exclude = [_corpo.get_rid()]
+		if not spazio.intersect_ray(q).is_empty():
+			return L
+	return null
 
 
 ## Spegne ogni lampada della scena, comunque sia stata accesa.
@@ -292,6 +354,17 @@ func _sistema() -> void:
 	# la camera guarda lungo -Z locale: questa imbardata la punta contro il muro
 	_corpo.rotation.y = atan2(_fuori.x, _fuori.z)
 	_luce.visible = bool(presa["accesa"])
+	# la plafoniera si accende solo per le prese che la vogliono, e si spegne per
+	# tutte le altre: accesa una volta resterebbe accesa e falserebbe il resto
+	for coppia in [[_plafoniera, "illuminato"], [_altrove, "altrove"]]:
+		if coppia[0] == null:
+			continue
+		var acceso: bool = presa.get(coppia[1], false)
+		var n: Node = coppia[0]
+		while n != null and n != _scena:
+			if n is Node3D:
+				(n as Node3D).visible = acceso
+			n = n.get_parent()
 	if presa.get("oltre", false):
 		_spia.global_position = _oltre
 		_spia.look_at(_mira, Vector3.UP)
@@ -325,7 +398,13 @@ func _leggi() -> void:
 			tutti.append((c.r + c.g + c.b) / 3.0 * 255.0)
 	tutti.sort()
 	var presa: Dictionary = _prese[_i]
-	var chiave = "oltre" if presa.get("oltre", false) else presa["d"]
+	var chiave = presa["d"]
+	if presa.get("oltre", false):
+		chiave = "oltre"
+	elif presa.get("illuminato", false):
+		chiave = "accesa"
+	elif presa.get("altrove", false):
+		chiave = "altrove"
 	# UNA FOTO LA LASCIA COMUNQUE. I numeri dicono di quanto si e' alzato il muro, non
 	# se l'ombra si stacca dai battiscopa o se l'intonaco granisce: quelle si vedono.
 	if presa.get("oltre", false):
@@ -357,6 +436,28 @@ func _conclusione() -> bool:
 	if alzata_lontano > ALZATA_MASSIMA_LONTANO:
 		_guasti.append("a %.1f m alza di %.1f livelli: sta schiarendo la stanza, non "
 			% [lontano, alzata_lontano] + "quello che hai vicino")
+	if _letture.has("accesa"):
+		var con: float = _letture["accesa"]["accesa"] - _letture["accesa"]["spenta"]
+		print("  a luce accesa    %5.1f    %5.1f    %+6.1f"
+			% [_letture["accesa"]["spenta"], _letture["accesa"]["accesa"], con])
+		if con > ACCESA_MASSIMA:
+			_guasti.append("con la plafoniera accesa la lampada alza ancora di %.1f "
+				% con + "livelli: si vede il proprio alone su una parete illuminata")
+
+	if _letture.has("altrove"):
+		var la: float = _letture["altrove"]["accesa"] - _letture["altrove"]["spenta"]
+		print("  luce di la'      %5.1f    %5.1f    %+6.1f"
+			% [_letture["altrove"]["spenta"], _letture["altrove"]["accesa"], la])
+		# NON basta che sia accesa: dev'essere PIENA. Al primo giro il confronto era
+		# con ALZATA_MINIMA, e togliendo il controllo dell'occlusione la lampada
+		# scendeva a meta' senza che il banco fiatasse - una stanza buia illuminata a
+		# meta' perche' il corridoio di la' e' acceso e' lo stesso difetto, solo piu'
+		# educato. Si confronta con quanto alzava al buio, alla stessa distanza.
+		var al_buio: float = _letture[DISTANZE[0]]["accesa"] - _letture[DISTANZE[0]]["spenta"]
+		if la < al_buio - 3.0:
+			_guasti.append("una lampada accesa DI LA' DAL MURO la smorza: qui alza di "
+				+ "%.1f livelli invece dei %.1f che fa al buio" % [la, al_buio])
+
 	if _letture.has("oltre"):
 		var fuga: float = _letture["oltre"]["accesa"] - _letture["oltre"]["spenta"]
 		print("  di la' dal muro   %5.1f    %5.1f    %+6.1f"

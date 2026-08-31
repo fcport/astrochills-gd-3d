@@ -41,6 +41,22 @@ MODELLI = {
                                 "era una scatola con un cono davanti; questo ha bobine, obiettivo e\n"
                                 "carter, ed e' l'oggetto giusto per una sala del 1999 - le proiezioni\n"
                                 "divulgative si facevano ancora con la pellicola e le diapositive."),
+    # LA CARTA DELLA CONSOLLE. Sul piano c'erano tre scatole piatte di materiale
+    # "Carta": da un metro erano tre scatole piatte. Un blocco di fogli non e' un
+    # parallelepipedo - ha i fogli che non sono pari, il cartone dietro, la costa
+    # incollata in rosso - e sono le tre cose che dicono "qualcuno ci lavora".
+    # Questo set ne porta otto, fra blocchi interi, mezzi e fogli sciolti, che e'
+    # quello che serve per fare un piano disordinato invece di un piano arredato.
+    "office_notepads": ("1k",
+                        "Blocchi per appunti e fogli sciolti per la consolle della\n"
+                        "sala di controllo. Otto pezzi diversi: e' quello che serve\n"
+                        "per sparpagliare un piano invece di posarci sopra tre\n"
+                        "scatole uguali."),
+    "stationery_supplies": ("1k",
+                            "Cancelleria da scrivania, il contorno del registro delle\n"
+                            "osservazioni. Sono gli oggetti che nessuno guarda e che,\n"
+                            "se non ci sono, fanno sembrare la stanza un rendering di\n"
+                            "catalogo."),
 }
 
 
@@ -206,6 +222,27 @@ A_MANO = {
         " catalogo, non come un cesso in servizio. Il braccio cromato lo porta lui,"
         " ed e' l'unica cosa cromata rimasta nella stanza da quando la barra degli"
         " asciugamani e' diventata un distributore di lamiera."),
+    "postazione_retro": (
+        ("postazione_retro.zip", "retro_crt_computer_1990s_desktop_pc.zip",
+         "retro_crt_computer_(1990s_desktop_pc).zip"),
+        "https://sketchfab.com/3d-models/retro-crt-computer-1990s-desktop-pc-ea9faf1298d24497b916c27a4ea38636",
+        "MadeByYeshe", "CC-BY-4.0",
+        'This work is based on "Retro CRT Computer (1990s Desktop PC)" '
+        "(https://sketchfab.com/3d-models/retro-crt-computer-1990s-desktop-pc-ea9faf1298d24497b916c27a4ea38636) "
+        "by MadeByYeshe (https://sketchfab.com/MadeByYeshe) licensed under "
+        "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "Postazione completa del 1990: monitor, TASTIERA, MOUSE A PALLINA e case",
+    ),
+    "telefono_ufficio": (
+        ("telefono_ufficio.zip", "phone.zip"),
+        "https://sketchfab.com/3d-models/phone-eaa0a0cbce964b2099b955f5ea241eee",
+        "Schmoldt5000", "CC-BY-4.0",
+        'This work is based on "Phone" '
+        "(https://sketchfab.com/3d-models/phone-eaa0a0cbce964b2099b955f5ea241eee) "
+        "by Schmoldt5000 (https://sketchfab.com/Schmoldt5000) licensed under "
+        "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "Telefono da tavolo beige con la cornetta e il filo a spirale",
+    ),
 }
 
 # Le texture arrivano a 4096: dentro il .glb della stanza sarebbero ventidue megabyte

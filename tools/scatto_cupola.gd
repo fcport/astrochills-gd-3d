@@ -94,6 +94,17 @@ func _process(_d: float) -> bool:
 				var a := get_root().get_node_or_null("Blockout/" + n + "/Accesa") as Node3D
 				if a != null:
 					a.visible = true
+	# SCATTO_SPENTE=magazzino,bagno spegne le lampade nominate. Serve a misurare
+	# una cosa che a luci tutte accese non si vede: quanta luce arriva in una stanza
+	# che ha la SUA lampada spenta. Se ce n'e', o passa da una porta o passa da un
+	# muro - e la differenza la dice il posto in cui cade.
+	if _conto == ASPETTA - 3:
+		for q in OS.get_environment("SCATTO_SPENTE").split(","):
+			if q.is_empty():
+				continue
+			var a2 := get_root().get_node_or_null("Blockout/Luce_" + q + "/Accesa") as Node3D
+			if a2 != null:
+				a2.visible = false
 	# SCATTO_APRI=pensile apre ogni porta il cui nome contiene quel pezzo di testo.
 	# Un'anta si giudica APERTA: chiusa, un pensile con l'anta incollata e un pensile
 	# con l'anta che gira sono lo stesso rettangolo, e l'unica cosa che si vede e' se

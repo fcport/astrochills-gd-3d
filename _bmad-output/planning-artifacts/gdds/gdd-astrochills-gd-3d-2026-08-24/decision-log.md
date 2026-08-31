@@ -3148,3 +3148,58 @@ su. Un commento che spiega un valore lo protegge dal caso e non lo protegge da q
 anzi lo peggiora, perché chi passa legge la spiegazione, la trova sensata e tira
 dritto. L'unica difesa è che il vincolo lo misuri qualcosa: dove esiste un banco (le
 porte, le plafoniere, le ripetizioni) questo non succede.
+
+## D-153 — La luce passava davvero attraverso i muri, e la colpa era di una lampada finta
+
+«A me sembra che la luce passi attraverso i muri». Passava.
+
+**Misurato, non dedotto.** Aggiunto a `scatto_cupola.gd` un `SCATTO_SPENTE=<lista>` che
+spegne le lampade nominate — serve a vedere una cosa che a luci tutte accese non si
+vede: quanta luce arriva in una stanza che ha la **sua** lampada spenta. Con tutte
+spente il magazzino sta a 0,06 di media su 255. Accendendo solo il bagno, di là dal
+muro: **24,15**. Il colpevole era uno solo.
+
+Il primo sospettato era `shadow_blur`, e aveva le sue colpe (vedi sotto), ma i numeri
+l'hanno scagionato: 1,6 → 1,2 sposta il massimo da 143 a 120 e la media di un decimo.
+Anche `shadow_normal_bias` da 0,45 a 0,10 e la portata da 11 a 6,5: **fuga 24,15
+identica al centesimo in tutti e tre i casi**. Quando tre leve diverse non spostano un
+numero, quel numero non viene da lì.
+
+Il colpevole è la **lampada di rimbalzo**: una seconda luce nello stesso punto, debole e
+**senza ombre**, messa perché quello che sta in ombra non fosse nero assoluto. Tolta:
+la fuga passa da 24,15 a 0,06. È lei, per intero.
+
+**E non è un numero da correggere — è una cosa impossibile.** Accanto le stava scritto
+«portata corta, la caduta a 1,6 la fa morire prima del muro». Non è vero e non poteva
+esserlo: la lampada sta a 2,42 dal pavimento e a 1,40-1,65 dai muri della sua stanza.
+Una portata che arrivi al pavimento arriva ai muri **prima**. Non esiste il valore
+giusto: esiste solo la scelta fra una stanza con le ombre nere e un edificio con i muri
+trasparenti.
+
+Il prezzo è misurato: la colonna sotto il catino del lavabo scende da 92 a 63 su 255.
+L'ambiente notturno sale da 0,035 a 0,11 e ne recupera tre — non ventotto, ma non
+attraversa niente, perché non viene da nessun punto. Il rimedio vero è la luce
+indiretta calcolata, che è una decisione sull'atmosfera di tutto il gioco.
+
+**Il controllo che mancava** è `verifica_luci_cieche()`, e la regola è geometrica, non
+di gusto: dentro l'edificio una lampada proietta ombra. Attenzione al default — in
+Godot `shadow_enabled` vale **falso** se non è scritto, quindi una luce cieca non lo
+dice a nessuno. Le spie arancioni degli interruttori restano cieche e vanno bene: 0,008
+di energia su 35 cm. Non le assolve il nome, le assolvono i loro numeri.
+
+## D-154 — Due righe uguali nello stesso nodo, e vince l'ultima
+
+Trovato di passaggio: `shadow_blur` compariva **due volte** su tutte e nove le
+plafoniere. In cima alla lista 1,2, con tre righe di motivo — «oltre questa soglia
+l'ombra rientra e su un muro di venti centimetri la luce ricomincia a passare
+dall'altra parte» — e in fondo un 1,6 aggiunto dopo per ammorbidire l'ombra nel catino
+del lavabo. In vigore c'era 1,6, cioè proprio il valore che il commento vieta, e il
+commento restava lì a dire il contrario a chiunque lo leggesse.
+
+È un modo di sbagliare tipico di un file **generato**: le proprietà di una lampada
+vengono da una lista costruita a pezzi, e aggiungere una riga in fondo non somiglia
+affatto a cancellarne una in mezzo, anche se è quello che fa.
+
+`verifica_doppioni()` legge il testo **generato** e non il generatore: le due righe
+possono nascere a cinquanta righe di distanza, da due rami diversi, e finire comunque
+nello stesso nodo. Quello che conta è cosa arriva a Godot.

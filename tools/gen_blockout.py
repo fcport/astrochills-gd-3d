@@ -290,7 +290,7 @@ def tscn():
     righe += ['[sub_resource type="Environment" id="env"]',
               'background_mode = 1', 'background_color = Color(0.004, 0.005, 0.010, 1)',
               'ambient_light_source = 2', 'ambient_light_color = Color(0.26, 0.32, 0.48, 1)',
-              'ambient_light_energy = 0.035',
+              'ambient_light_energy = 0.11',
               'tonemap_mode = 3', 'tonemap_exposure = 1.0', 'tonemap_white = 3.0', '',
               '[node name="Blockout" type="Node3D"]', '',
               '[node name="WorldEnvironment" type="WorldEnvironment" parent="."]',
@@ -457,12 +457,46 @@ def tscn():
              # NERA a spigolo vivo, e da mezzo metro non si leggeva come un'ombra -
              # si leggeva come un pezzo mancante del modello. `light_size` da' alla
              # lampada la sua dimensione vera e l'ombra torna a essere un'ombra.
-             'light_size = 0.35', 'shadow_blur = 1.6'],
+             # `shadow_blur` NON SI RIPETE QUI, e per un po' c'era. Piu' su, con
+             # tre righe di motivo, sta gia' `shadow_blur = 1.2`, con scritto che
+             # oltre quella soglia l'ombra RIENTRA e su un muro di venti
+             # centimetri la luce ricomincia a passare dall'altra parte. Poi e'
+             # stato aggiunto un secondo `shadow_blur = 1.6` in fondo alla stessa
+             # lista, per ammorbidire l'ombra nel catino del lavabo - e in un
+             # .tscn, fra due righe uguali dentro lo stesso nodo, VINCE L'ULTIMA.
+             # Il valore in vigore era quello che il commento di sopra vieta, e il
+             # commento restava li' a dire il contrario. Adesso lo dice anche
+             # `verifica_doppioni()`.
+             'light_size = 0.35'],
             ['transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.002, 0)',
              'mesh = SubResource("mesh_diff")',
              'material_override = SubResource("mat_diff")'],
             ["Lamiera", "Neon"],
-            # LA LAMPADA DI RIMBALZO: una seconda luce nello stesso punto, debole e
+            # LA LAMPADA DI RIMBALZO NON C'E' PIU', E NON SI PUO' RIMETTERE.
+            # Era una seconda luce nello stesso punto, debole e SENZA OMBRE, per far
+            # si' che quello che sta in ombra non fosse nero assoluto: la colonna
+            # sotto il catino del lavabo passava da 63 a 92 su 255, e si vedeva.
+            #
+            # Accanto le stava scritto "portata corta, la caduta a 1,6 la fa morire
+            # prima del muro". Misurata, non moriva affatto: spegnendo tutte le
+            # lampade tranne quella del bagno, il magazzino di la' dal muro andava
+            # da 0,06 a 24,15 di media. Una luce senza ombre attraversa venti
+            # centimetri di muro come se non ci fossero, e la stanza accanto si
+            # illuminava da sola.
+            #
+            # E NON E' UN NUMERO DA CORREGGERE, e' una cosa impossibile: la lampada
+            # sta a 2,42 dal pavimento e a 1,40-1,65 dai muri della sua stanza. Una
+            # portata che arrivi al pavimento arriva ai muri PRIMA. Non esiste il
+            # valore giusto - esiste solo la scelta fra una stanza con le ombre nere
+            # e un edificio con i muri trasparenti.
+            #
+            # Il rimedio vero e' la luce indiretta calcolata (VoxelGI), che e' una
+            # decisione sull'atmosfera di tutto il gioco e non su una lampada. Nel
+            # frattempo l'ambiente notturno sale da 0,035 a 0,11: alza le ombre di
+            # tre livelli invece di ventotto, ma non attraversa niente perche' non
+            # viene da nessun punto.
+            # -- com'era, per memoria:
+            # una seconda luce nello stesso punto, debole e
             # SENZA OMBRE. Non serve a illuminare di piu', serve a far si' che quello
             # che sta in ombra non sia NERO ASSOLUTO. In una stanza vera la luce
             # rimbalza sulle pareti e l'ombra sotto il bordo di un lavabo resta
@@ -474,15 +508,7 @@ def tscn():
             # PORTATA CORTA, cinque metri contro undici. Senza ombre questa luce
             # attraversa i muri, e a undici metri avrebbe schiarito mezzo edificio;
             # a cinque, e a un sesto dell'energia, resta nella stanza.
-            rimbalzo=['transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.30, 0)',
-                      'light_energy = 0.95', 'light_color = Color(1, 0.96, 0.88, 1)',
-                      # QUATTRO METRI E CADUTA RAPIDA, e i due numeri vanno insieme.
-                      # A 0,34 di energia l'ombra nel catino saliva di sette livelli
-                      # su 255: non si vedeva la differenza. A 0,95 si vede, ma una
-                      # luce senza ombre a portata lunga esce dalla stanza: la
-                      # caduta a 1,6 la fa morire prima del muro.
-                      'omni_range = 4.0', 'omni_attenuation = 1.6',
-                      'light_specular = 0.0', 'shadow_enabled = false'])
+            )
 
     for (ln, ax, az, anx, anz, aq) in punti_applique():
         nodo_luce[ln] = "Luce_%s" % ln
@@ -1020,6 +1046,104 @@ RIGHELLO_A_PARTE = {
 }
 
 
+def verifica_luci_cieche(testo, portata_max=0.60, energia_max=0.05):
+    """Ogni lampada dentro l'edificio proietta ombra. Senza, attraversa i muri.
+
+    NON E' UNA REGOLA DI GUSTO, E' GEOMETRIA. Una luce che non proietta ombra
+    illumina tutto quello che sta nel suo raggio, muri compresi: se il raggio arriva
+    al pavimento della sua stanza - e deve, altrimenti non serve a niente - arriva
+    anche di la' dal muro, perche' il muro e' PIU' VICINO del pavimento. Una
+    plafoniera sta a 2,42 dal pavimento e a 1,40 dal muro piu' vicino.
+
+    Il caso che l'ha fatta scrivere: le plafoniere avevano una seconda luce senza
+    ombre, per schiarire le ombre nere. Accanto le stava scritto che la sua caduta
+    "la fa morire prima del muro". Misurato spegnendo tutte le lampade tranne quella
+    del bagno, il magazzino di la' dal muro passava da 0,06 a 24,15 di media - cioe'
+    si illuminava da solo, ed e' esattamente quello che si vedeva giocando.
+
+    ATTENZIONE AL DEFAULT: in Godot `shadow_enabled` vale FALSO se non e' scritto.
+    Una luce senza quella riga e' una luce cieca, e non lo dice nessuno.
+
+    NON SI PASSA PER NOME. Le spie arancioni dentro gli interruttori sono cieche e
+    vanno bene cosi': 0,008 di energia su 35 cm di portata. Attraversano il muro
+    anche loro, e non arriva niente dall'altra parte. Quello che le assolve e' il
+    prodotto dei loro numeri, non il loro nome - e cosi' la prossima luce cieca
+    verra' giudicata per quello che fa, non per come si chiama.
+    """
+    FUORI = ("esterno_porta", "esterno_sud")   # illuminano il piazzale: nessun muro
+    problemi = []
+    blocco = tipo = ""
+    ombra, portata, energia = False, 0.0, 0.0
+
+    def valore(riga):
+        try:
+            return float(riga.split(" = ")[1])
+        except (IndexError, ValueError):
+            return 0.0
+
+    def chiudi():
+        if not tipo.endswith("Light3D") or ombra:
+            return
+        if any(f in blocco for f in FUORI):
+            return
+        if portata <= portata_max or energia <= energia_max:
+            return
+        problemi.append("  LUCE CIECA               %s non proietta ombra e arriva a "
+                        "%.1f m con %.2f di energia: attraversa i muri"
+                        % (blocco, portata, energia))
+    for riga in testo.split(chr(10)):
+        if riga.startswith("["):
+            chiudi()
+            blocco, ombra, portata, energia = riga.strip(), False, 0.0, 0.0
+            tipo = riga.split('type="')[1].split('"')[0] if 'type="' in riga else ""
+            continue
+        if riga.strip() == "shadow_enabled = true":
+            ombra = True
+        elif riga.startswith("omni_range = ") or riga.startswith("spot_range = "):
+            portata = valore(riga)
+        elif riga.startswith("light_energy = "):
+            energia = valore(riga)
+    chiudi()
+    return problemi
+
+
+def verifica_doppioni(testo):
+    """Nessun nodo scrive due volte la stessa proprieta'.
+
+    IN UN .tscn, FRA DUE RIGHE UGUALI DENTRO LO STESSO NODO, VINCE L'ULTIMA - in
+    silenzio. E' un modo di sbagliare tipico di un file GENERATO: le proprieta' di
+    una lampada qui vengono da una lista costruita a pezzi, e aggiungere una riga in
+    fondo non somiglia affatto a cancellarne una in mezzo, anche se e' quello che fa.
+
+    Il caso che l'ha fatta scrivere: `shadow_blur` compariva due volte su tutte e
+    nove le plafoniere. In cima alla lista c'era 1,2 con tre righe di motivo -
+    "oltre questa soglia l'ombra rientra e su un muro di venti centimetri la luce
+    ricomincia a passare dall'altra parte" - e in fondo un 1,6 aggiunto dopo per
+    ammorbidire l'ombra nel catino del lavabo. In vigore c'era 1,6, cioe' proprio
+    il valore che il commento di sopra vieta, e il commento restava li' a dire il
+    contrario a chiunque lo leggesse.
+
+    Si controlla il testo GENERATO e non il generatore: le due righe possono nascere
+    a cinquanta righe di distanza, da due rami diversi, e comunque finire nello
+    stesso nodo. Quello che conta e' cosa arriva a Godot.
+    """
+    problemi, blocco, visti = [], "", set()
+    for riga in testo.split(chr(10)):
+        if riga.startswith("["):
+            blocco, visti = riga.strip(), set()
+            continue
+        if " = " not in riga or riga.startswith(" ") or riga.startswith(";"):
+            continue
+        p = riga.split(" = ")[0]
+        if not p.replace("_", "").replace("/", "").isalnum():
+            continue
+        if p in visti:
+            problemi.append("  PROPRIETA' DOPPIA        %s scritta due volte in %s: "
+                            "vale l'ultima" % (p, blocco))
+        visti.add(p)
+    return problemi
+
+
 def verifica_ripetizioni(tolleranza=0.12):
     """Ogni texture si ripete alla misura che la sua fonte DICHIARA.
 
@@ -1180,13 +1304,16 @@ else:
     print("aperture: tutte collocate, nessun montante sotto i 30 cm")
 _tetti = [(b[0]-b[3]/2, b[2]-b[5]/2, b[0]+b[3]/2, b[2]+b[5]/2)
           for b in blocchi if b[6].startswith('TettoCup')]
+_testo_scena = io.open(out, encoding="utf-8").read()
 _ing = (verifica_ingombri() + verifica_raccordi() + verifica_ante()
         + verifica_trappole() + verifica_arredi() + verifica_interruttori()
         + verifica_applique() + verifica_passerella() + verifica_plafoniere()
         + verifica_ripetizioni()
         + verifica_fessure() + verifica_angoli()
         + verifica_freschezza()
-        + verifica_orientamenti(io.open(out, encoding="utf-8").read()))
+        + verifica_orientamenti(_testo_scena)
+        + verifica_doppioni(_testo_scena)
+        + verifica_luci_cieche(_testo_scena))
 if _ing:
     print("ATTENZIONE:")
     for _p in _ing:
@@ -1209,7 +1336,7 @@ print("scritto %s  -  %d blocchi, %d dimensioni distinte" % (out, len(blocchi), 
 # ambientale mentre nel .tscn restava a 0,45. Qui si rilegge il file scritto e si
 # controlla che i valori che contano ci siano davvero.
 _scritto = io.open(out, encoding="utf-8").read()
-_attesi = [("ambient_light_energy = 0.035", "la luce ambientale della notte"),
+_attesi = [("ambient_light_energy = 0.11", "la luce ambientale della notte"),
            ("tonemap_mode = 3", "il tonemapping ACES"),
            ("shadow_normal_bias = 0.45", "i bias delle ombre delle plafoniere"),
            ('locale = "la cucina"', "il nome del locale nel prompt"),

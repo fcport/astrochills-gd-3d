@@ -103,6 +103,33 @@ A_MANO = {
         " montatura fissata a un pilastro. E la sua montatura e' gia' tarata per la"
         " nostra latitudine - l'asse polare misurato sta a 43 gradi, Montegrimano e'"
         " a 43,9: si raddrizza di un grado, non si reinventa."),
+    "lavabo_bagno": (
+        "lavabo_bagno.zip",
+        "https://sketchfab.com/3d-models/33cbd0ac6ae24bd292783a4e06fc4138",
+        "Antonio Rossin", "CC-BY-4.0",
+        'This work is based on "Lavabo" '
+        "(https://sketchfab.com/3d-models/33cbd0ac6ae24bd292783a4e06fc4138) "
+        "by Antonio Rossin (https://sketchfab.com/antoniorossin) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "Lavabo a semicolonna con bacino rettangolare arrotondato e miscelatore monocomando: e' esattamente la forma che aveva un lavabo italiano di serie negli anni Novanta. Gli altri candidati erano squadrati stile art deco o tondi da bagno d'epoca, che sono altri due decenni. Arriva beige e va riportato al bianco ceramica."),
+    "bidet_bagno": (
+        "bidet_bagno.zip",
+        "https://sketchfab.com/3d-models/e52d1be9d7594dd39c8ae8e3dcab9cd5",
+        "Joele segreto", "CC-BY-4.0",
+        'This work is based on "Bidet" '
+        "(https://sketchfab.com/3d-models/e52d1be9d7594dd39c8ae8e3dcab9cd5) "
+        "by Joele segreto (https://sketchfab.com/joelesegreto) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "Bidet monoforo con miscelatore, 2.600 facce. Un bagno italiano senza bidet non e' un bagno italiano, e questo ha la forma giusta - catino ovale su base piena - invece che quella sospesa di adesso."),
+    "wc_bagno": (
+        "wc_bagno.zip",
+        "https://sketchfab.com/3d-models/5b18711616054a44b025d9272b745a6a",
+        "Yaiyeondurisin", "CC-BY-4.0",
+        'This work is based on "Qualitas Bathrooms toilet low poly" '
+        "(https://sketchfab.com/3d-models/5b18711616054a44b025d9272b745a6a) "
+        "by Yaiyeondurisin (https://sketchfab.com/yaiyeondurisin) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "Water con cassetta bassa appoggiata e tubo di scarico a vista: e' quello giusto per il 1999. I water con la cassetta incassata a muro sono di adesso, e quelli con la cassetta alta e la catena sono di cinquant'anni prima."),
 }
 
 # Le texture arrivano a 4096: dentro il .glb della stanza sarebbero ventidue megabyte

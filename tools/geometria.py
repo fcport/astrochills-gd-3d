@@ -816,6 +816,40 @@ ARREDI_DIVULGAZIONE = [
 # Ogni stanza arredata: nome, ELENCO di rettangoli netti (x0, z0, x1, z1), mobili.
 # Aggiungerne una significa aggiungere una riga qui: i controlli, la collisione nel
 # blockout e il conto dei pezzi la prendono da sola.
+# --- il bagno ----------------------------------------------------------------
+# 3,15 x 2,80 al netto, con la porta sul muro nord (che si apre DENTRO, verso ovest)
+# e la finestra al centro del muro sud. Da quei due vincoli discende tutto il resto:
+# la parete est e' l'unica libera per tutta la sua lunghezza ed e' li' che vanno i
+# sanitari in fila; la parete ovest la prende il lavabo, che dev'essere fuori dal
+# giro dell'anta; sotto la finestra ci sta solo roba bassa, cioe' il termosifone.
+#
+# SENZA VASCA, per richiesta: al suo posto la doccia nell'angolo sud-est, 90x90.
+# In un bagno di servizio di un osservatorio e' anche piu' credibile della vasca -
+# ci si sciacqua dopo una notte in cupola, non ci si fa il bagno.
+#
+# L'INTERASSE WC-BIDET E' 75 CM e non e' un numero a caso: sotto i 55 non ci si
+# siede, sopra gli 80 la parete sembra vuota in mezzo. Settantacinque e' la misura
+# che si trova nei bagni veri di quegli anni.
+SALA_BAGNO = [(5.00, 6.60, 8.15, 9.40)]
+ARREDI_BAGNO = [
+    # parete est, in fila da nord a sud: wc, bidet, doccia
+    ("Wc",          7.47, 6.90, 8.15, 7.30, 0.80),
+    ("Bidet",       7.55, 7.65, 8.15, 8.05, 0.65),
+    ("Doccia",      7.25, 8.50, 8.15, 9.40, 2.00),
+    # parete ovest: il lavabo con lo specchio e la mensola sopra, tutto in una
+    # impronta sola - sono un pezzo unico per chi ci sbatte contro
+    ("Lavabo",      5.00, 8.15, 5.60, 8.90, 1.90),
+    # muro nord, a OVEST della porta e non a est: il vano va da 5,80 a 7,10 e il
+    # perno sta a 7,02, quindi l'anta spazza il quadrante verso ovest fino a 1,14 m.
+    # Messo a est era addosso al cardine e il controllo l'ha preso in pieno.
+    ("Pensile",     5.00, 6.60, 5.60, 6.92, 2.05),
+    # sotto la finestra, e piu' basso del davanzale: un termosifone davanti a un
+    # vetro e' normale, un mobile no. Allineato al vano vero, che va da 6,20 a 7,20.
+    ("Termo",       6.20, 9.25, 7.20, 9.40, 0.75),
+    # il portasciugamani a muro, fra la porta e il lavabo
+    ("Portasalv",   5.00, 7.30, 5.12, 7.95, 1.30),
+]
+
 SALA_PC = [(5.30, 0.10, 8.15, 4.30)]
 SALA_CUCINA = [(8.35, 1.60, 13.30, 4.00)]
 SALA_DIVULGAZIONE = [
@@ -827,6 +861,7 @@ STANZE_ARREDATE = [
     ("controllo pc", SALA_PC, ARREDI_PC),
     ("cucina", SALA_CUCINA, ARREDI_CUCINA),
     ("divulgazione", SALA_DIVULGAZIONE, ARREDI_DIVULGAZIONE),
+    ("bagno", SALA_BAGNO, ARREDI_BAGNO),
 ]
 
 

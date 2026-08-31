@@ -82,6 +82,7 @@ def tscn():
              '[ext_resource type="PackedScene" path="res://assets/models/controllo_pc.glb" id="4_arredi"]',
              '[ext_resource type="PackedScene" path="res://assets/models/cucina.glb" id="5_cucina"]',
              '[ext_resource type="PackedScene" path="res://assets/models/divulgazione.glb" id="6_divulg"]',
+             '[ext_resource type="PackedScene" path="res://assets/models/bagno.glb" id="19_bagno"]',
              # Le ante in gioco sono nodi Door generati qui, non pezzi del modello: le
              # loro texture vanno caricate nella scena, o restano l'unica cosa a colore
              # piatto rimasta a vista.
@@ -268,6 +269,7 @@ def tscn():
               '[node name="ControlloPC" parent="." instance=ExtResource("4_arredi")]', '',
               '[node name="Cucina" parent="." instance=ExtResource("5_cucina")]', '',
               '[node name="Divulgazione" parent="." instance=ExtResource("6_divulg")]', '',
+              '[node name="Bagno" parent="." instance=ExtResource("19_bagno")]', '',
               # LA LUNA, e con le ombre. Senza `shadow_enabled` una direzionale
               # attraversa i muri: illuminava il pavimento delle stanze interne
               # passando dal tetto, e si vedeva una luce che non veniva da nessuna
@@ -835,6 +837,7 @@ SCRIVONO = {
     "cupola_blender.py": "cupola.glb",
     "arredi_blender.py": "controllo_pc.glb",
     "cucina_blender.py": "cucina.glb",
+    "bagno_blender.py": "bagno.glb",
     "divulgazione_blender.py": "divulgazione.glb",
     "impianti_blender.py": "impianti.glb",
 }

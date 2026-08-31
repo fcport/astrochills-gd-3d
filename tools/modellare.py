@@ -66,9 +66,29 @@ COLORI = {
     # si trova l'interruttore. Il problema che risolve nel gioco e' lo stesso che
     # risolveva in casa.
     "Spia":     (0.95, 0.45, 0.10),
+    # IL BAGNO. Il rivestimento e il pavimento non sono lo stesso pezzo e non hanno
+    # lo stesso colore: a muro la ceramica bianca lucida, a terra il gres beige.
+    "PiastrelleMuro": (0.87, 0.86, 0.83),
+    "PiastrellePav":  (0.80, 0.77, 0.70),
+    "Listello":       (0.90, 0.88, 0.84),
+    # LO SPECCHIO NON E' UN METALLO, ed e' la terza volta in questo progetto che il
+    # motivo si ripresenta: in Godot una superficie metallica e liscia riflette
+    # l'ambiente, e in una stanza chiusa senza riflessi da riflettere l'ambiente e'
+    # NERO. Uno specchio metallico in un bagno interno diventa un rettangolo di
+    # pece. Qui e' un materiale chiaro poco ruvido: non riflette davvero, ma legge
+    # come vetro argentato ed e' quello che serve.
+    "Specchio":       (0.70, 0.73, 0.76),
+    # lo smalto azzurrino degli asciugamani e del tappetino, che nella foto sono
+    # l'unica macchia di colore in una stanza tutta crema
+    "Spugna":         (0.42, 0.58, 0.56),
 }
 RUVIDEZZA = {"Metallo": 0.45, "Inox": 0.28, "Rame": 0.35, "Schermo": 0.12,
-             "Acceso": 0.20, "Gomma": 0.75, "Ceramica": 0.25, "Smalto": 0.30}
+             "Acceso": 0.20, "Gomma": 0.75, "Ceramica": 0.25, "Smalto": 0.30,
+             # la ceramica smaltata di un rivestimento e' LUCIDA, ed e' cosi' che si
+             # riconosce un bagno: 0,12 a muro contro 0,45 del gres a terra, che e'
+             # opaco perche' su un pavimento bagnato lucido ci si ammazza
+             "PiastrelleMuro": 0.12, "PiastrellePav": 0.45, "Listello": 0.15,
+             "Specchio": 0.06, "Spugna": 0.90}
 METALLICI = ("Metallo", "Inox", "Rame", "Ferro")
 # I materiali la cui texture va MOLTIPLICATA per il colore invece che sostituirlo.
 # Di norma il colore e' solo un ripiego per quando la texture manca, e collegare la
@@ -103,6 +123,14 @@ TEXTURE = {
     "TelaiMetallo": ("metallo", 0.60),
     "Metallo":      ("metallo", 1.20),
     "Plastica":     ("plastica", 0.35),
+    # IL BAGNO. 0,75 a muro: la texture porta cinque piastrelle per lato, quindi
+    # ognuna viene 15 cm - il formato del rivestimento di allora. A terra 1,20 su
+    # quattro piastrelle fa 30 cm, che e' la piastrella da pavimento di quegli anni.
+    "PiastrelleMuro": ("piastrelle-muro", 0.75),
+    "PiastrellePav":  ("piastrelle-pavimento", 1.20),
+    # il listello e' un motivo solo in una tessera quadrata, e la fascia e' alta
+    # otto centimetri: una ripetizione, una losanga.
+    "Listello":       ("listello", 0.08),
     "Muri":         ("intonaco", 2.00),
     # il soffitto e' intonaco come i muri, ma la trama si ripete piu' larga: sopra la
     # testa la stessa scala dei muri si legge come un motivo, non come una superficie

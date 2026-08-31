@@ -2181,3 +2181,52 @@ Adesso l'attesa si calcola da `SI_ABITUA`, letta dallo script della lampada. Chi
 rallenta non deve venire a ricordarsi del banco. La costante si legge dal `GDScript`
 caricato e non dal `class_name`: quel nome vive nella cache che scrive l'editor, e un
 banco lanciato con `--script` su un progetto appena clonato quella cache non ce l'ha.
+
+## D-111 — Il bagno: quello che lo data non sono i sanitari
+
+**Richiesta.** Un bagno come quello della foto — italiano, anni Novanta, non moderno
+— ma **senza vasca**.
+
+**La cosa da capire prima di modellare.** Un water è un water in ogni paese e in ogni
+decennio: i sanitari non datano niente. Quello che sposta la stanza di trent'anni
+sono tre cose, e sono geometria e materiale:
+
+1. **Il rivestimento si ferma a 1,60** e sopra c'è intonaco. Piastrellare fino al
+   soffitto è un gesto di oggi.
+2. **Il listello.** La fascia di losanghe azzurrine che chiude il rivestimento è il
+   pezzo che data il bagno più di tutto il resto messo insieme.
+3. **Il bidet.** Un bagno senza bidet non è italiano. Interasse dal water 75 cm:
+   sotto i 55 non ci si siede, sopra gli 80 la parete sembra vuota in mezzo.
+
+**Il listello non si scarica: lo si disegna.** Le librerie CC0 sono piene di
+piastrelle e non hanno un listello, perché un listello è un pezzo di gusto e il gusto
+non si fotografa in una libreria di materiali generici. `tools/fai_listello.py` lo
+genera: fondo crema, due filetti, una losanga col cuore caldo. Ed è **una tessera
+quadrata con un motivo solo**, non una 4:1 con quattro — le UV di questo progetto si
+cuociono con una scala sola per le due direzioni, e una tessera larga quattro volte
+l'altezza si sarebbe schiacciata sulla fascia mostrandone un quarto.
+
+**Sporge di dieci millimetri**, come le nervature della porta del magazzino: a filo
+sarebbe un disegno stampato sul muro.
+
+**Senza vasca**: doccia 90×90 nell'angolo sud-est, piatto alto 12 cm col bordo — i
+piatti a filo pavimento sono di adesso. In un osservatorio è anche più credibile
+della vasca: ci si sciacqua dopo una notte in cupola.
+
+## D-112 — Un modellatore che non si rifiuta di girare
+
+I tre sanitari sono superfici curve continue: fatti con le scatole vengono mobili,
+non ceramiche, e vanno presi da fuori (CC-BY, vedi `CREDITI.md`). Ma Sketchfab
+consegna solo a un account autenticato, quindi passano per il registro `A_MANO`.
+
+**Se i modelli non ci sono, `bagno_blender.py` NON fallisce**: mette i suoi
+segnaposto, li dichiara a schermo, e produce comunque il `.glb`. È una scelta, non
+una scorciatoia — un bagno con tre segnaposto è comunque una stanza da guardare e da
+attraversare, mentre un modellatore che si rifiuta di girare blocca anche tutto il
+lavoro che con quei modelli non c'entra: il rivestimento, il listello, la doccia, il
+mobiletto. Quando i file arrivano, la stessa riga li monta al posto dei segnaposto.
+
+**Due materiali sbagliati, visti solo nel render.** Applique e termosifone erano di
+`Lamiera`, che in questo progetto è la lamiera segnata delle plafoniere industriali:
+sopra uno specchio da bagno e sotto una finestra leggevano come pezzi arrugginiti.
+Sono metallo smaltato bianco, cioè `Ceramica`.

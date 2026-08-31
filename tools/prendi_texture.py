@@ -74,6 +74,19 @@ SET = {
               " geometrico, non come una libreria. La tela si tinge NEUTRA apposta -"
               " il colore di ogni dorso arriva dal materiale e moltiplica la mappa,"
               " cosi' otto colori diversi condividono una trama sola."),
+    # IL BAGNO. Due piastrelle diverse e non una sola: in un bagno italiano di quegli
+    # anni il rivestimento a parete e il pavimento non sono mai lo stesso pezzo. A
+    # muro la ceramica bianca lucida da 15x15, che riflette e si sporca di aloni; a
+    # terra il gres beige opaco, piu' grande e piu' vissuto. Usare la stessa per
+    # entrambi e' l'errore che fa leggere un bagno come una piscina.
+    "piastrelle-muro": ("Tiles036", None,
+                        "Ceramica bianca lucida quadrata per il rivestimento del bagno"
+                        " fino a 1,60 m. E' quella della foto: bianco crema, fuga"
+                        " sottile, lucida."),
+    "piastrelle-pavimento": ("Tiles142", None,
+                             "Gres beige opaco per il pavimento del bagno. Segnato"
+                             " quanto basta: un pavimento di bagno del 1999 non e'"
+                             " nuovo di posa."),
     "carta": ("Paper004", (222, 214, 196),
               "Carta ingiallita: i volumi coricati, i registri, i fogli sui banchi."),
     "plastica": ("Plastic010", (207, 191, 148),

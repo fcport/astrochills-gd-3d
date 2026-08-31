@@ -2987,3 +2987,55 @@ carpenteria: su ventisette centimetri, a 0,60 se ne vedrebbe meno di mezza
 ripetizione, cioè una macchia sola, e a seconda di dove cade è tutta ruggine o tutta
 vernice. A 0,34 il pezzo prende quasi tutta la mappa e legge come un oggetto piccolo e
 vecchio invece che come un ritaglio.
+
+## D-147 — Il pensile non doveva cambiare cardine, doveva uscire dall'angolo
+
+Spostare il cardine da ovest a est (D-144) toglieva il taglio nel rivestimento e ne
+faceva un altro difetto: un mobiletto che si apre al contrario di come lo aprirebbe
+chiunque ci stia davanti. Le due opzioni sembravano due, e invece la domanda era
+un'altra — **perché il pensile sta incastrato nell'angolo?**
+
+Ventotto centimetri a est, e il cardine torna a ovest dove deve stare. **Ventotto e non
+trenta**: il vano della porta del bagno comincia a 5,92, e a trenta il mobile andrebbe
+a filo dello stipite. L'anta gira nel vuoto — il banco misura 102 gradi liberi contro
+90 di apertura, e a fermarla oltre è il distributore di carta sul muro ovest, che è
+esattamente il pezzo che ci si aspetta di trovare lì.
+
+Vale la pena dirlo perché è un modo di sbagliare che si ripete: davanti a un difetto,
+la prima cura è quasi sempre quella che sposta il sintomo di un posto. Il cardine era
+il sintomo; la posizione era la causa.
+
+## D-148 — Del distributore si prende la forma, non la pelle
+
+Il segnaposto a scatole aveva la vernice giusta (D-146) e la silhouette sbagliata: un
+distributore vero ha la **calotta arrotondata**, il **labbro** sotto da cui esce il
+foglio e il **fondo rastremato**, e sono tre curve — cioè proprio la cosa che con le
+scatole non si fa. Stessa lezione della porta del magazzino, e stessa forma di rimedio:
+il pezzo viene da fuori.
+
+Ma qui la divisione del lavoro è **opposta a quella del radiatore**. Del radiatore si è
+preso proprio lo sporco: la ruggine attorno alla valvola e lo smalto scrostato sono
+texture, e a mano non si fanno i sessant'anni. Questo modello arriva **bianco di
+fabbrica e senza mappe**, e in un bagno del 1999 sarebbe l'unica cosa nuova della
+stanza: lui dà la forma, la lamiera verniciata e scrostata gliela diamo noi.
+
+**Le UV si rifanno, e non è un dettaglio.** Quelle del modello sono impacchettate per
+la sua texture: una mappa ripetitiva ci finisce sopra a una scala che non ha scelto
+nessuno, e la stessa vernice viene a grana grossa su un pezzo e fine su quello accanto.
+`vernicia()` le riproietta a scatola come tutto il resto del progetto, alla scala che
+il materiale dichiara — e **cuoce la posa nella mesh prima di proiettare**, perché
+`posa_modello` scala l'oggetto padre e proiettare sulle coordinate locali darebbe una
+grana che dipende da quanto il modello è stato rimpicciolito per stare nell'impronta.
+
+`vernicia()` girerà solo il giorno in cui il modello sarà scaricato, quindi si prova
+oggi su un cubo scalato — stesso patto di `prova_ingiallisci`. **E la prova, alla prima
+stesura, misurava la cosa sbagliata:** presa su tutto l'oggetto, l'escursione delle U
+mette insieme facce proiettate su piani diversi — una legge la y del mondo, quella
+accanto la x — e veniva 44 invece di 2,94. Accusava `vernicia` di un difetto suo.
+Corretta a misurare una faccia alla volta, e validata togliendo la cottura della posa:
+dice 1,47 invece di 2,94, cioè esattamente il fattore di scala mancante.
+
+Il modello sta su Sketchfab, che vuole il login: come il radiatore e la porta del
+magazzino, la voce è in `A_MANO` e lo zip va messo a mano in
+`assets/models/_da_scaricare/`. Finché non c'è, il segnaposto resta e il modellatore lo
+dice invece di fallire.

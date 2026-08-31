@@ -770,13 +770,18 @@ def pezzi_anta(a):
 #  per l'anta singola), tipo, quota della base, cima, spessore, quanto si lascia
 #  davanti alle maniglie, apertura in gradi
 MOBILI_CON_ANTE = [
-    # IL CARDINE STA A EST, E CI E' VOLUTO VEDERLO APERTO. Da "a" cadeva sul capo
-    # OVEST, che qui e' l'angolo: il pensile e' addossato al muro ovest, e un'anta
-    # incernierata su quel capo ruota DENTRO il piano di quel muro - a novanta gradi
-    # il battente sta nel rivestimento. Il banco delle porte non lo vedeva e non
-    # poteva: le piastrelle sono mesh, non collisione, e lui misura la fisica. E'
-    # un difetto che si vede solo aprendo l'anta e guardando.
-    ("Pensile", "sud",   1, "b", "specchio", 1.450, 2.050, 0.018, 0.000, 90.0),
+    # IL CARDINE STA A OVEST, ED E' IL PENSILE CHE SI E' SPOSTATO. Incernierato a
+    # ovest con il mobile addossato al muro, il battente ruotava DENTRO il piano di
+    # quel muro: a novanta gradi stava nel rivestimento, e si vedeva attraversare il
+    # listello. La prima cura e' stata mettere il cardine dall'altro capo, e non era
+    # la cura giusta - risolveva il taglio ma dava un mobile che si apre al
+    # contrario di come lo aprirebbe chiunque ci stia davanti.
+    #
+    # Il cardine e' quello di prima; e' il pensile che ha smesso di stare
+    # nell'angolo. Ventotto centimetri a est bastano perche' l'anta giri nel vuoto -
+    # e non trenta, che l'attaccherebbero allo stipite della porta del bagno (il
+    # vano comincia a 5,92).
+    ("Pensile", "sud",   1, "a", "specchio", 1.450, 2.050, 0.018, 0.000, 90.0),
     ("Armadio", "ovest", 2, "a", "lamiera",  0.125, 1.825, 0.018, 0.070, 90.0),
 ]
 
@@ -1062,7 +1067,7 @@ ARREDI_BAGNO = [
     # muro nord, a OVEST della porta e non a est: il vano va da 5,80 a 7,10 e il
     # perno sta a 7,02, quindi l'anta spazza il quadrante verso ovest fino a 1,14 m.
     # Messo a est era addosso al cardine e il controllo l'ha preso in pieno.
-    ("Pensile",     5.00, 6.60, 5.60, 6.92, 2.05),
+    ("Pensile",     5.28, 6.60, 5.88, 6.92, 2.05),
     # sotto la finestra, e piu' basso del davanzale: un termosifone davanti a un
     # vetro e' normale, un mobile no. Allineato al vano vero, che va da 6,20 a 7,20.
     # 20 cm di profondita' e non 15: un radiatore di ghisa a due colonne e'
@@ -1094,7 +1099,7 @@ ARREDI_BAGNO = [
     # chiedersi cosa ci sta davvero in un bagno di servizio di un osservatorio, e
     # non e' un asciugamano di casa - e' il distributore di carta a muro, che e'
     # lamiera verniciata, cioe' un materiale che questo progetto ha gia'.
-    ("Distributore", 5.00, 7.40, 5.13, 7.70, 1.56),
+    ("Distributore", 5.00, 7.38, 5.15, 7.72, 1.56),
 ]
 
 SALA_PC = [(5.30, 0.10, 8.15, 4.30)]

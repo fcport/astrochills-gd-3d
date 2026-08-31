@@ -173,6 +173,23 @@ A_MANO = {
         " sezione a otto, il cappello fuso e la ruggine dove gocciola la valvola. La"
         " ghisa e' la sola cosa in questo bagno che DEVE essere segnata - un"
         " radiatore lucido in un edificio del 1962 sarebbe l'unica cosa nuova."),
+    "distributore_carta": (
+        ("distributore_carta.zip", "dispensador_de_toalla_de_papel_paper_dispenser.zip",
+         "paper_dispenser.zip", "dispensador-de-toalla-de-papel-paper-dispenser.zip"),
+        "https://sketchfab.com/3d-models/dispensador-de-toalla-de-papel-paper-dispenser-4af9dde390bd4c35b5f978142187cfeb",
+        "tlalokan", "CC-BY-4.0",
+        'This work is based on "Dispensador de toalla de papel - Paper dispenser" '
+        "(https://sketchfab.com/3d-models/dispensador-de-toalla-de-papel-paper-dispenser-4af9dde390bd4c35b5f978142187cfeb) "
+        "by tlalokan (https://sketchfab.com/tlalokan) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "Distributore di salviette di carta a muro, 2.444 facce. Quello fatto a mano"
+        " erano sei scatole, e da un metro erano sei scatole: un distributore vero ha"
+        " la calotta arrotondata, il labbro sotto da cui esce il foglio e il fondo"
+        " rastremato, e sono tre curve - cioe' la cosa che con le scatole non si fa."
+        " Arriva BIANCO SENZA MAPPE, ed e' giusto cosi': la forma la da' lui, l'eta'"
+        " gliela diamo noi con la lamiera verniciata e scrostata. E' la divisione"
+        " opposta a quella del radiatore, dove di fuori si e' preso proprio lo"
+        " sporco."),
 }
 
 # Le texture arrivano a 4096: dentro il .glb della stanza sarebbero ventidue megabyte

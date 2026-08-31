@@ -100,16 +100,16 @@ size = Vector3(0.130, 0.055, 0.016)
 size = Vector3(0.130, 0.055, 0.016)
 
 [sub_resource type="BoxMesh" id="m_13"]
-size = Vector3(0.130, 1.560, 0.300)
+size = Vector3(0.150, 1.400, 30.000)
 
 [sub_resource type="BoxShape3D" id="s_13"]
-size = Vector3(0.130, 1.560, 0.300)
+size = Vector3(0.150, 1.400, 30.000)
 
 [sub_resource type="BoxMesh" id="m_14"]
-size = Vector3(0.150, 1.400, 30.000)
+size = Vector3(0.150, 1.560, 0.340)
 
 [sub_resource type="BoxShape3D" id="s_14"]
-size = Vector3(0.150, 1.400, 30.000)
+size = Vector3(0.150, 1.560, 0.340)
 
 [sub_resource type="BoxMesh" id="m_15"]
 size = Vector3(0.200, 0.400, 2.800)
@@ -442,10 +442,10 @@ size = Vector3(0.460, 0.026, 0.010)
 size = Vector3(0.460, 0.026, 0.010)
 
 [sub_resource type="BoxMesh" id="m_70"]
-size = Vector3(0.488, 0.500, 0.006)
+size = Vector3(0.500, 0.500, 0.006)
 
 [sub_resource type="BoxShape3D" id="s_70"]
-size = Vector3(0.488, 0.500, 0.006)
+size = Vector3(0.500, 0.500, 0.006)
 
 [sub_resource type="BoxMesh" id="m_71"]
 size = Vector3(0.500, 0.920, 0.500)
@@ -466,16 +466,16 @@ size = Vector3(0.570, 1.850, 0.900)
 size = Vector3(0.570, 1.850, 0.900)
 
 [sub_resource type="BoxMesh" id="m_74"]
-size = Vector3(0.588, 0.050, 0.010)
+size = Vector3(0.600, 0.050, 0.010)
 
 [sub_resource type="BoxShape3D" id="s_74"]
-size = Vector3(0.588, 0.050, 0.010)
+size = Vector3(0.600, 0.050, 0.010)
 
 [sub_resource type="BoxMesh" id="m_75"]
-size = Vector3(0.588, 0.600, 0.018)
+size = Vector3(0.600, 0.600, 0.018)
 
 [sub_resource type="BoxShape3D" id="s_75"]
-size = Vector3(0.588, 0.600, 0.018)
+size = Vector3(0.600, 0.600, 0.018)
 
 [sub_resource type="BoxMesh" id="m_76"]
 size = Vector3(0.600, 1.350, 0.550)
@@ -2059,7 +2059,7 @@ transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 5.335, 0
 shape = SubResource("s_84")
 
 [node name="Pensile_1" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 5.300, 1.025, 6.760)
+transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 5.580, 1.025, 6.760)
 
 [node name="Col" type="CollisionShape3D" parent="Pensile_1"]
 shape = SubResource("s_80")
@@ -2071,10 +2071,10 @@ transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 6.670, 0
 shape = SubResource("s_103")
 
 [node name="Distributore_2" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 5.065, 0.780, 7.550)
+transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 5.075, 0.780, 7.550)
 
 [node name="Col" type="CollisionShape3D" parent="Distributore_2"]
-shape = SubResource("s_13")
+shape = SubResource("s_14")
 
 [node name="Prato_1" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 11.000, -0.130, 11.000)
@@ -2110,21 +2110,21 @@ shape = SubResource("s_143")
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, -5.000, 0.700, 11.000)
 
 [node name="Mesh" type="MeshInstance3D" parent="RecO_1"]
-mesh = SubResource("m_14")
+mesh = SubResource("m_13")
 material_override = SubResource("mat_rec")
 
 [node name="Col" type="CollisionShape3D" parent="RecO_1"]
-shape = SubResource("s_14")
+shape = SubResource("s_13")
 
 [node name="RecE_1" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 27.000, 0.700, 11.000)
 
 [node name="Mesh" type="MeshInstance3D" parent="RecE_1"]
-mesh = SubResource("m_14")
+mesh = SubResource("m_13")
 material_override = SubResource("mat_rec")
 
 [node name="Col" type="CollisionShape3D" parent="RecE_1"]
-shape = SubResource("s_14")
+shape = SubResource("s_13")
 
 [node name="Auto_1" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 23.000, 0.750, 25.000)
@@ -2971,50 +2971,50 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.450, 1.010, 0)
 shape = SubResource("s_96")
 
 [node name="Anta_pensile_bagno" type="StaticBody3D" parent="."]
-transform = Transform3D(-1.0000, 0, -0.0000, 0, 1, 0, 0.0000, 0, -1.0000, 5.600, 1.450, 6.911)
+transform = Transform3D(1.0000, 0, -0.0000, 0, 1, 0, 0.0000, 0, 1.0000, 5.280, 1.450, 6.911)
 script = ExtResource("3_door")
 apertura_gradi = 90.0
-verso = 1
+verso = -1
 durata = 0.40
 prompt_text = "Apri"
 
 [node name="Mesh" type="MeshInstance3D" parent="Anta_pensile_bagno"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.294, 0.300, -0.000)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.300, 0.300, 0.000)
 mesh = SubResource("m_75")
 material_override = SubResource("mat_teche")
 
 [node name="Vetro1" type="MeshInstance3D" parent="Anta_pensile_bagno"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.294, 0.300, -0.012)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.300, 0.300, 0.012)
 mesh = SubResource("m_70")
 material_override = SubResource("mat_specchio")
 
 [node name="Anta2" type="MeshInstance3D" parent="Anta_pensile_bagno"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.294, 0.025, -0.014)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.300, 0.025, 0.014)
 mesh = SubResource("m_74")
 material_override = SubResource("mat_teche")
 
 [node name="Anta3" type="MeshInstance3D" parent="Anta_pensile_bagno"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.294, 0.575, -0.014)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.300, 0.575, 0.014)
 mesh = SubResource("m_74")
 material_override = SubResource("mat_teche")
 
 [node name="Anta4" type="MeshInstance3D" parent="Anta_pensile_bagno"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.025, 0.300, -0.014)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.025, 0.300, 0.014)
 mesh = SubResource("m_7")
 material_override = SubResource("mat_teche")
 
 [node name="Anta5" type="MeshInstance3D" parent="Anta_pensile_bagno"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.563, 0.300, -0.014)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.575, 0.300, 0.014)
 mesh = SubResource("m_7")
 material_override = SubResource("mat_teche")
 
 [node name="Maniglia6" type="MeshInstance3D" parent="Anta_pensile_bagno"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.513, 0.300, -0.031)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.525, 0.300, 0.031)
 mesh = SubResource("m_3")
 material_override = SubResource("mat_metallo")
 
 [node name="Col" type="CollisionShape3D" parent="Anta_pensile_bagno"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.294, 0.300, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.300, 0.300, 0)
 shape = SubResource("s_75")
 
 [node name="Anta_armadio_bagno_1" type="StaticBody3D" parent="."]

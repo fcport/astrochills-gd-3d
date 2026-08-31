@@ -912,6 +912,46 @@ def usa_le_ridotte(pezzi, cartella, metallico=None):
     return sostituite
 
 
+def vernicia(pezzi, nome):
+    """Mette LA NOSTRA vernice su un modello preso da fuori, UV comprese.
+
+    Serve quando di un modello si tiene la FORMA e non la pelle - ed e' un caso
+    vero, non un ripiego: un distributore di salviette a muro ha la calotta tonda,
+    il labbro e il fondo rastremato, cioe' tre curve che con le scatole non si
+    fanno; ma arriva bianco di fabbrica, e in un bagno del 1999 tutto e' vecchio
+    tranne lui. E' la divisione opposta a quella del radiatore, dove da fuori si e'
+    preso proprio lo sporco.
+
+    LE UV SI RIFANNO, e questo e' il pezzo che non si puo' saltare. Quelle del
+    modello sono impacchettate per la SUA texture: una mappa ripetitiva ci finisce
+    sopra a una scala che non ha scelto nessuno - la stessa vernice risulta a grana
+    grossa su un pezzo e fine su quello accanto. Qui si riproiettano a scatola come
+    tutto il resto del progetto, alla scala che il materiale dichiara, cosi' la
+    lamiera del distributore ha la stessa grana della lamiera di tutto il resto.
+
+    E LA POSA SI CUOCE NELLA MESH PRIMA DI PROIETTARE: `posa_modello` scala
+    l'oggetto padre, e proiettare sulle coordinate locali darebbe una grana che
+    dipende da quanto il modello e' stato rimpicciolito per stare nell'impronta -
+    cioe' un numero che cambia da solo quando si sposta un muro.
+    """
+    m = materiale(nome)
+    scala = metri_ripetizione(nome)
+    for o in list(pezzi):
+        if o.type != "MESH" or o.data is None:
+            continue
+        o.data.transform(o.matrix_world)
+        o.parent = None
+        o.matrix_world = Matrix()
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        uv_a_scatola(bm, scala)
+        bm.to_mesh(o.data)
+        bm.free()
+        o.data.materials.clear()
+        o.data.materials.append(m)
+        o.data.update()
+
+
 def verifica_impronte(oggetti, impronte, tolleranza=0.06):
     """Nessun vertice fuori dai rettangoli dichiarati in geometria.
 

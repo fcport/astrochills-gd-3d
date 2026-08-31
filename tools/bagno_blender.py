@@ -61,6 +61,7 @@ for _m in ("geometria", "modellare"):
 from geometria import (ante_mobili, ARREDI_BAGNO, impronta_utile,   # noqa: E402
                        SALA_BAGNO, scalati, SPESS_PIASTRELLA, W_SILL)
 from modellare import (COLORI, cilindro, cilindro_orizz, esporta,   # noqa: E402
+                       vernicia,
                        finisci, raddrizza_normali, usa_le_ridotte,
                        lampada, posa_modello, prepara_render, pulisci, scatola,
                        verifica_impronte)
@@ -369,7 +370,53 @@ def sopra_il_lavabo():
     return
 
 
+# Il distributore di carta: quanto e' alto il pezzo e a che quota sta la sua base.
+# 1,20 e' la quota da cui si tira il foglio, che e' l'unica che conta: sopra si
+# arriva scomodi, sotto ci si china.
+BASE_DIST, ALTO_DIST = 1.200, 0.345
+# I GRADI VANNO MISURATI, non indovinati, e finche' il modello non c'e' restano
+# zero. Lo strumento e' `tools/verso_sanitari.py`, lo stesso che ha deciso il verso
+# di water, bidet e lavabo: posa il pezzo alle quattro rotazioni e conta quanti
+# vertici finiscono a filo del muro a cui e' addossato. La spia che smaschera un
+# verso sbagliato non e' la percentuale, e' l'INGOMBRO: un pezzo girato male viene
+# schiacciato da `posa_modello` per stare nell'impronta, e da schiacciato tocca il
+# muro dappertutto - e' successo col water e col termosifone.
+GRADI_DIST = 0.0
+
+
 def distributore_carta():
+    """Il distributore scaricato se c'e', quello fatto a mano se no.
+
+    STESSO PATTO DEL TERMOSIFONE. Il segnaposto qui non e' uno scarto - cassa,
+    sportello sporgente, feritoia e due fogli - ma un distributore vero ha la
+    calotta arrotondata, il labbro sotto da cui esce il foglio e il fondo
+    rastremato, e sono TRE CURVE: la cosa che con le scatole non si fa. Le scatole
+    danno la forma giusta e la silhouette sbagliata, ed e' la stessa lezione della
+    porta del magazzino.
+
+    LA VERNICE RESTA NOSTRA. Il modello arriva bianco di fabbrica e senza mappe: in
+    un bagno del 1999 sarebbe l'unica cosa nuova della stanza. `vernicia` gli mette
+    la lamiera verniciata e scrostata e gli rifa' le UV alla nostra scala, cosi' la
+    grana e' la stessa del segnaposto e di tutto il resto. E' la divisione opposta
+    a quella del radiatore, dove da fuori si e' preso proprio lo sporco.
+    """
+    via = os.path.join(ESTERNI, "distributore_carta", "scene.gltf")
+    if not os.path.exists(via):
+        distributore_segnaposto()
+        mancanti.append("Distributore (il distributore di carta) - manca %s" % via)
+        print("  Distrib  SEGNAPOSTO: il modello non c'e' ancora")
+        return
+    x0, z0, x1, z1, _a = IMPRONTE["Distributore"]
+    pezzi = posa_modello(via, (x0, z0, x1, z1, ALTO_DIST), gradi=GRADI_DIST,
+                         appoggio=BASE_DIST)
+    girate = raddrizza_normali(pezzi)
+    if girate:
+        print("  Distrib  %d facce avevano la normale al contrario" % girate)
+    vernicia(pezzi, "Distributore")
+    print("  Distrib  dal modello scaricato, verniciato qui")
+
+
+def distributore_segnaposto():
     """Il distributore di carta a muro, al posto dell'asciugamano.
 
     QUI PRIMA C'ERA UN ASCIUGAMANO, ed era geometria buona: la piega sopra la barra
@@ -757,6 +804,59 @@ def prova_ingiallisci():
     return esito
 
 
+def prova_vernicia():
+    """`vernicia` gira solo quando il modello del distributore c'e', cioe' oggi mai.
+
+    Un pezzo di codice che nessuno esegue e' un pezzo di codice che non funziona, e
+    questo si scoprirebbe il giorno in cui il modello arriva - il giorno peggiore.
+    Qui si prova su un cubo di mezzo metro, scalato e spostato come lo scalerebbe
+    `posa_modello`, e si controllano le due cose che la funzione promette: il
+    materiale e' il nostro, e le UV misurano il MONDO diviso i metri di ripetizione
+    - non le coordinate locali, che con un oggetto scalato darebbero un altro
+    numero.
+    """
+    from modellare import metri_ripetizione
+    import bmesh as _bm
+    lato = 0.5
+    bm = _bm.new()
+    _bm.ops.create_cube(bm, size=lato)
+    mesh = bpy.data.meshes.new("_provaVerniceMesh")
+    bm.to_mesh(mesh)
+    bm.free()
+    o = bpy.data.objects.new("_provaVernice", mesh)
+    bpy.context.collection.objects.link(o)
+    o.scale = (2.0, 2.0, 2.0)              # il cubo nel mondo e' largo un metro
+    o.location = (7.0, -3.0, 1.0)
+    bpy.context.view_layer.update()
+    vernicia([o], "Distributore")
+    esito = []
+    nomi = [m.name for m in o.data.materials]
+    if nomi != ["Distributore"]:
+        esito.append("vernicia: sulla mesh e' rimasto %s" % nomi)
+    uv = o.data.uv_layers.active
+    if uv is None:
+        esito.append("vernicia: non ha lasciato UV")
+    else:
+        # SI MISURA UNA FACCIA ALLA VOLTA, e la prima stesura non lo faceva: presa
+        # su tutto l'oggetto, l'escursione delle U mette insieme facce proiettate
+        # su piani DIVERSI - una legge la y del mondo, quella accanto la x - e
+        # veniva quarantaquattro invece di tre. Il controllo accusava `vernicia` di
+        # un difetto suo: e' il secondo modo in cui un controllo puo' essere
+        # inutile, quello che misura la cosa sbagliata.
+        atteso = (lato * 2.0) / metri_ripetizione("Distributore")
+        for p in o.data.polygons:
+            u = [uv.data[i].uv[0] for i in p.loop_indices]
+            w = [uv.data[i].uv[1] for i in p.loop_indices]
+            largo = max(max(u) - min(u), max(w) - min(w))
+            if abs(largo - atteso) > 0.05:
+                esito.append("vernicia: una faccia copre %.2f ripetizioni invece di "
+                             "%.2f - sta proiettando le coordinate locali, non il "
+                             "mondo" % (largo, atteso))
+                break
+    bpy.data.objects.remove(o, do_unlink=True)
+    return esito
+
+
 def quanto_e_chiara(mappa):
     """La luminosita' media di un'immagine, su 255 e IN sRGB.
 
@@ -922,7 +1022,7 @@ distributore_carta()
 termosifone()
 sanitari()
 
-_prova = prova_ingiallisci()
+_prova = prova_ingiallisci() + prova_vernicia()
 oggetti = finisci(morbidi=("Ceramica", "CeramicaVecchia", "Cromo", "Radiatore"))
 
 # IL GUSCIO NON HA IMPRONTA, ED E' GIUSTO COSI'. Rivestimento, listello e pavimento

@@ -87,6 +87,21 @@ Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuz
 > by tboiston (https://sketchfab.com/tboiston) licensed under CC-BY-4.0
 > (http://creativecommons.org/licenses/by/4.0/)
 
+**Dispensador de toalla de papel** — il distributore di salviette del bagno.
+Del modello si prende solo la **forma**: la calotta arrotondata, il labbro da cui
+esce il foglio e il fondo rastremato sono tre curve, e con le scatole non si fanno.
+Arriva bianco senza mappe, ed è giusto così — in un bagno del 1999 sarebbe l'unica
+cosa nuova della stanza: la lamiera verniciata e scrostata gliela mette
+`tools/bagno_blender.py`.
+Autore: [tlalokan](https://sketchfab.com/tlalokan).
+Fonte: <https://sketchfab.com/3d-models/dispensador-de-toalla-de-papel-paper-dispenser-4af9dde390bd4c35b5f978142187cfeb>
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> This work is based on "Dispensador de toalla de papel - Paper dispenser"
+> (https://sketchfab.com/3d-models/dispensador-de-toalla-de-papel-paper-dispenser-4af9dde390bd4c35b5f978142187cfeb)
+> by tlalokan (https://sketchfab.com/tlalokan) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
 ## Tutto il resto
 
 Gli altri modelli e tutte le texture sono **CC0**: nessuna attribuzione richiesta.

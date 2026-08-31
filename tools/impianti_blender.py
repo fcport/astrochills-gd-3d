@@ -32,6 +32,7 @@ for _m in ("geometria", "modellare"):
     if _m in sys.modules:
         importlib.reload(sys.modules[_m])
 from geometria import (H, H_PLAFONIERA, H_INTERRUTTORE, L_PLACCA, A_PLACCA,   # noqa: E402
+                       L_PLAF, P_PLAF, H_PLAF,
                        SP_PLACCA, punti_luce, punti_applique, punti_interruttori,
                        verifica_interruttori)
 from modellare import (esporta, finisci, lampada, prepara_render,   # noqa: E402
@@ -59,7 +60,8 @@ RENDER = os.path.join(RADICE, "_bmad-output", "planning-artifacts", "gdds",
 # e soprattutto non ha un diffusore, cioe' non ha la superficie che si accende. Il
 # pezzo che conta di una plafoniera e' proprio quello: la faccia luminosa che dice
 # da dove viene la luce. Otto scatole fatte qui la danno, un modello di fuori no.
-L_PLAF, P_PLAF, H_PLAF = 1.28, 0.28, 0.09
+# le misure LE DA GEOMETRIA: le legge anche `verifica_plafoniere()`, che deve
+# controllare l'ingombro vero e non una copia invecchiata di questo file.
 
 
 def plafoniera(diffusore="Neon"):

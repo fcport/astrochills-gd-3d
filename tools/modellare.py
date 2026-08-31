@@ -114,6 +114,14 @@ COLORI = {
     # metallo liscio in Godot riflette l'ambiente, e in una stanza chiusa l'ambiente
     # e' nero - stessa trappola dello specchio e della porta del magazzino.
     "Armadietto":     (0.60, 0.63, 0.59),
+    # IL DISTRIBUTORE DI CARTA NON E' L'ARMADIO, e la differenza e' la mappa. Con
+    # `Armadietto` usciva un rettangolo grigio uniforme, ed era giusto che uscisse
+    # cosi': il set "metallo" e' un metallo NUDO, la sua mappa colore e' un
+    # azzurrino piatto e tutto il carattere sta nella normale - che su un oggetto
+    # da ventisette centimetri non si vede. Qui va la lamiera VERNICIATA e segnata,
+    # che di carattere ne ha nel colore. Non sta fra i TINTI: la mappa parla da
+    # sola, e questa tinta serve solo se un giorno la mappa non ci fosse.
+    "Distributore":   (0.78, 0.78, 0.76),
     # LA CERAMICA VECCHIA E QUELLA NUOVA NON SONO LO STESSO BIANCO. Uno smalto di
     # vent'anni ingiallisce e perde lucido: un sanitario bianco di fabbrica, in un
     # osservatorio del 1999, legge come un rendering di catalogo. Serve per i
@@ -157,7 +165,8 @@ RUVIDEZZA = {"Metallo": 0.45, "Inox": 0.28, "Rame": 0.35, "Schermo": 0.12,
              "Radiatore": 0.42, "Cromo": 0.14,
              "LegnoBagno": 0.45, "InternoMobile": 0.62,
              "Cartone": 0.85, "Rotolo": 0.92, "Flacone": 0.35,
-             "Alcol": 0.22}
+             "Alcol": 0.22,
+             "Distributore": 0.55}
 METALLICI = ("Metallo", "Inox", "Rame", "Ferro")
 # I materiali la cui texture va MOLTIPLICATA per il colore invece che sostituirlo.
 # Di norma il colore e' solo un ripiego per quando la texture manca, e collegare la
@@ -192,6 +201,12 @@ TEXTURE = {
     "AnteMetallo":  ("metallo", 0.60),
     "TelaiMetallo": ("metallo", 0.60),
     "Metallo":      ("metallo", 1.20),
+    # 0,34 e non 0,60 come la carpenteria: il distributore e' largo ventisette
+    # centimetri, e a 0,60 se ne vedrebbe meno di mezza ripetizione - cioe' una
+    # macchia sola, che a seconda di dove cade e' tutta ruggine o tutta vernice.
+    # A 0,34 il pezzo prende quasi tutta la mappa e si legge come un oggetto
+    # piccolo e vecchio invece che come un ritaglio.
+    "Distributore": ("lamiera", 0.34),
     # l'armadio prende la trama del metallo, non quella della lamiera segnata delle
     # plafoniere: quella e' scrostata, e un armadio di servizio di un osservatorio in
     # funzione e' vecchio, non un rudere

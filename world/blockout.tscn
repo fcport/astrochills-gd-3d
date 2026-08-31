@@ -100,10 +100,10 @@ size = Vector3(0.130, 0.055, 0.016)
 size = Vector3(0.130, 0.055, 0.016)
 
 [sub_resource type="BoxMesh" id="m_13"]
-size = Vector3(0.130, 1.440, 0.300)
+size = Vector3(0.130, 1.560, 0.300)
 
 [sub_resource type="BoxShape3D" id="s_13"]
-size = Vector3(0.130, 1.440, 0.300)
+size = Vector3(0.130, 1.560, 0.300)
 
 [sub_resource type="BoxMesh" id="m_14"]
 size = Vector3(0.150, 1.400, 30.000)
@@ -2071,7 +2071,7 @@ transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 6.670, 0
 shape = SubResource("s_103")
 
 [node name="Distributore_2" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 5.065, 0.720, 7.550)
+transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 5.065, 0.780, 7.550)
 
 [node name="Col" type="CollisionShape3D" parent="Distributore_2"]
 shape = SubResource("s_13")
@@ -2447,7 +2447,7 @@ mesh = SubResource("mesh_diff")
 material_override = SubResource("mat_diff")
 
 [node name="Luce_magazzino" type="Node3D" parent="."]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 4.00, 2.910, 8.00)
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 4.00, 2.910, 8.00)
 
 [node name="Apparecchio" parent="Luce_magazzino" instance=ExtResource("11_plafoniera")]
 
@@ -2971,45 +2971,45 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.450, 1.010, 0)
 shape = SubResource("s_96")
 
 [node name="Anta_pensile_bagno" type="StaticBody3D" parent="."]
-transform = Transform3D(1.0000, 0, -0.0000, 0, 1, 0, 0.0000, 0, 1.0000, 5.012, 1.450, 6.911)
+transform = Transform3D(-1.0000, 0, -0.0000, 0, 1, 0, 0.0000, 0, -1.0000, 5.600, 1.450, 6.911)
 script = ExtResource("3_door")
 apertura_gradi = 90.0
-verso = -1
+verso = 1
 durata = 0.40
 prompt_text = "Apri"
 
 [node name="Mesh" type="MeshInstance3D" parent="Anta_pensile_bagno"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.294, 0.300, 0.000)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.294, 0.300, -0.000)
 mesh = SubResource("m_75")
 material_override = SubResource("mat_teche")
 
 [node name="Vetro1" type="MeshInstance3D" parent="Anta_pensile_bagno"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.294, 0.300, 0.012)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.294, 0.300, -0.012)
 mesh = SubResource("m_70")
 material_override = SubResource("mat_specchio")
 
 [node name="Anta2" type="MeshInstance3D" parent="Anta_pensile_bagno"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.294, 0.025, 0.014)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.294, 0.025, -0.014)
 mesh = SubResource("m_74")
 material_override = SubResource("mat_teche")
 
 [node name="Anta3" type="MeshInstance3D" parent="Anta_pensile_bagno"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.294, 0.575, 0.014)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.294, 0.575, -0.014)
 mesh = SubResource("m_74")
 material_override = SubResource("mat_teche")
 
 [node name="Anta4" type="MeshInstance3D" parent="Anta_pensile_bagno"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.025, 0.300, 0.014)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.025, 0.300, -0.014)
 mesh = SubResource("m_7")
 material_override = SubResource("mat_teche")
 
 [node name="Anta5" type="MeshInstance3D" parent="Anta_pensile_bagno"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.563, 0.300, 0.014)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.563, 0.300, -0.014)
 mesh = SubResource("m_7")
 material_override = SubResource("mat_teche")
 
 [node name="Maniglia6" type="MeshInstance3D" parent="Anta_pensile_bagno"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.513, 0.300, 0.031)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.513, 0.300, -0.031)
 mesh = SubResource("m_3")
 material_override = SubResource("mat_metallo")
 

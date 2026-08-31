@@ -10,6 +10,7 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        scalati, verifica_aperture, verifica_copertura,
                        punti_luce, punti_interruttori, verifica_interruttori,
                        verifica_applique, verifica_passerella,
+                       verifica_plafoniere,
                        luci_senza_comando, comandate_da, GIRATE_PLAFONIERA,
                        LUCI_ROSSE, PARTE_SPENTA, punti_applique,
                        H_APPLIQUE, NOME_LOCALE, LUCE_MONITOR, SEMPRE_ACCESE,
@@ -1121,7 +1122,7 @@ _tetti = [(b[0]-b[3]/2, b[2]-b[5]/2, b[0]+b[3]/2, b[2]+b[5]/2)
           for b in blocchi if b[6].startswith('TettoCup')]
 _ing = (verifica_ingombri() + verifica_raccordi() + verifica_ante()
         + verifica_trappole() + verifica_arredi() + verifica_interruttori()
-        + verifica_applique() + verifica_passerella()
+        + verifica_applique() + verifica_passerella() + verifica_plafoniere()
         + verifica_fessure() + verifica_angoli()
         + verifica_freschezza()
         + verifica_orientamenti(io.open(out, encoding="utf-8").read()))

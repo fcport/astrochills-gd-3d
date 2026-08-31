@@ -770,7 +770,13 @@ def pezzi_anta(a):
 #  per l'anta singola), tipo, quota della base, cima, spessore, quanto si lascia
 #  davanti alle maniglie, apertura in gradi
 MOBILI_CON_ANTE = [
-    ("Pensile", "sud",   1, "a", "specchio", 1.450, 2.050, 0.018, 0.000, 90.0),
+    # IL CARDINE STA A EST, E CI E' VOLUTO VEDERLO APERTO. Da "a" cadeva sul capo
+    # OVEST, che qui e' l'angolo: il pensile e' addossato al muro ovest, e un'anta
+    # incernierata su quel capo ruota DENTRO il piano di quel muro - a novanta gradi
+    # il battente sta nel rivestimento. Il banco delle porte non lo vedeva e non
+    # poteva: le piastrelle sono mesh, non collisione, e lui misura la fisica. E'
+    # un difetto che si vede solo aprendo l'anta e guardando.
+    ("Pensile", "sud",   1, "b", "specchio", 1.450, 2.050, 0.018, 0.000, 90.0),
     ("Armadio", "ovest", 2, "a", "lamiera",  0.125, 1.825, 0.018, 0.070, 90.0),
 ]
 
@@ -1088,7 +1094,7 @@ ARREDI_BAGNO = [
     # chiedersi cosa ci sta davvero in un bagno di servizio di un osservatorio, e
     # non e' un asciugamano di casa - e' il distributore di carta a muro, che e'
     # lamiera verniciata, cioe' un materiale che questo progetto ha gia'.
-    ("Distributore", 5.00, 7.40, 5.13, 7.70, 1.44),
+    ("Distributore", 5.00, 7.40, 5.13, 7.70, 1.56),
 ]
 
 SALA_PC = [(5.30, 0.10, 8.15, 4.30)]
@@ -1335,7 +1341,13 @@ PUNTI_LUCE = [
 # le stanze profonde in Z e strette in X: li' la plafoniera va girata di novanta
 # gradi, o sporge dai muri. Lo sanno in due - chi la modella e chi la posa nel
 # blockout - quindi sta qui.
-GIRATE_PLAFONIERA = ("pc", "cucina")
+# IL MAGAZZINO CI E' ENTRATO DOPO, e ci e' entrato perche' la plafoniera si vedeva
+# infilata nel muro. Ha un metro e trentacinque netti in X e l'apparecchio ne misura
+# uno e ventotto: pure centrato perfettamente resterebbero tre centimetri per parte,
+# e centrato non era - il punto luce sta a 4,00 e il centro della stanza a 4,125,
+# quindi sfondava di nove centimetri dentro il muro ovest. Adesso lo dice
+# `verifica_plafoniere()` invece di aspettare che qualcuno alzi la testa.
+GIRATE_PLAFONIERA = ("pc", "cucina", "magazzino")
 # LA CUPOLA HA LUCE ROSSA, E DI DEFAULT NON CE L'HA ACCESA. Non e' atmosfera: la
 # luce bianca brucia l'adattamento al buio dell'occhio, e per rifarlo servono venti
 # minuti. In una sala telescopio o si sta al rosso o si sta al buio - e il buio e'
@@ -1344,6 +1356,11 @@ GIRATE_PLAFONIERA = ("pc", "cucina")
 LUCI_ROSSE = ("cupola1", "cupola2", "cupola3")
 PARTE_SPENTA = ("cupola1", "cupola2", "cupola3")
 H_PLAFONIERA = 2.72     # sotto l'intradosso: la plafoniera e' alta 12 cm e pende poco
+# L'INGOMBRO DELL'APPARECCHIO STA QUI e non solo in `impianti_blender.py`. Chi lo
+# disegna e chi controlla che ci stia nella stanza devono leggere lo stesso numero:
+# scritto due volte, il giorno che la plafoniera diventa da 1,50 il controllo
+# continua a dire che va bene. Nato lungo X: `GIRATE_PLAFONIERA` dice chi si gira.
+L_PLAF, P_PLAF, H_PLAF = 1.28, 0.28, 0.09
 # 1,45 e non 1,10. L'altezza vera di un interruttore italiano e' 1,10, ma
 # l'occhio del giocatore sta a 1,65 e il raggio di interazione parte dalla camera
 # e va DRITTO: a 1,10 bisognava accovacciarsi per accendere la luce. Fra la quota
@@ -1410,6 +1427,76 @@ def punti_luce():
 def punti_applique():
     """(nome, x, z, nx, nz, quota) in metri reali: le luci a parete."""
     return list(APPLIQUE)
+
+
+def _stanza_attorno(px, pz, muri):
+    """Le quattro facce di muro piu' vicine a un punto: (ovest, est, nord, sud).
+
+    I muri di `MURI` sono ASSI, non volumi: lo spessore glielo mette
+    `blocchi_edificio()`, mezzo `SP` per parte. Qui si torna la faccia INTERNA,
+    cioe' quella che si vede dalla stanza, perche' e' quella contro cui un
+    apparecchio sbatte.
+    """
+    ovest = est = nord = sud = None
+    mezzo = SP / 2.0
+    for (x0, z0, x1, z1) in muri:
+        orizz = abs(z1 - z0) < 0.001
+        a, b = min(x0, x1), max(x0, x1)
+        c, d = min(z0, z1), max(z0, z1)
+        if orizz:
+            if not (a - 0.01 <= px <= b + 0.01):
+                continue
+            if c <= pz and (nord is None or c + mezzo > nord):
+                nord = c + mezzo
+            if c >= pz and (sud is None or c - mezzo < sud):
+                sud = c - mezzo
+        else:
+            if not (c - 0.01 <= pz <= d + 0.01):
+                continue
+            if a <= px and (ovest is None or a + mezzo > ovest):
+                ovest = a + mezzo
+            if a >= px and (est is None or a - mezzo < est):
+                est = a - mezzo
+    return ovest, est, nord, sud
+
+
+def verifica_plafoniere(franco=0.04):
+    """Ogni apparecchio a soffitto sta DENTRO la sua stanza, non dentro il muro.
+
+    IL CONTROLLO NASCE DA UN DIFETTO VISTO A OCCHIO: nel magazzino la plafoniera
+    era infilata nel muro ovest per nove centimetri, e non se ne accorgeva niente -
+    a soffitto non si passa, quindi nessuna verifica di ingombro la guardava, e
+    l'unico modo di vederla era alzare la testa in quella stanza.
+
+    La misura e' banale e proprio per questo andava scritta: il magazzino ha un
+    metro e trentacinque netti in X, l'apparecchio ne misura uno e ventotto, e il
+    punto luce non stava nemmeno in mezzo. Bastava girarlo di novanta gradi - la
+    stanza e' profonda tre metri in Z - e la stessa cosa vale per ogni stanza
+    stretta che qualcuno aggiungera'.
+
+    `franco` e' l'aria minima che deve restare fra il testata e l'intonaco: a zero
+    l'apparecchio tocca il muro, che e' una posa che non fa nessuno.
+    """
+    muri, _, _, _, _, _ = scalati()
+    problemi = []
+    for (x, z, nome) in punti_luce():
+        girato = nome in GIRATE_PLAFONIERA
+        ix, iz = (P_PLAF, L_PLAF) if girato else (L_PLAF, P_PLAF)
+        ovest, est, nord, sud = _stanza_attorno(x, z, muri)
+        for (faccia, quanto, verso) in (
+                ("ovest", None if ovest is None else (x - ix / 2) - ovest, "muro ovest"),
+                ("est",   None if est is None else est - (x + ix / 2), "muro est"),
+                ("nord",  None if nord is None else (z - iz / 2) - nord, "muro nord"),
+                ("sud",   None if sud is None else sud - (z + iz / 2), "muro sud")):
+            if quanto is None:
+                continue
+            if quanto < franco:
+                come = "dentro il" if quanto < 0 else "a %.0f mm dal" % (quanto * 1000)
+                problemi.append(
+                    "  PLAFONIERA STRETTA       %s: %s %s%s"
+                    % (nome, come, verso,
+                       " di %.0f mm" % (-quanto * 1000) if quanto < 0 else ""))
+    return problemi
 
 
 # porta -> verso in cui si ENTRA nella stanza che l'interruttore comanda.

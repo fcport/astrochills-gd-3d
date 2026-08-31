@@ -2923,3 +2923,67 @@ e diventa uno sportello.
 pensile parte da 1,45 e spazza quel tratto di muro fino a z 7,52: col distributore più
 alto si fermava a 75 gradi invece di 90. È lo stesso conto che farebbe chi lo avvita
 davvero, guardando l'anta del pensile aprirsi.
+
+## D-144 — Il cardine del pensile stava dalla parte del muro
+
+Il pensile è appoggiato all'angolo nord-ovest e l'anta era incernierata sul capo
+**ovest**, cioè proprio quello contro il muro. Un'anta incernierata lì non ruota nella
+stanza: ruota **dentro il piano del rivestimento**, e a novanta gradi il battente sta
+nelle piastrelle. Aprendolo si vedeva il legno attraversare il listello.
+
+**Il banco delle porte diceva 90 gradi liberi, e non stava mentendo.** Le piastrelle
+del bagno sono mesh, non collisione — lo spessore che si vede di taglio non è un
+corpo — e `prova_porte.gd` misura la fisica. Un battente che passa attraverso dodici
+millimetri di ceramica non urta niente. È il terzo modo in cui un controllo può essere
+inutile, quello che misura la cosa sbagliata, e stavolta non c'è una misura da
+correggere: è un difetto che si vede solo aprendo l'anta e guardando.
+
+Cardine dal capo **est**: l'anta gira nella stanza, dove non c'è niente. Il banco è
+passato da 90 gradi liberi (col muro escluso perché "già toccato da chiusa") a 130
+liberi veri.
+
+E siccome il vincolo che teneva il distributore di carta a 1,42 era proprio quell'anta
+che spazzava il muro ovest, il distributore torna alla quota che gli spetta per
+ergonomia — 1,20-1,55 — invece che a quella imposta da un difetto.
+
+## D-145 — La plafoniera del magazzino era dentro il muro, e nessuno la guardava
+
+Alzando la testa nel magazzino, l'apparecchio a soffitto era infilato nella parete
+ovest. Il conto è banale e proprio per questo è stato saltato: il magazzino ha **un
+metro e trentacinque netti in X**, la plafoniera ne misura **uno e ventotto**. Anche
+centrata al millimetro resterebbero tre centimetri e mezzo per parte — e centrata non
+era, perché il punto luce sta a 4,00 e il centro della stanza a 4,125. Sfondava di
+nove centimetri.
+
+`GIRATE_PLAFONIERA` esisteva già proprio per questo — «le stanze profonde in Z e
+strette in X: lì la plafoniera va girata di novanta gradi, o sporge dai muri» — e il
+magazzino non ci era dentro. Adesso sì: la stanza è profonda tre metri in Z, girata ci
+sta con quasi un metro di margine.
+
+**Il pezzo che serviva era il controllo, non la rotazione.** A soffitto non ci si
+cammina, quindi nessuna verifica di ingombro guardava lassù: l'unico modo di
+accorgersene era alzare la testa in quella stanza. `verifica_plafoniere()` misura ogni
+apparecchio contro le quattro facce della sua stanza e lo dice in millimetri. Provato
+rimettendo il difetto — «magazzino: dentro il muro ovest di 90 mm», che è esattamente
+la misura fatta a mano — e spostandone un secondo contro il muro est.
+
+`L_PLAF, P_PLAF, H_PLAF` si spostano in `geometria.py`: chi disegna l'apparecchio e
+chi controlla che ci stia devono leggere lo stesso numero, o il giorno che la
+plafoniera diventa da un metro e mezzo il controllo continua a dire che va bene.
+
+## D-146 — Il distributore era grigio perché la sua mappa è un grigio
+
+Appena montato, il distributore di carta era un rettangolo grigio uniforme — e usava
+`Armadietto`, che una texture ce l'ha. Il punto è **quale**: il set `metallo` è
+Metal032, un metallo **nudo**, e la sua mappa colore è un azzurrino piatto senza un
+segno. Tutto il suo carattere sta nella normale, e su un oggetto da ventisette
+centimetri visto da un metro la normale non si legge. È la stessa lezione della porta
+del magazzino, dalla parte opposta: lì il rilievo faceva il lavoro della vernice, qui
+la vernice non c'era proprio.
+
+Materiale suo, con la mappa `lamiera` — lamiera **verniciata e scrostata**, che di
+carattere ne ha nel colore — a **0,34 metri per ripetizione** e non 0,60 come la
+carpenteria: su ventisette centimetri, a 0,60 se ne vedrebbe meno di mezza
+ripetizione, cioè una macchia sola, e a seconda di dove cade è tutta ruggine o tutta
+vernice. A 0,34 il pezzo prende quasi tutta la mappa e legge come un oggetto piccolo e
+vecchio invece che come un ritaglio.

@@ -395,13 +395,9 @@ def distributore_carta():
     x0, z0, x1, z1, _alto = IMPRONTE["Distributore"]
     xf = X0 + SPESS                       # il filo della piastrella
     corpo, fronte = 0.090, 0.015          # profondita' della cassa e dello sportello
-    # 1,42 IN CIMA E NON 1,55, e a dirlo e' stato il banco delle porte: l'anta del
-    # pensile parte da 1,45 e spazza questo tratto di muro fino a z 7,52, e col
-    # distributore piu' alto si fermava a 75 gradi invece di 90. E' lo stesso conto
-    # che farebbe chi lo avvita davvero, guardando l'anta del pensile aprirsi.
-    base, cima = 1.075, 1.420
+    base, cima = 1.200, 1.545
     za, zb = z0 + 0.015, z1 - 0.015
-    M = "Armadietto"
+    M = "Distributore"
     # la cassa
     scatola(M, xf, xf + corpo, base + 0.055, cima, za, zb)
     # il fondo rientra: e' lo scivolo da cui esce il foglio

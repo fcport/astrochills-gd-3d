@@ -2230,3 +2230,39 @@ mobiletto. Quando i file arrivano, la stessa riga li monta al posto dei segnapos
 `Lamiera`, che in questo progetto è la lamiera segnata delle plafoniere industriali:
 sopra uno specchio da bagno e sotto una finestra leggevano come pezzi arrugginiti.
 Sono metallo smaltato bianco, cioè `Ceramica`.
+
+## D-113 — Trenta secondi, e un banco che li cronometra
+
+**Richiesta.** La lampada del giocatore deve metterci trenta secondi ad accendersi al
+buio. È lentissimo ed è anzi **più veloce del vero**: un occhio umano ci mette dai
+venti ai trenta minuti ad adattarsi davvero.
+
+**Conseguenza da sapere, perché non è un difetto ma lo sembra.** Passando accanto a
+una lampada accesa la luce si spegne in un quarto di secondo e poi ci rimette trenta a
+tornare. Camminando per un osservatorio mezzo illuminato la si vedrà quasi sempre a
+metà strada, e piena solo restando fermi al buio.
+
+**Il banco non aspetta trenta secondi per presa**: gira con `Engine.time_scale = 25`,
+quindi il `delta` che arriva alla lampada è quello di trenta secondi mentre ne passa
+poco più di uno. Si misura la stessa curva, srotolata in fretta. Accorciare l'attesa
+invece avrebbe misurato una lampada a metà salita chiamandola a regime — l'errore già
+fatto due volte qui.
+
+**E adesso qualcuno cronometra la salita.** Nessuno dei controlli fotografici misura
+*quanto* ci mette: aspettano il regime e guardano quello. Rimettendo 0,30 al posto di
+1/30 tutte le foto resterebbero identiche e il banco tacerebbe.
+
+## D-114 — Il cronometro ha accusato la lampada, e sbagliava lui
+
+Alla prima misura il banco ha riportato **2,9 secondi su 30 dichiarati**, che sembrava
+la prova che la costante non avesse effetto. Non era così: il criterio di arrivo era
+«smette di crescere», e basta un fotogramma in cui l'energia non cambia. Ce n'è più
+d'uno, perché il bersaglio si ricalcola dieci volte al secondo e non a ogni
+fotogramma: il cronometro dichiarava arrivata una lampada ferma al dieci per cento.
+
+Adesso aspetta che raggiunga il 99% del suo massimo. Misura 30,0 s.
+
+**Vale come voce a sé** perché è il rovescio dei difetti raccolti finora: qui un
+controllo ha accusato del codice sano. Un banco che sbaglia in questa direzione è meno
+pericoloso di uno che tace, ma costa lo stesso — e per un momento ho creduto che la
+lampada fosse rotta.

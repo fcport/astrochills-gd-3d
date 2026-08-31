@@ -42,7 +42,17 @@ extends SceneTree
 static func assesto() -> int:
 	var s: GDScript = load("res://world/player/luce_prossimita.gd")
 	var lenta: float = s.get_script_constant_map()["SI_ABITUA"]
-	return int(60.0 / lenta * 1.25) + 10
+	return int(60.0 / lenta * 1.25 / FRETTA) + 12
+
+
+## SI ACCELERA IL TEMPO, non si accorcia l'attesa. La lampada adesso ci mette mezzo
+## minuto a salire: aspettarlo davvero, dodici volte, vorrebbe dire sei minuti di
+## banco, e un banco che costa sei minuti non lo lancia piu' nessuno prima di
+## committare. Con `Engine.time_scale` il `delta` che arriva alla lampada e' quello
+## di trenta secondi mentre ne passano poco piu' di uno: si misura LA STESSA curva,
+## solo srotolata in fretta. Accorciare l'attesa invece avrebbe misurato una lampada
+## a meta' salita chiamandola a regime, che e' l'errore gia' fatto due volte qui.
+const FRETTA := 25.0
 
 ## A che distanze dal muro si misura. La prima è «ci sono quasi addosso», l'ultima
 ## è «è in fondo alla stanza e deve restare nera».
@@ -99,12 +109,24 @@ var _prese: Array = []
 var _i := -1
 var _attesa := 0
 var _letture := {}
+## Il cronometro della salita. Nessuno dei controlli fotografici misura QUANTO ci
+## mette la lampada ad accendersi — li' si aspetta il regime e si guarda quello — e
+## il tempo di salita e' una richiesta esplicita: trenta secondi, per dare l'idea
+## dell'occhio che si abitua al buio. Se domani qualcuno rimette 0,30 al posto di
+## 1/30 tutte le foto restano identiche e il banco tace. Questo no.
+var _cronometrato := false
+var _salita := 0.0
+var _prima_energia := 0.0
+
 var _guasti: Array[String] = []
 
 
 func _process(_d: float) -> bool:
 	if _i < 0:
 		_prepara()
+		return false
+	if not _cronometrato:
+		_cronometra(_d)
 		return false
 	if _attesa > 0:
 		_attesa -= 1
@@ -117,8 +139,38 @@ func _process(_d: float) -> bool:
 	return false
 
 
+## Quanto ci mette la lampada a salire da zero al massimo, cronometrato sul campo.
+##
+## Si misura il TEMPO SIMULATO, cioe' la somma dei delta: il banco gira con
+## `Engine.time_scale` alto, e cronometrare l'orologio da polso darebbe un
+## venticinquesimo del numero vero.
+func _cronometra(delta: float) -> void:
+	if _salita == 0.0:
+		_luce.light_energy = 0.0
+		_prima_energia = 0.0
+	_salita += delta
+	# SI ASPETTA CHE ARRIVI AL MASSIMO, non che "smetta di crescere". Il secondo
+	# criterio sembrava piu' semplice e misurava 2,9 s su 30: basta un fotogramma in
+	# cui l'energia non cambia - e ce n'e' piu' d'uno, perche' il bersaglio si
+	# ricalcola dieci volte al secondo e non a ogni fotogramma - perche' il
+	# cronometro decida che e' arrivata quando sta ancora al dieci per cento.
+	var piena: float = _luce.get("_piena")
+	if _luce.light_energy < piena * 0.99 and _salita < 300.0:
+		return
+	# smessa di crescere: e' arrivata
+	var s: GDScript = load("res://world/player/luce_prossimita.gd")
+	var atteso: float = 1.0 / float(s.get_script_constant_map()["SI_ABITUA"])
+	print("  la lampada sale da zero al massimo in %.1f s (dichiarati %.1f)"
+		% [_salita, atteso])
+	if absf(_salita - atteso) > atteso * 0.20:
+		_guasti.append("ci mette %.1f s ad accendersi invece dei %.1f dichiarati"
+			% [_salita, atteso])
+	_cronometrato = true
+
+
 ## Trova il muro su cui misurare e apparecchia l'elenco delle prese.
 func _prepara() -> void:
+	Engine.time_scale = FRETTA
 	_scena = load("res://world/blockout.tscn").instantiate()
 	get_root().add_child(_scena)
 	_corpo = _scena.get_node_or_null("Player") as CharacterBody3D

@@ -20,9 +20,10 @@
 ## direzione, e se incontra il tetto sei al chiuso.
 ##
 ## E CI METTE, SALENDO. Il conto si rifà dieci volte al secondo, ma l'energia ci
-## arriva scorrendo, e in salita ci mette più di tre secondi: è il tempo in cui un
-## occhio si abitua al buio. Entrando in una stanza spenta non si vede subito quel
-## che si ha accanto — lo si vede emergere. In discesa invece un quarto di secondo,
+## arriva scorrendo, e in salita ci mette MEZZO MINUTO: è il tempo in cui un occhio
+## si abitua al buio, anzi molto meno del vero. Entrando in una stanza spenta non si
+## vede subito quel che si ha accanto — lo si vede emergere. In discesa un quarto di
+## secondo,
 ## perché all'abbagliamento ci si adatta subito, e perché una lampada che ci
 ## mettesse tre secondi a spegnersi lascerebbe vedere il proprio alone entrando in
 ## una stanza accesa.
@@ -44,11 +45,20 @@ const CHIARO := 0.30
 const OGNI := 0.1
 
 ## Quanto in fretta la lampada SALE, in frazioni dell'energia piena al secondo.
-## Zero virgola trenta sono più di tre secondi per accendersi del tutto, ed è lento
-## apposta: è il tempo in cui un occhio vero si abitua al buio. Entrando in una
-## stanza spenta non si vede subito quel che si ha accanto — lo si vede emergere, e
-## quel ritardo è la cosa che rende il buio un posto invece che un difetto.
-const SI_ABITUA := 0.30
+## Un trentesimo: TRENTA SECONDI per arrivare al massimo.
+##
+## È lentissimo e va bene così — è anzi più veloce del vero, perché un occhio umano
+## ci mette dai venti ai trenta minuti ad adattarsi davvero al buio. Trenta secondi
+## sono la versione giocabile di quella curva: entri in una stanza spenta e per la
+## prima mezza minuto la stanza ti si apre addosso poco per volta, invece di essere
+## già lì.
+##
+## VA SAPUTA UNA CONSEGUENZA, perché non è un difetto ma lo sembra: passando accanto
+## a una lampada accesa la luce si spegne in un quarto di secondo e poi ci rimette
+## trenta a tornare. Camminando per un osservatorio mezzo illuminato la si vedrà
+## quasi sempre a metà strada, e piena solo restando fermi al buio. È esattamente
+## quello che fa un occhio, ma chi si aspetta una torcia la troverà rotta.
+const SI_ABITUA := 1.0 / 30.0
 
 ## Quanto in fretta SCENDE. Un quarto di secondo, cioè più di dieci volte la
 ## salita, e l'asimmetria è quella dell'occhio vero: al buio ci si abitua piano, alla

@@ -120,7 +120,12 @@ def postazione(zc, accesa):
     # ma un numero giusto il giorno che e' stato scritto, sopravvissuto alla ragione
     # che lo teneva su. Il mouse adesso sta a 1,62 e il monitor centrato va da 1,76 a
     # 2,24: non si toccano nemmeno.
-    posati = posa_modello(MONITOR, (x0 + 0.03, zc - 0.24, x0 + 0.53, zc + 0.24, 0.42),
+    # IL MONITOR ARRETRA DI TRE CENTIMETRI, e a chiederlo e' stata la tastiera vera.
+    # Quella fatta a mano cominciava dove finiva l'impronta del monitor e non lo
+    # toccava; quella di fuori e' piu' profonda, e i due si compenetravano per due
+    # millimetri - poco, ma da seduti si vede il bordo del battitasti sparire dentro
+    # la cassa. Il monitor sta a 5,7 cm dal muro, che e' dove sta un monitor.
+    posati = posa_modello(MONITOR, (x0 + 0.00, zc - 0.24, x0 + 0.50, zc + 0.24, 0.42),
                           gradi=0.0, appoggio=y_piano)
     # lo schermo acceso: in partita ci andra' il display vero, qui basta che si veda
     # che e' acceso, ed e' l'unica luce propria della stanza
@@ -148,7 +153,7 @@ def postazione(zc, accesa):
     # quella, e il modello ha quasi esattamente quel rapporto - scalandolo sui due
     # lati viene 1,50 e 1,51, cioe' non lo si sta stirando.
     kz0, kz1 = zc - 0.225, zc + 0.225
-    posa_modello(POSTAZIONE, (x0 + 0.47, kz0, x0 + 0.65, kz1, 0.05),
+    posa_modello(POSTAZIONE, (x0 + 0.48, kz0, x0 + 0.66, kz1, 0.05),
                  gradi=0.0, appoggio=y_piano, tieni=TASTIERA)
     cilindro("Gomma", x0 + 0.06, zc + 0.17, 0.10, y_piano - 0.05, 0.008, 8)
     return posati
@@ -314,8 +319,15 @@ def minutaglia():
     # verrebbe grande la meta'. Si scala sulla PIANTA - trenta per trentadue, che e'
     # un telefono da tavolo con la cornetta accanto - e l'altezza esce da se'.
     tz = zs + 0.85
+    #
+    # 270 GRADI, E LE ALTRE TRE SI SONO GUARDATE. Il verso qui non decide solo dove
+    # guarda il tastierino: decide se la CORNETTA si legge. E' posata di fianco alla
+    # base, e a 90 gradi finiva con l'asse puntato verso chi siede - da li' si
+    # accorciava in un moncone verticale con l'ombra sotto, e sembrava sospesa a
+    # mezz'aria. Non lo era: era di scorcio. A 270 sta di traverso, piatta e intera,
+    # e il tastierino guarda comunque chi siede.
     posa_modello(TELEFONO, (x0 + 0.06, tz - 0.16, x0 + 0.36, tz + 0.16, 0.40),
-                 gradi=90.0, appoggio=alt)
+                 gradi=270.0, appoggio=alt)
     # LA CARTA VIENE DA FUORI, e prima erano sette scatole piatte di colore "Carta".
     # Un blocco di fogli non e' un parallelepipedo: i fogli non sono pari, dietro c'e'
     # il cartone, la costa e' incollata in rosso. Sono le tre cose che dicono

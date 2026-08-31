@@ -3240,3 +3240,32 @@ pochi gradi, un blocco giallo con la penna sopra e il portapenne. La carta e la
 cancelleria sono CC0 (Poly Haven) e le scarica `prendi_modello.py` da solo; in quel set
 i nomi **sopravvivono** all'import, perché l'autore ha dato lo stesso nome alla mesh e
 al nodo, e i pezzi si possono chiedere per nome.
+
+## D-156 — La cornetta non volava: era di scorcio
+
+Due difetti trovati guardando, e vale la pena separarli perché uno era vero e l'altro
+no.
+
+**La tastiera dentro il monitor: due millimetri.** Misurati — il monitor arriva a x
+5,773 e la tastiera cominciava a 5,771. La tastiera fatta a mano cominciava dove finiva
+l'*impronta* del monitor e non lo toccava mai; quella di fuori è più profonda, e i due
+si sono trovati. Il monitor arretra di tre centimetri (sta comunque a 5,7 cm dal muro,
+che è dove sta un monitor) e la tastiera avanza di uno: restano quasi quattro
+centimetri di aria.
+
+**La cornetta invece non volava.** Misurato: il punto più basso del telefono è
+esattamente il piano della consolle, 0,750, e i vertici entro due centimetri dal fondo
+sono 390 — la base è appoggiata. Quello che si vedeva era la cornetta **di scorcio**: è
+posata di fianco alla base, e a 90 gradi il suo asse puntava dritto verso chi siede.
+Da lì si accorciava in un moncone verticale con l'ombra sotto, e leggeva come un
+oggetto sospeso a mezz'aria.
+
+A 270 gradi sta di traverso, piatta e intera, e il tastierino guarda comunque chi
+siede. Le quattro rotazioni si sono guardate una per una, dal punto di vista di chi è
+seduto e non dall'alto — perché è di lì che il difetto si vedeva.
+
+**La lezione è sul verso.** Per i sanitari e per il distributore il verso decideva dove
+guarda il fronte, e si misurava contando i vertici a filo del muro. Qui il fronte era
+già giusto a 90 gradi: quello che il verso decideva era se un pezzo si LEGGE, e questo
+non lo dice nessun conteggio. Lo dice guardare l'oggetto da dove lo guarderà il
+giocatore.

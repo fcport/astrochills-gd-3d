@@ -1942,3 +1942,46 @@ il contenuto della correzione.
 `verifica_angoli` guarda i quattro quadranti attorno a ogni incrocio e segnala quello
 vuoto che ha pieni tutti e due i vicini — perché quello è un angolo, non una fine.
 Validato riaprendo gli angoli: ne trova otto, e con la cura zero.
+
+### D-100 — Una porta di magazzino non è un'anta grigia
+
+In un edificio pubblico italiano di fine anni Novanta il magazzino ha una porta in
+lamiera pressopiegata: è quella che dice «qui dentro non ci sta un ufficio, ci stanno
+le casse». Con l'anta di legno come tutte le altre, il locale non si distingueva da un
+bagno.
+
+E la differenza non è il colore. Una lastra grigia liscia resta una porta di legno
+dipinta di grigio: sono le **nervature** stampate, la **griglia di aerazione** in basso
+e il **portalucchetto** a farla leggere come lamiera. Il portalucchetto sta su una
+faccia sola — un magazzino si chiude da fuori — ed è il pezzo che, da solo, dice che
+locale c'è dietro.
+
+Le nervature erano alte otto millimetri e non si vedevano: senza occlusione ambientale
+un rilievo così basso non fa ombra, e l'anta tornava a leggere come una lastra. A
+quindici si vedono, ed è anche la bugna vera di una porta pressopiegata.
+
+`PORTE_METALLO` sta in `geometria.py` accanto a `MANIGLIONE` e `APERTURA_PORTE`: quali
+porte sono di lamiera è un dato della pianta, non una scelta del modellatore. Se ne
+segue anche il controtelaio — un'anta di lamiera non sta in un telaio di legno.
+
+### D-101 — Lo stesso 0,50 vale 0,50 in Blender e 0,21 in Godot
+
+La stessa lamiera è tinta in due file: il telaio in Blender, l'anta nel `.tscn`. Tinta
+dichiarata identica, 0,50. **Misurate, uscivano 100 e 52 su 255** — l'anta la metà del
+suo telaio.
+
+`albedo_color` di Godot è in **sRGB** e viene convertita in lineare per illuminare; il
+Base Color di Blender è **già lineare**. Lo stesso numero vale 0,21 di qua e 0,50 di là,
+cioè due volte e mezzo. 0,73 in sRGB è 0,50 in lineare, e con quello anta e telaio
+misurano 96 e 100.
+
+Sotto c'era un secondo difetto che il primo nascondeva: `applica_texture` prende la
+tinta dalla tavolozza di `modellare.py`, dove i nomi dei materiali di
+`osservatorio_blender.py` non esistono. Non trovandoli moltiplicava per bianco, cioè
+**non tingeva affatto** — il telaio usciva color alluminio. Dichiarare un materiale
+«tinto» in `TINTI` non basta se poi la tinta non c'è: adesso la passa chi la conosce.
+
+Nessuno dei due si vede leggendo il codice, e nemmeno guardando la porta: si vedono
+misurando i pixel di anta, telaio e muro nello stesso scatto. Per farlo serviva poter
+guardare una stanza a luce rossa come la si guarda quando la si deve giudicare, e da lì
+`SCATTO_FARO` in `scatto_cupola.gd` — una lampada sulla camera.

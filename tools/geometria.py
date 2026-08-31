@@ -83,6 +83,16 @@ APERTURE = [
 # tranne dove il locale e' troppo stretto per contenere l'anta.
 MANIGLIONE = ("ingresso",)   # maniglione antipanico, sul lato INTERNO dell'anta
 
+# LE PORTE DI SERVIZIO NON SONO DI LEGNO. In un edificio pubblico italiano di fine
+# anni Novanta il magazzino ha una porta in lamiera pressopiegata, verniciata,
+# spesso con la griglia di aerazione in basso e il portalucchetto: e' quella che
+# dice "qui dentro non ci sta un ufficio, ci stanno le casse". Con l'anta di legno
+# come tutte le altre, il locale non si distingueva da un bagno.
+# La differenza non e' solo il colore: sono le NERVATURE, la griglia e il lucchetto
+# a farla leggere come una porta di lamiera. Una lastra grigia liscia resta una
+# porta di legno dipinta di grigio.
+PORTE_METALLO = ("magazzino",)
+
 APERTURA_PORTE = {
     "ingresso":            ("a", +1),   # verso il prato
     "cucina":              ("a", -1),   # dentro la cucina
@@ -565,11 +575,13 @@ def blocchi_infissi():
                 aggiungi(fisso, cy, centro_lungo, spess, alto, lungo, nome_)
 
         # montanti verticali, traversa in alto, e in basso solo per le finestre
-        posa(px_ + TS / 2 if o == "h" else pz + TS / 2, y0 + h / 2, TS, h, "Telaio")
-        posa((px_ + w - TS / 2) if o == "h" else (pz + w - TS / 2), y0 + h / 2, TS, h, "Telaio")
-        posa(m, y1 - TS / 2, w - 2 * TS, TS, "Telaio")
+        # un'anta di lamiera non sta in un telaio di legno: il controtelaio segue l'anta
+        tel = "TelaioMet" if nome in PORTE_METALLO else "Telaio"
+        posa(px_ + TS / 2 if o == "h" else pz + TS / 2, y0 + h / 2, TS, h, tel)
+        posa((px_ + w - TS / 2) if o == "h" else (pz + w - TS / 2), y0 + h / 2, TS, h, tel)
+        posa(m, y1 - TS / 2, w - 2 * TS, TS, tel)
         if not porta:
-            posa(m, y0 + TS / 2, w - 2 * TS, TS, "Telaio")
+            posa(m, y0 + TS / 2, w - 2 * TS, TS, tel)
 
         luce_l, luce_h = w - 2 * TS, h - (TS if porta else 2 * TS)
         if porta:
@@ -641,6 +653,7 @@ def ante_porte(apertura_gradi=0.0):
             "nome": nome, "perno": perno, "direzione": direzione, "normale": normale,
             "larghezza": lung, "altezza": H_ARCH - TS, "spessore": ANTA,
             "apertura": apertura_gradi, "maniglione": nome in MANIGLIONE,
+            "metallo": nome in PORTE_METALLO,
         })
     return ante
 
@@ -666,6 +679,40 @@ def pezzi_anta(a):
         pezzi.append((L / 2, 1.05, -(T / 2 + 0.055), L - 0.20, 0.045, 0.035, "Maniglione"))
         for x in (0.13, L - 0.13):
             pezzi.append((x, 1.05, -(T / 2 + 0.028), 0.045, 0.075, 0.055, "Maniglione"))
+    if a.get("metallo"):
+        # LA LAMIERA NON E' UN COLORE, SONO LE NERVATURE. Un'anta pressopiegata ha
+        # due bugne orizzontali stampate che la irrigidiscono, e sono loro a farla
+        # leggere come lamiera: una lastra grigia liscia resta una porta di legno
+        # dipinta di grigio. Stanno su tutte e due le facce perche' la piega passa
+        # da parte a parte.
+        for quota in (0.62, 1.42):
+            for faccia in (+1.0, -1.0):
+                # QUINDICI MILLIMETRI, non otto. A otto la nervatura c'era e non
+                # si vedeva: senza occlusione ambientale un rilievo cosi' basso non
+                # fa ombra, e l'anta tornava a leggere come una lastra liscia
+                # verniciata di grigio. Un millimetro e mezzo e' anche la bugna
+                # vera di una porta pressopiegata.
+                pezzi.append((L / 2, quota, faccia * (T / 2 + 0.0075),
+                              L - 0.10, 0.075, 0.015, "Lamiera"))
+        # griglia di aerazione in basso: in un magazzino ci sta perche' dentro non
+        # ci si ferma, e tre alette bastano a dirlo
+        for k in range(3):
+            for faccia in (+1.0, -1.0):
+                pezzi.append((L / 2, 0.28 + k * 0.048, faccia * (T / 2 + 0.005),
+                              L - 0.28, 0.026, 0.010, "Lamiera"))
+        # maniglia a leva: rosetta vicino al bordo libero, leva che punta verso il
+        # cardine - dall'altra parte sporgerebbe fuori dall'anta
+        for faccia in (+1.0, -1.0):
+            pezzi.append((L - 0.09, 1.05, faccia * (T / 2 + 0.006),
+                          0.075, 0.135, 0.012, "Maniglia"))
+            pezzi.append((L - 0.145, 1.05, faccia * (T / 2 + 0.048),
+                          0.115, 0.028, 0.028, "Maniglia"))
+        # PORTALUCCHETTO, e sta su una faccia sola: un magazzino si chiude da fuori.
+        # Il lato negativo e' quello opposto al verso di apertura, cioe' quello da
+        # cui si spinge - che per una porta che si apre verso l'interno e' proprio
+        # il fuori. E' il pezzo che, da solo, dice che locale c'e' dietro.
+        pezzi.append((L - 0.10, 0.88, -(T / 2 + 0.008), 0.130, 0.055, 0.016, "Maniglia"))
+        pezzi.append((L - 0.10, 0.825, -(T / 2 + 0.014), 0.048, 0.060, 0.026, "Maniglia"))
     return pezzi
 
 

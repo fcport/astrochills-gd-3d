@@ -93,7 +93,10 @@ def tscn():
              '[ext_resource type="Script" path="res://world/interactables/light_switch.gd" id="12_switch"]',
              '[ext_resource type="PackedScene" path="res://assets/models/applique_rossa.glb" id="13_applique"]',
              '[ext_resource type="Texture2D" path="res://assets/textures/diffusore/color.jpg" id="14_diff_c"]',
-             '[ext_resource type="PackedScene" path="res://assets/models/applique_bianca.glb" id="15_esterna"]', '']
+             '[ext_resource type="PackedScene" path="res://assets/models/applique_bianca.glb" id="15_esterna"]',
+             '[ext_resource type="Texture2D" path="res://assets/textures/metallo/color.jpg" id="16_met_c"]',
+             '[ext_resource type="Texture2D" path="res://assets/textures/metallo/normal.jpg" id="17_met_n"]',
+             '[ext_resource type="Texture2D" path="res://assets/textures/metallo/roughness.jpg" id="18_met_r"]', '']
     dims = sorted(set((round(b[3], 3), round(b[4], 3), round(b[5], 3)) for b in blocchi)
                   | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
                      for a in ante_porte() for p in pezzi_anta(a)}
@@ -112,11 +115,38 @@ def tscn():
         righe.append('')
     for nome, col in [("mat_muro", "0.78, 0.76, 0.72"), ("mat_pav", "0.42, 0.40, 0.38"),
                       ("mat_soff", "0.60, 0.60, 0.62"), ("mat_pass", "0.55, 0.45, 0.32"), ("mat_prato", "0.20, 0.26, 0.17"),
-                      ("mat_auto", "0.45, 0.13, 0.13"), ("mat_rec", "0.35, 0.33, 0.30"), ("mat_tetto", "0.24, 0.22, 0.21"), ("mat_anta", "0.38, 0.28, 0.19"), ("mat_dome", "0.86, 0.87, 0.88"), ("mat_tele", "0.30, 0.33, 0.38")]:
+                      ("mat_auto", "0.45, 0.13, 0.13"), ("mat_rec", "0.35, 0.33, 0.30"), ("mat_tetto", "0.24, 0.22, 0.21"), ("mat_anta", "0.38, 0.28, 0.19"), ("mat_dome", "0.86, 0.87, 0.88"), ("mat_tele", "0.30, 0.33, 0.38"),
+                      # la porta del magazzino: lamiera verniciata verde-grigio
+                      # 0,73 QUI VUOL DIRE 0,50 LA'. La stessa lamiera e' tinta in
+                      # due file - il telaio in Blender, l'anta qui - e la tinta
+                      # dichiarata era la stessa: 0,50. Misurate, uscivano 100 e 52
+                      # su 255. `albedo_color` di Godot e' in sRGB e viene convertita
+                      # in lineare per illuminare, il Base Color di Blender e' gia'
+                      # lineare: lo stesso numero vale 0,21 di qua e 0,50 di la',
+                      # cioe' due volte e mezzo. 0,73 in sRGB e' 0,50 in lineare.
+                      ("mat_metallo", "0.73, 0.75, 0.73")]:
         righe += ['[sub_resource type="StandardMaterial3D" id="%s"]' % nome,
                   'albedo_color = Color(%s, 1)' % col]
         if nome == "mat_dome":
             righe.append('cull_mode = 2')   # visibile anche da dentro la cupola
+        if nome == "mat_metallo":
+            # stesso triplanare dell'anta di legno e per la stessa ragione: le UV
+            # di una BoxMesh vanno da 0 a 1 su OGNI faccia, quindi la grana della
+            # lamiera si stirerebbe per riempire un'aletta di griglia larga due
+            # centimetri e mezzo esattamente come riempie l'anta intera.
+            righe += ['albedo_texture = ExtResource("16_met_c")',
+                      'normal_enabled = true',
+                      'normal_texture = ExtResource("17_met_n")',
+                      'roughness_texture = ExtResource("18_met_r")',
+                      # NIENTE METALLICO. E' la terza volta in questo progetto:
+                      # una superficie metallica restituisce cio' che ha intorno, e
+                      # in un corridoio a luce rossa non ha intorno niente. L'anta
+                      # usciva quasi nera mentre il telaio - stesso colore, stessa
+                      # mappa, ma senza metallico - era grigio-verde. La vernice a
+                      # fuoco di una porta non e' uno specchio.
+                      'metallic = 0.0', 'metallic_specular = 0.35', 'roughness = 0.55',
+                      'uv1_triplanar = true',
+                      'uv1_scale = Vector3(1.6, 1.6, 1.6)']
         if nome == "mat_anta":
             # TRIPLANARE, non le UV della BoxMesh: quelle vanno da 0 a 1 su OGNI
             # faccia, quindi la venatura si stirerebbe per riempire l'anta invece di
@@ -583,15 +613,22 @@ def tscn():
                   'prompt_text = "Apri"', '',
                   ]
         # il lato interno dell'anta sta lungo +Z locale quando verso vale +1
-        for (lungo, alto, lato, sx, sy, sz, etichetta) in pezzi_anta(a):
+        # IL NUMERO E' L'INDICE, non la distanza dal cardine. Con il nome ricavato
+        # da `lungo` i dieci pezzi della griglia e delle nervature - tutti in
+        # mezzeria - si chiamavano tutti "Lamiera37", e un .tscn con nodi omonimi
+        # sotto lo stesso genitore non e' un file valido.
+        materia = {"Anta": "mat_metallo" if a.get("metallo") else "mat_anta",
+                   "Lamiera": "mat_metallo", "Maniglia": "mat_metallo",
+                   "Maniglione": "mat_tele"}
+        for k, (lungo, alto, lato, sx, sy, sz, etichetta) in enumerate(pezzi_anta(a)):
             chiave = (round(sx, 3), round(sy, 3), round(sz, 3))
-            suffisso = "Mesh" if etichetta == "Anta" else etichetta + str(round(lungo * 100))
+            suffisso = "Mesh" if etichetta == "Anta" else "%s%d" % (etichetta, k)
             righe += ['[node name="%s" type="MeshInstance3D" parent="%s"]' % (suffisso, nome),
                       'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
                       % (lungo, alto, -lato * verso),
                       'mesh = SubResource("m_%d")' % idx[chiave],
                       'material_override = SubResource("%s")'
-                      % ("mat_anta" if etichetta == "Anta" else "mat_tele"), '']
+                      % materia.get(etichetta, "mat_tele"), '']
         righe += ['[node name="Col" type="CollisionShape3D" parent="%s"]' % nome,
                   'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, 0)' % (L / 2, HA / 2),
                   'shape = SubResource("s_%d")' % idx[(round(L, 3), round(HA, 3), round(T, 3))], '']

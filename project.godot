@@ -205,50 +205,8 @@ ui_release_mouse={
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0
-; FORWARD+ E NON PIU' gl_compatibility, e non e' una scelta di gusto: e' il
-; vincolo che rendeva impossibile la cosa chiesta. In OpenGL Compatibility le
-; luci puntiformi con ombra sono poche e si ESCLUDONO A VICENDA - accendendo la
-; luce rossa della cupola si spegnevano quelle della sala divulgazione, che
-; restavano accese a vedersi e non illuminavano piu' niente. Nessuna manopola lo
-; risolve: max_lights_per_object era gia' al massimo e l'atlante a 8192.
-; 
-; Forward+ raggruppa le luci in cluster e non ha quel tetto; in piu' le sue mappe
-; d'ombra tolgono la griglia di linee sul soffitto. Il costo e' hardware un po'
-; meno vecchio, che qui c'e'. Si torna indietro cambiando questa riga.
-renderer/rendering_method="forward_plus"
-renderer/rendering_method.mobile="mobile"
-; OTTO LUCI PER OGGETTO NON BASTANO. In OpenGL Compatibility ogni superficie ne
-; considera al massimo otto, e le plafoniere sono dieci: sul pavimento dell'ala
-; est, che e' un pezzo solo, le due in eccesso venivano scartate in silenzio - la
-; lampada si vedeva accesa e sotto non arrivava niente.
-;
-; DEBANDING. Un alone rosso ampio e saturo si scalina in ANELLI CONCENTRICI: e'
-; la quantizzazione a otto bit, misurata - fasce di 20-40 pixel identici che
-; differiscono di UN livello. Il debanding aggiunge un rumore impercettibile che
-; le rompe.
-;
-; I COMMENTI QUI VANNO CON IL PUNTO E VIRGOLA. project.godot non e' un .ini
-; qualunque: il cancelletto non e' un commento, e una riga che ne comincia fa
-; ABORTIRE la lettura della sezione. Tutto quello che stava sotto - debanding,
-; atlante delle ombre, luci per oggetto - non e' mai arrivato al motore, e per
-; mezza giornata ho creduto di aver acceso cose che erano spente.
-; ANELLI CONCENTRICI: e' la quantizzazione a otto bit, non un difetto della luce.
-; Il debanding aggiunge un rumore impercettibile che rompe le fasce.
 anti_aliasing/quality/use_debanding=true
 limits/opengl/max_lights_per_object=15
-; ATLANTE DELLE OMBRE PIU' GRANDE. Dodici luci con ombra in un atlante da 4096 si
-; dividono qualche centinaio di pixel a testa, e una shadow map troppo grossa per
-; la superficie che copre si vede come una GRIGLIA DI LINEE sul soffitto - non e'
-; la trama dell'intonaco, e' la mappa d'ombra che si campiona da sola.
 lights_and_shadows/positional_shadow/atlas_size=8192
-; I RIQUADRI PIU' GRANDI, ED E' LA CURA VERA DEGLI ANELLI CONCENTRICI.
-; L'atlante e' uno e si divide in quattro quadranti; il quarto, con la
-; suddivisione di serie, tiene 64 ombre da 512 pixel l'una. Una lampada che
-; illumina una calotta da cinque metri con 512 pixel si fa ombra da sola a
-; scacchi - e su una superficie curva gli scacchi sono anelli. Qui le luci con
-; ombra sono quattordici: con questa ripartizione ce ne stanno ventotto, e la
-; piu' piccola ha 1024 pixel invece di 512.
-lights_and_shadows/positional_shadow/atlas_quadrant_0_subdiv=2
-lights_and_shadows/positional_shadow/atlas_quadrant_1_subdiv=2
 lights_and_shadows/positional_shadow/atlas_quadrant_2_subdiv=2
 lights_and_shadows/positional_shadow/atlas_quadrant_3_subdiv=3

@@ -95,6 +95,12 @@ TEXTURE = {
     "LegnoTeche":   ("legno-teche", 0.70),
     "Ante":         ("legno-porte", 1.00),
     "Telai":        ("legno-porte", 1.00),
+    # La porta del magazzino e il suo controtelaio: lamiera verniciata, non legno.
+    # 0,60 per ripetizione e non 1,20 come la carpenteria - su un'anta larga
+    # settantaquattro centimetri la scala grande ci starebbe mezza volta, e mezza
+    # ripetizione non e' una superficie.
+    "AnteMetallo":  ("metallo", 0.60),
+    "TelaiMetallo": ("metallo", 0.60),
     "Metallo":      ("metallo", 1.20),
     "Plastica":     ("plastica", 0.35),
     "Muri":         ("intonaco", 2.00),

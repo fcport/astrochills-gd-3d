@@ -53,6 +53,9 @@ PARTI = [
     (("Pass",), "Passerella", (0.42, 0.35, 0.26)),
     (("Rampa", "Scal"), "Rampa", (0.46, 0.39, 0.29)),
     (("Pilastro", "Tubo"), "Montatura", (0.24, 0.26, 0.30)),
+    # PRIMA di "Telaio": parte_di() confronta con startswith, e "TelaioMet"
+    # comincia per "Telaio" - messo dopo non verrebbe mai raggiunto.
+    (("TelaioMet",), "TelaiMetallo", (0.50, 0.54, 0.50)),
     (("Telaio",), "Telai", (0.30, 0.22, 0.15)),
     (("Anta",), "Ante", (0.38, 0.28, 0.19)),
     (("Davanzale",), "Davanzali", (0.62, 0.60, 0.57)),
@@ -66,6 +69,16 @@ def parte_di(nome):
         if nome.startswith(prefissi):
             return etichetta, colore
     return MURI
+
+
+# I materiali la cui TINTA conta: la mappa va MOLTIPLICATA per il colore, non usata
+# com'e'. Serve saperlo qui perche' `applica_texture` prende la tinta dalla tavolozza
+# di modellare.py, dove questi nomi non esistono: non trovandoli moltiplicava per
+# bianco, cioe' non tingeva. Il set "metallo" e' una lamiera NUDA e chiara, quindi
+# senza tinta il telaio del magazzino usciva color alluminio mentre l'anta - che in
+# scena e' tinta da Godot - usciva verde scuro. Stesso colore dichiarato, due
+# risultati diversi, e la causa non era in nessuno dei due posti dove l'ho cercata.
+TINTI_QUI = ("AnteMetallo", "TelaiMetallo")
 
 
 def materiale(nome, colore):
@@ -90,7 +103,7 @@ def materiale(nome, colore):
             if hasattr(m, attributo):
                 setattr(m, attributo, valore)
         m.use_backface_culling = False
-    applica_texture(m, nome)
+    applica_texture(m, nome, tinta=colore if nome in TINTI_QUI else None)
     return m
 
 
@@ -171,7 +184,9 @@ def crea_ante():
         uv_a_scatola(bm)
         bm.to_mesh(malla)
         bm.free()
-        malla.materials.append(materiale("Ante", (0.38, 0.28, 0.19)))
+        malla.materials.append(materiale("AnteMetallo", (0.50, 0.54, 0.50))
+                               if a.get("metallo")
+                               else materiale("Ante", (0.38, 0.28, 0.19)))
         oggetto = bpy.data.objects.new("Anta_" + a["nome"], malla)
         bpy.context.collection.objects.link(oggetto)
 

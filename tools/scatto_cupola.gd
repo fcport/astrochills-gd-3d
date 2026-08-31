@@ -35,8 +35,26 @@ func _init() -> void:
 	cam.position = _numeri("SCATTO_DA", Vector3(2.60, 1.65, 5.90))
 	cam.rotation_degrees = _numeri("SCATTO_VERSO", Vector3(-6, 0, 0))
 	cam.fov = 55.0
+	# SCATTO_FARO accende una lampada sulla camera. Guardare un pezzo di arredo in
+	# una stanza a luce rossa non dice niente: un'anta verniciata e una di legno
+	# sono lo stesso rettangolo nero. Non e' come si vedra' in partita - e' come si
+	# vede una cosa quando la si deve GIUDICARE.
+	if not OS.get_environment("SCATTO_FARO").is_empty():
+		var faro := OmniLight3D.new()
+		faro.light_energy = maxf(0.1, float(OS.get_environment("SCATTO_FARO")))
+		faro.omni_range = 8.0
+		faro.omni_attenuation = 1.0
+		faro.shadow_enabled = false
+		cam.add_child(faro)
 	cam.current = true
 
+
+
+func _accendi_tutto(n: Node) -> void:
+	if n.name == "Accesa" and n is Node3D:
+		(n as Node3D).visible = true
+	for f in n.get_children():
+		_accendi_tutto(f)
 
 
 func _numeri(chiave: String, difetto: Vector3) -> Vector3:
@@ -57,10 +75,17 @@ func _process(_d: float) -> bool:
 	# usciva identico a luci spente e per un po' ho creduto che le lampade non
 	# facessero luce - misurava una stanza al buio credendo di misurarla accesa.
 	if _conto == ASPETTA - 4:
-		for n in ["Luce_cupola1", "Luce_cupola2", "Luce_cupola3"]:
-			var a := get_root().get_node_or_null("Blockout/" + n + "/Accesa") as Node3D
-			if a != null:
-				a.visible = true
+		# SCATTO_LUCI=tutte accende ogni lampada della scena. Serve a guardare un
+		# pezzo di arredo per quello che e': la sala del telescopio ha solo le
+		# rosse accese, e sotto quelle un'anta verniciata e una di legno sono due
+		# rettangoli neri uguali.
+		if OS.get_environment("SCATTO_LUCI") == "tutte":
+			_accendi_tutto(get_root())
+		else:
+			for n in ["Luce_cupola1", "Luce_cupola2", "Luce_cupola3"]:
+				var a := get_root().get_node_or_null("Blockout/" + n + "/Accesa") as Node3D
+				if a != null:
+					a.visible = true
 	if _conto < ASPETTA:
 		return false
 	for n in ["Luce_cupola1", "Luce_cupola2", "Luce_cupola3", "Luce_corridoio", "Luce_pc"]:

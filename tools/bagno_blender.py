@@ -122,10 +122,17 @@ SPORGE = 0.010     # di quanto il listello esce dal filo del rivestimento
 # 1,90 perche' comprende specchio, mensola e applique; il lavabo e' alto 86 cm.
 # Passando 1,90 a `posa_modello` il lavabo veniva scalato per essere alto quasi un
 # metro, cioe' dieci centimetri troppo, e da fermi davanti si vedeva.
+#
+# E QUESTE TRE ALTEZZE SONO SOPRA IL VERO DI UN QUARTO. Un water alto un metro non
+# esiste; questo lo e'. Il perche' sta per esteso accanto alle impronte, in
+# `geometria.ARREDI_BAGNO`, e in due parole e' il campo visivo: a 107 gradi di
+# orizzontale la ceramica di misura giusta legge come un giocattolo. Le impronte in
+# pianta sono state allargate INSIEME a questi numeri - `posa_modello` prende il
+# minore fra altezza e ingombro, e una sola delle due mosse non muove niente.
 SANITARI = [
-    ("wc_bagno",     "Wc",      90.0, 0.78, "il water"),
-    ("bidet_bagno",  "Bidet",  180.0, 0.52, "il bidet"),
-    ("lavabo_bagno", "Lavabo", 270.0, 0.86, "il lavabo a colonna"),
+    ("wc_bagno",     "Wc",      90.0, 1.00, "il water"),
+    ("bidet_bagno",  "Bidet",  180.0, 0.75, "il bidet"),
+    ("lavabo_bagno", "Lavabo", 270.0, 1.04, "il lavabo a colonna"),
 ]
 
 # IL TERMOSIFONE NON LO DECIDE `verso_sanitari.py`, e vale la pena dire perche'.

@@ -2833,3 +2833,31 @@ specchiare inverte l'avvolgimento delle facce, e in Godot una faccia avvolta al
 contrario si illumina con la normale sbagliata, cioè esce nera.
 
 `metallicFactor` non dichiarato, quindi 1,0: **ottava volta**. Azzerato.
+
+## D-141 — I sanitari sono più grandi del vero, e la colpa è dell'ottica
+
+Seconda lamentela sulla stessa cosa: «water, bidet e lavandino sono microscopici».
+La prima volta (D-138) i sanitari si erano **misurati** — 0,78, 0,52, 0,86, i numeri
+veri al centimetro — e il colpevole era il rivestimento, che a 7,5 cm per piastrella
+faceva da righello sbagliato. Corretto quello, sembrano piccoli lo stesso.
+
+Rimisurati adesso, uno per uno, con `posa_modello` che li schiaccia dentro
+l'impronta: altezza esatta, ingombro in pianta al millimetro di quanto dichiarato.
+La stanza è 3,15 × 2,80 e il giocatore ha l'occhio a 1,65: tutto giusto. Quello che
+resta è il **campo visivo**. La camera di `player.tscn` sta al valore di fabbrica, 75
+gradi, che in Godot è il *verticale*: su 16:9 fanno 107 gradi in orizzontale. A
+quell'apertura tutto quello che sta al centro dello schermo si allontana, e sotto tre
+metri di soffitto una ceramica di misura esatta legge come una ceramica da bambole.
+
+Si è scelto di **sbagliare la misura invece che l'impressione**: water 1,00, bidet
+0,75, lavabo 1,04 — un quarto abbondante sopra il vero. Chi ci gioca non ha il metro
+in mano.
+
+Due mosse insieme, non una: `posa_modello` prende il **minore** fra la scala che
+verrebbe dall'altezza e quella che verrebbe dall'ingombro in pianta, e alzare solo
+l'altezza non muove niente — il water era già a 0,456 su 0,46 di impronta. Le
+impronte di `ARREDI_BAGNO` sono cresciute con le altezze, e il bidet ha avuto un
+secondo giro: a 0,67 restava il fratello piccolo del water, a 0,75 sono una coppia.
+
+Il campo visivo resta com'è: cambiarlo è una decisione su tutto il gioco, non sul
+bagno.

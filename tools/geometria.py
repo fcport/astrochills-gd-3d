@@ -1022,8 +1022,20 @@ ARREDI_BAGNO = [
     # 46 cm di larghezza e non 40: `posa_modello` scala sull'altezza e poi
     # rimpicciolisce finche' l'ingombro in pianta ci sta, e a 40 il water usciva
     # alto 68 cm invece di 78. Sei centimetri di impronta valgono dieci di water.
-    ("Wc",          7.47, 6.88, 8.15, 7.34, 0.80),
-    ("Bidet",       7.55, 7.65, 8.15, 8.05, 0.65),
+    #
+    # E ADESSO SONO PIU' GRANDI DEL VERO, DI UN QUARTO ABBONDANTE. Non e' una svista:
+    # e' il secondo giro sulla stessa lamentela. Il primo giro i sanitari si sono
+    # MISURATI - water 0,78, lavabo 0,86, i numeri veri al centimetro - e il colpevole
+    # era il rivestimento, che a 7,5 cm per piastrella faceva da righello sbagliato.
+    # Corretto quello, sembrano piccoli lo stesso. Quello che resta e' l'ottica: la
+    # camera del giocatore sta al campo visivo di fabbrica, 75 gradi in verticale,
+    # cioe' 107 in orizzontale su 16:9, e a quell'apertura quello che sta al centro
+    # dello schermo si allontana. Sotto tre metri di soffitto un water di misura
+    # esatta legge come un water da bambini. Qui si sceglie di sbagliare la MISURA
+    # invece che l'IMPRESSIONE: chi ci gioca non ha il metro in mano, e l'unica prova
+    # che conta e' guardarli da dentro la stanza.
+    ("Wc",          7.37, 6.86, 8.15, 7.46, 1.02),
+    ("Bidet",       7.43, 7.70, 8.15, 8.16, 0.77),
     # NIENTE DOCCIA. C'era, ed era la risposta sbagliata alla domanda «cosa ci metto
     # al posto della vasca»: qui non ci si lava, e' il bagno di servizio di un
     # osservatorio, non una camera d'albergo. Al suo posto un armadio di lamiera da
@@ -1040,7 +1052,7 @@ ARREDI_BAGNO = [
     ("Armadio",     7.58, 8.44, 8.15, 9.34, 1.85),
     # parete ovest: il lavabo con lo specchio e la mensola sopra, tutto in una
     # impronta sola - sono un pezzo unico per chi ci sbatte contro
-    ("Lavabo",      5.00, 8.15, 5.60, 8.90, 1.90),
+    ("Lavabo",      5.00, 8.10, 5.64, 8.96, 1.90),
     # muro nord, a OVEST della porta e non a est: il vano va da 5,80 a 7,10 e il
     # perno sta a 7,02, quindi l'anta spazza il quadrante verso ovest fino a 1,14 m.
     # Messo a est era addosso al cardine e il controllo l'ha preso in pieno.

@@ -27,17 +27,29 @@ Il modello arriva col treppiede da campagna e senza gerarchia; qui viene montato
 pilastro e riarticolato sui due assi equatoriali da `tools/telescopio_blender.py`. La
 licenza permette le modifiche e l'uso commerciale, a patto del credito qui sopra.
 
-**Lavabo** — il lavabo a semicolonna del bagno.
-Autore: [Antonio Rossin](https://sketchfab.com/antoniorossin).
-Fonte: <https://sketchfab.com/3d-models/33cbd0ac6ae24bd292783a4e06fc4138>
+**Old Dirty Pedestal Sink** — il lavabo del bagno.
+Autore: [Renend Studio](https://sketchfab.com/RenendStudio).
+Fonte: <https://sketchfab.com/3d-models/4a9095d3540144c7bd8bcefe0de2a227>
 Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
 
-> This work is based on "Lavabo"
-> (https://sketchfab.com/3d-models/33cbd0ac6ae24bd292783a4e06fc4138)
-> by Antonio Rossin (https://sketchfab.com/antoniorossin) licensed under CC-BY-4.0
+> This work is based on "Old Dirty Pedestal Sink - Low Poly / PBR"
+> (https://sketchfab.com/3d-models/4a9095d3540144c7bd8bcefe0de2a227)
+> by Renend Studio (https://sketchfab.com/RenendStudio) licensed under CC-BY-4.0
 > (http://creativecommons.org/licenses/by/4.0/)
 
-**Bidet** — il bidet del bagno.
+**Game Ready - Dirty Old Toilet** — il water del bagno.
+Autore: [Allan-Jay Branscombe](https://sketchfab.com/AllanJayBranscombe).
+Fonte: <https://sketchfab.com/3d-models/6ac515a1c4154db18b5b4bd0b46d6405>
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> This work is based on "Game Ready - Dirty Old Toilet"
+> (https://sketchfab.com/3d-models/6ac515a1c4154db18b5b4bd0b46d6405)
+> by Allan-Jay Branscombe (https://sketchfab.com/AllanJayBranscombe) licensed under
+> CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+
+**Bidet** — il bidet del bagno. Arriva bianco di fabbrica e viene invecchiato da
+`tools/bagno_blender.py`: di bidet vecchi non ne esiste uno con licenza libera, e non
+è un caso — il bidet è un oggetto italiano e le librerie 3D sono anglosassoni.
 Autore: [Joele segreto](https://sketchfab.com/joelesegreto).
 Fonte: <https://sketchfab.com/3d-models/e52d1be9d7594dd39c8ae8e3dcab9cd5>
 Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
@@ -45,16 +57,6 @@ Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuz
 > This work is based on "Bidet"
 > (https://sketchfab.com/3d-models/e52d1be9d7594dd39c8ae8e3dcab9cd5)
 > by Joele segreto (https://sketchfab.com/joelesegreto) licensed under CC-BY-4.0
-> (http://creativecommons.org/licenses/by/4.0/)
-
-**Qualitas Bathrooms toilet low poly** — il water del bagno.
-Autore: [Yaiyeondurisin](https://sketchfab.com/yaiyeondurisin).
-Fonte: <https://sketchfab.com/3d-models/5b18711616054a44b025d9272b745a6a>
-Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
-
-> This work is based on "Qualitas Bathrooms toilet low poly"
-> (https://sketchfab.com/3d-models/5b18711616054a44b025d9272b745a6a)
-> by Yaiyeondurisin (https://sketchfab.com/yaiyeondurisin) licensed under CC-BY-4.0
 > (http://creativecommons.org/licenses/by/4.0/)
 
 ## Tutto il resto

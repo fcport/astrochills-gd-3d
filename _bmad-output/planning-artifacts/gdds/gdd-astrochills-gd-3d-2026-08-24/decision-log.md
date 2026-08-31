@@ -2266,3 +2266,52 @@ Adesso aspetta che raggiunga il 99% del suo massimo. Misura 30,0 s.
 controllo ha accusato del codice sano. Un banco che sbaglia in questa direzione è meno
 pericoloso di uno che tace, ma costa lo stesso — e per un momento ho creduto che la
 lampada fosse rotta.
+
+## D-115 — In un osservatorio il bagno non ha la doccia
+
+**Correzione.** La doccia era il primo rimpiazzo della vasca e non reggeva: «è un
+osservatorio, non una camera d'albergo». Ha ragione — lì non ci si lava, ci si lavora.
+L'angolo sud-est lo prende un **armadio di lamiera da locale tecnico**: detersivi,
+ricambi, il camice.
+
+**Tre dettagli che sono geometria, non arredamento.** Le feritoie di aerazione in alto
+(un armadio chiuso senza sfiato ammuffisce, e chi li fabbrica lo sa), le maniglie
+verticali a bastone, lo zoccolo rientrato che lo stacca dal pavimento bagnato. Senza
+quei tre, una scatola grigia resta una scatola grigia.
+
+**Due errori, entrambi visti solo nel render.** La cassa aveva fianchi e fronte
+scambiati di asse — ne usciva un armadio aperto di lato, con le ante appiccicate sopra
+il pannello che avrebbero dovuto essere. E portava il materiale `Lamiera`, che in
+questo progetto è quella scrostata delle plafoniere industriali: sembrava un rudere.
+Un armadio di servizio di un osservatorio in funzione è vecchio, non abbandonato.
+
+## D-116 — I sanitari devono essere vecchi, e il bidet non esiste vecchio
+
+**Correzione.** La forma dei sanitari andava bene, la ceramica no: bianca di
+fabbrica. Un sanitario nuovo in un bagno del 1999 legge come un rendering di
+catalogo. Sostituiti lavabo e water con due modelli **già ingialliti e segnati**
+(vedi `CREDITI.md`) — meglio lo sporco vero di chi li ha fatti che una tinta
+uniforme passata sopra.
+
+**Il bidet no.** Di bidet vecchi non esiste **nemmeno uno** con licenza libera, e non
+è un caso: il bidet è un oggetto italiano e francese, e le librerie 3D sono
+anglosassoni. Quindi si prende quello pulito e lo si invecchia in casa —
+moltiplicando la sua mappa colore per una tinta calda, non sostituendola: quella mappa
+porta le ombre e i dettagli del modello, e buttarla via per un colore piatto sarebbe
+un peggioramento travestito da invecchiamento.
+
+**E la ceramica vecchia perde il lucido**, non solo il bianco: `CeramicaVecchia` sta
+a 0,38 di rugosità contro i 0,25 della nuova. È metà di quello che la fa leggere
+vecchia — uno smalto di vent'anni non specchia più.
+
+## D-117 — Provare oggi il codice che scatterà fra giorni
+
+`ingiallisci()` gira solo quando il bidet sarà stato scaricato, cioè fra giorni. Un
+pezzo di codice che nessuno esegue è un pezzo di codice che non funziona, e nessuno lo
+eseguirebbe fino al giorno in cui serve — che è il giorno peggiore per scoprire che
+sbaglia il nome di un socket.
+
+Quindi il modellatore lo prova **a ogni build**, su un cubo di prova: costruisce un
+materiale con texture, lo invecchia, e controlla che il Base Color sia passato per un
+nodo Mix in MULTIPLY con la tinta nel socket giusto. Validato per iniezione:
+scambiando i due socket il controllo accusa.

@@ -823,19 +823,26 @@ ARREDI_DIVULGAZIONE = [
 # sanitari in fila; la parete ovest la prende il lavabo, che dev'essere fuori dal
 # giro dell'anta; sotto la finestra ci sta solo roba bassa, cioe' il termosifone.
 #
-# SENZA VASCA, per richiesta: al suo posto la doccia nell'angolo sud-est, 90x90.
-# In un bagno di servizio di un osservatorio e' anche piu' credibile della vasca -
-# ci si sciacqua dopo una notte in cupola, non ci si fa il bagno.
+# SENZA VASCA, per richiesta. E nemmeno la doccia, che era il primo rimpiazzo e non
+# reggeva: in un osservatorio non ci si lava, ci si lavora. L'angolo sud-est lo
+# prende un armadio di lamiera da locale tecnico.
 #
 # L'INTERASSE WC-BIDET E' 75 CM e non e' un numero a caso: sotto i 55 non ci si
 # siede, sopra gli 80 la parete sembra vuota in mezzo. Settantacinque e' la misura
 # che si trova nei bagni veri di quegli anni.
 SALA_BAGNO = [(5.00, 6.60, 8.15, 9.40)]
 ARREDI_BAGNO = [
-    # parete est, in fila da nord a sud: wc, bidet, doccia
+    # parete est, in fila da nord a sud: wc, bidet, armadio
     ("Wc",          7.47, 6.90, 8.15, 7.30, 0.80),
     ("Bidet",       7.55, 7.65, 8.15, 8.05, 0.65),
-    ("Doccia",      7.25, 8.50, 8.15, 9.40, 2.00),
+    # NIENTE DOCCIA. C'era, ed era la risposta sbagliata alla domanda «cosa ci metto
+    # al posto della vasca»: qui non ci si lava, e' il bagno di servizio di un
+    # osservatorio, non una camera d'albergo. Al suo posto un armadio di lamiera da
+    # locale tecnico - detersivi, ricambi, il camice - che e' quello che in un posto
+    # cosi' sta davvero in bagno.
+    # 7,58 e non 7,65: le maniglie a bastone sporgono cinque centimetri dall'anta,
+    # e l'impronta deve contenere quello che si tocca, non la cassa
+    ("Armadio",     7.58, 8.50, 8.15, 9.40, 1.85),
     # parete ovest: il lavabo con lo specchio e la mensola sopra, tutto in una
     # impronta sola - sono un pezzo unico per chi ci sbatte contro
     ("Lavabo",      5.00, 8.15, 5.60, 8.90, 1.90),

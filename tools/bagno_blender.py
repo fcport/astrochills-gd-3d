@@ -49,7 +49,8 @@ for _m in ("geometria", "modellare"):
     if _m in sys.modules:
         importlib.reload(sys.modules[_m])
 from geometria import ARREDI_BAGNO, SALA_BAGNO, W_SILL   # noqa: E402
-from modellare import (cilindro, cilindro_orizz, esporta, finisci,   # noqa: E402
+from modellare import (COLORI, cilindro, cilindro_orizz, esporta,   # noqa: E402
+                       finisci,
                        lampada, posa_modello, prepara_render, pulisci, scatola,
                        verifica_impronte)
 
@@ -83,6 +84,11 @@ SANITARI = [
     ("bidet_bagno",  "Bidet",  -90.0, "il bidet"),
     ("lavabo_bagno", "Lavabo",  90.0, "il lavabo a colonna"),
 ]
+
+# Chi arriva bianco di fabbrica e va portato all'eta' degli altri. Il water e il
+# lavabo no: quelli si sono trovati gia' segnati, ed e' meglio lo sporco vero di
+# chi li ha fatti che una tinta uniforme passata sopra.
+INVECCHIARE = ("Bidet",)
 
 mancanti = []
 
@@ -126,41 +132,58 @@ def pavimento():
     scatola("PiastrellePav", X0, X1, 0.0, 0.012, Z0, Z1)
 
 
-# --- la doccia ---------------------------------------------------------------
-def doccia():
-    x0, z0, x1, z1, alto = IMPRONTE["Doccia"]
-    b = 0.02                       # il piatto sta dentro l'impronta di due centimetri
-    px0, pz0, px1, pz1 = x0 + b, z0 + b, x1 - b, z1 - b
-    # IL PIATTO E' ALTO 12 CM E HA IL BORDO. I piatti a filo pavimento sono di
-    # adesso; nel 1999 il piatto era un catino di ceramica che si sale, e quel
-    # gradino si vede da tutta la stanza.
-    scatola("Ceramica", px0, px1, 0.0, 0.10, pz0, pz1)
-    for (a, b_, c, d) in ((px0, pz0, px1, pz0 + 0.05), (px0, pz1 - 0.05, px1, pz1),
-                          (px0, pz0, px0 + 0.05, pz1), (px1 - 0.05, pz0, px1, pz1)):
-        scatola("Ceramica", a, c, 0.10, 0.14, b_, d)
-    cilindro("Inox", (px0 + px1) / 2, (pz0 + pz1) / 2, 0.100, 0.104, 0.045)
+# --- l'armadio di servizio ---------------------------------------------------
+def armadio():
+    """Armadio di lamiera a due ante, nell'angolo dove stava la doccia.
 
-    # il box: una lastra fissa a nord, e a ovest una lastra che lascia il varco
-    # per entrare. Un box chiuso su tre lati e' un armadio.
-    scatola("Vetrina", px0, px1, 0.14, alto, pz0, pz0 + 0.008)
-    meta = pz0 + (pz1 - pz0) * 0.5
-    scatola("Vetrina", px0, px0 + 0.008, 0.14, alto, pz0, meta)
-    # i profili di alluminio: sopra, sotto e sui montanti
-    for (a, c) in ((px0, px1),):
-        for y in (0.14, alto):
-            scatola("Inox", a, c, y - 0.02, y + 0.02, pz0 - 0.004, pz0 + 0.012)
-    for y in (0.14, alto):
-        scatola("Inox", px0 - 0.004, px0 + 0.012, y - 0.02, y + 0.02, pz0, meta)
-    for zz in (pz0, meta):
-        scatola("Inox", px0 - 0.004, px0 + 0.012, 0.14, alto, zz - 0.008, zz + 0.008)
-    scatola("Inox", px1 - 0.016, px1, 0.14, alto, pz0 - 0.004, pz0 + 0.012)
+    In un osservatorio il bagno di servizio non ha la doccia: ha il posto dove
+    stanno i detersivi, i ricambi e il camice. Un armadio da spogliatoio in lamiera
+    verniciata dice quello, e lo dice con tre dettagli che sono geometria:
+    le FERITOIE in alto (un armadio chiuso senza sfiato ammuffisce, e chi li fa lo
+    sa), le maniglie VERTICALI a bastone, e lo zoccolo che lo stacca dal pavimento
+    bagnato. Senza quei tre, una scatola grigia e' una scatola grigia.
+    """
+    xi, z0, x1, z1, alto = IMPRONTE["Armadio"]
+    x0 = xi + 0.07          # il filo dell'anta: i 7 cm davanti sono le maniglie
+    zoccolo = 0.10
+    M = "Armadietto"
+    # LA CASSA, E GLI ASSI VANNO GUARDATI DUE VOLTE. L'armadio e' addossato alla
+    # parete est: la SCHIENA sta a x alto, la FRONTE a x basso, e i FIANCHI sono i
+    # due piani a z costante. Alla prima stesura fianchi e fronte si erano scambiati
+    # di posto e ne era uscito un armadio aperto di lato, con le ante appiccicate
+    # sopra il pannello che avrebbero dovuto essere.
+    for (za, zb) in ((z0, z0 + 0.02), (z1 - 0.02, z1)):          # fianchi
+        scatola(M, x0, x1, zoccolo, alto, za, zb)
+    scatola(M, x1 - 0.02, x1, zoccolo, alto, z0, z1)             # schiena
+    for (b, d) in ((zoccolo, zoccolo + 0.02), (alto - 0.02, alto)):
+        scatola(M, x0, x1, b, d, z0, z1)                         # fondo e cielo
+    # il ripiano di mezzo, che si vede dalla fessura fra le ante
+    scatola(M, x0 + 0.02, x1 - 0.02, 1.05, 1.068, z0 + 0.02, z1 - 0.02)
+    # lo zoccolo rientrato: un armadio a filo pavimento sembra incollato
+    scatola(M, x0 + 0.04, x1 - 0.04, 0.0, zoccolo, z0 + 0.04, z1 - 0.04)
 
-    # soffione e miscelatore sul muro est, che e' il muro cieco
-    xm = px1 - 0.01
-    cilindro_orizz("Inox", xm - 0.14, 1.95, (pz0 + pz1) / 2, "x", 0.28, 0.014)
-    cilindro("Inox", xm - 0.27, (pz0 + pz1) / 2, 1.86, 1.95, 0.055, seg=12)
-    cilindro_orizz("Inox", xm - 0.05, 1.15, (pz0 + pz1) / 2, "x", 0.10, 0.028)
-    cilindro_orizz("Inox", xm - 0.10, 1.15, (pz0 + pz1) / 2 + 0.08, "x", 0.02, 0.010)
+    # le due ante, con la fuga in mezzo
+    xa = x0
+    meta = (z0 + z1) / 2
+    for (za, zb) in ((z0 + 0.012, meta - 0.005), (meta + 0.005, z1 - 0.012)):
+        scatola(M, xa, xa + 0.018, zoccolo + 0.025, alto - 0.025, za, zb)
+        # LE FERITOIE, e sporgono in fuori invece di essere incassate. Un armadio
+        # chiuso senza sfiato ammuffisce e chi li fabbrica lo sa; ma incassate di
+        # quattro millimetri, in una stanza senza occlusione ambientale, non fanno
+        # ombra e non esistono - la stessa lezione delle nervature del magazzino.
+        for k in range(3):
+            y = alto - 0.16 - k * 0.05
+            scatola("Schermo", xa - 0.004, xa + 0.006, y, y + 0.018,
+                    za + 0.07, zb - 0.07)
+            scatola(M, xa - 0.010, xa - 0.004, y - 0.008, y + 0.026,
+                    za + 0.062, zb - 0.062)
+    # le maniglie a bastone, verticali, ai due lati della fuga
+    for zz in (meta - 0.055, meta + 0.055):
+        cilindro("Inox", xa - 0.052, zz, 0.95, 1.28, 0.011, seg=8)
+        for y in (0.95, 1.28):
+            cilindro_orizz("Inox", xa - 0.035, y, zz, "x", 0.035, 0.009)
+    # la serratura a chiave: un armadio di servizio si chiude
+    cilindro("Inox", xa - 0.006, meta - 0.12, 1.12, 1.13, 0.013, seg=10)
 
 
 # --- il mobiletto e lo specchio ----------------------------------------------
@@ -243,19 +266,19 @@ def wc_segnaposto():
     cx, cz = (x0 + x1) / 2, (z0 + z1) / 2
     # la tazza: due tronchi di cono sovrapposti, che e' il minimo per non sembrare
     # una scatola. Non e' un water: e' il posto dove ne andra' uno.
-    cilindro("Ceramica", cx + 0.04, cz, 0.0, 0.20, 0.11, seg=12, r2=0.15)
-    cilindro("Ceramica", cx + 0.04, cz, 0.20, 0.40, 0.15, seg=12, r2=0.18)
+    cilindro("CeramicaVecchia", cx + 0.04, cz, 0.0, 0.20, 0.11, seg=12, r2=0.15)
+    cilindro("CeramicaVecchia", cx + 0.04, cz, 0.20, 0.40, 0.15, seg=12, r2=0.18)
     scatola("Bianco", x0 + 0.06, x1 - 0.14, 0.40, 0.43, z0 + 0.02, z1 - 0.02)
     # la cassetta appoggiata, che nel 1999 era ancora la norma
-    scatola("Ceramica", x1 - 0.20, x1, 0.43, 0.80, z0 + 0.03, z1 - 0.03)
+    scatola("CeramicaVecchia", x1 - 0.20, x1, 0.43, 0.80, z0 + 0.03, z1 - 0.03)
     cilindro("Inox", x1 - 0.10, cz, 0.80, 0.82, 0.022, seg=10)
 
 
 def bidet_segnaposto():
     x0, z0, x1, z1, _a = IMPRONTE["Bidet"]
     cx, cz = (x0 + x1) / 2, (z0 + z1) / 2
-    cilindro("Ceramica", cx + 0.03, cz, 0.0, 0.22, 0.09, seg=12, r2=0.14)
-    cilindro("Ceramica", cx + 0.03, cz, 0.22, 0.40, 0.14, seg=12, r2=0.17)
+    cilindro("CeramicaVecchia", cx + 0.03, cz, 0.0, 0.22, 0.09, seg=12, r2=0.14)
+    cilindro("CeramicaVecchia", cx + 0.03, cz, 0.22, 0.40, 0.14, seg=12, r2=0.17)
     cilindro("Inox", x1 - 0.07, cz, 0.40, 0.52, 0.018, seg=10)
     cilindro_orizz("Inox", x1 - 0.13, 0.51, cz, "x", 0.09, 0.012)
 
@@ -264,18 +287,69 @@ def lavabo_segnaposto():
     x0, z0, x1, z1, _a = IMPRONTE["Lavabo"]
     cx, cz = (x0 + x1) / 2, (z0 + z1) / 2
     # la colonna
-    cilindro("Ceramica", cx, cz, 0.0, 0.72, 0.09, seg=12, r2=0.11)
+    cilindro("CeramicaVecchia", cx, cz, 0.0, 0.72, 0.09, seg=12, r2=0.11)
     # il catino: fondo e quattro sponde, che e' come si fa un lavabo con le scatole
-    scatola("Ceramica", x0, x1 - 0.02, 0.72, 0.78, z0 + 0.02, z1 - 0.02)
+    scatola("CeramicaVecchia", x0, x1 - 0.02, 0.72, 0.78, z0 + 0.02, z1 - 0.02)
     for (a, b, c, d) in ((x0, z0 + 0.02, x1 - 0.02, z0 + 0.06),
                          (x0, z1 - 0.06, x1 - 0.02, z1 - 0.02),
                          (x1 - 0.06, z0 + 0.02, x1 - 0.02, z1 - 0.02)):
-        scatola("Ceramica", a, c, 0.78, 0.86, b, d)
-    scatola("Ceramica", x0, x0 + 0.09, 0.78, 0.88, z0 + 0.02, z1 - 0.02)
+        scatola("CeramicaVecchia", a, c, 0.78, 0.86, b, d)
+    scatola("CeramicaVecchia", x0, x0 + 0.09, 0.78, 0.88, z0 + 0.02, z1 - 0.02)
     # il miscelatore monocomando, che nel 1999 aveva gia' sostituito i due rubinetti
     cilindro("Inox", x0 + 0.055, cz, 0.86, 0.98, 0.020, seg=10)
     cilindro_orizz("Inox", x0 + 0.09, 0.975, cz, "x", 0.10, 0.013)
     scatola("Inox", x0 + 0.045, x0 + 0.075, 0.98, 1.02, cz + 0.01, cz + 0.05)
+
+
+def ingiallisci(pezzi, tinta):
+    """Da' vent'anni a una ceramica che arriva nuova di fabbrica.
+
+    Il water e il lavabo si sono trovati gia' segnati; il bidet no, e di bidet
+    vecchi non ne esiste nemmeno uno con licenza libera. Non e' un caso: il bidet e'
+    un oggetto italiano e francese e le librerie 3D sono anglosassoni. Accanto a due
+    sanitari ingialliti, un bidet bianco di fabbrica sarebbe l'unica cosa nuova della
+    stanza - e in una stanza dove tutto ha vent'anni, l'unica cosa nuova e' quella
+    che si nota.
+
+    SI MOLTIPLICA la mappa colore per una tinta calda, non la si sostituisce: quella
+    mappa porta le ombre e i dettagli del modello, e buttarla via per un colore
+    piatto sarebbe un peggioramento travestito da invecchiamento. E' lo stesso nodo
+    Mix in MULTIPLY che `modellare.applica_texture` usa per i dorsi dei libri, e
+    l'esportatore glTF lo sa tradurre.
+    """
+    fatti = set()
+    for o in pezzi:
+        for slot in getattr(o, "material_slots", []):
+            m = slot.material
+            if m is None or m.name in fatti or not m.use_nodes:
+                continue
+            fatti.add(m.name)
+            nt = m.node_tree
+            bsdf = None
+            for n in nt.nodes:
+                if n.type == "BSDF_PRINCIPLED":
+                    bsdf = n
+                    break
+            if bsdf is None:
+                continue
+            base = bsdf.inputs["Base Color"]
+            if base.is_linked:
+                sorgente = base.links[0].from_socket
+                mix = nt.nodes.new("ShaderNodeMix")
+                mix.data_type = "RGBA"
+                mix.blend_type = "MULTIPLY"
+                mix.inputs["Factor"].default_value = 1.0
+                mix.inputs[6].default_value = (tinta[0], tinta[1], tinta[2], 1.0)
+                nt.links.new(mix.inputs[7], sorgente)
+                nt.links.new(base, mix.outputs[2])
+            else:
+                c = base.default_value
+                base.default_value = (c[0] * tinta[0], c[1] * tinta[1],
+                                      c[2] * tinta[2], 1.0)
+            # e lo smalto perde il lucido, che e' meta' di quello che lo fa vecchio
+            r = bsdf.inputs["Roughness"]
+            r.default_value = max(0.38, r.default_value)
+    return pezzi
 
 
 def sanitari():
@@ -285,12 +359,52 @@ def sanitari():
     for (cartella, quale, gradi, come_si_chiama) in SANITARI:
         via = os.path.join(ESTERNI, cartella, "scene.gltf")
         if os.path.exists(via):
-            posa_modello(via, IMPRONTE[quale], gradi=gradi)
-            print("  %-8s dal modello scaricato" % quale)
+            pezzi = posa_modello(via, IMPRONTE[quale], gradi=gradi)
+            if quale in INVECCHIARE:
+                ingiallisci(pezzi, COLORI["CeramicaVecchia"])
+                print("  %-8s dal modello scaricato, invecchiato qui" % quale)
+            else:
+                print("  %-8s dal modello scaricato" % quale)
         else:
             fatti[quale]()
             mancanti.append("%s (%s) - manca %s" % (quale, come_si_chiama, via))
             print("  %-8s SEGNAPOSTO: il modello non c'e' ancora" % quale)
+
+
+def prova_ingiallisci():
+    """`ingiallisci` scattera' fra giorni, quando il bidet sara' stato scaricato.
+
+    Provata oggi, su un cubo di prova: si costruisce un materiale con la texture
+    delle piastrelle, lo si invecchia e si controlla che il Base Color sia passato
+    per un nodo Mix in MULTIPLY. Un pezzo di codice che nessuno esegue e' un pezzo di
+    codice che non funziona, e questo qui non lo eseguirebbe nessuno fino al giorno
+    in cui serve - cioe' il giorno peggiore per scoprire che sbaglia il nome di un
+    socket.
+    """
+    from modellare import materiale
+    mesh = bpy.data.meshes.new("_provaMesh")
+    o = bpy.data.objects.new("_prova", mesh)
+    bpy.context.collection.objects.link(o)
+    m = materiale("PiastrelleMuro").copy()
+    m.name = "_provaMat"
+    o.data.materials.append(m)
+    ingiallisci([o], (0.5, 0.4, 0.3))
+    base = None
+    for n in m.node_tree.nodes:
+        if n.type == "BSDF_PRINCIPLED":
+            base = n.inputs["Base Color"]
+    esito = []
+    if base is None or not base.is_linked:
+        esito.append("ingiallisci: il Base Color non e' rimasto collegato")
+    else:
+        nodo = base.links[0].from_node
+        if nodo.type != "MIX" or nodo.blend_type != "MULTIPLY":
+            esito.append("ingiallisci: davanti al Base Color c'e' %s, non un Mix "
+                         "in MULTIPLY" % nodo.type)
+        elif tuple(round(v, 3) for v in nodo.inputs[6].default_value)[:3] != (0.5, 0.4, 0.3):
+            esito.append("ingiallisci: la tinta non e' finita nel socket giusto")
+    bpy.data.objects.remove(o, do_unlink=True)
+    return esito
 
 
 # --- costruzione -------------------------------------------------------------
@@ -298,14 +412,15 @@ pulisci()
 riveste()
 listello()
 pavimento()
-doccia()
+armadio()
 pensile()
 sopra_il_lavabo()
 portasalviette()
 termosifone()
 sanitari()
 
-oggetti = finisci(morbidi=("Ceramica", "Inox"))
+_prova = prova_ingiallisci()
+oggetti = finisci(morbidi=("Ceramica", "CeramicaVecchia", "Inox"))
 
 # IL GUSCIO NON HA IMPRONTA, ED E' GIUSTO COSI'. Rivestimento, listello e pavimento
 # non sono arredi: sono uno strato di un centimetro incollato a superfici che la
@@ -313,7 +428,7 @@ oggetti = finisci(morbidi=("Ceramica", "Inox"))
 # si sovrappongono a ogni sanitario addossato al muro - cioe' a tutti - e il
 # controllo degli arredi si riempirebbe di guasti inventati.
 GUSCIO = ("PiastrelleMuro", "PiastrellePav", "Listello")
-problemi = verifica_impronte(
+problemi = _prova + verifica_impronte(
     [o for o in oggetti if o.name not in GUSCIO],
     [(x0, z0, x1, z1) for (x0, z0, x1, z1, _h) in IMPRONTE.values()])
 
@@ -366,7 +481,7 @@ def scatta(nome, posizione, mira, lente=28.0):
 scatta("bagno.png", (6.45, 1.62, 6.95), (7.90, 1.05, 8.60), lente=20.0)
 # il lavabo con lo specchio, dal centro della stanza
 scatta("bagno-lavabo.png", (6.60, 1.62, 8.10), (5.05, 1.20, 8.55), lente=24.0)
-# la doccia e la finestra
-scatta("bagno-doccia.png", (5.60, 1.62, 7.20), (7.90, 1.10, 9.20), lente=22.0)
+# l'armadio e la finestra
+scatta("bagno-armadio.png", (5.60, 1.62, 7.20), (7.90, 1.10, 9.20), lente=22.0)
 # il listello da vicino: e' il pezzo che data la stanza, va guardato
 scatta("bagno-listello.png", (6.30, 1.55, 7.60), (8.10, 1.52, 7.30), lente=45.0)

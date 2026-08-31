@@ -105,13 +105,17 @@ A_MANO = {
         " a 43,9: si raddrizza di un grado, non si reinventa."),
     "lavabo_bagno": (
         "lavabo_bagno.zip",
-        "https://sketchfab.com/3d-models/33cbd0ac6ae24bd292783a4e06fc4138",
-        "Antonio Rossin", "CC-BY-4.0",
-        'This work is based on "Lavabo" '
-        "(https://sketchfab.com/3d-models/33cbd0ac6ae24bd292783a4e06fc4138) "
-        "by Antonio Rossin (https://sketchfab.com/antoniorossin) licensed under CC-BY-4.0 "
-        "(http://creativecommons.org/licenses/by/4.0/)",
-        "Lavabo a semicolonna con bacino rettangolare arrotondato e miscelatore monocomando: e' esattamente la forma che aveva un lavabo italiano di serie negli anni Novanta. Gli altri candidati erano squadrati stile art deco o tondi da bagno d'epoca, che sono altri due decenni. Arriva beige e va riportato al bianco ceramica."),
+        "https://sketchfab.com/3d-models/4a9095d3540144c7bd8bcefe0de2a227",
+        "Renend Studio", "CC-BY-4.0",
+        'This work is based on "Old Dirty Pedestal Sink - Low Poly / PBR" '
+        "(https://sketchfab.com/3d-models/4a9095d3540144c7bd8bcefe0de2a227) "
+        "by Renend Studio (https://sketchfab.com/RenendStudio) licensed under "
+        "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "Lavabo ovale su semicolonna, 2.110 facce, con la ceramica INGIALLITA E"
+        " MACCHIATA. Prima c'era un lavabo della stessa forma ma bianco di fabbrica:"
+        " la forma e' meta' del lavoro, l'altra meta' e' che la ceramica abbia"
+        " vent'anni addosso. Un sanitario nuovo in un osservatorio del 1999 legge"
+        " come un rendering di catalogo, non come un bagno dove qualcuno lavora."),
     "bidet_bagno": (
         "bidet_bagno.zip",
         "https://sketchfab.com/3d-models/e52d1be9d7594dd39c8ae8e3dcab9cd5",
@@ -123,13 +127,16 @@ A_MANO = {
         "Bidet monoforo con miscelatore, 2.600 facce. Un bagno italiano senza bidet non e' un bagno italiano, e questo ha la forma giusta - catino ovale su base piena - invece che quella sospesa di adesso."),
     "wc_bagno": (
         "wc_bagno.zip",
-        "https://sketchfab.com/3d-models/5b18711616054a44b025d9272b745a6a",
-        "Yaiyeondurisin", "CC-BY-4.0",
-        'This work is based on "Qualitas Bathrooms toilet low poly" '
-        "(https://sketchfab.com/3d-models/5b18711616054a44b025d9272b745a6a) "
-        "by Yaiyeondurisin (https://sketchfab.com/yaiyeondurisin) licensed under CC-BY-4.0 "
-        "(http://creativecommons.org/licenses/by/4.0/)",
-        "Water con cassetta bassa appoggiata e tubo di scarico a vista: e' quello giusto per il 1999. I water con la cassetta incassata a muro sono di adesso, e quelli con la cassetta alta e la catena sono di cinquant'anni prima."),
+        "https://sketchfab.com/3d-models/6ac515a1c4154db18b5b4bd0b46d6405",
+        "Allan-Jay Branscombe", "CC-BY-4.0",
+        'This work is based on "Game Ready - Dirty Old Toilet" '
+        "(https://sketchfab.com/3d-models/6ac515a1c4154db18b5b4bd0b46d6405) "
+        "by Allan-Jay Branscombe (https://sketchfab.com/AllanJayBranscombe) "
+        "licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "Water con cassetta bassa appoggiata e ceramica segnata, 7.646 facce. La"
+        " cassetta appoggiata e' quella del 1999: incassata a muro e' di adesso,"
+        " alta con la catena e' di cinquant'anni prima. E lo sporco e' voluto - non"
+        " un rudere, un sanitario vecchio."),
 }
 
 # Le texture arrivano a 4096: dentro il .glb della stanza sarebbero ventidue megabyte

@@ -411,118 +411,118 @@ size = Vector3(0.550, 3.200, 0.200)
 size = Vector3(0.550, 3.200, 0.200)
 
 [sub_resource type="BoxMesh" id="m_65"]
-size = Vector3(0.600, 0.650, 0.400)
+size = Vector3(0.570, 1.850, 0.900)
 
 [sub_resource type="BoxShape3D" id="s_65"]
-size = Vector3(0.600, 0.650, 0.400)
+size = Vector3(0.570, 1.850, 0.900)
 
 [sub_resource type="BoxMesh" id="m_66"]
-size = Vector3(0.600, 1.350, 0.550)
+size = Vector3(0.600, 0.650, 0.400)
 
 [sub_resource type="BoxShape3D" id="s_66"]
-size = Vector3(0.600, 1.350, 0.550)
+size = Vector3(0.600, 0.650, 0.400)
 
 [sub_resource type="BoxMesh" id="m_67"]
-size = Vector3(0.600, 1.550, 0.650)
+size = Vector3(0.600, 1.350, 0.550)
 
 [sub_resource type="BoxShape3D" id="s_67"]
-size = Vector3(0.600, 1.550, 0.650)
+size = Vector3(0.600, 1.350, 0.550)
 
 [sub_resource type="BoxMesh" id="m_68"]
-size = Vector3(0.600, 1.800, 0.800)
+size = Vector3(0.600, 1.550, 0.650)
 
 [sub_resource type="BoxShape3D" id="s_68"]
-size = Vector3(0.600, 1.800, 0.800)
+size = Vector3(0.600, 1.550, 0.650)
 
 [sub_resource type="BoxMesh" id="m_69"]
-size = Vector3(0.600, 1.850, 1.900)
+size = Vector3(0.600, 1.800, 0.800)
 
 [sub_resource type="BoxShape3D" id="s_69"]
-size = Vector3(0.600, 1.850, 1.900)
+size = Vector3(0.600, 1.800, 0.800)
 
 [sub_resource type="BoxMesh" id="m_70"]
-size = Vector3(0.600, 1.900, 0.750)
+size = Vector3(0.600, 1.850, 1.900)
 
 [sub_resource type="BoxShape3D" id="s_70"]
-size = Vector3(0.600, 1.900, 0.750)
+size = Vector3(0.600, 1.850, 1.900)
 
 [sub_resource type="BoxMesh" id="m_71"]
-size = Vector3(0.600, 2.050, 0.320)
+size = Vector3(0.600, 1.900, 0.750)
 
 [sub_resource type="BoxShape3D" id="s_71"]
-size = Vector3(0.600, 2.050, 0.320)
+size = Vector3(0.600, 1.900, 0.750)
 
 [sub_resource type="BoxMesh" id="m_72"]
-size = Vector3(0.620, 1.050, 0.620)
+size = Vector3(0.600, 2.050, 0.320)
 
 [sub_resource type="BoxShape3D" id="s_72"]
-size = Vector3(0.620, 1.050, 0.620)
+size = Vector3(0.600, 2.050, 0.320)
 
 [sub_resource type="BoxMesh" id="m_73"]
-size = Vector3(0.640, 0.075, 0.015)
+size = Vector3(0.620, 1.050, 0.620)
 
 [sub_resource type="BoxShape3D" id="s_73"]
-size = Vector3(0.640, 0.075, 0.015)
+size = Vector3(0.620, 1.050, 0.620)
 
 [sub_resource type="BoxMesh" id="m_74"]
-size = Vector3(0.680, 0.800, 0.400)
+size = Vector3(0.640, 0.075, 0.015)
 
 [sub_resource type="BoxShape3D" id="s_74"]
-size = Vector3(0.680, 0.800, 0.400)
+size = Vector3(0.640, 0.075, 0.015)
 
 [sub_resource type="BoxMesh" id="m_75"]
-size = Vector3(0.700, 0.750, 2.800)
+size = Vector3(0.680, 0.800, 0.400)
 
 [sub_resource type="BoxShape3D" id="s_75"]
-size = Vector3(0.700, 0.750, 2.800)
+size = Vector3(0.680, 0.800, 0.400)
 
 [sub_resource type="BoxMesh" id="m_76"]
-size = Vector3(0.740, 2.020, 0.045)
+size = Vector3(0.700, 0.750, 2.800)
 
 [sub_resource type="BoxShape3D" id="s_76"]
-size = Vector3(0.740, 2.020, 0.045)
+size = Vector3(0.700, 0.750, 2.800)
 
 [sub_resource type="BoxMesh" id="m_77"]
-size = Vector3(0.750, 3.550, 0.200)
+size = Vector3(0.740, 2.020, 0.045)
 
 [sub_resource type="BoxShape3D" id="s_77"]
-size = Vector3(0.750, 3.550, 0.200)
+size = Vector3(0.740, 2.020, 0.045)
 
 [sub_resource type="BoxMesh" id="m_78"]
-size = Vector3(0.780, 1.830, 0.850)
+size = Vector3(0.750, 3.550, 0.200)
 
 [sub_resource type="BoxShape3D" id="s_78"]
-size = Vector3(0.780, 1.830, 0.850)
+size = Vector3(0.750, 3.550, 0.200)
 
 [sub_resource type="BoxMesh" id="m_79"]
-size = Vector3(0.800, 1.050, 0.600)
+size = Vector3(0.780, 1.830, 0.850)
 
 [sub_resource type="BoxShape3D" id="s_79"]
-size = Vector3(0.800, 1.050, 0.600)
+size = Vector3(0.780, 1.830, 0.850)
 
 [sub_resource type="BoxMesh" id="m_80"]
-size = Vector3(0.840, 0.045, 0.035)
+size = Vector3(0.800, 1.050, 0.600)
 
 [sub_resource type="BoxShape3D" id="s_80"]
-size = Vector3(0.840, 0.045, 0.035)
+size = Vector3(0.800, 1.050, 0.600)
 
 [sub_resource type="BoxMesh" id="m_81"]
-size = Vector3(0.900, 0.900, 0.200)
+size = Vector3(0.840, 0.045, 0.035)
 
 [sub_resource type="BoxShape3D" id="s_81"]
-size = Vector3(0.900, 0.900, 0.200)
+size = Vector3(0.840, 0.045, 0.035)
 
 [sub_resource type="BoxMesh" id="m_82"]
-size = Vector3(0.900, 2.000, 0.600)
+size = Vector3(0.900, 0.900, 0.200)
 
 [sub_resource type="BoxShape3D" id="s_82"]
-size = Vector3(0.900, 2.000, 0.600)
+size = Vector3(0.900, 0.900, 0.200)
 
 [sub_resource type="BoxMesh" id="m_83"]
-size = Vector3(0.900, 2.000, 0.900)
+size = Vector3(0.900, 2.000, 0.600)
 
 [sub_resource type="BoxShape3D" id="s_83"]
-size = Vector3(0.900, 2.000, 0.900)
+size = Vector3(0.900, 2.000, 0.600)
 
 [sub_resource type="BoxMesh" id="m_84"]
 size = Vector3(0.950, 3.550, 0.200)
@@ -950,7 +950,7 @@ shape = SubResource("s_126")
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 7.975, 1.425, 0.000)
 
 [node name="Col" type="CollisionShape3D" parent="M0_2"]
-shape = SubResource("s_77")
+shape = SubResource("s_78")
 
 [node name="F0_1" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 6.800, 0.325, 0.000)
@@ -1190,7 +1190,7 @@ shape = SubResource("s_101")
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 4.125, 2.550, 6.500)
 
 [node name="Col" type="CollisionShape3D" parent="A12_2"]
-shape = SubResource("s_81")
+shape = SubResource("s_82")
 
 [node name="A12_3" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 6.450, 2.550, 6.500)
@@ -1808,19 +1808,19 @@ shape = SubResource("s_91")
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 5.650, 0.375, 2.600)
 
 [node name="Col" type="CollisionShape3D" parent="Consolle_1"]
-shape = SubResource("s_75")
+shape = SubResource("s_76")
 
 [node name="Rack_1" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 7.850, 0.900, 1.100)
 
 [node name="Col" type="CollisionShape3D" parent="Rack_1"]
-shape = SubResource("s_68")
+shape = SubResource("s_69")
 
 [node name="Schedario_1" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 7.850, 0.675, 1.975)
 
 [node name="Col" type="CollisionShape3D" parent="Schedario_1"]
-shape = SubResource("s_66")
+shape = SubResource("s_67")
 
 [node name="Mobile_1" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 6.800, 0.425, 0.325)
@@ -1832,7 +1832,7 @@ shape = SubResource("s_103")
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 6.330, 0.525, 2.000)
 
 [node name="Col" type="CollisionShape3D" parent="Sedia1_1"]
-shape = SubResource("s_72")
+shape = SubResource("s_73")
 
 [node name="CucinaBase_1" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 9.975, 0.450, 1.900)
@@ -1844,13 +1844,13 @@ shape = SubResource("s_120")
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 12.000, 0.775, 1.925)
 
 [node name="Col" type="CollisionShape3D" parent="Frigo_1"]
-shape = SubResource("s_67")
+shape = SubResource("s_68")
 
 [node name="Dispensa_1" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 12.850, 1.000, 1.900)
 
 [node name="Col" type="CollisionShape3D" parent="Dispensa_1"]
-shape = SubResource("s_82")
+shape = SubResource("s_83")
 
 [node name="Tavolo_1" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 12.200, 0.390, 3.675)
@@ -1898,7 +1898,7 @@ shape = SubResource("s_114")
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 8.740, 0.915, 6.775)
 
 [node name="Col" type="CollisionShape3D" parent="Distributore_1"]
-shape = SubResource("s_78")
+shape = SubResource("s_79")
 
 [node name="Schermo_1" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 16.500, 1.150, 1.670)
@@ -1928,49 +1928,49 @@ shape = SubResource("s_112")
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 16.500, 0.525, 7.100)
 
 [node name="Col" type="CollisionShape3D" parent="Proiettore_1"]
-shape = SubResource("s_79")
+shape = SubResource("s_80")
 
 [node name="TecaEst1_1" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 18.600, 0.925, 2.650)
 
 [node name="Col" type="CollisionShape3D" parent="TecaEst1_1"]
-shape = SubResource("s_69")
+shape = SubResource("s_70")
 
 [node name="TecaEst2_1" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 18.600, 0.925, 6.950)
 
 [node name="Col" type="CollisionShape3D" parent="TecaEst2_1"]
-shape = SubResource("s_69")
+shape = SubResource("s_70")
 
 [node name="Wc_1" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 7.810, 0.400, 7.100)
 
 [node name="Col" type="CollisionShape3D" parent="Wc_1"]
-shape = SubResource("s_74")
+shape = SubResource("s_75")
 
 [node name="Bidet_1" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 7.850, 0.325, 7.850)
 
 [node name="Col" type="CollisionShape3D" parent="Bidet_1"]
+shape = SubResource("s_66")
+
+[node name="Armadio_1" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 7.865, 0.925, 8.950)
+
+[node name="Col" type="CollisionShape3D" parent="Armadio_1"]
 shape = SubResource("s_65")
-
-[node name="Doccia_1" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 7.700, 1.000, 8.950)
-
-[node name="Col" type="CollisionShape3D" parent="Doccia_1"]
-shape = SubResource("s_83")
 
 [node name="Lavabo_1" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 5.300, 0.950, 8.525)
 
 [node name="Col" type="CollisionShape3D" parent="Lavabo_1"]
-shape = SubResource("s_70")
+shape = SubResource("s_71")
 
 [node name="Pensile_1" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 5.300, 1.025, 6.760)
 
 [node name="Col" type="CollisionShape3D" parent="Pensile_1"]
-shape = SubResource("s_71")
+shape = SubResource("s_72")
 
 [node name="Termo_1" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1.0000, 0.0000, 0, -0.0000, 1.0000, 6.700, 0.375, 9.325)
@@ -2669,7 +2669,7 @@ material_override = SubResource("mat_anta")
 
 [node name="Maniglione1" type="MeshInstance3D" parent="Porta_ingresso"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.520, 1.050, -0.077)
-mesh = SubResource("m_80")
+mesh = SubResource("m_81")
 material_override = SubResource("mat_tele")
 
 [node name="Maniglione2" type="MeshInstance3D" parent="Porta_ingresso"]
@@ -2743,27 +2743,27 @@ prompt_text = "Apri"
 
 [node name="Mesh" type="MeshInstance3D" parent="Porta_magazzino"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.370, 1.010, 0.000)
-mesh = SubResource("m_76")
+mesh = SubResource("m_77")
 material_override = SubResource("mat_metallo")
 
 [node name="Lamiera1" type="MeshInstance3D" parent="Porta_magazzino"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.370, 0.620, 0.030)
-mesh = SubResource("m_73")
+mesh = SubResource("m_74")
 material_override = SubResource("mat_metallo")
 
 [node name="Lamiera2" type="MeshInstance3D" parent="Porta_magazzino"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.370, 0.620, -0.030)
-mesh = SubResource("m_73")
+mesh = SubResource("m_74")
 material_override = SubResource("mat_metallo")
 
 [node name="Lamiera3" type="MeshInstance3D" parent="Porta_magazzino"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.370, 1.420, 0.030)
-mesh = SubResource("m_73")
+mesh = SubResource("m_74")
 material_override = SubResource("mat_metallo")
 
 [node name="Lamiera4" type="MeshInstance3D" parent="Porta_magazzino"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.370, 1.420, -0.030)
-mesh = SubResource("m_73")
+mesh = SubResource("m_74")
 material_override = SubResource("mat_metallo")
 
 [node name="Lamiera5" type="MeshInstance3D" parent="Porta_magazzino"]
@@ -2828,7 +2828,7 @@ material_override = SubResource("mat_metallo")
 
 [node name="Col" type="CollisionShape3D" parent="Porta_magazzino"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.370, 1.010, 0)
-shape = SubResource("s_76")
+shape = SubResource("s_77")
 
 [node name="Porta_bagno" type="StaticBody3D" parent="."]
 transform = Transform3D(-1.0000, 0, -0.0000, 0, 1, 0, 0.0000, 0, -1.0000, 7.020, 0.000, 6.500)

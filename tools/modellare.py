@@ -188,12 +188,12 @@ TINTI = ("NeonRosso", "LibroRosso", "LibroBlu", "LibroVerde", "LibroCrema",
 # rispettano. Siccome ogni mesh porta un materiale solo, la scala si puo' cuocere
 # nelle UV senza perdere niente: cambiarla costa una rigenerazione, dieci secondi.
 TEXTURE = {
-    "LegnoUfficio": ("legno-ufficio", 1.10),
-    "LegnoCucina":  ("legno-cucina", 0.80),
-    "LegnoTeche":   ("legno-teche", 0.70),
-    "LegnoBagno":   ("legno-porte", 0.55),
-    "Ante":         ("legno-porte", 1.00),
-    "Telai":        ("legno-porte", 1.00),
+    "LegnoUfficio": ("legno-ufficio", 0.80),
+    "LegnoCucina":  ("legno-cucina", 0.40),
+    "LegnoTeche":   ("legno-teche", 0.80),
+    "LegnoBagno":   ("legno-porte", 0.80),
+    "Ante":         ("legno-porte", 0.80),
+    "Telai":        ("legno-porte", 0.80),
     # La porta del magazzino e il suo controtelaio: lamiera verniciata, non legno.
     # 0,60 per ripetizione e non 1,20 come la carpenteria - su un'anta larga
     # settantaquattro centimetri la scala grande ci starebbe mezza volta, e mezza
@@ -244,7 +244,14 @@ TEXTURE = {
     # il soffitto e' intonaco come i muri, ma la trama si ripete piu' larga: sopra la
     # testa la stessa scala dei muri si legge come un motivo, non come una superficie
     "Soffitto":     ("intonaco", 3.20),
-    "Pavimento":    ("pavimento", 0.90),
+    # 0,55 E NON 0,90. La mappa non dichiara la sua misura - ambientCG la pubblica
+    # per i legni e non per questa - quindi la si sceglie dalla GRANIGLIA: a 0,90 la
+    # scaglia piu' grossa veniva otto centimetri, che e' una palladiana da atrio di
+    # banca. Il seminato di un edificio pubblico italiano di quegli anni ha scaglie
+    # da mezzo a due centimetri e mezzo, con qualche pezzo fino a quattro: a 0,55 la
+    # tipica viene 1,3 cm e la piu' grossa 4,8. E' lo stesso righello delle
+    # piastrelle del bagno, e lo stesso errore.
+    "Pavimento":    ("pavimento", 0.55),
     "Tetto":        ("tetto", 2.60),
     # MANDORLATA, e non la lamiera liscia della carpenteria. Un impalcato in
     # quota ha il rilievo antiscivolo, ed e' quel rilievo che dice all'occhio
@@ -266,8 +273,8 @@ TEXTURE = {
     "LibroBlu":     ("libri", 0.06),
     "LibroVerde":   ("libri", 0.06),
     "LibroCrema":   ("libri", 0.06),
-    "Tessuto":      ("libri", 0.30),
-    "Carta":        ("carta", 0.22),
+    "Tessuto":      ("libri", 0.40),
+    "Carta":        ("carta", 0.30),
 }
 RADICE_TEX = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                           "assets", "textures")
@@ -403,8 +410,15 @@ def materiale(nome):
     if nome == "Acceso":
         # Il fosforo verde di un monitor acceso e' l'unica luce propria della stanza.
         # L'emissione attraversa il glTF, la trasmissione no: qui serve la prima.
+        #
+        # 0,75 E NON 1,6, E IL MOTIVO E' CHE IL VERDE SI PERDEVA. A 1,6 il canale
+        # verde usciva a 1,15 - cioe' oltre il bianco - e dopo il tonemapping lo
+        # schermo non era piu' un fosforo: era un rettangolo bianco-azzurro, una
+        # scatola luminosa appoggiata sul piano. Un colore che satura smette di
+        # essere un colore. Sotto l'uno il verde resta verde, e il monitor torna a
+        # leggersi come un monitor acceso invece che come una lampada.
         b.inputs["Emission Color"].default_value = (0.24, 0.72, 0.36, 1.0)
-        b.inputs["Emission Strength"].default_value = 1.6
+        b.inputs["Emission Strength"].default_value = 0.75
     applica_texture(m, nome)
     return m
 

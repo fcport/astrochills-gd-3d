@@ -174,7 +174,9 @@ A_MANO = {
         " ghisa e' la sola cosa in questo bagno che DEVE essere segnata - un"
         " radiatore lucido in un edificio del 1962 sarebbe l'unica cosa nuova."),
     "distributore_carta": (
-        ("distributore_carta.zip", "dispensador_de_toalla_de_papel_paper_dispenser.zip",
+        ("distributore_carta.zip",
+         "dispensador_de_toalla_de_papel_-_paper_dispenser.zip",
+         "dispensador_de_toalla_de_papel_paper_dispenser.zip",
          "paper_dispenser.zip", "dispensador-de-toalla-de-papel-paper-dispenser.zip"),
         "https://sketchfab.com/3d-models/dispensador-de-toalla-de-papel-paper-dispenser-4af9dde390bd4c35b5f978142187cfeb",
         "tlalokan", "CC-BY-4.0",
@@ -190,6 +192,20 @@ A_MANO = {
         " gliela diamo noi con la lamiera verniciata e scrostata. E' la divisione"
         " opposta a quella del radiatore, dove di fuori si e' preso proprio lo"
         " sporco."),
+    "portarotolo": (
+        ("portarotolo.zip", "toilet_paper_dispenser.zip"),
+        "https://sketchfab.com/3d-models/toilet-paper-dispenser-96e96772a7564df0b417244bd2be33f3",
+        "tobei", "CC-BY-4.0",
+        'This work is based on "toilet paper dispenser" '
+        "(https://sketchfab.com/3d-models/toilet-paper-dispenser-96e96772a7564df0b417244bd2be33f3) "
+        "by tobei (https://sketchfab.com/tobei) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "Portarotolo a muro con il rotolo e il lembo che pende, 714 facce. E' il"
+        " pezzo che un bagno non puo' non avere e che nessuno nota finche' non"
+        " manca: un water senza portarotolo accanto legge come un sanitario da"
+        " catalogo, non come un cesso in servizio. Il braccio cromato lo porta lui,"
+        " ed e' l'unica cosa cromata rimasta nella stanza da quando la barra degli"
+        " asciugamani e' diventata un distributore di lamiera."),
 }
 
 # Le texture arrivano a 4096: dentro il .glb della stanza sarebbero ventidue megabyte

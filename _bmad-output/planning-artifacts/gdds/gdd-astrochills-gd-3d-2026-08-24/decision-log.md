@@ -3039,3 +3039,65 @@ Il modello sta su Sketchfab, che vuole il login: come il radiatore e la porta de
 magazzino, la voce è in `A_MANO` e lo zip va messo a mano in
 `assets/models/_da_scaricare/`. Finché non c'è, il segnaposto resta e il modellatore lo
 dice invece di fallire.
+
+## D-149 — Il righello ce l'avevamo scritto sopra, e nessuno lo leggeva
+
+«Qui è tutto sbarellato», davanti alla consolle della sala di controllo. Ed era vero,
+ma non per il motivo che sembrava: nessun oggetto era della misura sbagliata. Era la
+**venatura del legno** a essere grande un terzo di troppo, ed è la terza volta in
+questo progetto che il difetto è il righello e non la cosa misurata.
+
+**ambientCG la misura la pubblica.** Wood048 — il rovere della consolle — copre 80×80
+cm; noi lo ripetevamo ogni 1,10, cioè il 38% più grande del vero. Wood066, il legno
+della cucina, copre 40 cm e lo ripetevamo ogni 80: il **doppio**. Wood049 delle porte,
+80 cm, ripetuto a 1,00 sulle ante e a 0,55 nel bagno — sbagliato nei due versi opposti
+nello stesso edificio. Nessuno di questi numeri era stato *scelto*: erano stati
+indovinati a occhio, uno alla volta, guardando un render.
+
+Adesso `prendi_texture.py` scrive la misura dichiarata dentro il `FONTE.txt` accanto
+a ogni cartella, e `verifica_ripetizioni()` confronta ogni voce di `TEXTURE` con
+quella. Chi vuole discostarsene lo può fare, ma lo scrive in `RIGHELLO_A_PARTE` col
+motivo — i dorsi dei libri usano una tela da 40 cm a 6, perché un dorso è largo cinque
+centimetri e alla misura vera non ci starebbe dentro un filo di trama. Provato
+rimettendo l'1,10: «LegnoUfficio si ripete ogni 1.10 m ma legno-ufficio copre 0.80 m
+(x1.38)».
+
+Dove la fonte la misura non la dichiara — l'intonaco, il terrazzo, la lamiera — non c'è
+niente da controllare, e allora si sceglie guardando il disegno. **La graniglia passa
+da 0,90 a 0,55**: a 0,90 la scaglia più grossa veniva otto centimetri, cioè una
+palladiana da atrio di banca. Il seminato di un edificio pubblico italiano di
+quegli anni ha scaglie da mezzo a due centimetri e mezzo, con qualche pezzo fino a
+quattro — a 0,55 la tipica viene 1,3 cm e la più grossa 4,8.
+
+**E il monitor scendeva a 0,75 di emissione.** A 1,6 il canale verde usciva a 1,15,
+cioè oltre il bianco, e dopo il tonemapping lo schermo non era più un fosforo: era un
+rettangolo bianco-azzurro, una scatola luminosa appoggiata sul piano, che sbiancava
+anche il legno attorno. Un colore che satura smette di essere un colore.
+
+## D-150 — Il distributore è a rotolo, e il portarotolo esisteva già
+
+Arrivato il modello, la prima cosa che ha detto è che il segnaposto aveva sbagliato
+oggetto: non è il distributore piatto da salviette piegate, è quello a **rotolo con la
+leva**, e dentro ci deve stare una bobina. Largo 0,30, alto 0,36, **profondo 0,23** —
+e la profondità l'ha imposta lui, non l'abbiamo scelta noi.
+
+Il verso è misurato posandolo alle quattro rotazioni e guardando: a 90 si vede la
+schiena, un quadrato liscio; a 0 e 180 il profilo di fianco; a **270** c'è il fronte,
+ed è l'unica delle quattro in cui l'oggetto dice a cosa serve.
+
+Più profondo, entrava nel giro dell'anta del pensile — che dal cardine a 5,28 arriva
+fino a z 7,51 — quindi è sceso di ventidue centimetri verso sud. Da 7,60 in giù quel
+giro non ci arriva.
+
+**Il foglio che pende non è lamiera.** `vernicia` passa la stessa vernice su tutto, ed
+è quello che deve fare, ma il pezzo che sporge sotto la feritoia è carta: con le
+macchie di ruggine addosso non leggeva come un foglio, leggeva come un lembo di
+lamiera. Si riconosce dalla geometria — è il pezzo che scende più in basso di tutti —
+perché i nomi che sopravvivono all'import sono `Box003_Material #60_0` e simili.
+
+Col distributore è arrivato anche un **portarotolo**, e va bene che sia arrivato: un
+water senza portarotolo accanto legge come un sanitario da catalogo, non come un cesso
+in servizio. Sta sul muro **nord** e non su quello est — il muro est è tutto occupato,
+fra water e bidet restano ventidue centimetri — e seduti si guarda a ovest, quindi il
+nord cade a portata di mano destra. Questo non si vernicia: arriva già fatto, e
+l'unica cosa da correggere è `metallicFactor`, non dichiarato quindi uno. Nona volta.

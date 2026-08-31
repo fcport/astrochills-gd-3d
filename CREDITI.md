@@ -102,6 +102,20 @@ Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuz
 > by tlalokan (https://sketchfab.com/tlalokan) licensed under CC-BY-4.0
 > (http://creativecommons.org/licenses/by/4.0/)
 
+**toilet paper dispenser** — il portarotolo accanto al water. È il pezzo che un
+bagno non può non avere e che nessuno nota finché non manca: un water senza
+portarotolo accanto legge come un sanitario da catalogo, non come un cesso in
+servizio. Questo arriva già fatto — braccio, rotolo, lembo che pende — e l'unica
+cosa corretta è `metallicFactor`, che in glTF vale uno se non è dichiarato.
+Autore: [tobei](https://sketchfab.com/tobei).
+Fonte: <https://sketchfab.com/3d-models/toilet-paper-dispenser-96e96772a7564df0b417244bd2be33f3>
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> This work is based on "toilet paper dispenser"
+> (https://sketchfab.com/3d-models/toilet-paper-dispenser-96e96772a7564df0b417244bd2be33f3)
+> by tobei (https://sketchfab.com/tobei) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
 ## Tutto il resto
 
 Gli altri modelli e tutte le texture sono **CC0**: nessuna attribuzione richiesta.

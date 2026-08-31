@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Genera world/blockout.tscn dalla pianta del GDD: muri grezzi da percorrere a piedi."""
+import ast
 import io
+import os
 import re as _re
 
 from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP, H_DOME_BASE, DOME_R, DOME_H,
@@ -1008,6 +1010,64 @@ SCRIVONO = {
 }
 
 
+# I materiali la cui ripetizione NON deve valere la misura del quadro, col motivo.
+# Una deroga senza motivo e' una svista che si e' fatta regola.
+RIGHELLO_A_PARTE = {
+    "LibroRosso": "un dorso di libro e' largo cinque centimetri: alla misura vera "
+                  "della tela non ci starebbe dentro un filo di trama",
+    "LibroBlu": "come LibroRosso", "LibroVerde": "come LibroRosso",
+    "LibroCrema": "come LibroRosso",
+}
+
+
+def verifica_ripetizioni(tolleranza=0.12):
+    """Ogni texture si ripete alla misura che la sua fonte DICHIARA.
+
+    IL RIGHELLO DELLA STANZA. E' il difetto che in questo progetto e' gia' costato
+    due giri: le piastrelle del bagno si ripetevano ogni 75 cm su una mappa da dieci
+    piastrelle - sette centimetri e mezzo l'una - e sanitari misurati al centimetro
+    leggevano come giocattoli. Non si giudica a occhio quanto e' grande un water: si
+    contano le piastrelle che gli stanno dietro, e se il righello e' sbagliato tutto
+    quello che ci si misura sopra e' sbagliato con lui.
+
+    ambientCG la misura la PUBBLICA - Wood048 copre 80x80 cm, Wood066 quaranta - e
+    `prendi_texture.py` la scrive nel FONTE.txt accanto alla cartella. Finche'
+    nessuno la leggeva, il rovere della consolle si ripeteva ogni 1,10 (un terzo
+    troppo grande) e quello della cucina ogni 0,80, cioe' il DOPPIO del vero.
+
+    Chi vuole discostarsene lo puo' fare, ma lo scrive in `RIGHELLO_A_PARTE` con il
+    motivo: i dorsi dei libri usano una tela da 40 cm a 6, perche' un dorso e' largo
+    cinque centimetri e alla misura vera non ci starebbe dentro un filo di trama.
+
+    Dove la fonte la misura non la dichiara - l'intonaco, il terrazzo, la lamiera -
+    non c'e' niente da controllare: quella la sceglie l'occhio, e il perche' sta
+    scritto accanto al numero.
+    """
+    qui = os.path.dirname(os.path.abspath(__file__))
+    fonte = os.path.join(os.path.dirname(qui), "assets", "textures")
+    sorgente = io.open(os.path.join(qui, "modellare.py"), encoding="utf-8").read()
+    blocco = sorgente[sorgente.index("TEXTURE = {"):]
+    blocco = blocco[:blocco.index(chr(10) + "}") + 2]
+    dichiarate = ast.literal_eval(blocco[blocco.index("{"):])
+    problemi = []
+    for nome, (cartella, metri) in sorted(dichiarate.items()):
+        via_ = os.path.join(fonte, cartella, "FONTE.txt")
+        if not os.path.exists(via_):
+            continue
+        m = _re.search(r"Il quadro copre (\d+) x (\d+) cm",
+                      io.open(via_, encoding="utf-8").read())
+        if m is None:
+            continue
+        vero = int(m.group(1)) / 100.0
+        if nome in RIGHELLO_A_PARTE:
+            continue
+        if abs(metri / vero - 1.0) > tolleranza:
+            problemi.append(
+                "  RIGHELLO SBAGLIATO      %s si ripete ogni %.2f m ma %s copre "
+                "%.2f m (x%.2f)" % (nome, metri, cartella, vero, metri / vero))
+    return problemi
+
+
 def verifica_freschezza():
     """I .glb devono essere piu' nuovi di chi li scrive, e in gioco piu' nuovi di loro.
 
@@ -1123,6 +1183,7 @@ _tetti = [(b[0]-b[3]/2, b[2]-b[5]/2, b[0]+b[3]/2, b[2]+b[5]/2)
 _ing = (verifica_ingombri() + verifica_raccordi() + verifica_ante()
         + verifica_trappole() + verifica_arredi() + verifica_interruttori()
         + verifica_applique() + verifica_passerella() + verifica_plafoniere()
+        + verifica_ripetizioni()
         + verifica_fessure() + verifica_angoli()
         + verifica_freschezza()
         + verifica_orientamenti(io.open(out, encoding="utf-8").read()))

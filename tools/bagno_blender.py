@@ -61,7 +61,7 @@ for _m in ("geometria", "modellare"):
 from geometria import (ante_mobili, ARREDI_BAGNO, impronta_utile,   # noqa: E402
                        SALA_BAGNO, scalati, SPESS_PIASTRELLA, W_SILL)
 from modellare import (COLORI, cilindro, cilindro_orizz, esporta,   # noqa: E402
-                       vernicia,
+                       materiale, vernicia,
                        finisci, raddrizza_normali, usa_le_ridotte,
                        lampada, posa_modello, prepara_render, pulisci, scatola,
                        verifica_impronte)
@@ -373,15 +373,41 @@ def sopra_il_lavabo():
 # Il distributore di carta: quanto e' alto il pezzo e a che quota sta la sua base.
 # 1,20 e' la quota da cui si tira il foglio, che e' l'unica che conta: sopra si
 # arriva scomodi, sotto ci si china.
-BASE_DIST, ALTO_DIST = 1.200, 0.345
-# I GRADI VANNO MISURATI, non indovinati, e finche' il modello non c'e' restano
-# zero. Lo strumento e' `tools/verso_sanitari.py`, lo stesso che ha deciso il verso
-# di water, bidet e lavabo: posa il pezzo alle quattro rotazioni e conta quanti
-# vertici finiscono a filo del muro a cui e' addossato. La spia che smaschera un
-# verso sbagliato non e' la percentuale, e' l'INGOMBRO: un pezzo girato male viene
-# schiacciato da `posa_modello` per stare nell'impronta, e da schiacciato tocca il
-# muro dappertutto - e' successo col water e col termosifone.
-GRADI_DIST = 0.0
+BASE_DIST, ALTO_DIST = 1.200, 0.360
+# I GRADI SONO MISURATI, non indovinati: posato alle quattro rotazioni e guardato.
+# A 90 si vede la schiena, un quadrato liscio; a 0 e 180 il profilo di fianco. A 270
+# c'e' il fronte - la calotta tonda, il labbro, la leva a destra e il foglio che
+# pende - ed e' l'unica delle quattro in cui l'oggetto dice a cosa serve.
+GRADI_DIST = 270.0
+
+# Il portarotolo: quota del braccio e verso. A 0 gradi la piastra guarda a NORD,
+# cioe' sta contro il muro a cui e' avvitata, e l'asse del rotolo corre lungo x,
+# parallelo a quel muro - che e' come lo monta un idraulico. 0,70 e' l'altezza a cui
+# si trova la mano di chi e' seduto.
+BASE_ROT, ALTO_ROT, GRADI_ROT = 0.700, 0.160, 0.0
+
+
+def portarotolo():
+    """Il portarotolo a muro accanto al water, col rotolo e il lembo che pende.
+
+    NON SI VERNICIA. Il distributore arriva bianco e senza carattere, e la vernice
+    gliela diamo noi; questo arriva gia' fatto - il braccio cromato, la carta, il
+    lembo - e l'unica cosa da correggere e' quella di sempre: `metallicFactor` non
+    dichiarato vale UNO in glTF, e un cromo pieno in un bagno chiuso non riflette
+    niente, cioe' e' nero. E' la nona volta in questo progetto.
+    """
+    via = os.path.join(ESTERNI, "portarotolo", "scene.gltf")
+    if not os.path.exists(via):
+        mancanti.append("Portarotolo (il portarotolo) - manca %s" % via)
+        print("  Rotolo   NIENTE: il modello non c'e' ancora")
+        return
+    pezzi = posa_modello(via, IMPRONTE["Portarotolo"][:4] + (ALTO_ROT,),
+                         gradi=GRADI_ROT, appoggio=BASE_ROT)
+    girate = raddrizza_normali(pezzi)
+    if girate:
+        print("  Rotolo   %d facce avevano la normale al contrario" % girate)
+    usa_le_ridotte(pezzi, os.path.dirname(via), metallico=0.0)
+    print("  Rotolo   dal modello scaricato")
 
 
 def distributore_carta():
@@ -413,6 +439,17 @@ def distributore_carta():
     if girate:
         print("  Distrib  %d facce avevano la normale al contrario" % girate)
     vernicia(pezzi, "Distributore")
+    # IL FOGLIO CHE PENDE NON E' LAMIERA. `vernicia` passa la stessa vernice su
+    # tutto - e' quello che deve fare - ma il pezzo che sporge sotto la feritoia e'
+    # carta, e con le macchie di ruggine addosso non legge come un foglio: legge
+    # come un lembo di lamiera. Si riconosce dalla geometria, che e' l'unico
+    # criterio che regge (i nomi qui sono `Box003_Material #60_0` e simili): e' il
+    # pezzo che scende piu' in basso di tutti.
+    foglio = min((o for o in pezzi if o.type == "MESH" and o.data is not None),
+                 key=lambda o: min(v_.co.z for v_ in o.data.vertices), default=None)
+    if foglio is not None:
+        foglio.data.materials.clear()
+        foglio.data.materials.append(materiale("Rotolo"))
     print("  Distrib  dal modello scaricato, verniciato qui")
 
 
@@ -1019,6 +1056,7 @@ armadio()
 pensile()
 sopra_il_lavabo()
 distributore_carta()
+portarotolo()
 termosifone()
 sanitari()
 

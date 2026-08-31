@@ -1099,7 +1099,21 @@ ARREDI_BAGNO = [
     # chiedersi cosa ci sta davvero in un bagno di servizio di un osservatorio, e
     # non e' un asciugamano di casa - e' il distributore di carta a muro, che e'
     # lamiera verniciata, cioe' un materiale che questo progetto ha gia'.
-    ("Distributore", 5.00, 7.38, 5.15, 7.72, 1.56),
+    # PROFONDO VENTICINQUE CENTIMETRI, e non e' un errore: questo non e' il
+    # distributore piatto da salviette piegate, e' quello a ROTOLO con la leva, che
+    # dentro ci deve tenere una bobina. Il modello lo dice da solo - largo 0,30,
+    # alto 0,36, profondo 0,23 - e sono le misure di un apparecchio vero.
+    # SPOSTATO A SUD di ventidue centimetri rispetto a dove stava la barra degli
+    # asciugamani: piu' profondo, entrava nel giro dell'anta del pensile, che dal
+    # suo cardine a 5,28 arriva fino a z 7,51. Da 7,60 in giu' quel giro non ci
+    # arriva piu'.
+    ("Distributore", 5.00, 7.60, 5.25, 7.94, 1.58),
+    # IL PORTAROTOLO, sul muro nord a fianco del water. Non e' un ornamento: un
+    # water senza portarotolo accanto legge come un sanitario da catalogo, non come
+    # un cesso in servizio. Sta a NORD e non a est perche' il muro est ce l'ha tutto
+    # occupato - fra water e bidet restano ventidue centimetri - e perche' seduti si
+    # guarda a ovest, quindi il muro nord cade a portata di mano destra.
+    ("Portarotolo",  7.55, 6.60, 7.85, 6.75, 0.86),
 ]
 
 SALA_PC = [(5.30, 0.10, 8.15, 4.30)]

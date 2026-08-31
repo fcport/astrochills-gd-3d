@@ -140,6 +140,22 @@ A_MANO = {
         " cassetta appoggiata e' quella del 1999: incassata a muro e' di adesso,"
         " alta con la catena e' di cinquant'anni prima. E lo sporco e' voluto - non"
         " un rudere, un sanitario vecchio."),
+    "porta_magazzino": (
+        ("porta_magazzino.zip", "metal_door_-_gameready.zip", "metal_door_gameready.zip"),
+        "https://sketchfab.com/3d-models/metal-door-gameready-2497028f443744e78891604323dab4ac",
+        "SPLEEN VISION", "CC-BY-4.0",
+        'This work is based on "metal door - gameready" '
+        "(https://sketchfab.com/3d-models/metal-door-gameready-2497028f443744e78891604323dab4ac) "
+        "by SPLEEN VISION (https://sketchfab.com/spleen.vision) licensed under "
+        "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "Porta di lamiera verniciata da locale tecnico: maniglia a leva, targhetta"
+        " smaltata e feritoie di aerazione in basso. Quella fatta a mano aveva i"
+        " pezzi giusti - nervature, griglia, portalucchetto - ma erano scatole, e da"
+        " un metro si vedeva che erano scatole: una porta di lamiera la fa la"
+        " VERNICE, cioe' la texture, non il rilievo."
+        "\n\nLA TARGHETTA DICE HEIZRAUM, e va ridipinta: e' l'unico difetto del"
+        " modello, ed e' un difetto di texture, che e' il tipo che si sa correggere"
+        " (vedi tools/fai_listello.py, che una texture se la disegna da zero)."),
     "termosifone_bagno": (
         ("termosifone_bagno.zip", "old_radiator.zip"),
         "https://sketchfab.com/3d-models/old-radiator-8a1a2e0263aa401591c1e87d824a79ef",

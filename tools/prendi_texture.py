@@ -27,6 +27,7 @@ import zipfile
 QUI = os.path.dirname(os.path.abspath(__file__))
 RADICE = os.path.dirname(QUI)
 DEST = os.path.join(RADICE, "assets", "textures")
+NL = chr(10)
 CACHE = os.path.join(QUI, "__texture_cache__")
 
 # cartella -> (asset ambientCG, tinta media voluta in sRGB o None, perche')
@@ -49,11 +50,19 @@ SET = {
                   " e non c'e' niente che dati meglio un interno del 1999."),
     "tetto": ("Asphalt033", None,
               "Guaina bituminosa per le coperture piane."),
+    # SMACCHIATA AL 70 PER CENTO, e il numero viene da un oggetto preciso: il
+    # distributore di carta del bagno. PaintedMetal012 di suo e' vernice bianca con
+    # CHIAZZE DI RUGGINE grosse, e su una carcassa di plafoniera vista da due metri
+    # e settanta non si vedono nemmeno; su un apparecchio da trenta centimetri,
+    # guardato da un metro mentre ci si lava le mani, quelle chiazze diventano la
+    # cosa che si guarda - e un distributore di salviette che sembra ammuffito non
+    # e' vecchio, e' sporco. Togliendone sette decimi restano le righe e le ombre
+    # della vernice segnata, che e' quello che serviva.
     "lamiera": ("PaintedMetal012", (196, 196, 190),
                 "Lamiera verniciata bianca, un po' segnata: le carcasse delle plafoniere\n"
                 "e gli apparecchi a parete. Erano un grigio piatto, e sul soffitto\n"
                 "leggevano come blocchi appena piu' chiari dell'intonaco invece che\n"
-                "come lampade."),
+                "come lampade.", 0.70),
     "diffusore": ("Plastic013A", (225, 224, 215),
                   "Plastica opalina del diffusore. Serve soprattutto ACCESA: la stessa\n"
                   "mappa fa da emissiva nel materiale della scena, e una superficie\n"
@@ -129,8 +138,54 @@ def tingi(percorso, media_voluta):
     return media, fattori
 
 
+def smacchia_ruggine(percorso, quanto):
+    """Attenua le MACCHIE di una mappa, invece di toglierle.
+
+    NON E' UN FILTRO DI BELLEZZA, E' UNA QUESTIONE DI SCALA. Una texture di lamiera
+    verniciata porta le chiazze di ruggine grandi come le ha fotografate chi l'ha
+    fatta: su una superficie ampia sono una variazione, su un oggetto da trenta
+    centimetri sono IL disegno. Il distributore di carta del bagno usciva
+    ammuffito - e ammuffito non e' vecchio, e' sporco.
+
+    Come: si prende per base il colore della VERNICE - la media dei pixel piu'
+    chiari, che sono quelli che la macchia non ha toccato - e ogni pixel si tira
+    verso quella base in proporzione a quanto se ne discosta. Cosi' le righe
+    leggere restano quasi intatte e le chiazze grosse sbiadiscono. E' il contrario
+    di quello che farebbe una sfocatura, che toglie prima il dettaglio fine.
+
+    Torna la frazione di pixel che contava come macchia: se e' zero non c'era
+    niente da togliere, e il passo su quel set e' inutile.
+    """
+    from PIL import Image
+    im = Image.open(percorso).convert("RGB")
+    px = list(im.getdata())
+    luce = sorted(sum(p) / 3.0 for p in px)
+    soglia_chiari = luce[int(len(luce) * 0.85)]
+    chiari = [p for p in px if sum(p) / 3.0 >= soglia_chiari]
+    base = tuple(sum(p[i] for p in chiari) / float(len(chiari)) for i in range(3))
+    SOGLIA, PIENO = 26.0, 60.0      # sotto e' grana della vernice; sopra e' macchia piena
+    macchia = 0
+    nuovi = []
+    for p in px:
+        d = max(abs(p[i] - base[i]) for i in range(3))
+        if d <= SOGLIA:
+            nuovi.append(p)
+            continue
+        macchia += 1
+        w = min(1.0, (d - SOGLIA) / PIENO) * quanto
+        nuovi.append(tuple(int(round(p[i] + (base[i] - p[i]) * w)) for i in range(3)))
+    im.putdata(nuovi)
+    im.save(percorso, quality=92)
+    return macchia / float(len(px))
+
+
 def prendi(cartella):
-    asset, tinta, perche = SET[cartella]
+    # IL QUARTO CAMPO E' FACOLTATIVO. Quasi nessun set ha bisogno di essere
+    # smacchiato, e obbligarli tutti a scrivere uno zero renderebbe rumorosa una
+    # tabella dove la voce che conta e' il MOTIVO.
+    voce = SET[cartella]
+    asset, tinta, perche = voce[:3]
+    smacchia = voce[3] if len(voce) > 3 else 0.0
     fuori = os.path.join(DEST, cartella)
     os.makedirs(fuori, exist_ok=True)
     scritte = []
@@ -141,9 +196,13 @@ def prendi(cartella):
                     io.open(os.path.join(fuori, nuovo), "wb").write(z.read(n))
                     scritte.append(nuovo)
     nota = ""
+    if smacchia and "color.jpg" in scritte:
+        quante = smacchia_ruggine(os.path.join(fuori, "color.jpg"), smacchia)
+        nota += (NL + "Smacchiata al %.0f per cento: era macchia il %.1f per cento dei pixel." + NL
+                 + "La rigenera tools/prendi_texture.py." + NL) % (smacchia * 100, quante * 100)
     if tinta and "color.jpg" in scritte:
         media, fattori = tingi(os.path.join(fuori, "color.jpg"), tinta)
-        nota = ("\nTinta: media originale RGB %.0f %.0f %.0f, riportata a %d %d %d\n"
+        nota += ("\nTinta: media originale RGB %.0f %.0f %.0f, riportata a %d %d %d\n"
                 "(fattori %.2f %.2f %.2f). La rigenera tools/prendi_texture.py.\n"
                 % (media[0], media[1], media[2], tinta[0], tinta[1], tinta[2], *fattori))
     io.open(os.path.join(fuori, "FONTE.txt"), "w", encoding="utf-8").write(

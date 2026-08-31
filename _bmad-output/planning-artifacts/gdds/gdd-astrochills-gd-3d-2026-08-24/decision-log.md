@@ -3101,3 +3101,29 @@ in servizio. Sta sul muro **nord** e non su quello est — il muro est è tutto 
 fra water e bidet restano ventidue centimetri — e seduti si guarda a ovest, quindi il
 nord cade a portata di mano destra. Questo non si vernicia: arriva già fatto, e
 l'unica cosa da correggere è `metallicFactor`, non dichiarato quindi uno. Nona volta.
+
+## D-151 — La ruggine si toglie sulla mappa, non sull'oggetto
+
+Il distributore di carta sembrava ammuffito. E ammuffito non è vecchio: è sporco.
+
+La causa è di **scala**, non di gusto. `PaintedMetal012` è vernice bianca con chiazze
+di ruggine grandi come le ha fotografate chi ha fatto la texture: su una carcassa di
+plafoniera vista da due metri e settanta non si notano nemmeno; su un apparecchio da
+trenta centimetri, guardato da un metro mentre ci si lava le mani, quelle chiazze
+diventano **il** disegno dell'oggetto. È lo stesso problema del righello, visto da
+un'altra faccia: non è la mappa a essere sbagliata, è il rapporto fra la mappa e la
+cosa su cui finisce.
+
+Si toglie **sul file**, come già si tinge — così quello che vede Blender è quello che
+riceve Godot, e la scelta resta un dato in `prendi_texture.SET` invece che una
+correzione a mano su un jpg che nessuno saprebbe più rifare.
+
+`smacchia_ruggine()` non sfoca e non schiarisce: prende per base il colore della
+**vernice** — la media dei pixel più chiari, quelli che la macchia non ha toccato — e
+tira ogni pixel verso quella base **in proporzione a quanto se ne discosta**. Le righe
+leggere restano quasi intatte, le chiazze grosse sbiadiscono. Una sfocatura avrebbe
+fatto l'opposto: via il dettaglio fine, le chiazze intere.
+
+Il numero che torna è la frazione di pixel che contava come macchia — il 24,2% qui — e
+serve a sapere se il passo ha fatto qualcosa: a zero non c'era niente da togliere e la
+riga in `SET` è rumore.

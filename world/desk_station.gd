@@ -15,13 +15,26 @@
 ## il vetro, ridai il controllo. È il sottoinsieme di `main.gd` che non sa cosa
 ## sia una fase.
 ##
-## **DEBITO DICHIARATO.** Sono due copie della stessa sequenza, e due copie di una
-## verità sola invecchiano male: la prima volta che qualcuno correggerà l'ordine
-## dei passi in un file e non nell'altro, il difetto si vedrà solo in uno dei due
-## mondi. Quando il gioco traslocherà nel blockout — `main.tscn` che punta qui
-## invece che a `observatory.tscn` — questo file e la parte di `main.gd` che gli
-## corrisponde devono diventare uno solo, e questo è il file destinato a
-## sopravvivere: è quello che non conosce la notte.
+## **DEBITO DICHIARATO, E ADESSO SCADUTO.** Sono due copie della stessa sequenza, e
+## due copie di una verità sola invecchiano male: la prima volta che qualcuno
+## correggerà l'ordine dei passi in un file e non nell'altro, il difetto si vedrà
+## solo in uno dei due mondi.
+##
+## IL TRASLOCO È AVVENUTO — 31 agosto 2026, `main.tscn` punta al blockout — e il
+## debito NON è stato pagato. Va detto com'è invece di lasciarlo scritto al futuro:
+## quando il gioco gira, questa scena è istanziata dentro `main.tscn`, la guardia
+## qui sotto vede che `current_scene` non è lei, e questo file TACE per tutta la
+## partita. La postazione la comanda `main.gd`. Quello che resta acceso qui serve
+## alle sonde — `tools/prova_postazione.tscn`, `tools/prova_cupola.tscn` — che
+## montano il blockout da solo, senza notte e senza orchestratore, per provare una
+## cosa alla volta.
+##
+## QUINDI: la sequenza vera è quella di `main.gd`; questa è la sua gemella
+## semplificata, viva solo sul banco. Il giorno in cui si vorrà una copia sola, la
+## strada è portare i tre passi QUI e far chiamare questo file a `main.gd`, che
+## resterebbe padrone di tutto ciò che la notte aggiunge — le fasi, il terminale,
+## la BBS. Non è stato fatto insieme al trasloco per non mettere una riscrittura
+## della postazione nello stesso commit che cambia il mondo sotto i piedi.
 ##
 ## L'ORDINE DEI PASSI È ADR-003, e non è decorativo:
 ##   1. `player.set_enabled(false)` — il controllo si toglie PRIMA di muovere
@@ -42,10 +55,12 @@ var _monitor: CrtMonitor
 ## SI MONTA SOLO SE QUESTA SCENA STA GIRANDO DA SOLA, e la guardia non è
 ## difensiva: è il confine fra i due mondi, scritto in una riga.
 ##
-## Il giorno del trasloco questa scena verrà istanziata DENTRO `main.tscn`, che ha
-## già il suo orchestratore della postazione. Due nodi che rispondono alla stessa
-## `E` sullo stesso monitor farebbero partire due transizioni sovrapposte sullo
-## stesso corpo: il giocatore finirebbe seduto due volte e in piedi una sola.
+## DAL 31 AGOSTO 2026 QUESTA GUARDIA LAVORA DAVVERO, tutte le partite: la scena è
+## istanziata dentro `main.tscn`, che ha già il suo orchestratore della postazione.
+## Due nodi che rispondono alla stessa `E` sullo stesso monitor farebbero partire
+## due transizioni sovrapposte sullo stesso corpo: il giocatore finirebbe seduto
+## due volte e in piedi una sola. Era una riga scritta in previsione; adesso è
+## l'unica cosa che tiene separati i due mondi.
 ##
 ## `current_scene` è la scena che il motore sta eseguendo: quando è questo nodo, il
 ## blockout gira da solo e la postazione è sua. Quando non lo è, qualcun altro

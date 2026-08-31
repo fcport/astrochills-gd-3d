@@ -3636,3 +3636,80 @@ adesso.
 Si riaccende con `CONTINUI = true`, una riga. Il giorno in cui arriveranno i campioni veri
 ogni nodo ha già il proprio posto dove metterli — `_install_*_sound()` — e questo file
 sparisce con un `git rm`.
+
+## D-164 — Il gioco trasloca nell'edificio vero
+
+**31 agosto 2026.** `main.tscn` non punta più a `world/observatory.tscn` — il kit-bash di
+scatole con cui l'epica 1 aveva fatto esistere un posto — ma a `world/blockout.tscn`, cioè
+all'osservatorio modellato: quindici locali, la cupola, gli infissi, gli impianti.
+
+**La spinta è arrivata da una domanda di Federico, ed era la domanda giusta:** «ma che
+cupola stai aprendo, mi sembra quella del vecchio osservatorio». Lo era. La fase 1 apriva
+due lastre di tetto che scorrono, non i due gusci del cinescopio— pardon, del *tubo* —
+modellati a marzo. Il meccanismo funzionava in tutti e due i mondi (D-162); solo che quello
+in cui il gioco girava era il vecchio.
+
+**Cosa ha traslocato con lui.** Il letto, la moka, la lampada da riparare, il campanello di
+fine sequenza, il volume «dentro l'edificio» e il registro «stare a guardare» della cupola.
+Sono gli stessi nodi di prima, con le stesse scene: quello che cambia è dove stanno.
+
+**Cosa NON ha traslocato, e va detto:** la vita del telescopio. `world/telescope.gd`
+pretende tre figli — `$Tube`, `$Hum`, `$Body` — e il telescopio del mondo nuovo arriva
+dentro `osservatorio.glb`, dove quella struttura non c'è. Finché non gliela si dà, la
+montatura non insegue e non ronza durante la posa. È l'unico pezzo dell'epica 3 rimasto
+indietro, ed è un lavoro suo.
+
+**Il letto in magazzino, e non l'ho deciso io.** L'avevo messo nella sala di controllo —
+dove stava nel vecchio mondo, «a un paio di passi dalla scrivania» — e i controlli di
+`verifica_stanza` lo hanno rifiutato al primo giro, prima che la scena esistesse: finiva
+sotto l'anta della porta del corridoio, che si apre in dentro e spazza un quarto di cerchio
+da 1,06, e quel che restava di pavimento si spezzava in due con quasi un metro quadro
+irraggiungibile a piedi. Nel magazzino ci sta: la porta è metà e spazza mezzo metro appena.
+
+**È il motivo per cui il letto è finito FRA GLI ARREDI di `geometria.py`** invece che in un
+angolo di scena: là dentro lo guardano cinque controlli — dentro la stanza, non dentro un
+mobile, non sotto un'anta, non davanti a un vetro, e il resto ancora percorribile — e
+nessuno dei cinque sa aprire una scena di Godot. Un letto messo a occhio li avrebbe saltati
+tutti.
+
+**Il volume «dentro» è in due scatole e non in una.** La pianta è una elle: una scatola
+sola coprirebbe anche il prato davanti alla facciata, e chi ci passeggia risulterebbe
+dentro — il campanello di fine sequenza suonerebbe come se fosse in corridoio. Gli spigoli
+delle due scatole sono LETTI dal perimetro, non ricopiati.
+
+**La sonda ha misurato per tre giri la cosa sbagliata.** In partita la cupola sembrava
+aprirsi a metà velocità: 0,08 di corsa al secondo contro 0,16. Ho cercato il guasto nel
+tempo di gioco, nella sospensione della fase, nello stato dell'input. Non c'era: la sonda
+aveva DUE punti in cui sommava il proprio orologio, e dopo la pressione ci passava da tutti
+e due nello stesso fotogramma. Il meccanismo era giusto e la misura no — la stessa forma di
+guasto di D-162, due volte in un giorno.
+
+**Come sta adesso, misurato in partita vera** (`PARTITA=1` in `tools/prova_cupola.tscn`:
+carica `main.tscn`, si siede al monitor, tiene premuto): seduti dopo mezzo secondo,
+apertura piena a 6,75 s, i due portelli ruotati di 90,0 gradi con i baricentri che
+percorrono 3,15 e 3,39 m, la fase `dome` chiusa con 100, e subito dopo la fase `polar`
+montata. La notte va avanti.
+
+**E che il letto si possa USARE non l'ho dedotto: l'ho misurato.** `bed.tscn` porta
+scritto in testa un difetto già pagato — il primo letto di questo progetto non si poteva
+usare, per una geometria che nessuno aveva provato guardandola — e il magazzino è stretto
+abbastanza da rifarlo. `tools/prova_letto.tscn` accende il letto, gira attorno con il corpo
+del giocatore e, da ogni punto in cui si sta in piedi, guarda la spalliera **col raggio del
+giocatore**: portata, maschera e altezza dell'occhio sono i suoi, non copie. Referto: due
+punti buoni, il più vicino a 0,72 m, tutti e due davanti alla porta. Stretto, ma vero.
+
+**Anche questa sonda ha mentito una volta prima di dire il vero,** e vale la pena scriverlo
+perché è sempre lo stesso errore: al primo giro dichiarava occupati tutti e
+centosessantanove i punti — «il letto è irraggiungibile». La capsula del giocatore è alta
+1,80 e sta a 0,90 dai piedi, quindi il suo fondo tocca il pavimento esattamente; il
+pavimento è sul layer 1 come tutto il resto, e un contatto tangente conta come
+intersezione. Cinque centimetri di sollevamento, e la stanza è tornata quella che è.
+
+**Il debito della postazione è scaduto e non è stato pagato.** `world/desk_station.gd`
+dichiarava che al trasloco sarebbe dovuto diventare una cosa sola con la parte
+corrispondente di `main.gd`. Non è successo: da oggi quel file TACE per tutta la partita —
+la sua guardia vede che non è lui la scena corrente — e resta acceso solo per le sonde, che
+montano il blockout da solo per provare una cosa alla volta. Metterci dentro una
+riscrittura della postazione nello stesso commit che cambia il mondo sotto i piedi sarebbe
+stato un modo di non sapere più quale delle due cose ha rotto cosa. Sta scritto in testa a
+quel file, com'è e perché.

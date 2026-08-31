@@ -1215,11 +1215,35 @@ SALA_DIVULGAZIONE = [
     (8.35, 4.85, 18.90, 9.40),      # la fascia sud, per tutta la larghezza
     (14.75, 1.60, 18.90, 4.85),     # il volume grande a est, oltre la segreta
 ]
+# IL MAGAZZINO, CHE ADESSO HA DENTRO LA BRANDA.
+#
+# Non c'e' una camera da letto in questo edificio e non ci deve essere: chi fa il
+# turno dorme dove capita, ed e' quello che si trova negli osservatori veri.
+#
+# LA SALA DI CONTROLLO L'AVEVA RIFIUTATA, e non per un giudizio: per due misure.
+# Messo contro il muro sud, il letto finiva sotto l'anta della porta del corridoio
+# - che si apre in dentro e spazza un quarto di cerchio da 1,06 - e quel che
+# restava di pavimento si spezzava in due, con quasi un metro quadro irraggiungibile
+# a piedi. Lo hanno detto il controllo 3 e il controllo 5 di `verifica_stanza`, al
+# primo giro, prima che la scena esistesse. Nel magazzino ci sta: la porta e' meta'
+# e spazza mezzo metro appena, e resta un metro e trentacinque di passaggio.
+#
+# Netto fra i muri: x 3,45..4,80 (1,35), z 6,60..9,40 (2,80).
+SALA_MAGAZZINO = [(3.45, 6.60, 4.80, 9.40)]
+ARREDI_MAGAZZINO = [
+    # La branda contro il muro est, la testiera al muro sud. 92 x 202: l'ingombro
+    # di `world/interactables/bed.tscn`, ricopiato qui perche' e' l'unico modo di
+    # farlo guardare dai controlli - che sono cinque, e nessuno di loro sa aprire
+    # una scena di Godot.
+    ("Letto", 3.88, 7.35, 4.80, 9.37, 1.05),
+]
+
 STANZE_ARREDATE = [
     ("controllo pc", SALA_PC, ARREDI_PC),
     ("cucina", SALA_CUCINA, ARREDI_CUCINA),
     ("divulgazione", SALA_DIVULGAZIONE, ARREDI_DIVULGAZIONE),
     ("bagno", SALA_BAGNO, ARREDI_BAGNO),
+    ("magazzino", SALA_MAGAZZINO, ARREDI_MAGAZZINO),
 ]
 
 
@@ -1559,6 +1583,38 @@ FRANCO_VETRO = 0.001
 # guarda in basso di 22 gradi, che e' quanto si guardava in basso nel 1999 con un
 # tubo su una scrivania da 75.
 SEDILE_MONITOR = (0.42, 0.172)
+
+# --- quello che si posa sopra i mobili ---------------------------------------
+#
+# DERIVATE DAL MOBILE, NON BATTUTE A MANO. La moka e la lampada stanno sul bancone
+# della cucina: se il bancone si sposta o si accorcia, si spostano con lui. Tre
+# numeri fissi resterebbero appesi in aria - o dentro un frigorifero - e nessun
+# controllo lo direbbe, perche' nessuno guarda cosa c'e' SOPRA un piano.
+_BANCONE = [_a for _a in ARREDI_CUCINA if _a[0] == "CucinaBase"][0]
+MOKA = (_BANCONE[1] + 0.50, _BANCONE[5], (_BANCONE[2] + _BANCONE[4]) / 2)
+LAMPADA_CUCINA = (_BANCONE[3] - 0.70, _BANCONE[5], (_BANCONE[2] + _BANCONE[4]) / 2)
+
+# Il letto, come lo vuole Godot: il centro della sua impronta.
+#
+# LA TESTIERA GUARDA LA PORTA, e non e' arredamento: e' l'unica cosa che rende il
+# letto usabile. Il raggio dell'interazione e' corto (1,2 m da un occhio a 1,65) e
+# `bed.tscn` ha una sola superficie alta abbastanza da essere inquadrata - la
+# spalliera, a 1,05. Nel magazzino il letto occupa il muro est per intero e lascia
+# libero solo il pezzo davanti alla porta: con la testiera in fondo alla stanza
+# resterebbe a due metri da qualunque punto in cui si possa stare in piedi, e il
+# prompt non comparirebbe mai. Girato cosi', chi entra ce l'ha davanti.
+#
+# Il centro della COLLISIONE non coincide con quello del telaio - la scatola di
+# `bed.tscn` sta quattro centimetri piu' in la' - quindi l'origine si sposta di
+# altrettanto, o il letto sfonda nel muro e nessuno se ne accorge finche' non ci si
+# cammina dentro.
+_LETTO = [_a for _a in ARREDI_MAGAZZINO if _a[0] == "Letto"][0]
+SCARTO_LETTO = 0.04
+LETTO = ((_LETTO[1] + _LETTO[3]) / 2, (_LETTO[2] + _LETTO[4]) / 2 + SCARTO_LETTO)
+
+# La cupola come volume: dove sta il giocatore quando "sta a guardare".
+# Raggio piu' corto di quello della calotta, per non toccare i muri.
+ATTIVITA_CUPOLA = (2.20, 2.00)     # raggio, altezza del cilindro
 # (nome, x, z, nx, nz, quota). Le esterne stanno piu' in alto, sopra l'architrave.
 APPLIQUE = [
     ("cupola1", 2.60, 0.10, 0.0, +1.0, H_APPLIQUE),   # muro nord, sopra il varco

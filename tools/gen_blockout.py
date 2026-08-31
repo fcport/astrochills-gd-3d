@@ -18,6 +18,7 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        LUCI_ROSSE, PARTE_SPENTA, punti_applique,
                        H_APPLIQUE, NOME_LOCALE, LUCE_MONITOR, SEMPRE_ACCESE,
                        H_INTERRUTTORE, L_PLACCA, A_PLACCA, SP_PLACCA,
+                       LETTO, MOKA, LAMPADA_CUCINA, ATTIVITA_CUPOLA,
                        CASSA_MONITOR, VETRO_MONITOR, SEDILE_MONITOR,
                        BOMBATURA_MONITOR, FRANCO_VETRO)
 
@@ -25,6 +26,14 @@ MURI, APERTURE, PAVIMENTI, SOFFITTI, SALA, (_CX, _CZ) = scalati()
 _R = DOME_R
 
 import math as _m
+
+# Gli spigoli della elle, letti dal perimetro e non ricopiati: servono al volume
+# «dentro l'edificio». Le x del perimetro sono tre (0, il risvolto, il fondo est) e
+# le z altrettante; scalate, sono gli angoli delle due scatole.
+_PX = sorted({v for _s in PERIMETRO for v in (_s[0], _s[2])})
+_PZ = sorted({v for _s in PERIMETRO for v in (_s[1], _s[3])})
+_DX0, _DX1 = _PX[1] * K, _PX[2] * K
+_DZ0, _DZ1 = _PZ[1] * K, _PZ[2] * K
 
 CX, CZ = 5.2 * K, 5.0 * K          # centro della cupola, per luci e istanza
 
@@ -43,7 +52,13 @@ for (_cx, _cy, _cz, _sx, _sy, _sz, _nome, *_r) in collisioni_infissi():
     aggiungi(_cx, _cy, _cz, _sx, _sy, _sz, _nome)
 # Gli arredi entrano come SOLA COLLISIONE, come i muri: la forma la da' il modello
 # controllo_pc.glb, che nasce dalle stesse impronte.
-blocchi.extend(arredi())
+# IL LETTO ESCE DA QUI, e non e' un caso speciale gratuito: e' un INTERAGIBILE, e
+# `world/interactables/bed.tscn` si porta dietro la propria collisione. Lasciandolo
+# anche fra i blocchi ci sarebbero due solidi nello stesso posto - uno che risponde
+# al raggio dell'interazione e uno muto - e chi guarda il letto da un certo angolo
+# colpirebbe quello sbagliato e non vedrebbe nessun prompt. Sta in `ARREDI_MAGAZZINO`
+# per farsi guardare dai controlli della stanza, non per finire in scena due volte.
+blocchi.extend(b for b in arredi() if b[6] != "Letto")
 
 # ---------------------------------------------------------------- esterno: prato, recinto, auto
 # prato: continuo con il pavimento interno, cosi' uscendo non si cade
@@ -132,6 +147,12 @@ def tscn():
              '[ext_resource type="Script" path="res://world/interactables/crt_monitor.gd" id="25_crt"]',
              '[ext_resource type="PackedScene" path="res://crt/crt_screen.tscn" id="26_vetro"]',
              '[ext_resource type="Script" path="res://world/dome_shutter.gd" id="27_cupola"]',
+             '[ext_resource type="PackedScene" path="res://world/interactables/bed.tscn" id="28_letto"]',
+             '[ext_resource type="PackedScene" path="res://world/interactables/moka.tscn" id="29_moka"]',
+             '[ext_resource type="PackedScene" path="res://world/interactables/lamp.tscn" id="30_lampada"]',
+             '[ext_resource type="PackedScene" path="res://world/sequence_chime.tscn" id="31_chime"]',
+             '[ext_resource type="Script" path="res://world/indoors_volume.gd" id="32_dentro"]',
+             '[ext_resource type="Script" path="res://world/dome_activity.gd" id="33_attivita"]',
              '']
     dims = sorted(set((round(b[3], 3), round(b[4], 3), round(b[5], 3)) for b in blocchi)
                   | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
@@ -325,6 +346,23 @@ def tscn():
               # legge come un adesivo. Sedici per sedici sono 289 vertici, cioe'
               # niente, e la calotta viene liscia.
               'subdivide_width = 16', 'subdivide_height = 16', '',
+              # IL VOLUME «DENTRO L'EDIFICIO», in due scatole e non in una.
+              #
+              # La pianta e' una elle: una scatola sola che la contenesse tutta
+              # coprirebbe anche l'angolo vuoto a sud-ovest del corpo est, cioe' il
+              # prato davanti alla facciata. Chi passeggia li' fuori risulterebbe
+              # dentro, e il campanello di fine sequenza suonerebbe come se fosse
+              # in corridoio. Due scatole, e i loro spigoli sono LETTI dal
+              # perimetro: nessun numero battuto a mano puo' divergere dai muri.
+              '[sub_resource type="BoxShape3D" id="s_dentro_ovest"]',
+              'size = Vector3(%.3f, %.3f, %.3f)' % (_DX0, H, _DZ1), '',
+              '[sub_resource type="BoxShape3D" id="s_dentro_est"]',
+              'size = Vector3(%.3f, %.3f, %.3f)' % (_DX1 - _DX0, H, _DZ1 - _DZ0), '',
+              # Il volume in cui «si sta a guardare»: un cilindro dentro la calotta,
+              # piu' stretto di lei per non toccare i muri.
+              '[sub_resource type="CylinderShape3D" id="s_attivita"]',
+              'radius = %.2f' % ATTIVITA_CUPOLA[0],
+              'height = %.2f' % ATTIVITA_CUPOLA[1], '',
               # IL COPIONE DELLA POSTAZIONE STA SULLA RADICE, ed e' l'unico script
               # di questa scena che non sia un interagibile: sedersi non e' una
               # proprieta' del monitor, e' una sequenza fra il monitor, il corpo del
@@ -970,6 +1008,55 @@ def tscn():
               'transform = Transform3D(1, 0, 0, 0, %.5f, %.5f, 0, %.5f, %.5f, 0, %.3f, %.3f)'
               % (_co, -_si, _si, _co, _sopra, _avanti), '']
 
+    # --- quello che si usa, e quello che misura ------------------------------
+    #
+    # ARRIVANO TUTTI DA SCENE GIA' SCRITTE, e nessuno di loro e' nuovo: sono i
+    # nodi che il vecchio osservatorio aveva e che il trasloco porta con se'. Le
+    # posizioni vengono da `geometria.py`, derivate dai mobili su cui poggiano:
+    # spostare il bancone della cucina sposta la moka.
+    righe += ['[node name="Letto" parent="." instance=ExtResource("28_letto")]',
+              # DRITTO, cioe' con la testiera a -Z, che nel magazzino vuol dire
+              # verso la porta: e' l'unico verso in cui il letto si puo' usare.
+              # Vedi `LETTO` in geometria.py.
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, 0.000, %.3f)'
+              % LETTO, '',
+              '[node name="Moka" parent="." instance=ExtResource("29_moka")]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
+              % MOKA, '',
+              '[node name="Lampada" parent="." instance=ExtResource("30_lampada")]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
+              % LAMPADA_CUCINA, '',
+              # Il campanello di fine sequenza sta al monitor, come nel vecchio
+              # mondo: la sua taratura - unit_size, max_distance - e' fatta su
+              # QUELLA distanza, e spostarlo vorrebbe dire rifarla a orecchio.
+              '[node name="SequenceChime" parent="." instance=ExtResource("31_chime")]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, 1.100, %.3f)'
+              % (CASSA_MONITOR[0], CASSA_MONITOR[2]), '',
+              # Dentro o fuori. Serve al campanello, che senza non sa distinguere
+              # «in cupola» da «sul prato»: in Compatibility i muri non occludono,
+              # e la sola distanza metteva il prato piu' vicino della cupola.
+              '[node name="Dentro" type="Area3D" parent="."]',
+              'script = ExtResource("32_dentro")', '',
+              '[node name="Ovest" type="CollisionShape3D" parent="Dentro"]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
+              % (_DX0 / 2, H / 2, _DZ1 / 2),
+              'shape = SubResource("s_dentro_ovest")', '',
+              '[node name="Est" type="CollisionShape3D" parent="Dentro"]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
+              % ((_DX0 + _DX1) / 2, H / 2, (_DZ0 + _DZ1) / 2),
+              'shape = SubResource("s_dentro_est")', '',
+              # «Stare a guardare»: misura e basta, nessun feedback. Il cigolio che
+              # si porta dietro e' un tono continuo, quindi tace finche' non ci
+              # saranno campioni veri (world/toni_segnaposto.gd).
+              '[node name="AttivitaCupola" type="Area3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
+              % (CX, ATTIVITA_CUPOLA[1] / 2, CZ),
+              'script = ExtResource("33_attivita")', '',
+              '[node name="Collision" type="CollisionShape3D" parent="AttivitaCupola"]',
+              'shape = SubResource("s_attivita")', '',
+              '[node name="Dwell" type="Timer" parent="AttivitaCupola"]', '',
+              '[node name="Creak" type="AudioStreamPlayer3D" parent="AttivitaCupola"]', '']
+
     righe += ['[node name="Player" parent="." instance=ExtResource("1_player")]',
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, 0.000, %.3f)' % (21.7 * K, 17.0 * K), '', '',
               '[node name="Camera" parent="Player" index="1"]',
@@ -1501,7 +1588,14 @@ _attesi = [("ambient_light_energy = 0.035", "la luce ambientale della notte"),
            # I BATTENTI: se il nodo sparisce, la fase 1 continua ad annunciare
            # l'apertura sul bus e nessuno la ascolta. Nessun errore, nessun log:
            # solo una cupola che resta chiusa mentre il pannello dice OPEN.
-           ('script = ExtResource("27_cupola")', "i battenti della cupola")]
+           ('script = ExtResource("27_cupola")', "i battenti della cupola"),
+           # IL LETTO E' L'UNICO MODO DI ARRIVARE ALLA NOTTE DOPO: senza, `main.gd`
+           # grida una volta all'avvio e poi il giocatore gira all'infinito in un
+           # osservatorio in cui l'alba non finisce mai.
+           ('instance=ExtResource("28_letto")', "il letto"),
+           ('instance=ExtResource("29_moka")', "la moka"),
+           ('instance=ExtResource("30_lampada")', "la lampada da riparare"),
+           ('script = ExtResource("32_dentro")', "il volume dentro/fuori")]
 _mancanti = ["  MANCA NEL .tscn   %s (%s)" % (t, perche)
              for (t, perche) in _attesi if t not in _scritto]
 if _mancanti:

@@ -24,6 +24,12 @@
 [ext_resource type="Script" path="res://world/interactables/crt_monitor.gd" id="25_crt"]
 [ext_resource type="PackedScene" path="res://crt/crt_screen.tscn" id="26_vetro"]
 [ext_resource type="Script" path="res://world/dome_shutter.gd" id="27_cupola"]
+[ext_resource type="PackedScene" path="res://world/interactables/bed.tscn" id="28_letto"]
+[ext_resource type="PackedScene" path="res://world/interactables/moka.tscn" id="29_moka"]
+[ext_resource type="PackedScene" path="res://world/interactables/lamp.tscn" id="30_lampada"]
+[ext_resource type="PackedScene" path="res://world/sequence_chime.tscn" id="31_chime"]
+[ext_resource type="Script" path="res://world/indoors_volume.gd" id="32_dentro"]
+[ext_resource type="Script" path="res://world/dome_activity.gd" id="33_attivita"]
 
 [sub_resource type="BoxMesh" id="m_0"]
 size = Vector3(0.018, 0.018, 0.032)
@@ -1146,6 +1152,16 @@ size = Vector3(0.386, 0.420, 0.430)
 size = Vector2(0.309, 0.274)
 subdivide_width = 16
 subdivide_height = 16
+
+[sub_resource type="BoxShape3D" id="s_dentro_ovest"]
+size = Vector3(8.250, 3.000, 9.500)
+
+[sub_resource type="BoxShape3D" id="s_dentro_est"]
+size = Vector3(10.750, 3.000, 8.000)
+
+[sub_resource type="CylinderShape3D" id="s_attivita"]
+radius = 2.20
+height = 2.00
 
 [node name="Blockout" type="Node3D"]
 script = ExtResource("24_postazione")
@@ -3512,6 +3528,40 @@ mesh = SubResource("q_monitor")
 
 [node name="Seat" parent="Monitor/CrtScreen" index="2"]
 transform = Transform3D(1, 0, 0, 0, 0.92541, 0.37898, 0, -0.37898, 0.92541, 0, 0.172, 0.420)
+
+[node name="Letto" parent="." instance=ExtResource("28_letto")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.340, 0.000, 8.400)
+
+[node name="Moka" parent="." instance=ExtResource("29_moka")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.850, 0.900, 1.900)
+
+[node name="Lampada" parent="." instance=ExtResource("30_lampada")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.900, 0.900, 1.900)
+
+[node name="SequenceChime" parent="." instance=ExtResource("31_chime")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.550, 1.100, 2.000)
+
+[node name="Dentro" type="Area3D" parent="."]
+script = ExtResource("32_dentro")
+
+[node name="Ovest" type="CollisionShape3D" parent="Dentro"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.125, 1.500, 4.750)
+shape = SubResource("s_dentro_ovest")
+
+[node name="Est" type="CollisionShape3D" parent="Dentro"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.625, 1.500, 5.500)
+shape = SubResource("s_dentro_est")
+
+[node name="AttivitaCupola" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.600, 1.000, 2.500)
+script = ExtResource("33_attivita")
+
+[node name="Collision" type="CollisionShape3D" parent="AttivitaCupola"]
+shape = SubResource("s_attivita")
+
+[node name="Dwell" type="Timer" parent="AttivitaCupola"]
+
+[node name="Creak" type="AudioStreamPlayer3D" parent="AttivitaCupola"]
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.850, 0.000, 8.500)

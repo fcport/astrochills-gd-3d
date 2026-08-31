@@ -20,6 +20,10 @@
 ## giudicare il MOVIMENTO: da sotto, di notte, due gusci scuri su un guscio scuro
 ## non si distinguono, e una foto nera non prova niente in nessuna delle due
 ## direzioni. SOLE=<energia> alza la luna finche' la forma si vede.
+## PARTITA=1 carica IL GIOCO — `main.tscn`, con la notte e l'orchestratore — si
+## siede al monitor come farebbe il giocatore e tiene premuto il comando. È la
+## prova che conta davvero: monta le fasi il piano della notte, non la sonda, e se
+## la cupola non fosse la prima non si aprirebbe niente.
 ## FASE=1 non annuncia niente da sé: monta la FASE VERA, le tiene premuto il
 ## comando, e guarda se la cupola si apre. È l'unica prova che copre la catena
 ## intera — pannello, bus, battenti — invece delle sue due metà separate.
@@ -41,13 +45,19 @@ const FUORI := "user://cupola.png"
 ## sonda della postazione, e la correzione è la stessa.
 const LIMITE := 12.0
 
-var _scena: Node3D
+## `Node` e non `Node3D`: in partita la scena caricata è `main.tscn`, la cui radice
+## è un `Node` semplice — il mondo 3D vive dentro il suo SubViewport. Tipizzarla
+## come `Node3D` faceva morire la sonda all'assegnazione, prima di misurare.
+var _scena: Node
 var _fase := 0
 var _conto := 0
 var _tempo := 0.0
 var _partenza: Array[Vector3] = []
 var _bersaglio := 1.0
 var _fase_vera: Phase
+var _partita := false
+var _premuto := false
+var _ultimo_secondo := 0
 
 
 func _ready() -> void:
@@ -61,7 +71,7 @@ func _monta() -> void:
 	if quale.is_empty():
 		quale = "res://world/observatory.tscn"
 	print("[cupola] mondo: %s" % quale)
-	var scena: Node3D = load(quale).instantiate()
+	var scena: Node = load(quale).instantiate()
 	# PRIMA in albero, POI scena corrente: `set_current_scene()` rifiuta un nodo che
 	# non sia già figlio della radice. E non `change_scene_to_file()`, che libererebbe
 	# la scena corrente — cioè questa sonda, che sparirebbe prima di misurare.
@@ -99,6 +109,9 @@ func _process(d: float) -> void:
 			return
 		var a := OS.get_environment("APERTURA")
 		_bersaglio = clampf(float(a), 0.0, 1.0) if not a.is_empty() else 1.0
+		if not OS.get_environment("PARTITA").is_empty():
+			_siediti()
+			return
 		if not OS.get_environment("FASE").is_empty():
 			_monta_la_fase()
 			return
@@ -108,8 +121,33 @@ func _process(d: float) -> void:
 		return
 
 	if _fase == 1:
+		# UN SOLO POSTO DOVE SCORRE IL TEMPO. La prima stesura ne aveva due — il
+		# ramo «partita» e questo — e dopo la pressione ci passava tutti e due nello
+		# stesso fotogramma: l'orologio della sonda correva al doppio, e la cupola
+		# sembrava aprirsi a meta' velocita'. Il meccanismo era giusto, la misura no,
+		# e per tre giri ho cercato il guasto dalla parte sbagliata.
 		_tempo += d
+		if _partita and not _premuto:
+			var banco := _trova_banco(get_tree().root)
+			if banco != null and banco.is_seated:
+				print("[cupola] seduti dopo %.2f s: tengo premuto il comando" % _tempo)
+				Input.action_press(&"dome_open")
+				_premuto = true
+			elif _tempo > LIMITE:
+				print("[cupola] NON CI SI SIEDE dopo %.1f s" % LIMITE)
+				_fine()
+			return
 		var s := DomeShutter.find_in(get_tree())
+		# UN RIGO AL SECONDO MENTRE SI APRE. Una sonda che stampa solo l'esito dice
+		# «non ci e' arrivata» e non dice se e' andata piano, se si e' fermata, o se
+		# non e' mai partita: tre guasti diversi con lo stesso referto.
+		if int(_tempo) > _ultimo_secondo:
+			_ultimo_secondo = int(_tempo)
+			var f := _trova_fase(get_tree().root)
+			print("[cupola]   %2d s: battente %.3f  pannello %s  scala %.2f  comando %s"
+				% [_ultimo_secondo, s.aperture(),
+					("%.3f" % f.aperture()) if f != null else "-",
+					Engine.time_scale, Input.is_action_pressed(&"dome_open")])
 		if absf(s.aperture() - _bersaglio) > 0.001 and _tempo < LIMITE:
 			return
 		if absf(s.aperture() - _bersaglio) > 0.001:
@@ -121,7 +159,7 @@ func _process(d: float) -> void:
 		_conto = 0
 		var lastre := _lastre(s)
 		print("[cupola] apertura %.2f raggiunta in %.2f s" % [_bersaglio, _tempo])
-		if _fase_vera != null:
+		if _fase_vera != null or _partita:
 			# Il comando si lascia e si preme INVIO, come farebbe il giocatore: è
 			# l'ultimo anello, e senza di lui «la fase finisce» resterebbe una cosa
 			# scritta nel codice e mai vista succedere.
@@ -169,6 +207,49 @@ func _process(d: float) -> void:
 			print("[cupola] scatto in %s" % ProjectSettings.globalize_path(FUORI))
 		_fine()
 		return
+
+
+## Si siede al monitor come farebbe il giocatore: `E` sul monitor, e basta. Chi
+## monta la fase è il piano della notte, che qui non si tocca.
+func _siediti() -> void:
+	_partita = true
+	# CHE LA NOTTE VADA AVANTI E' META' DELLA PROVA. Una fase che si apre e non si
+	# chiude lascia la notte ferma su di se' fino all'alba, e da fuori si vedrebbe
+	# solo una cupola aperta e un monitor che non cambia mai schermata.
+	Events.phase_finished.connect(func(chiave: StringName, punteggio: int) -> void:
+		print("[cupola] fase '%s' chiusa con %d" % [chiave, punteggio]))
+	Events.phase_started.connect(func(chiave: StringName) -> void:
+		print("[cupola] fase '%s' montata" % chiave))
+	var monitor := CrtMonitor.find_in(get_tree())
+	if monitor == null:
+		print("[cupola] NESSUN MONITOR nel gioco")
+		_fine()
+		return
+	monitor.interact(Player.find_in(get_tree()))
+
+
+## La fase della cupola, ovunque l'orchestratore l'abbia montata.
+func _trova_fase(n: Node) -> PhaseDome:
+	var d := n as PhaseDome
+	if d != null:
+		return d
+	for f in n.get_children():
+		var t := _trova_fase(f)
+		if t != null:
+			return t
+	return null
+
+
+## Il banco della postazione, ovunque `main.gd` l'abbia appeso.
+func _trova_banco(n: Node) -> DeskCamera:
+	var d := n as DeskCamera
+	if d != null:
+		return d
+	for f in n.get_children():
+		var t := _trova_banco(f)
+		if t != null:
+			return t
+	return null
 
 
 ## Monta la fase vera e le tiene premuto il comando.

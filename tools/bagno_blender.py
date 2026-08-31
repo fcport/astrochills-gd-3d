@@ -50,7 +50,7 @@ for _m in ("geometria", "modellare"):
         importlib.reload(sys.modules[_m])
 from geometria import ARREDI_BAGNO, SALA_BAGNO, W_SILL   # noqa: E402
 from modellare import (COLORI, cilindro, cilindro_orizz, esporta,   # noqa: E402
-                       finisci,
+                       finisci, usa_le_ridotte,
                        lampada, posa_modello, prepara_render, pulisci, scatola,
                        verifica_impronte)
 
@@ -79,10 +79,23 @@ SPORGE = 0.010     # di quanto il listello esce dal filo del rivestimento
 # I sanitari presi da fuori: cartella dentro assets/models/esterni -> (impronta,
 # gradi, come si chiama in italiano). I gradi sono la rotazione attorno alla
 # verticale perche' guardino DENTRO la stanza: un modello non conosce il nostro nord.
+# I sanitari presi da fuori: cartella -> (impronta, gradi, altezza di posa, nome).
+#
+# I GRADI SONO MISURATI, non indovinati: li stampa `tools/verso_sanitari.py`, che
+# posa ogni modello alle quattro rotazioni e conta quanti vertici finiscono a filo
+# del muro a cui quel pezzo e' addossato. Per il water quel conteggio non bastava -
+# con la cassetta non arriva mai ai lati dell'impronta e dava zero a tutte e quattro
+# - e li' decide da che parte pende la meta' alta del modello: un water ha la
+# cassetta in alto e dietro.
+#
+# E L'ALTEZZA DI POSA NON E' QUELLA DELL'IMPRONTA. L'impronta del lavabo e' alta
+# 1,90 perche' comprende specchio, mensola e applique; il lavabo e' alto 86 cm.
+# Passando 1,90 a `posa_modello` il lavabo veniva scalato per essere alto quasi un
+# metro, cioe' dieci centimetri troppo, e da fermi davanti si vedeva.
 SANITARI = [
-    ("wc_bagno",     "Wc",     -90.0, "il water"),
-    ("bidet_bagno",  "Bidet",  -90.0, "il bidet"),
-    ("lavabo_bagno", "Lavabo",  90.0, "il lavabo a colonna"),
+    ("wc_bagno",     "Wc",      90.0, 0.78, "il water"),
+    ("bidet_bagno",  "Bidet",  180.0, 0.52, "il bidet"),
+    ("lavabo_bagno", "Lavabo", 270.0, 0.86, "il lavabo a colonna"),
 ]
 
 # Chi arriva bianco di fabbrica e va portato all'eta' degli altri. Il water e il
@@ -283,6 +296,30 @@ def bidet_segnaposto():
     cilindro_orizz("Inox", x1 - 0.13, 0.51, cz, "x", 0.09, 0.012)
 
 
+def rubinetto_lavabo(quota):
+    """Il miscelatore sopra il lavabo, che nel modello scaricato NON c'e'.
+
+    Il lavabo d'epoca arriva col solo foro: la rubinetteria e' un pezzo a parte in
+    quasi tutti i modelli di sanitari, e un lavabo senza rubinetto e' una vasca. Sta
+    qui e non dentro il segnaposto proprio per questo - serve in tutti e due i casi,
+    e messo dentro il segnaposto sarebbe sparito il giorno in cui il modello e'
+    arrivato.
+
+    MONOCOMANDO e non due rubinetti separati: nel 1999 il miscelatore aveva gia'
+    sostituito la coppia acqua calda / acqua fredda, che e' di vent'anni prima.
+    """
+    x0, z0, x1, z1, _a = IMPRONTE["Lavabo"]
+    cz = (z0 + z1) / 2
+    xr = x0 + 0.10
+    cilindro("Inox", xr, cz, quota, quota + 0.15, 0.021, seg=10)
+    # il becco sporge 14 cm sopra il bacino: a dieci restava dentro il bordo del
+    # lavabo e da fermi davanti si vedeva solo il corpo del miscelatore
+    cilindro_orizz("Inox", xr + 0.075, quota + 0.145, cz, "x", 0.15, 0.013)
+    # la leva, inclinata all'indietro come sta una leva alzata a meta'
+    scatola("Inox", xr - 0.012, xr + 0.014, quota + 0.15, quota + 0.185,
+            cz + 0.008, cz + 0.055)
+
+
 def lavabo_segnaposto():
     x0, z0, x1, z1, _a = IMPRONTE["Lavabo"]
     cx, cz = (x0 + x1) / 2, (z0 + z1) / 2
@@ -295,10 +332,7 @@ def lavabo_segnaposto():
                          (x1 - 0.06, z0 + 0.02, x1 - 0.02, z1 - 0.02)):
         scatola("CeramicaVecchia", a, c, 0.78, 0.86, b, d)
     scatola("CeramicaVecchia", x0, x0 + 0.09, 0.78, 0.88, z0 + 0.02, z1 - 0.02)
-    # il miscelatore monocomando, che nel 1999 aveva gia' sostituito i due rubinetti
-    cilindro("Inox", x0 + 0.055, cz, 0.86, 0.98, 0.020, seg=10)
-    cilindro_orizz("Inox", x0 + 0.09, 0.975, cz, "x", 0.10, 0.013)
-    scatola("Inox", x0 + 0.045, x0 + 0.075, 0.98, 1.02, cz + 0.01, cz + 0.05)
+    # il miscelatore lo mette rubinetto_lavabo(), che serve anche al modello vero
 
 
 def ingiallisci(pezzi, tinta):
@@ -356,10 +390,15 @@ def sanitari():
     """Monta i modelli scaricati; dove mancano mette il segnaposto e lo dice."""
     fatti = {"Wc": wc_segnaposto, "Bidet": bidet_segnaposto,
              "Lavabo": lavabo_segnaposto}
-    for (cartella, quale, gradi, come_si_chiama) in SANITARI:
+    for (cartella, quale, gradi, alto, come_si_chiama) in SANITARI:
         via = os.path.join(ESTERNI, cartella, "scene.gltf")
+        x0, z0, x1, z1, _h = IMPRONTE[quale]
         if os.path.exists(via):
-            pezzi = posa_modello(via, IMPRONTE[quale], gradi=gradi)
+            pezzi = posa_modello(via, (x0, z0, x1, z1, alto), gradi=gradi)
+            # LE MAPPE RIDOTTE, e la metallicita' a zero. Una ceramica non e' un
+            # metallo: la mappa metallicRoughness dei sanitari, presa com'e', la
+            # farebbe specchiare, e in un bagno chiuso lo specchio e' nero.
+            usa_le_ridotte(pezzi, os.path.dirname(via), metallico=0.0)
             if quale in INVECCHIARE:
                 ingiallisci(pezzi, COLORI["CeramicaVecchia"])
                 print("  %-8s dal modello scaricato, invecchiato qui" % quale)
@@ -368,6 +407,8 @@ def sanitari():
         else:
             fatti[quale]()
             mancanti.append("%s (%s) - manca %s" % (quale, come_si_chiama, via))
+        if quale == "Lavabo":
+            rubinetto_lavabo(0.80 if os.path.exists(via) else 0.86)
             print("  %-8s SEGNAPOSTO: il modello non c'e' ancora" % quale)
 
 
@@ -458,6 +499,21 @@ if problemi:
 
 esporta(USCITA)
 
+# QUANTO PESA, RILETTO DAL FILE SCRITTO. Il bagno e' arrivato a 33 MB - piu'
+# dell'intero edificio - perche' i tre sanitari restavano attaccati alle loro mappe
+# a 4096 mentre le versioni ridotte stavano nella cartella accanto senza che nessuno
+# le usasse. Non se ne accorgeva niente: il modello era giusto, i controlli passavano,
+# e il numero lo si vede solo guardando la cartella. Adesso lo guarda lui.
+PESO_MASSIMO = 20.0
+_mb = os.path.getsize(USCITA) / 1048576.0
+print("  il modello pesa %.1f MB" % _mb)
+if _mb > PESO_MASSIMO:
+    print("")
+    print("ATTENZIONE: %.1f MB contro i %.1f ammessi - quasi sempre e' una mappa"
+          % (_mb, PESO_MASSIMO))
+    print("  presa da fuori e rimasta a piena risoluzione: vedi usa_le_ridotte().")
+    sys.exit(1)
+
 if mancanti:
     print("\nSANITARI ANCORA DA SCARICARE (adesso ci sono i segnaposto):")
     for m in mancanti:
@@ -478,7 +534,7 @@ def scatta(nome, posizione, mira, lente=28.0):
 
 
 # entrando dalla porta: si deve vedere la fila dei sanitari e il listello che corre
-scatta("bagno.png", (6.45, 1.62, 6.95), (7.90, 1.05, 8.60), lente=20.0)
+scatta("bagno.png", (5.90, 1.62, 8.80), (8.10, 0.75, 7.05), lente=24.0)
 # il lavabo con lo specchio, dal centro della stanza
 scatta("bagno-lavabo.png", (6.60, 1.62, 8.10), (5.05, 1.20, 8.55), lente=24.0)
 # l'armadio e la finestra

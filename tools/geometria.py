@@ -833,7 +833,10 @@ ARREDI_DIVULGAZIONE = [
 SALA_BAGNO = [(5.00, 6.60, 8.15, 9.40)]
 ARREDI_BAGNO = [
     # parete est, in fila da nord a sud: wc, bidet, armadio
-    ("Wc",          7.47, 6.90, 8.15, 7.30, 0.80),
+    # 46 cm di larghezza e non 40: `posa_modello` scala sull'altezza e poi
+    # rimpicciolisce finche' l'ingombro in pianta ci sta, e a 40 il water usciva
+    # alto 68 cm invece di 78. Sei centimetri di impronta valgono dieci di water.
+    ("Wc",          7.47, 6.88, 8.15, 7.34, 0.80),
     ("Bidet",       7.55, 7.65, 8.15, 8.05, 0.65),
     # NIENTE DOCCIA. C'era, ed era la risposta sbagliata alla domanda «cosa ci metto
     # al posto della vasca»: qui non ci si lava, e' il bagno di servizio di un

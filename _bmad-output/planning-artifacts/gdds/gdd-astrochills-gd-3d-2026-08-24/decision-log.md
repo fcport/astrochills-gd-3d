@@ -2315,3 +2315,53 @@ Quindi il modellatore lo prova **a ogni build**, su un cubo di prova: costruisce
 materiale con texture, lo invecchia, e controlla che il Base Color sia passato per un
 nodo Mix in MULTIPLY con la tinta nel socket giusto. Validato per iniezione:
 scambiando i due socket il controllo accusa.
+
+## D-118 — L'orientamento di un modello preso da fuori si misura
+
+Un modello scaricato non conosce il nostro nord. L'angolo si trova per tentativi
+guardando un render alla volta — tre modelli per quattro angoli fa dodici render, e
+il rischio di fermarsi al primo che *sembra* giusto.
+
+`tools/verso_sanitari.py` lo misura: posa ogni modello alle quattro rotazioni e conta
+quanti vertici finiscono a filo di ciascun lato dell'impronta. Il lato che ne
+raccoglie di più è il retro, e il retro va contro il muro. Lavabo: 67% a ovest con
+270°, contro il 6% dei 90° che aveva — era girato di mezzo giro.
+
+**Per il water quel conteggio non bastava**: dava zero contro est e contro ovest a
+tutte e quattro le rotazioni, e sembrava un modello senza retro. Non lo era —
+`posa_modello` scala sull'altezza e poi rimpicciolisce finché l'ingombro in pianta ci
+sta, quindi un pezzo orientato male viene ridotto e non arriva più a nessun muro. Il
+secondo criterio è **dove pende la metà alta**: un water ha la cassetta in alto e
+dietro.
+
+**E l'altezza di posa non è quella dell'impronta.** L'impronta del lavabo è alta 1,90
+perché comprende specchio, mensola e applique; il lavabo è alto 86 cm. Passando 1,90
+il lavabo veniva scalato a quasi un metro.
+
+## D-119 — Il bagno pesava 33 MB, più dell'intero edificio
+
+`prendi_modello.riduci()` porta le mappe scaricate a 1024 e le rinomina. **Nessuno le
+usava.** `_collega_texture_vicine` tocca solo i modelli che arrivano *senza* texture,
+e un glTF le sue ce le ha: i file ridotti stavano nella cartella accanto mentre i
+sanitari restavano attaccati agli originali a 4096.
+
+Niente lo segnalava. Il modello era giusto, tutti i controlli passavano, e il numero
+si vede solo guardando la cartella.
+
+**Due difetti sotto, non uno.** `riduci()` riconosceva solo i `.png`: il baseColor del
+water è `M_Toilet_baseColor.jpeg` e non veniva nemmeno ridotto. Adesso si guarda il
+*nome* della mappa e si accetta qualunque formato.
+
+**La cura sta in `modellare.usa_le_ridotte()`, ed è la terza volta che serve** — le
+prime due erano rattoppi dentro un singolo modellatore. Sostituisce il **datablock**
+dell'immagine, non il `filepath`: l'importatore glTF imballa le immagini nel .blend, e
+cambiare percorso più `reload()` ricarica i dati imballati ignorando il file nuovo, in
+silenzio. Da 33,3 a 15,5 MB.
+
+**E forza la metallicità a zero.** Una mappa metallicRoughness su una ceramica la fa
+specchiare, e uno specchio in una stanza chiusa senza niente da riflettere è nero. È
+il difetto ricorrente di questo progetto: quarta volta.
+
+**Adesso il modellatore rilegge il file scritto e ne guarda il peso**: sopra i 20 MB
+fallisce, dicendo dove guardare. Validato per iniezione — togliendo la riduzione
+riporta 33,3 MB e si ferma.

@@ -676,6 +676,61 @@ def posa_modello(percorso, impronta, gradi=0.0, riempi=1.0, appoggio=0.0,
     return [perno] + nuovi
 
 
+def usa_le_ridotte(pezzi, cartella, metallico=None):
+    """Sostituisce le texture di un modello scaricato con le nostre versioni ridotte.
+
+    TERZA VOLTA CHE SERVE, e le prime due erano rattoppi locali dentro un
+    modellatore. `prendi_modello.riduci()` porta le mappe a 1024 e le rinomina in
+    `textures/color.jpg`, `normal.png`, `roughness.jpg` - ma nessuno le usa:
+    `_collega_texture_vicine` tocca solo i modelli che arrivano SENZA texture, e un
+    glTF le sue ce le ha. Il risultato e' che i file ridotti stanno li' e il modello
+    resta attaccato agli originali a 4096. Il bagno pesava 33 MB, piu' dell'intero
+    edificio, e nessun controllo diceva niente.
+
+    E SI SOSTITUISCE IL DATABLOCK, non il `filepath`. L'importatore glTF IMBALLA le
+    immagini dentro il .blend: cambiare il percorso e chiamare `reload()` ricarica i
+    dati imballati e ignora il file nuovo, in silenzio. L'unico modo e' caricare
+    l'immagine da capo e riassegnarla al nodo.
+
+    `metallico`, se dato, forza la metallicita' del materiale. Serve piu' spesso di
+    quanto sembri: una mappa metallicRoughness su una superficie dipinta o smaltata
+    la rende uno specchio, e uno specchio in una stanza chiusa senza niente da
+    riflettere e' NERO. E' il difetto ricorrente di questo progetto.
+    """
+    dentro = os.path.join(cartella, "textures")
+    nostre = {"basecolor": "color.jpg", "diffuse": "color.jpg", "albedo": "color.jpg",
+              "normal": "normal.png", "roughness": "roughness.jpg"}
+    materiali = set()
+    for o in pezzi:
+        for slot in getattr(o, "material_slots", []):
+            if slot.material is not None:
+                materiali.add(slot.material)
+    sostituite = 0
+    for m in materiali:
+        if not m.use_nodes:
+            continue
+        for nodo in m.node_tree.nodes:
+            if nodo.type != "TEX_IMAGE" or nodo.image is None:
+                continue
+            vecchio = nodo.image.name.lower()
+            for pezzo, nostro in nostre.items():
+                if pezzo not in vecchio:
+                    continue
+                via_ = os.path.join(dentro, nostro)
+                if not os.path.exists(via_):
+                    break
+                nodo.image = bpy.data.images.load(via_, check_existing=True)
+                nodo.image.colorspace_settings.name = (
+                    "sRGB" if nostro == "color.jpg" else "Non-Color")
+                sostituite += 1
+                break
+        if metallico is not None:
+            for n in m.node_tree.nodes:
+                if n.type == "BSDF_PRINCIPLED":
+                    n.inputs["Metallic"].default_value = metallico
+    return sostituite
+
+
 def verifica_impronte(oggetti, impronte, tolleranza=0.06):
     """Nessun vertice fuori dai rettangoli dichiarati in geometria.
 

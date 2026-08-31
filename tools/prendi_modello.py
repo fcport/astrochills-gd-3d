@@ -181,13 +181,25 @@ def riduci(cartella_texture):
     if not os.path.isdir(cartella_texture):
         return
     lavori = []
+    # L'ESTENSIONE NON E' SEMPRE .png, e per un po' questo pezzo ha creduto di si'.
+    # Il water del bagno porta `M_Toilet_baseColor.jpeg`: non finendo per `.png` non
+    # veniva riconosciuto, non veniva ridotto, e il modello restava attaccato
+    # all'originale da tre megabyte. Nessun errore, nessun avviso - solo un .glb da
+    # trentatre megabyte, piu' pesante dell'intero edificio. Si guarda il NOME della
+    # mappa e si accetta qualunque formato PIL sappia aprire.
+    def e_una(nome, che_cosa):
+        radice = os.path.splitext(nome.lower())[0]
+        return any(radice.endswith(s) for s in che_cosa)
+
     for n in os.listdir(cartella_texture):
         b = n.lower()
-        if b.endswith(("_basecolor.png", "_diffuse.png")):
+        if b in ("color.jpg", "normal.png", "roughness.jpg"):
+            continue                      # gia' nostro: non si riduce due volte
+        if e_una(b, ("_basecolor", "_diffuse", "_albedo")):
             lavori.append((n, "color.jpg", None))
-        elif b.endswith("_normal.png"):
+        elif e_una(b, ("_normal",)):
             lavori.append((n, "normal.png", None))
-        elif b.endswith("_metallicroughness.png"):
+        elif e_una(b, ("_metallicroughness", "_roughness")):
             # nel glTF la rugosita' e' il canale VERDE e la metallicita' il BLU:
             # si estrae il verde, il blu si butta.
             lavori.append((n, "roughness.jpg", 1))

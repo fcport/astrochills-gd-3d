@@ -23,9 +23,18 @@ sono geometria e materiale, non arredamento:
     e' 75 cm da asse ad asse: sotto i 55 non ci si siede, sopra gli 80 la parete
     sembra vuota in mezzo.
 
-SENZA VASCA, per richiesta: al suo posto la doccia nell'angolo sud-est, 90x90 con
-box in cristallo. In un bagno di servizio di un osservatorio e' anche piu'
-credibile - ci si sciacqua dopo una notte in cupola, non ci si fa il bagno.
+SENZA VASCA E SENZA DOCCIA, e la seconda e' stata una correzione. Al posto della
+vasca c'era finita una doccia con box in cristallo, che e' l'arredo di una camera
+d'albergo: in un osservatorio in servizio, nell'angolo sud-est ci sta l'ARMADIO dei
+detersivi, dei ricambi e del camice. Un bagno di servizio non e' un bagno piccolo,
+e' un bagno con dentro cose diverse.
+
+LE ANTE DEI MOBILI NON STANNO IN QUESTO FILE. Un pezzo che ruota ha bisogno di un
+nodo suo con l'origine sul cardine, e un .glb e' una mesh sola: pensile e armadio
+qui sono la CASSA, le loro ante sono dati in `geometria.ANTE_MOBILI` e in gioco
+diventano nodi `Door` come le sette porte dell'edificio. Il piano su cui battono lo
+legge `filo_anta()` da quella stessa tabella, cosi' cassa e anta non possono
+scollarsi.
 
 I SANITARI ARRIVANO DA FUORI, quando ci sono. Un water, un bidet e un lavabo a
 colonna sono superfici curve continue: fatti con le scatole vengono mobili, non
@@ -49,7 +58,7 @@ import importlib   # noqa: E402
 for _m in ("geometria", "modellare"):
     if _m in sys.modules:
         importlib.reload(sys.modules[_m])
-from geometria import ARREDI_BAGNO, SALA_BAGNO, W_SILL   # noqa: E402
+from geometria import ANTE_MOBILI, ARREDI_BAGNO, SALA_BAGNO, W_SILL   # noqa: E402
 from modellare import (COLORI, cilindro, cilindro_orizz, esporta,   # noqa: E402
                        finisci, raddrizza_normali, usa_le_ridotte,
                        lampada, posa_modello, prepara_render, pulisci, scatola,
@@ -98,6 +107,19 @@ SANITARI = [
     ("bidet_bagno",  "Bidet",  180.0, 0.52, "il bidet"),
     ("lavabo_bagno", "Lavabo", 270.0, 0.86, "il lavabo a colonna"),
 ]
+
+# IL TERMOSIFONE NON LO DECIDE `verso_sanitari.py`, e vale la pena dire perche'.
+# Quel banco sceglie l'angolo che appoggia piu' vertici al muro, e sul radiatore
+# vince 90 gradi con il 51% - solo che a 90 gradi il modello viene schiacciato a due
+# centimetri di larghezza per stare nei venti di fondo dell'impronta. E' la stessa
+# trappola del water: un pezzo orientato male viene RIMPICCIOLITO da posa_modello
+# finche' ci sta, e da rimpicciolito tocca il muro dappertutto. Il numero che
+# smaschera il caso e' l'ingombro - largo 0.02, alto 0.13 - non la percentuale.
+# Restano 0 e 180, che per un radiatore di ghisa sono lo stesso pezzo specchiato:
+# decide da che parte stanno la valvola e il detentore, e quello si e' guardato in
+# render (bagno-termo.png). A zero la valvola cade verso la porta, cioe' dalla parte
+# da cui la si vede entrando; a 180 finisce nell'angolo cieco sotto la finestra.
+GRADI_TERMO = 0.0
 
 # Chi arriva bianco di fabbrica e va portato all'eta' degli altri. Il water e il
 # lavabo no: quelli si sono trovati gia' segnati, ed e' meglio lo sporco vero di
@@ -172,8 +194,8 @@ def armadio():
     sa), le maniglie VERTICALI a bastone, e lo zoccolo che lo stacca dal pavimento
     bagnato. Senza quei tre, una scatola grigia e' una scatola grigia.
     """
-    xi, z0, x1, z1, alto = IMPRONTE["Armadio"]
-    x0 = xi + 0.07          # il filo dell'anta: i 7 cm davanti sono le maniglie
+    _xi, z0, x1, z1, alto = IMPRONTE["Armadio"]
+    x0 = filo_anta("armadio bagno 1")[0]   # dove batte l'anta: la cassa sta dietro
     x1 = x1 - SPESS         # e la schiena si ferma sulla piastrella, non dentro
     zoccolo = 0.10
     M = "Armadietto"
@@ -187,57 +209,73 @@ def armadio():
     scatola(M, x1 - 0.02, x1, zoccolo, alto, z0, z1)             # schiena
     for (b, d) in ((zoccolo, zoccolo + 0.02), (alto - 0.02, alto)):
         scatola(M, x0, x1, b, d, z0, z1)                         # fondo e cielo
-    # il ripiano di mezzo, che si vede dalla fessura fra le ante
-    scatola(M, x0 + 0.02, x1 - 0.02, 1.05, 1.068, z0 + 0.02, z1 - 0.02)
+    # TRE RIPIANI, non piu' uno. Con le ante incollate davanti se ne intravedeva uno
+    # solo dalla fessura, e uno bastava; adesso le ante si aprono e dentro si guarda.
+    # Un armadio di servizio con un ripiano solo e un metro e mezzo di vuoto sopra
+    # non e' un armadio di servizio, e' una scatola.
+    for y in (0.55, 1.05, 1.55):
+        scatola(M, x0 + 0.02, x1 - 0.02, y, y + 0.018, z0 + 0.02, z1 - 0.02)
     # lo zoccolo rientrato: un armadio a filo pavimento sembra incollato
     scatola(M, x0 + 0.04, x1 - 0.04, 0.0, zoccolo, z0 + 0.04, z1 - 0.04)
 
-    # le due ante, con la fuga in mezzo
-    xa = x0
+    # LE DUE ANTE NON STANNO PIU' QUI. Con feritoie, maniglie a bastone e serratura
+    # se ne sono andate in `ANTE_MOBILI`, e in gioco sono due nodi `Door` che girano
+    # sul cardine. Restava un dettaglio da salvare: la battuta contro cui chiudono,
+    # senza la quale ad ante chiuse si vede la fessura fino in fondo al mobile.
     meta = (z0 + z1) / 2
-    for (za, zb) in ((z0 + 0.012, meta - 0.005), (meta + 0.005, z1 - 0.012)):
-        scatola(M, xa, xa + 0.018, zoccolo + 0.025, alto - 0.025, za, zb)
-        # LE FERITOIE, e sporgono in fuori invece di essere incassate. Un armadio
-        # chiuso senza sfiato ammuffisce e chi li fabbrica lo sa; ma incassate di
-        # quattro millimetri, in una stanza senza occlusione ambientale, non fanno
-        # ombra e non esistono - la stessa lezione delle nervature del magazzino.
-        for k in range(3):
-            y = alto - 0.16 - k * 0.05
-            scatola("Schermo", xa - 0.004, xa + 0.006, y, y + 0.018,
-                    za + 0.07, zb - 0.07)
-            scatola(M, xa - 0.010, xa - 0.004, y - 0.008, y + 0.026,
-                    za + 0.062, zb - 0.062)
-    # le maniglie a bastone, verticali, ai due lati della fuga
-    for zz in (meta - 0.055, meta + 0.055):
-        cilindro("Cromo", xa - 0.052, zz, 0.95, 1.28, 0.011, seg=8)
-        for y in (0.95, 1.28):
-            cilindro_orizz("Cromo", xa - 0.035, y, zz, "x", 0.035, 0.009)
-    # la serratura a chiave: un armadio di servizio si chiude
-    cilindro("Cromo", xa - 0.006, meta - 0.12, 1.12, 1.13, 0.013, seg=10)
+    scatola(M, x0, x0 + 0.012, zoccolo + 0.02, alto - 0.02, meta - 0.010, meta + 0.010)
 
 
 # --- il mobiletto e lo specchio ----------------------------------------------
+def filo_anta(nome):
+    """Dove batte l'anta di un mobile: il piano oltre il quale la cassa non va.
+
+    LO LEGGE DALLA TABELLA CHE GENERA ANCHE IL NODO IN GIOCO. Cassa e anta le
+    disegnano due programmi diversi - il mobile qui, l'anta il generatore della
+    scena - e se il numero fosse scritto due volte, prima o poi sarebbero due
+    numeri: la cassa avanzerebbe di qualche millimetro e l'anta ci sparirebbe
+    dentro, oppure resterebbe una fessura da cui si vede il muro.
+
+    Torna la coppia (x, z) del piano; si usa la componente che serve.
+    """
+    for (n, (px, pz), _d, (ax, az), _L, _HA, _q, T, _t, _ap) in ANTE_MOBILI:
+        if n == nome:
+            return (px - ax * T / 2.0, pz - az * T / 2.0)
+    raise KeyError("anta sconosciuta: %s" % nome)
+
+
 def pensile():
-    """Appeso al muro nord: noce scuro e anta a specchio. E' il pezzo della foto."""
+    """Appeso al muro nord: noce scuro. L'ANTA NON STA QUI.
+
+    Un pezzo che ruota non puo' stare nel modello: il .glb e' una mesh sola, e
+    l'anta ha bisogno di un nodo suo con l'origine sul cardine. Sta in
+    `ANTE_MOBILI` di geometria.py insieme a quelle delle porte, e in gioco diventa
+    un nodo `Door` come tutti gli altri.
+
+    E TOLTA L'ANTA, IL MOBILE VA SVUOTATO. Finche' l'anta era incollata davanti, la
+    cassa poteva essere un blocco pieno e non se ne accorgeva nessuno; aprendola si
+    vedrebbe il pieno. Fianchi, schiena, cielo, fondo e un ripiano - che e' anche
+    l'unica cosa che rende l'apertura interessante.
+
+    IL MURO NON E' NE' A z0 NE' A x0: li' c'e' la piastrella. Il rivestimento e'
+    spesso poco piu' di un centimetro, e il pensile partiva dal filo del muro su
+    tutti e due i lati - in gioco si vedeva la fuga passare attraverso il legno. La
+    schiena era gia' stata arretrata; il fianco contro il muro ovest no, e il
+    difetto e' rimasto a meta'.
+    """
     x0, z0, x1, z1, alto = IMPRONTE["Pensile"]
     basso, cima = 1.45, alto
-    # IL MURO NON E' A z0: LI' C'E' LA PIASTRELLA. Il rivestimento e' spesso poco piu'
-    # di un centimetro e il pensile partiva dal filo del muro, cioe' dentro le
-    # piastrelle - e in gioco si vedeva la fuga passare attraverso il fianco del
-    # mobile. Un pensile si appende SOPRA il rivestimento, non dentro.
-    z0 = z0 + SPESS
-    zf = z1 - 0.004
-    # cassa
-    scatola("LegnoTeche", x0, x1, basso, cima, z0, z1)
-    # l'anta a specchio, incassata di un filo nella cornice di legno
-    scatola("Specchio", x0 + 0.05, x1 - 0.05, basso + 0.05, cima - 0.05,
-            zf, zf + 0.006)
-    # la cornice sporge: senza, lo specchio sembra dipinto sull'anta
-    for (a, b, c, d) in ((x0, basso, x1, basso + 0.05), (x0, cima - 0.05, x1, cima),
-                         (x0, basso, x0 + 0.05, cima), (x1 - 0.05, basso, x1, cima)):
-        scatola("LegnoTeche", a, c, b, d, zf, zf + 0.014)
-    # il pomello
-    cilindro_orizz("Cromo", x1 - 0.10, (basso + cima) / 2, zf + 0.02, "z", 0.03, 0.012)
+    z0, x0 = z0 + SPESS, x0 + SPESS
+    zf = filo_anta("pensile bagno")[1]
+    S = 0.018
+    M = "LegnoTeche"
+    for (a, b) in ((x0, x0 + S), (x1 - S, x1)):          # fianchi
+        scatola(M, a, b, basso, cima, z0, zf)
+    for (a, b) in ((basso, basso + S), (cima - S, cima)):  # fondo e cielo
+        scatola(M, x0, x1, a, b, z0, zf)
+    scatola(M, x0, x1, basso, cima, z0, z0 + 0.012)      # schiena
+    mezzo = (basso + cima) / 2
+    scatola(M, x0 + S, x1 - S, mezzo - 0.008, mezzo + 0.008, z0 + 0.012, zf - 0.004)
 
 
 def sopra_il_lavabo():
@@ -305,6 +343,32 @@ def asciugamano(x, barra, cz, largo):
 
 
 def termosifone():
+    """Il radiatore scaricato se c'e', quello fatto a mano se no.
+
+    IL SEGNAPOSTO QUI ERA GIA' BUONO - centoventi cilindri, i cappelli, i nippli, la
+    valvola - e resta, perche' e' quello che regge se il modello non c'e'. Ma un
+    radiatore di ghisa e' fatto di ruggine e smalto scrostato attorno alla valvola,
+    e quella e' TEXTURE: a mano si puo' fare la forma, non i sessant'anni.
+    """
+    via = os.path.join(ESTERNI, "termosifone_bagno", "scene.gltf")
+    if not os.path.exists(via):
+        termosifone_segnaposto()
+        mancanti.append("Termo (il termosifone) - manca %s" % via)
+        print("  Termo    SEGNAPOSTO: il modello non c'e' ancora")
+        return
+    pezzi = posa_modello(via, IMPRONTE["Termo"], gradi=GRADI_TERMO)
+    girate = raddrizza_normali(pezzi)
+    if girate:
+        print("  Termo    %d facce avevano la normale al contrario" % girate)
+    # METALLICO A ZERO ANCHE QUI, e stavolta il glTF non lo dichiara nemmeno: quando
+    # `metallicFactor` manca il valore predefinito e' UNO, cioe' metallo pieno. Un
+    # metallo in una stanza chiusa riflette il nero dell'ambiente ed esce nero - la
+    # stessa trappola dello specchio, della porta del magazzino e dei sanitari.
+    usa_le_ridotte(pezzi, os.path.dirname(via), metallico=0.0)
+    print("  Termo    dal modello scaricato")
+
+
+def termosifone_segnaposto():
     """Radiatore di GHISA A COLONNE, che e' quello che stava in un bagno di allora.
 
     Prima era fatto di lastre piatte, ed era un radiatore d'acciaio a piastre: quelli

@@ -716,6 +716,104 @@ def pezzi_anta(a):
     return pezzi
 
 
+# --- le ante dei mobili, che sono ante come quelle delle porte ----------------
+#
+# STESSO MECCANISMO, NON UNO NUOVO. Un'anta di armadietto ha esattamente i bisogni
+# di un'anta di porta: gira attorno a un cardine, si guarda, si preme E, e non deve
+# passare dentro chi l'ha aperta. Scriverne un secondo tipo avrebbe voluto dire due
+# posti dove il comportamento puo' divergere - e il primo a divergere sarebbe stato
+# proprio quello meno provato. In gioco sono nodi `Door` come tutti gli altri, e il
+# banco `prova_ante.gd` li misura senza sapere che sono mobili.
+#
+# QUELLO CHE CAMBIA E' LA QUOTA. Una porta parte dal pavimento; un pensile appeso
+# parte a un metro e quarantacinque. Da qui la voce in piu' nel dizionario, che per
+# le porte vale zero.
+#
+# Le coordinate sono quelle del bagno, cioe' METRI DI GIOCO gia' scalati: il
+# modello del bagno si innesta nella scena senza trasformazione, quindi qui e in
+# `ARREDI_BAGNO` si parla la stessa lingua. Ogni cardine sta sul filo del mobile che
+# il modellatore disegna, e se uno dei due si muove l'anta si stacca: e' il motivo
+# per cui i numeri stanno QUI, di fianco all'arredo, e non dentro il generatore.
+#
+#  nome, cardine (x, z), direzione dell'anta chiusa, dove va la PUNTA aprendo,
+#  larghezza, altezza, quota della base, spessore, tipo, apertura in gradi
+#
+# L'APERTURA E' MISURATA, non scelta: la stampa `tools/prova_ante.gd`, che prova la
+# sagoma di ogni anta grado per grado contro tutto il resto della stanza. Novanta
+# dove ci stanno; meno dove qualcosa e' nel giro, e allora il numero dice CHE COSA -
+# perche' un'anta che si ferma a meta' senza motivo scritto, fra un anno, sembra un
+# difetto.
+ANTE_MOBILI = [
+    # il pensile sopra il lavabo: cardine nell'angolo, si apre verso la stanza.
+    # LA X E' 5,012 E NON 5,00 per la stessa ragione per cui la Z e' arretrata: sul
+    # muro ovest c'e' il rivestimento, spesso dodici millimetri, e a 5,00 il fianco
+    # del mobile resta DENTRO le piastrelle. Il difetto si vedeva da meta' stanza -
+    # la fuga passava attraverso il legno - ed era stato corretto solo sulla schiena.
+    ("pensile bagno", (5.012, 6.911), (1.0, 0.0), (0.0, 1.0),
+     0.588, 0.600, 1.450, 0.018, "specchio", 90.0),
+    # l'armadio di lamiera, due ante che si aprono a libro dal centro
+    ("armadio bagno 1", (7.659, 8.512), (0.0, 1.0), (-1.0, 0.0),
+     0.433, 1.700, 0.125, 0.018, "lamiera", 90.0),
+    ("armadio bagno 2", (7.659, 9.388), (0.0, -1.0), (-1.0, 0.0),
+     0.433, 1.700, 0.125, 0.018, "lamiera", 90.0),
+]
+
+
+def ante_mobili():
+    """Le ante degli arredi, nella stessa forma di `ante_porte()`.
+
+    Torna gli stessi campi - perno, direzione, normale, misure - perche' il
+    generatore ne fa una cosa sola: il verso di rotazione lo ricava da direzione e
+    normale con la stessa formula, e sbagliarla in un posto solo la sbaglia per
+    tutti, che e' esattamente quello che si vuole.
+    """
+    ante = []
+    for (nome, (px, pz), (dx, dz), (ax, az), L, HA, quota, T, tipo, apre) in ANTE_MOBILI:
+        ante.append({
+            "nome": nome, "perno": (px, quota, pz),
+            "direzione": (dx, 0.0, dz), "normale": (ax, 0.0, az),
+            "larghezza": L, "altezza": HA, "spessore": T,
+            "quota": quota, "tipo": tipo, "apertura": apre,
+        })
+    return ante
+
+
+def pezzi_anta_mobile(a):
+    """Di che cosa e' fatta un'anta di mobile, nelle stesse coordinate locali.
+
+    `alto` si misura dalla BASE DELL'ANTA, non dal pavimento: il nodo in gioco sta
+    gia' alla quota giusta, e ripetere l'offset qui vorrebbe dire sommarlo due volte.
+    """
+    L, HA, T = a["larghezza"], a["altezza"], a["spessore"]
+    pezzi = [(L / 2, HA / 2, 0.0, L, HA, T, "Anta")]
+    if a["tipo"] == "specchio":
+        # LO SPECCHIO STA SULLA FACCIA CHE SI VEDE DA CHIUSA, cioe' quella verso cui
+        # l'anta si apre: `lato` positivo. Sulla faccia sbagliata sarebbe uno
+        # specchio rivolto dentro il mobile - visibile solo ad anta spalancata, che
+        # e' il solo momento in cui a nessuno serve.
+        pezzi.append((L / 2, HA / 2, T / 2 + 0.003, L - 0.10, HA - 0.10, 0.006, "Vetro"))
+        # la cornice sporge attorno allo specchio: senza, sembra dipinto sull'anta
+        for (lu, al, sx, sy) in ((L / 2, 0.025, L, 0.050), (L / 2, HA - 0.025, L, 0.050),
+                                 (0.025, HA / 2, 0.050, HA), (L - 0.025, HA / 2, 0.050, HA)):
+            pezzi.append((lu, al, T / 2 + 0.005, sx, sy, 0.010, "Anta"))
+        # il pomello, vicino al bordo libero
+        pezzi.append((L - 0.075, HA / 2, T / 2 + 0.022, 0.030, 0.030, 0.038, "Maniglia"))
+        return pezzi
+    # lamiera: le feritoie in alto, la maniglia a bastone e la serratura
+    for k in range(3):
+        y = HA - 0.135 - k * 0.05
+        pezzi.append((L / 2, y, T / 2 + 0.005, L - 0.14, 0.018, 0.010, "Feritoia"))
+        pezzi.append((L / 2, y + 0.009, T / 2 + 0.009, L - 0.126, 0.034, 0.006, "Anta"))
+    # LA MANIGLIA STA SUL BORDO LIBERO, che per queste due ante e' quello verso il
+    # centro dell'armadio: si aprono a libro, e le maniglie affiancate in mezzo sono
+    # la firma di un armadio da spogliatoio.
+    pezzi.append((L - 0.045, 0.865, T / 2 + 0.030, 0.022, 0.330, 0.022, "Maniglia"))
+    for al in (0.700, 1.030):
+        pezzi.append((L - 0.045, al, T / 2 + 0.016, 0.018, 0.018, 0.032, "Maniglia"))
+    pezzi.append((L - 0.115, 0.995, T / 2 + 0.006, 0.026, 0.026, 0.012, "Maniglia"))
+    return pezzi
+
+
 # --- arredi della sala di controllo -----------------------------------------
 # L'IMPRONTA STA QUI, IL DETTAGLIO NO. Ogni voce e' il volume che il giocatore
 # non attraversa: (nome, x0, z0, x1, z1, altezza) in metri reali di gioco.

@@ -2545,3 +2545,84 @@ bagno chiuso non c'è niente da riflettere e un metallo liscio riflette il nero.
 
 Il bagno usa adesso `Cromo`: metallicità zero, rugosità 0,14, il mestiere lo fa lo
 speculare. Legge come cromo lucido senza dipendere dall'ambiente.
+
+## D-130 — Il termosifone si scarica, non si modella
+
+Il radiatore fatto a mano aveva la forma giusta — ghisa a colonne, cappelli, nippli,
+valvola e detentore, centoventi cilindri in tutto — ed è stato sostituito lo stesso da
+*Old Radiator* di thethieme (CC-BY, Sketchfab). **La forma si fa a mano, i sessant'anni
+no.** La ruggine attorno alla valvola e lo smalto scrostato sono texture, e una texture
+di quel tipo non la si disegna: la si fotografa. Il segnaposto resta in
+`termosifone_segnaposto()` e regge se il modello non c'è.
+
+**Il verso non l'ha deciso `verso_sanitari.py`.** Quel banco sceglie l'angolo che appoggia
+più vertici al muro, e sul radiatore vinceva 90° con il 51% — solo che a 90° il modello
+veniva schiacciato a **2 cm** di larghezza per stare nei 20 di fondo dell'impronta. È la
+stessa trappola del water: `posa_modello` rimpicciolisce finché il pezzo ci sta, e da
+rimpicciolito tocca il muro dappertutto. Il numero che smaschera il caso è l'ingombro
+(*largo 0,02, alto 0,13*), non la percentuale. Restavano 0 e 180, che per un radiatore
+sono lo stesso pezzo specchiato, e lì ha deciso il render.
+
+`metallicFactor` non è dichiarato nel suo glTF: il valore predefinito è **1,0**, cioè
+metallo pieno. Settima volta in questo progetto. Azzerato.
+
+## D-131 — Le ante dei mobili sono `Door`, non un tipo nuovo
+
+Pensile e armadio del bagno si aprono. Il meccanismo **non è nuovo**: sono nodi `Door`,
+gli stessi delle sette porte dell'edificio.
+
+Un'anta di armadietto ha esattamente i bisogni di un'anta di porta — gira su un cardine,
+si guarda e si preme `E`, non deve passare dentro chi l'ha aperta — e `door.gd` li
+risolve già tutti, compreso il pezzo difficile: scostare chi ha davanti *un po' per
+fotogramma* invece di sparargli mezzo metro in uno. Un `CabinetDoor` scritto a parte
+avrebbe rifatto quel pezzo peggio, e — cosa che conta di più — **il banco delle porte non
+lo avrebbe nemmeno visto**. Così invece `prova_porte.gd` misura dieci ante senza sapere
+che tre sono mobili.
+
+L'unica differenza vera è la **quota**: una porta parte dal pavimento, un pensile appeso a
+1,45. Sta nell'origine del nodo, non nelle mesh.
+
+**Conseguenze sul modello.** Un pezzo che ruota non può stare dentro il `.glb`, che è una
+mesh sola: le ante escono dal modellatore ed entrano in `ANTE_MOBILI` di `geometria.py`,
+di fianco ai dati delle porte. E tolta l'anta, **il mobile va svuotato** — finché l'anta
+era incollata davanti il pensile poteva essere un blocco pieno e non se ne accorgeva
+nessuno; aprendolo si vedrebbe il pieno. Adesso ha fianchi, schiena, cielo, fondo e un
+ripiano; l'armadio è passato da uno a tre ripiani.
+
+Il piano su cui batte l'anta lo legge `filo_anta()` dalla stessa tabella che genera il
+nodo in gioco, invece di riscriverlo: cassa e anta le disegnano due programmi diversi, e
+un numero scritto due volte prima o poi diventa due numeri.
+
+**E il fianco del pensile era ancora dentro le piastrelle.** Il difetto era stato
+corretto solo sulla schiena; sul muro ovest il mobile partiva da 5,00 mentre il
+rivestimento arriva a 5,012. La metà corretta nascondeva la metà rotta — la quarta volta
+in questo progetto.
+
+## D-132 — Il banco che accusava le ante del proprio errore
+
+Aggiunte le tre ante, `prova_porte.gd` ha dichiarato due guasti: *«scosta a 3,5 m/s, che
+non è un passo indietro»*. **Non era vero, ed è il tipo di bugia peggiore** — manda a
+cercare un difetto dove non c'è.
+
+Due errori distinti, tutti e due del banco:
+
+1. **Ostacolo che non è un ostacolo.** `_quanto_girano()` provava la sagoma dell'anta
+   grado per grado e la trovava già in compenetrazione a zero gradi, dichiarando tutte e
+   tre le ante bloccate in partenza. Ovvio a dirlo: un'anta di armadietto **sta dentro
+   l'impronta del suo armadio**, da chiusa è il fronte del mobile. Adesso quello che
+   l'anta tocca da chiusa viene escluso dal giro. Che la correzione sia giusta lo dice il
+   fatto che i numeri delle sette porte **non sono cambiati di un grado**: nessuna tocca
+   il proprio telaio.
+2. **La persona nasceva dentro il termosifone.** Il corpo di prova veniva posato a 45 cm
+   dal cardine e 42 dal battente — misure buone per una porta larga 90 in un vano libero,
+   sbagliate per un'anta larga 43 in un angolo. Al primo `move_and_collide` la fisica lo
+   espelle, e l'espulsione è istantanea per definizione: il banco misurava la spinta del
+   *motore* e la scriveva a carico della porta. Adesso prova più punti dentro il settore
+   e tiene il primo **vuoto**; se non ne trova nessuno lo dice e salta la prova, invece di
+   inventare un guasto.
+
+**Validato iniettando il difetto**, e il primo tentativo di iniezione è servito a
+capire qualcosa. Togliendo il tetto sulla spinta (`SPINTA_MASSIMA`) il banco continuava a
+passare: perché il freno che conta davvero è l'altro, quello che **rallenta l'anta**
+quando sta scostando qualcuno. Tolto quello, 176 guasti, le nuove ante comprese
+(*«Anta_pensile_bagno: scosta a 2,0 m/s»*). Rimesso, zero.

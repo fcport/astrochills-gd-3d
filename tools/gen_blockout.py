@@ -6,6 +6,7 @@ import re as _re
 from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP, H_DOME_BASE, DOME_R, DOME_H,
                        blocchi_edificio, DISL_RAMPA, ante_porte, verifica_ante, verifica_trappole,
                        pezzi_anta, arredi, verifica_arredi,
+                       ante_mobili, pezzi_anta_mobile,
                        scalati, verifica_aperture, verifica_copertura,
                        punti_luce, punti_interruttori, verifica_interruttori,
                        verifica_applique, verifica_passerella,
@@ -97,10 +98,21 @@ def tscn():
              '[ext_resource type="PackedScene" path="res://assets/models/applique_bianca.glb" id="15_esterna"]',
              '[ext_resource type="Texture2D" path="res://assets/textures/metallo/color.jpg" id="16_met_c"]',
              '[ext_resource type="Texture2D" path="res://assets/textures/metallo/normal.jpg" id="17_met_n"]',
-             '[ext_resource type="Texture2D" path="res://assets/textures/metallo/roughness.jpg" id="18_met_r"]', '']
+             '[ext_resource type="Texture2D" path="res://assets/textures/metallo/roughness.jpg" id="18_met_r"]',
+             # il noce del pensile del bagno: stessa storia delle ante di legno, ma
+             # l'anta di un mobile ha la venatura piu' fitta di quella di una porta
+             '[ext_resource type="Texture2D" path="res://assets/textures/legno-teche/color.jpg" id="20_teche_c"]',
+             '[ext_resource type="Texture2D" path="res://assets/textures/legno-teche/normal.jpg" id="21_teche_n"]',
+             '[ext_resource type="Texture2D" path="res://assets/textures/legno-teche/roughness.jpg" id="22_teche_r"]', '']
     dims = sorted(set((round(b[3], 3), round(b[4], 3), round(b[5], 3)) for b in blocchi)
                   | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
                      for a in ante_porte() for p in pezzi_anta(a)}
+                  # e quelle dei mobili: se non entrano qui il .tscn cita BoxMesh
+                  # che non esistono, e Godot apre la scena senza le ante
+                  | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
+                     for a in ante_mobili() for p in pezzi_anta_mobile(a)}
+                  | {(round(a["larghezza"], 3), round(a["altezza"], 3),
+                      round(a["spessore"], 3)) for a in ante_mobili()}
                   # il corpo delle placche: due misure sole, secondo come e' girato
                   # il muro, ma se non entrano qui il .tscn cita forme che non esistono
                   | {(round(L_PLACCA, 3), round(A_PLACCA, 3), 0.05),
@@ -125,6 +137,17 @@ def tscn():
                       # in lineare per illuminare, il Base Color di Blender e' gia'
                       # lineare: lo stesso numero vale 0,21 di qua e 0,50 di la',
                       # cioe' due volte e mezzo. 0,73 in sRGB e' 0,50 in lineare.
+                      # I MOBILI DEL BAGNO. I loro colori sono gli stessi che il
+                      # modellatore usa in Blender, CONVERTITI: `albedo_color` di
+                      # Godot e' in sRGB, il Base Color di Blender e' lineare, e lo
+                      # stesso numero scritto nei due posti da' due grigi diversi. E'
+                      # la quarta volta che questo fattore 2,4 morde in questo
+                      # progetto, e qui morderebbe peggio che altrove - un'anta e la
+                      # cassa a cui e' attaccata devono essere lo STESSO legno.
+                      ("mat_teche", "0.638, 0.570, 0.511"),
+                      ("mat_armadietto", "0.808, 0.825, 0.803"),
+                      ("mat_specchio", "0.862, 0.877, 0.892"),
+                      ("mat_feritoia", "0.264, 0.284, 0.293"),
                       ("mat_metallo", "0.73, 0.75, 0.73")]:
         righe += ['[sub_resource type="StandardMaterial3D" id="%s"]' % nome,
                   'albedo_color = Color(%s, 1)' % col]
@@ -159,6 +182,30 @@ def tscn():
                       'roughness_texture = ExtResource("9_anta_r")',
                       'uv1_triplanar = true',
                       'uv1_scale = Vector3(0.8, 0.8, 0.8)']
+        if nome == "mat_teche":
+            righe += ['albedo_texture = ExtResource("20_teche_c")',
+                      'normal_enabled = true',
+                      'normal_texture = ExtResource("21_teche_n")',
+                      'roughness_texture = ExtResource("22_teche_r")',
+                      'uv1_triplanar = true',
+                      # piu' fitta di quella delle porte: un'anta di pensile e' larga
+                      # sessanta centimetri, e con la scala della porta ci starebbe
+                      # dentro mezza venatura
+                      'uv1_scale = Vector3(2.2, 2.2, 2.2)']
+        if nome == "mat_armadietto":
+            righe += ['albedo_texture = ExtResource("16_met_c")',
+                      'normal_enabled = true',
+                      'normal_texture = ExtResource("17_met_n")',
+                      'roughness_texture = ExtResource("18_met_r")',
+                      'metallic = 0.0', 'metallic_specular = 0.30', 'roughness = 0.48',
+                      'uv1_triplanar = true',
+                      'uv1_scale = Vector3(2.0, 2.0, 2.0)']
+        if nome == "mat_specchio":
+            # LUCIDO MA NON METALLICO. La quinta volta: una superficie metallica in
+            # una stanza chiusa restituisce il nero dell'ambiente, e uno specchio
+            # nero non si legge come uno specchio, si legge come un buco. Lucido e
+            # basta - riflette le luci e non pretende di riflettere la stanza.
+            righe += ['metallic = 0.0', 'metallic_specular = 0.85', 'roughness = 0.06']
         righe.append('')
     # IL PANNELLO CHE SI ACCENDE, e sta qui in mezzo alle altre sub_resource
     # perche' in un .tscn TUTTE le sub_resource vanno prima del primo [node]:
@@ -663,6 +710,57 @@ def tscn():
                       'mesh = SubResource("m_%d")' % idx[chiave],
                       'material_override = SubResource("%s")'
                       % materia.get(etichetta, "mat_tele"), '']
+        righe += ['[node name="Col" type="CollisionShape3D" parent="%s"]' % nome,
+                  'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, 0)' % (L / 2, HA / 2),
+                  'shape = SubResource("s_%d")' % idx[(round(L, 3), round(HA, 3), round(T, 3))], '']
+
+    # --- le ante dei mobili: stesso nodo `Door`, quota diversa ---------------
+    #
+    # NON UN SECONDO TIPO DI ANTA. Girano su un cardine, si aprono guardandole, non
+    # passano dentro chi le apre: sono i bisogni di una porta, e `door.gd` li
+    # risolve gia' tutti - compreso il pezzo difficile, scostare chi ha davanti un
+    # po' per fotogramma invece di sparargli mezzo metro in uno. Un `CabinetDoor`
+    # scritto a parte avrebbe rifatto quel pezzo peggio, e il banco delle porte non
+    # lo avrebbe nemmeno visto.
+    #
+    # L'UNICA DIFFERENZA VERA E' LA QUOTA: un pensile appeso comincia a un metro e
+    # quarantacinque, e quella entra nell'origine del nodo invece che nelle mesh -
+    # cosi' le coordinate dei pezzi restano quelle dell'anta e non della stanza.
+    materia_anta = {
+        "specchio": {"Anta": "mat_teche", "Vetro": "mat_specchio",
+                     "Maniglia": "mat_metallo"},
+        "lamiera": {"Anta": "mat_armadietto", "Feritoia": "mat_feritoia",
+                    "Maniglia": "mat_metallo"},
+    }
+    for a in ante_mobili():
+        dx, _, dz = a["direzione"]
+        nx, _, nz = a["normale"]
+        px, py, pz = a["perno"]
+        L, HA, T = a["larghezza"], a["altezza"], a["spessore"]
+        rot = _m.atan2(dz, dx)
+        verso = 1 if (dz * nx - dx * nz) > 0 else -1
+        nome = "Anta_" + a["nome"].replace(" ", "_")
+        c, s_ = _m.cos(rot), _m.sin(rot)
+        righe += ['[node name="%s" type="StaticBody3D" parent="."]' % nome,
+                  'transform = Transform3D(%.4f, 0, %.4f, 0, 1, 0, %.4f, 0, %.4f, %.3f, %.3f, %.3f)'
+                  % (c, -s_, s_, c, px, py, pz),
+                  'script = ExtResource("3_door")',
+                  'apertura_gradi = %.1f' % a["apertura"],
+                  'verso = %d' % verso,
+                  # PIU' LENTA DI UNA PORTA, ed e' il gesto: una porta la si spinge e
+                  # va, un'anta di mobile la si accompagna con la mano fino in fondo.
+                  'durata = 0.40',
+                  'prompt_text = "Apri"', '']
+        quali = materia_anta[a["tipo"]]
+        for k, (lungo, alto, lato, sx, sy, sz, etichetta) in enumerate(pezzi_anta_mobile(a)):
+            chiave = (round(sx, 3), round(sy, 3), round(sz, 3))
+            suffisso = "Mesh" if k == 0 else "%s%d" % (etichetta, k)
+            righe += ['[node name="%s" type="MeshInstance3D" parent="%s"]' % (suffisso, nome),
+                      'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
+                      % (lungo, alto, -lato * verso),
+                      'mesh = SubResource("m_%d")' % idx[chiave],
+                      'material_override = SubResource("%s")'
+                      % quali.get(etichetta, "mat_metallo"), '']
         righe += ['[node name="Col" type="CollisionShape3D" parent="%s"]' % nome,
                   'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, 0)' % (L / 2, HA / 2),
                   'shape = SubResource("s_%d")' % idx[(round(L, 3), round(HA, 3), round(T, 3))], '']

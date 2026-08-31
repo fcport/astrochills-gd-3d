@@ -52,6 +52,11 @@ var _era := Vector3.ZERO
 ## Quanto il corpo si e' mosso in tutta la corsa. Serve al terzo controllo.
 var _mosso := 0.0
 
+## Se l'allestimento di questa prova regge. Falso quando non si e' trovato un posto
+## libero per la persona: le misure che ne escono non dicono niente sulla porta, e
+## sommarle ai guasti manderebbe a cercare un difetto che non c'e'.
+var _valido := true
+
 
 func _init() -> void:
 	var scena: Node3D = load("res://world/blockout.tscn").instantiate()
@@ -127,13 +132,44 @@ func _physics_process(delta: float) -> bool:
 ## `lungo` e' la distanza dal cardine misurata sull'anta, `scarto` quella dal piano
 ## della porta: positivo dalla parte verso cui si apre.
 func _apparecchia(porta: Door, dove: int) -> void:
-	var lungo := 0.45
-	var scarto := 0.42 if dove > 0 else -0.65
 	_chiusa = Transform3D(Basis(Vector3.UP, porta.get("_chiusa_y")), porta.global_position)
-	# in coordinate dell'anta chiusa +X e' il battente; la punta gira verso -Z per
-	# `verso` positivo, quindi lo scarto va contro il verso
-	var punto: Vector3 = _chiusa * Vector3(lungo, 0.0, -scarto * signf(porta.verso))
-	_prima = Vector3(punto.x, ALTEZZA, punto.z)
+	var col0 := porta.get_node(^"Col") as CollisionShape3D
+	var lunga := (col0.shape as BoxShape3D).size.x
+	_valido = true
+	var punto := Vector3.ZERO
+	if dove > 0:
+		# NEL SETTORE, MA DOVE UNA PERSONA CI STA. Un punto fisso a quarantacinque
+		# centimetri dal cardine e quarantadue dal battente va bene per una porta
+		# larga novanta in mezzo a un vano libero, e va male per un'anta larga
+		# quarantatre in un angolo: davanti alle due ante dell'armadio quel punto
+		# cade dentro il termosifone. Si provano piu' posti e si tiene il primo
+		# VUOTO, restando sempre dentro il settore che l'anta spazza - fuori di li'
+		# la prova non proverebbe piu' niente.
+		var trovato := false
+		for l in [0.45, 0.32, 0.60, 0.22, 0.72]:
+			for sc in [0.42, 0.52, 0.34, 0.62]:
+				if Vector2(l, sc).length() > lunga + Door.MARGINE - 0.03:
+					continue
+				punto = _chiusa * Vector3(l, 0.0, -sc * signf(porta.verso))
+				punto = Vector3(punto.x, ALTEZZA, punto.z)
+				if _libera(porta, punto):
+					trovato = true
+					break
+			if trovato:
+				break
+		if not trovato:
+			_guasti.append("BANCO: davanti a %s non c'e' posto per una persona in "
+				% porta.name + "nessuno dei punti provati: la prova non vale")
+			_valido = false
+			punto = _chiusa * Vector3(0.45, 0.0, -0.42 * signf(porta.verso))
+			punto = Vector3(punto.x, ALTEZZA, punto.z)
+	else:
+		# dall'altra parte il punto e' fisso e sta spesso DENTRO un muro - dietro una
+		# porta c'e' quasi sempre il muro del vano - ed e' voluto: li' si chiede solo
+		# che la porta non lo tocchi, e un corpo fermo dentro un muro resta fermo.
+		punto = _chiusa * Vector3(0.45, 0.0, 0.65 * signf(porta.verso))
+		punto = Vector3(punto.x, ALTEZZA, punto.z)
+	_prima = punto
 	_posa(_corpo, _prima)
 	var col := porta.get_node(^"Col") as CollisionShape3D
 	_portata = (col.shape as BoxShape3D).size.x + Door.MARGINE
@@ -143,8 +179,39 @@ func _apparecchia(porta: Door, dove: int) -> void:
 	_restano = CORSA
 
 
+## Il posto dove il banco ha appena messo la persona deve essere VUOTO.
+##
+## E' un controllo sul banco, non sulla porta, e nasce da due guasti che sembravano
+## difetti delle ante dell'armadio: «scosta a 3,5 m/s». Non era l'anta. Il corpo
+## veniva posato a quarantadue centimetri dal battente e a quarantacinque dal
+## cardine - misure buone per una porta larga novanta, non per un'anta larga
+## quarantatre in un angolo - e finiva mezzo dentro il termosifone. Al primo
+## `move_and_collide` la fisica lo espelle, e l'espulsione e' istantanea per
+## definizione: il banco misurava la spinta della porta e leggeva quella del
+## motore.
+##
+## Un banco che accusa il codice del proprio errore di allestimento e' peggio di
+## nessun banco, perche' manda a cercare un guasto che non c'e'. Se non c'e' posto
+## per una persona, si dice - e quella prova si salta.
+func _libera(porta: Door, punto: Vector3) -> bool:
+	var spazio := _scena.get_world_3d().direct_space_state
+	var par := PhysicsShapeQueryParameters3D.new()
+	var capsula := CapsuleShape3D.new()
+	# stretta di un centimetro: SFIORARE un muro non e' esserci dentro, e a filo
+	# di parete la capsula tocca sempre
+	capsula.radius = 0.29
+	capsula.height = 1.70
+	par.shape = capsula
+	par.transform = Transform3D(Basis(), punto)
+	par.exclude = [porta.get_rid(), _corpo.get_rid()]
+	return spazio.intersect_shape(par, 1).is_empty()
+
+
 ## Un fotogramma di sorveglianza: nessuna compenetrazione, nessuno strappo.
 func _sorveglia(porta: Door, delta: float, nel_giro: bool) -> void:
+	if not _valido:
+		_era = _corpo.global_position
+		return
 	var loc := _chiusa.affine_inverse() * _corpo.global_position
 	var raggio := Vector2(loc.x, loc.z).length()
 	var angolo := rad_to_deg(atan2(-loc.z * signf(porta.verso), loc.x))
@@ -172,8 +239,10 @@ func _bilancio(porta: Door) -> void:
 	var raggio := Vector2(loc.x, loc.z).length()
 	var angolo := rad_to_deg(atan2(-loc.z * signf(porta.verso), loc.x))
 	var anta := rad_to_deg(porta.rotation.y - porta.get("_chiusa_y")) * signf(porta.verso)
-	print("  %-26s si apre a %2.0f gradi, il corpo scostato di %.2f m"
-		% [porta.name, anta, _mosso])
+	print("  %-26s si apre a %2.0f gradi, il corpo scostato di %.2f m%s"
+		% [porta.name, anta, _mosso, "" if _valido else "   (allestimento non valido)"])
+	if not _valido:
+		return
 
 	# LA PORTA SI DEVE ANCHE APRIRE. Fermarsi a filo di chi ha aperto e' la cura
 	# giusta quando dietro c'e' un muro, ed e' anche il modo perfetto di nascondere
@@ -243,6 +312,20 @@ func _quanto_girano() -> void:
 		par.shape = prova
 		par.exclude = [porta.get_rid(), _corpo.get_rid()]
 		var y0: float = porta.get("_chiusa_y")
+
+		# QUELLO CHE L'ANTA TOCCA GIA' DA CHIUSA NON E' UN OSTACOLO: E' IL MOBILE.
+		# Un'anta di armadietto sta DENTRO l'impronta del suo armadio - da chiusa e'
+		# il fronte del mobile - e senza questo passo il banco la trovava in
+		# compenetrazione al grado zero e dichiarava tutte e tre le ante bloccate
+		# prima ancora di partire. Vale anche per le porte, dove non cambia niente
+		# perche' nessuna tocca il proprio telaio: si vede dal fatto che i loro
+		# numeri restano quelli di prima.
+		par.transform = Transform3D(Basis(Vector3.UP, y0), porta.global_position) * col.transform
+		var suo := par.exclude
+		for tocco in spazio.intersect_shape(par, 16):
+			suo.append(tocco["rid"])
+		par.exclude = suo
+
 		var g := 0.0
 		var libera := 130.0
 		while g <= 130.0:

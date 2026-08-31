@@ -59,6 +59,19 @@ Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuz
 > by Joele segreto (https://sketchfab.com/joelesegreto) licensed under CC-BY-4.0
 > (http://creativecommons.org/licenses/by/4.0/)
 
+**Old Radiator** — il termosifone del bagno. Radiatore di ghisa a colonne con
+valvola termostatica. Quello fatto a mano prima aveva la forma giusta ma non poteva
+avere i sessant'anni: la ruggine attorno alla valvola e lo smalto scrostato sono
+texture, non geometria.
+Autore: [thethieme](https://sketchfab.com/thethieme).
+Fonte: <https://sketchfab.com/3d-models/old-radiator-8a1a2e0263aa401591c1e87d824a79ef>
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> This work is based on "Old Radiator"
+> (https://sketchfab.com/3d-models/old-radiator-8a1a2e0263aa401591c1e87d824a79ef)
+> by thethieme (https://sketchfab.com/thethieme) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
 ## Tutto il resto
 
 Gli altri modelli e tutte le texture sono **CC0**: nessuna attribuzione richiesta.

@@ -36,6 +36,7 @@ DA_PROVARE = [
     ("Wc", "wc_bagno", "est"),
     ("Bidet", "bidet_bagno", "est"),
     ("Lavabo", "lavabo_bagno", "ovest"),
+    ("Termo", "termosifone_bagno", "sud"),
 ]
 
 # di quanto si considera "a filo" del lato

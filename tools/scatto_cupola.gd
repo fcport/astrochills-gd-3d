@@ -57,6 +57,14 @@ func _accendi_tutto(n: Node) -> void:
 		_accendi_tutto(f)
 
 
+func _apri(n: Node, quali: String) -> void:
+	var d := n as Door
+	if d != null and quali in String(d.name):
+		d.set_open(true, true)
+	for f in n.get_children():
+		_apri(f, quali)
+
+
 func _numeri(chiave: String, difetto: Vector3) -> Vector3:
 	var s := OS.get_environment(chiave)
 	if s.is_empty():
@@ -86,6 +94,16 @@ func _process(_d: float) -> bool:
 				var a := get_root().get_node_or_null("Blockout/" + n + "/Accesa") as Node3D
 				if a != null:
 					a.visible = true
+	# SCATTO_APRI=pensile apre ogni porta il cui nome contiene quel pezzo di testo.
+	# Un'anta si giudica APERTA: chiusa, un pensile con l'anta incollata e un pensile
+	# con l'anta che gira sono lo stesso rettangolo, e l'unica cosa che si vede e' se
+	# la fuga cade dove deve. Aperta si vede se dentro c'e' qualcosa, se il legno
+	# della cassa e quello dell'anta sono lo stesso legno, e se la venatura gira con
+	# l'anta invece di restare incollata alla stanza.
+	if _conto == ASPETTA - 3:
+		var quali := OS.get_environment("SCATTO_APRI")
+		if not quali.is_empty():
+			_apri(get_root(), quali)
 	if _conto < ASPETTA:
 		return false
 	for n in ["Luce_cupola1", "Luce_cupola2", "Luce_cupola3", "Luce_corridoio", "Luce_pc"]:

@@ -140,6 +140,20 @@ A_MANO = {
         " cassetta appoggiata e' quella del 1999: incassata a muro e' di adesso,"
         " alta con la catena e' di cinquant'anni prima. E lo sporco e' voluto - non"
         " un rudere, un sanitario vecchio."),
+    "termosifone_bagno": (
+        ("termosifone_bagno.zip", "old_radiator.zip"),
+        "https://sketchfab.com/3d-models/old-radiator-8a1a2e0263aa401591c1e87d824a79ef",
+        "thethieme", "CC-BY-4.0",
+        'This work is based on "Old Radiator" '
+        "(https://sketchfab.com/3d-models/old-radiator-8a1a2e0263aa401591c1e87d824a79ef) "
+        "by thethieme (https://sketchfab.com/thethieme) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "Radiatore di ghisa a colonne con valvole, texturizzato. Il nostro era fatto"
+        " a mano con centoventi cilindri, e da vicino si vedeva che i cilindri erano"
+        " cilindri: le colonne di un radiatore vero non sono tubi lisci, hanno la"
+        " sezione a otto, il cappello fuso e la ruggine dove gocciola la valvola. La"
+        " ghisa e' la sola cosa in questo bagno che DEVE essere segnata - un"
+        " radiatore lucido in un edificio del 1962 sarebbe l'unica cosa nuova."),
 }
 
 # Le texture arrivano a 4096: dentro il .glb della stanza sarebbero ventidue megabyte
@@ -151,7 +165,18 @@ LATO_RIDOTTO = 1024
 def prendi_a_mano(cartella):
     zip_atteso, pagina, autore, licenza, credito, perche = A_MANO[cartella]
     fuori = os.path.join(DEST, cartella)
-    archivio = os.path.join(DEST, "_da_scaricare", zip_atteso)
+    # PIU' DI UN NOME AMMESSO, e non e' pigrizia. Sketchfab consegna lo zip col nome
+    # che l'autore ha dato al modello - `old_radiator.zip` - mentre qui la cartella si
+    # chiama come la usiamo noi. Pretendere il nostro nome vuol dire chiedere a chi
+    # scarica di rinominare a mano, e un passo a mano in piu' e' un passo che prima o
+    # poi si sbaglia. Si accetta il nome dell'autore E il nostro.
+    nomi = (zip_atteso,) if isinstance(zip_atteso, str) else tuple(zip_atteso)
+    cartella_zip = os.path.join(DEST, "_da_scaricare")
+    archivio = os.path.join(cartella_zip, nomi[0])
+    for n in nomi:
+        if os.path.exists(os.path.join(cartella_zip, n)):
+            archivio = os.path.join(cartella_zip, n)
+            break
     if not os.path.exists(os.path.join(fuori, "scene.gltf")):
         if not os.path.exists(archivio):
             print("MANCA %s." % cartella)

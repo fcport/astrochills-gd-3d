@@ -30,8 +30,8 @@ import importlib   # noqa: E402
 for _m in ("geometria", "modellare"):
     if _m in sys.modules:
         importlib.reload(sys.modules[_m])
-from geometria import (ARREDI_PC, CASSA_MONITOR, VETRO_MONITOR,   # noqa: E402
-                       verifica_arredi, V_SILL)
+from geometria import (ARREDI_PC, BOMBATURA_MONITOR, CASSA_MONITOR,   # noqa: E402
+                       VETRO_MONITOR, verifica_arredi, V_SILL)
 from modellare import (barra, bm_di, cilindro, cilindro_orizz, esporta,   # noqa: E402
                        finisci, lampada, materiale, posa_modello, prepara_render,
                        prisma, pulisci, scatola, scatola_inclinata, verifica_impronte)
@@ -128,16 +128,10 @@ def postazione(zc):
     # la cassa. Il monitor sta a 5,7 cm dal muro, che e' dove sta un monitor.
     posati = posa_modello(MONITOR, (x0 + 0.00, zc - 0.24, x0 + 0.50, zc + 0.24, 0.42),
                           gradi=0.0, appoggio=y_piano)
-    # IL VETRO SI SPEGNE, e non e' un passo indietro: e' il passo per cui il tubo
-    # era stato preso. Fino a ieri lo schermo era `Acceso` - fosforo verde emissivo,
-    # un adesivo luminoso - perche' non c'era altro modo di far leggere il monitor
-    # come acceso. Adesso il display vero c'e': il generatore del blockout monta un
-    # quad davanti a questo vetro e ci proietta il `SubViewport` del CRT.
-    #
-    # Quello che resta sotto e' la MASCHERA: il bordo nero che su un tubo vero sta
-    # attorno all'immagine, e che si vede perche' il vetro e' quasi quadrato e
-    # l'immagine e' 4:3. Lasciarlo emissivo darebbe una cornice verde luminosa
-    # attorno allo schermo, cioe' il difetto al posto del pezzo.
+    # IL VETRO DEL MODELLO NON ARRIVA IN PARTITA: lo toglie `sfila_il_vetro()` dopo
+    # che il controllo l'ha misurato. Fino ad allora serve, ed e' l'unica cosa che
+    # sa dove sta la faccia del cinescopio. Qui gli si mette solo un materiale
+    # perche' i render di controllo non lo mostrino verde fosforo.
     for o in posati:
         if o.type != "MESH":
             continue
@@ -165,6 +159,34 @@ def postazione(zc):
                  gradi=0.0, appoggio=y_piano, tieni=TASTIERA)
     cilindro("Gomma", x0 + 0.06, zc + 0.17, 0.10, y_piano - 0.05, 0.008, 8)
     return posati
+
+
+def sfila_il_vetro(posati):
+    """Toglie dal modello la faccia del cinescopio: in partita la disegna il gioco.
+
+    DUE VETRI NON POSSONO COINCIDERE, ed e' la seconda volta in due giorni che
+    questo progetto lo impara. Il quad del CRT sta un millimetro davanti a questo
+    vetro e si bomba della sua stessa calotta - ma lo shader la fa con una parabola
+    e il modello con un'altra curva, e le due si intersecano a meta' raggio: in
+    partita si vedeva il vetro del modello spuntare davanti allo schermo, una
+    fascia grigia a botte con tanto di riflesso speculare.
+
+    Si puo' inseguire il profilo dell'altro per sempre, o togliere l'altro. La
+    faccia del tubo, in partita, e' il quad: e' lui che si accende, che mostra
+    qualcosa e che si spegne. Questa mesh serve solo a DIRE DOV'E', e quello lo ha
+    gia' detto - `verifica_postazione()` la misura prima che sparisca, e i numeri
+    finiscono in geometria.py.
+
+    NEL RENDER DI BLENDER RESTA UN BUCO, ed e' giusto cosi': il modello non ha uno
+    schermo, e fingere che ce l'abbia e' esattamente l'errore da cui veniamo.
+    """
+    quanti = 0
+    for o in list(posati):
+        if o.type == "MESH" and "screen" in o.name.lower():
+            bpy.data.objects.remove(o, do_unlink=True)
+            posati.remove(o)
+            quanti += 1
+    return quanti
 
 
 def verifica_postazione(posati, tolleranza=0.005):
@@ -229,6 +251,10 @@ def verifica_postazione(posati, tolleranza=0.005):
               ["vetro fronte x", "vetro centro y", "vetro centro z",
                "vetro larghezza", "vetro altezza"])
 
+    # LA CALOTTA: quanto il vetro rientra agli angoli. E' la misura con cui il quad
+    # del CRT si bomba, e se il modello cambiasse tubo il quad resterebbe bombato
+    # come il vecchio - piatto su un tubo tondo, o tondo su uno piatto.
+    confronta([BOMBATURA_MONITOR], [vx[0] - vn[0]], ["bombatura del vetro"])
     return problemi
 
 
@@ -477,6 +503,9 @@ for o in oggetti:
 # --- controlli ---------------------------------------------------------------
 problemi = list(verifica_arredi())
 problemi += verifica_postazione(_monitor)
+# misurato: adesso puo' sparire. In partita la faccia del tubo e' il quad del CRT.
+print("\n  vetro del cinescopio: %d mesh sfilate dal modello"
+      % sfila_il_vetro(_monitor))
 
 problemi += verifica_impronte(
     oggetti + _sedia + _monitor,

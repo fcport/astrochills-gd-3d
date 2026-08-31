@@ -66,6 +66,21 @@ func _process(_d: float) -> void:
 		_conto = 0
 		return
 
+	# DA="x,y,z" A="x,y,z" salta la postazione e piazza una camera libera che guarda
+	# un punto. Serve a giudicare la FORMA del monitor invece del suo contenuto: da
+	# seduti si vede solo il vetro, e la cassa - che e' quella che puo' sembrare una
+	# scatola - la si guarda da fuori.
+	if _fase == 0 and _conto > 4 and not OS.get_environment("DA").is_empty():
+		_fase = 2
+		_conto = 0
+		var libera := Camera3D.new()
+		_scena.add_child(libera)
+		libera.global_position = _punto("DA", Vector3(6.9, 1.45, 3.0))
+		libera.look_at(_punto("A", Vector3(5.55, 0.98, 2.0)), Vector3.UP)
+		libera.fov = 40.0
+		libera.current = true
+		return
+
 	if _fase == 0 and _conto > 4:
 		_fase = 1
 		_conto = 0
@@ -118,6 +133,11 @@ func _process(_d: float) -> void:
 			piatto.albedo_color = Color(1, 0, 1)
 			piatto.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 			sm.set_surface_override_material(0, piatto)
+		# NASCONDI=1 spegne la mesh del vetro che arriva col modello. Serve a sapere
+		# CHI e' un rettangolo che si vede: se sparisce era il modello, se resta era
+		# il nostro quad. Le due cose si somigliano troppo per distinguerle a occhio.
+		if not OS.get_environment("NASCONDI").is_empty():
+			_spegni_vetro(_scena)
 		var e := OS.get_environment("LUCE")
 		if not e.is_empty():
 			var l := _scena.get_node_or_null("LuceMonitor") as OmniLight3D
@@ -160,6 +180,35 @@ func _process(_d: float) -> void:
 
 func _fine() -> void:
 	get_tree().quit()
+
+
+func _spegni_vetro(n: Node) -> void:
+	var m := n as MeshInstance3D
+	if m != null and "creen" in String(m.name) and m.name != "ScreenMesh":
+		var ab := m.get_aabb()
+		var g := m.global_transform
+		var estremi := []
+		for i in 8:
+			estremi.append(g * ab.get_endpoint(i))
+		var xs := []
+		for e in estremi:
+			xs.append(e.x)
+		xs.sort()
+		print("[postazione] %s: x da %.4f a %.4f  (scala %.4f)"
+			% [m.name, xs[0], xs[7], g.basis.get_scale().x])
+		m.visible = false
+	for f in n.get_children():
+		_spegni_vetro(f)
+
+
+func _punto(chiave: String, difetto: Vector3) -> Vector3:
+	var t := OS.get_environment(chiave)
+	if t.is_empty():
+		return difetto
+	var n := t.split(",")
+	if n.size() != 3:
+		return difetto
+	return Vector3(float(n[0]), float(n[1]), float(n[2]))
 
 
 func _v(p: Vector3) -> String:

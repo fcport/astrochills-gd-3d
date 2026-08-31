@@ -3422,3 +3422,61 @@ vetro — che è precisamente la decisione che D-011 vuole presa *insieme al rif
 del monitor e prima* delle sette fasi mancanti. Finché quella è aperta, le bande
 restano, e sono la cosa giusta: un'immagine che non riempie il tubo è un CRT, un
 carattere allungato del 18% è un difetto.
+
+## D-160 — Il vetro del tubo lo disegna il gioco, e il modello lo perde
+
+Federico: *«puoi arrotondare un po' il monitor? è veramente un quadrato incollato e
+spiaccicato»*. Aveva ragione sulla parola: **incollato**. Il quad dello schermo era una
+lastra piana davanti a un cinescopio, e una lastra piana davanti a un tubo si legge come
+un adesivo, per quanto bene la si illumini — tanto più che lo shader è `unshaded` e
+l'illuminazione non c'entra nulla. Il profilo era dritto, e in un tubo non lo è mai.
+
+**La cassa invece non era il problema, e valeva la pena scoprirlo prima di rifarla.** Il
+sospetto era che fosse un cubo — e in pianta lo è quasi: 43 di largo, 42 di alto, 38 di
+profondo, mentre un monitor da scrivania del 1999 si rastrema all'indietro. Ma guardata
+da vicino ha gli spigoli tondi, il chiaroscuro sul bordo superiore e la feritoia di
+sfiato. Ho anche messo a confronto il cinescopio del set retro — quello da cui vengono
+tastiera e mouse — con questo, uno accanto all'altro alla stessa impronta: il retro ha
+la silhouette più giusta e 224 facce contro 1402, ma la differenza non ripaga un cambio
+di asset. **Il difetto era il vetro, non la scatola.**
+
+**La calotta è misurata, non scelta:** 12,7 mm di rientro fra il centro e gli angoli.
+Lo shader la fa nel vertex, su un quad suddiviso 16 × 16 — su due triangoli soli non c'è
+niente da spostare. `dot(d, d) * 0.5` e non `clamp`: agli angoli il prodotto scalare vale
+2 e a metà di un lato 1, quindi con la metà gli angoli rientrano di tutto e i lati della
+metà. Con il clamp rientrerebbero uguale, e sarebbe una scodella a fondo piatto.
+
+**Poi il vetro del modello è tornato a farsi vedere, ed è la stessa lezione di D-159 una
+riga più in là.** Con il quad bombato, in partita spuntava davanti allo schermo una
+fascia grigia a botte, con tanto di riflesso speculare. Non era prospettiva: erano di
+nuovo due superfici che si contendono gli stessi pixel. Misurato il profilo del tubo,
+vertice per vertice:
+
+| r² | tubo | la mia parabola da 12,7 |
+|---|---|---|
+| 0,16 | 0,5 mm | 1,0 mm |
+| 0,89 | 4,4 mm | 5,8 mm |
+| 1,58 | 9,7 mm | 10,3 mm |
+| 2,00 | 12,7 mm | 13,0 mm |
+
+**Le due curve non hanno la stessa forma.** La faccia di un cinescopio è più piatta al
+centro e più ripida al bordo; una parabola scende subito. A metà raggio il quad era già
+un millimetro e mezzo più profondo del vetro, e ci sprofondava dentro — con la stessa
+profondità totale, che è la ragione per cui confrontare le due *profondità* non avrebbe
+mai trovato niente.
+
+Si può inseguire il profilo dell'altro per sempre, o togliere l'altro. **La faccia del
+tubo, in partita, è il quad**: è lui che si accende, che mostra qualcosa e che si spegne.
+La mesh del modello serviva solo a dire dov'è, e quello l'ha già detto — la misura sta in
+`geometria.py` e `verifica_postazione()` la ricontrolla a ogni passata, prima che
+`sfila_il_vetro()` la butti. Nel render di Blender resta un buco, ed è giusto così: il
+modello non ha uno schermo, e fingere che ce l'abbia è esattamente l'errore da cui
+veniamo.
+
+**Una via scartata, e il motivo per cui è stata scartata:** tenere tutti e due e abbassare
+la calotta a 10 mm perché il quad restasse davanti a ogni raggio. Funzionava, misurato —
+franco minimo 0,8 mm — e ho perfino scritto il controllo che lo verificava vertice per
+vertice, provandolo rimettendo i 13 mm (*«a r2 0.89 il franco è −0,3 mm»*). Ma era una
+tolleranza fra due cose che non devono coesistere: il giorno che il modello del tubo
+cambia, quel numero è di nuovo sbagliato e nessuno se lo ricorda. Tolto il vetro, il quad
+può permettersi la misura vera.

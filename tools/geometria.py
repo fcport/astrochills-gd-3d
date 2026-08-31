@@ -1432,6 +1432,19 @@ CASSA_MONITOR = (5.550, 0.960, 2.000, 0.386, 0.420, 0.430)
 # Il tubo e' bombato: la x e' il punto piu' avanzato, e ai bordi il vetro rientra
 # di tredici millimetri.
 VETRO_MONITOR = (5.741, 0.978, 2.000, 0.309, 0.274)
+# Di quanto il quad del CRT rientra agli angoli rispetto al centro: e' la calotta
+# del cinescopio, e senza di lei lo schermo e' un adesivo appiccicato su una
+# scatola. Misurata sul modello, non scelta.
+#
+# IL QUAD PUO' PERMETTERSI LA MISURA VERA perche' il vetro del modello in partita
+# non c'e': `arredi_blender.py` lo sfila dopo averlo misurato. Finche' c'erano
+# tutti e due bisognava tenere la calotta piu' bassa del vero, perche' lo shader
+# la fa con una parabola e il tubo con un'altra curva e le due si intersecavano a
+# meta' raggio - con il vetro del modello che spuntava davanti allo schermo.
+BOMBATURA_MONITOR = 0.013
+# Quanto il quad sta davanti all'apice del tubo. E' il gioco minimo perche' le due
+# superfici non litighino sullo stesso pixel.
+FRANCO_VETRO = 0.001
 # IL QUAD DELLO SCHERMO E' IL VETRO INTERO, e non un rettangolo 4:3 dentro di
 # esso. Ci ho provato: il vetro e' quasi quadrato, l'immagine e' 4:3, e un quad
 # 4:3 lascia scoperta la mesh del modello attorno - un secondo rettangolo,

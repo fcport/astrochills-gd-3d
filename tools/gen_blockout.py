@@ -17,7 +17,8 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        LUCI_ROSSE, PARTE_SPENTA, punti_applique,
                        H_APPLIQUE, NOME_LOCALE, LUCE_MONITOR, SEMPRE_ACCESE,
                        H_INTERRUTTORE, L_PLACCA, A_PLACCA, SP_PLACCA,
-                       CASSA_MONITOR, VETRO_MONITOR, SEDILE_MONITOR)
+                       CASSA_MONITOR, VETRO_MONITOR, SEDILE_MONITOR,
+                       BOMBATURA_MONITOR, FRANCO_VETRO)
 
 MURI, APERTURE, PAVIMENTI, SOFFITTI, SALA, (_CX, _CZ) = scalati()
 _R = DOME_R
@@ -310,7 +311,12 @@ def tscn():
               # cassa, che quindi lo inquadra da se'. La cornice nera attorno
               # all'immagine 4:3 la disegna lo shader del CRT, non questa mesh.
               '[sub_resource type="QuadMesh" id="q_monitor"]',
-              'size = Vector2(%.3f, %.3f)' % VETRO_MONITOR[3:], '',
+              'size = Vector2(%.3f, %.3f)' % VETRO_MONITOR[3:],
+              # SUDDIVISO, perche' lo shader lo BOMBA: su due triangoli soli non
+              # c'e' niente da spostare, e il vetro resta la lastra piatta che
+              # legge come un adesivo. Sedici per sedici sono 289 vertici, cioe'
+              # niente, e la calotta viene liscia.
+              'subdivide_width = 16', 'subdivide_height = 16', '',
               # IL COPIONE DELLA POSTAZIONE STA SULLA RADICE, ed e' l'unico script
               # di questa scena che non sia un interagibile: sedersi non e' una
               # proprieta' del monitor, e' una sequenza fra il monitor, il corpo del
@@ -898,7 +904,7 @@ def tscn():
     # rotazione serve DUE volte, e per questo sta sul padre e non sul quad: gira
     # anche il `Seat`, che quindi si sposta AVANTI al vetro invece che di fianco, e
     # fa guardare a -X chi si siede.
-    _vx = VETRO_MONITOR[0] + 0.001    # un millimetro, il gioco minimo contro lo z-fighting
+    _vx = VETRO_MONITOR[0] + FRANCO_VETRO
     # Il beccheggio del sedile NON si dichiara: si calcola da quanto sta avanti e
     # quanto sta sopra. Un marcatore che punta altrove che al proprio vetro e' il
     # difetto che `crt/desk_camera.gd` racconta per esteso - modulo giusto, segno
@@ -919,7 +925,11 @@ def tscn():
               # provato, il nome unico si risolve lo stesso da un figlio della radice.
               'unique_name_in_owner = true',
               'transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, %.3f, %.3f, %.3f)'
-              % (_vx - _cx, VETRO_MONITOR[1] - _cy, VETRO_MONITOR[2] - _cz), '',
+              % (_vx - _cx, VETRO_MONITOR[1] - _cy, VETRO_MONITOR[2] - _cz),
+              # La calotta del cinescopio: il centro resta dov'e', gli angoli
+              # rientrano di tanto quanto rientrano su quello vero. Cosi' il quad
+              # non e' piu' una lastra davanti al tubo - E' il tubo.
+              'glass_bulge = %.4f' % BOMBATURA_MONITOR, '',
               # Il quad della sotto-scena e' fatto per un altro tubo (0,32 x 0,24):
               # qui va rimisurato sul nostro, che e' 30,9 x 27,4.
               '[node name="ScreenMesh" parent="Monitor/CrtScreen" index="1"]',

@@ -1041,6 +1041,8 @@ size = Vector3(0.386, 0.420, 0.430)
 
 [sub_resource type="QuadMesh" id="q_monitor"]
 size = Vector2(0.309, 0.274)
+subdivide_width = 16
+subdivide_height = 16
 
 [node name="Blockout" type="Node3D"]
 script = ExtResource("24_postazione")
@@ -3094,6 +3096,7 @@ shape = SubResource("s_monitor")
 [node name="CrtScreen" parent="Monitor" instance=ExtResource("26_vetro")]
 unique_name_in_owner = true
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.192, 0.018, 0.000)
+glass_bulge = 0.0130
 
 [node name="ScreenMesh" parent="Monitor/CrtScreen" index="1"]
 mesh = SubResource("q_monitor")

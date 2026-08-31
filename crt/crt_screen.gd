@@ -10,6 +10,19 @@ extends Node3D
 @onready var _mesh: MeshInstance3D = %ScreenMesh
 @onready var seat: Marker3D = %Seat
 
+## Di quanti metri il vetro rientra agli angoli rispetto al centro.
+##
+## È una proprietà del TUBO, non dello schermo: la dichiara chi monta il monitor,
+## perché è lui a sapere quale cinescopio ha davanti. Zero è un vetro piatto, ed è
+## il default perché una scena che non lo dichiara non deve cambiare aspetto.
+##
+## Non si deriva come `image_scale` e `scanline_count`, e la differenza vale la
+## pena di dirla: quelli discendono da cose che questo nodo ha in mano — la misura
+## del quad, la misura del viewport. La bombatura no: sta nel modello del tubo, che
+## vive in `assets/models/` e che questo file non apre. Per la sala di controllo la
+## misura `tools/geometria.py`, e `arredi_blender.py` la ricontrolla a ogni passata.
+@export var glass_bulge: float = 0.0
+
 ## Se il Control mostrato può ricevere eventi. Vedi `set_input_enabled()`.
 var _input_enabled := false
 
@@ -69,6 +82,8 @@ func _ready() -> void:
 		elif immagine < vetro:
 			scala.x = immagine / vetro     # vetro piu' largo: bande ai lati
 		mat.set_shader_parameter("image_scale", scala)
+
+	mat.set_shader_parameter("bulge", glass_bulge)
 
 	Events.screen_registered.emit(self)
 

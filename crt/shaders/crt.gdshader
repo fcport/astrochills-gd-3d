@@ -37,6 +37,29 @@ uniform vec3 tint : source_color = vec3(0.86, 1.0, 0.92);
 // Non si dichiara a mano: `crt/crt_screen.gd` lo calcola dal quad e dal viewport.
 uniform vec2 image_scale = vec2(1.0, 1.0);
 
+// Di quanti METRI il vetro rientra agli angoli rispetto al suo centro. Zero = un
+// quad piatto, che e' come nasce la scena del CRT.
+//
+// UN VETRO PIATTO SI VEDE, e si vede come un adesivo. Il tubo della sala di
+// controllo e' bombato di 12,7 millimetri - misurati sul modello, non scelti - e
+// il rettangolo piatto che ci stava davanti leggeva come un quadrato incollato
+// sopra una scatola. Non e' un problema di ombreggiatura: `unshaded` non
+// illumina niente. E' che il profilo e' dritto, e in un tubo non lo e' mai.
+//
+// Serve il quad SUDDIVISO: su due triangoli soli non c'e' niente da spostare.
+uniform float bulge = 0.0;
+
+// La calotta: al centro niente, agli angoli tutto.
+//
+// `dot(d, d) * 0.5` e non `clamp(dot(d, d))`: agli angoli d vale (1, 1) e il
+// prodotto scalare 2, a meta' di un lato vale 1. Con la meta' gli angoli
+// rientrano di `bulge` e i lati della meta', che e' il profilo di una calotta.
+// Con il clamp rientrerebbero uguale, e sarebbe una scodella a fondo piatto.
+void vertex() {
+	vec2 d = (UV - 0.5) * 2.0;
+	VERTEX.z -= bulge * dot(d, d) * 0.5;
+}
+
 // Piega le UV come il vetro di un cinescopio.
 vec2 curve_uv(vec2 uv, float amount) {
 	uv = uv * 2.0 - 1.0;

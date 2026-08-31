@@ -19,6 +19,7 @@
 [ext_resource type="Texture2D" path="res://assets/textures/metallo/color.jpg" id="16_met_c"]
 [ext_resource type="Texture2D" path="res://assets/textures/metallo/normal.jpg" id="17_met_n"]
 [ext_resource type="Texture2D" path="res://assets/textures/metallo/roughness.jpg" id="18_met_r"]
+[ext_resource type="PackedScene" path="res://assets/models/porta_magazzino.glb" id="23_pmag"]
 
 [sub_resource type="BoxMesh" id="m_0"]
 size = Vector3(0.018, 0.018, 0.032)
@@ -2931,90 +2932,7 @@ apertura_gradi = 90.0
 verso = -1
 prompt_text = "Apri"
 
-[node name="Mesh" type="MeshInstance3D" parent="Porta_magazzino"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.370, 1.010, 0.000)
-mesh = SubResource("m_89")
-material_override = SubResource("mat_metallo")
-
-[node name="Lamiera1" type="MeshInstance3D" parent="Porta_magazzino"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.370, 0.620, 0.030)
-mesh = SubResource("m_85")
-material_override = SubResource("mat_metallo")
-
-[node name="Lamiera2" type="MeshInstance3D" parent="Porta_magazzino"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.370, 0.620, -0.030)
-mesh = SubResource("m_85")
-material_override = SubResource("mat_metallo")
-
-[node name="Lamiera3" type="MeshInstance3D" parent="Porta_magazzino"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.370, 1.420, 0.030)
-mesh = SubResource("m_85")
-material_override = SubResource("mat_metallo")
-
-[node name="Lamiera4" type="MeshInstance3D" parent="Porta_magazzino"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.370, 1.420, -0.030)
-mesh = SubResource("m_85")
-material_override = SubResource("mat_metallo")
-
-[node name="Lamiera5" type="MeshInstance3D" parent="Porta_magazzino"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.370, 0.280, 0.028)
-mesh = SubResource("m_69")
-material_override = SubResource("mat_metallo")
-
-[node name="Lamiera6" type="MeshInstance3D" parent="Porta_magazzino"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.370, 0.280, -0.028)
-mesh = SubResource("m_69")
-material_override = SubResource("mat_metallo")
-
-[node name="Lamiera7" type="MeshInstance3D" parent="Porta_magazzino"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.370, 0.328, 0.028)
-mesh = SubResource("m_69")
-material_override = SubResource("mat_metallo")
-
-[node name="Lamiera8" type="MeshInstance3D" parent="Porta_magazzino"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.370, 0.328, -0.028)
-mesh = SubResource("m_69")
-material_override = SubResource("mat_metallo")
-
-[node name="Lamiera9" type="MeshInstance3D" parent="Porta_magazzino"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.370, 0.376, 0.028)
-mesh = SubResource("m_69")
-material_override = SubResource("mat_metallo")
-
-[node name="Lamiera10" type="MeshInstance3D" parent="Porta_magazzino"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.370, 0.376, -0.028)
-mesh = SubResource("m_69")
-material_override = SubResource("mat_metallo")
-
-[node name="Maniglia11" type="MeshInstance3D" parent="Porta_magazzino"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.650, 1.050, 0.028)
-mesh = SubResource("m_9")
-material_override = SubResource("mat_metallo")
-
-[node name="Maniglia12" type="MeshInstance3D" parent="Porta_magazzino"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.595, 1.050, 0.071)
-mesh = SubResource("m_11")
-material_override = SubResource("mat_metallo")
-
-[node name="Maniglia13" type="MeshInstance3D" parent="Porta_magazzino"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.650, 1.050, -0.028)
-mesh = SubResource("m_9")
-material_override = SubResource("mat_metallo")
-
-[node name="Maniglia14" type="MeshInstance3D" parent="Porta_magazzino"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.595, 1.050, -0.071)
-mesh = SubResource("m_11")
-material_override = SubResource("mat_metallo")
-
-[node name="Maniglia15" type="MeshInstance3D" parent="Porta_magazzino"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.640, 0.880, -0.030)
-mesh = SubResource("m_13")
-material_override = SubResource("mat_metallo")
-
-[node name="Maniglia16" type="MeshInstance3D" parent="Porta_magazzino"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.640, 0.825, -0.036)
-mesh = SubResource("m_5")
-material_override = SubResource("mat_metallo")
+[node name="Mesh" parent="Porta_magazzino" instance=ExtResource("23_pmag")]
 
 [node name="Col" type="CollisionShape3D" parent="Porta_magazzino"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.370, 1.010, 0)

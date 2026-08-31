@@ -75,6 +75,13 @@ def _base(rot_x, rot_z, cx, cy, cz, rot_y=0.0):
             % (c, s_, -s_, c, cx, cy, cz))
 
 
+# Quali ante in gioco NON sono fatte di scatole ma di un modello, e con che
+# ExtResource. Il battente del magazzino era otto scatole - nervature, griglia,
+# portalucchetto - e i pezzi erano quelli giusti; solo che erano scatole, e da un
+# metro si vedeva. Una porta di lamiera la fa la VERNICE, cioe' la texture.
+ANTE_DAL_MODELLO = {"magazzino": "23_pmag"}
+
+
 def tscn():
     righe = ['[gd_scene load_steps=%d format=3]' % (3 + len(set((b[3], b[4], b[5]) for b in blocchi)) * 2), '',
              '[ext_resource type="PackedScene" path="res://world/player/player.tscn" id="1_player"]',
@@ -99,6 +106,11 @@ def tscn():
              '[ext_resource type="Texture2D" path="res://assets/textures/metallo/color.jpg" id="16_met_c"]',
              '[ext_resource type="Texture2D" path="res://assets/textures/metallo/normal.jpg" id="17_met_n"]',
              '[ext_resource type="Texture2D" path="res://assets/textures/metallo/roughness.jpg" id="18_met_r"]',
+             # IL BATTENTE DEL MAGAZZINO E' UN MODELLO, non delle scatole. Sta in un
+             # .glb suo e non dentro quello dell'edificio perche' RUOTA: un pezzo che
+             # gira ha bisogno di un nodo con l'origine sul cardine, e dentro
+             # osservatorio.glb girerebbe l'edificio.
+             '[ext_resource type="PackedScene" path="res://assets/models/porta_magazzino.glb" id="23_pmag"]',
              '']
     dims = sorted(set((round(b[3], 3), round(b[4], 3), round(b[5], 3)) for b in blocchi)
                   | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
@@ -710,6 +722,18 @@ def tscn():
         materia = {"Anta": "mat_metallo" if a.get("metallo") else "mat_anta",
                    "Lamiera": "mat_metallo", "Maniglia": "mat_metallo",
                    "Maniglione": "mat_tele"}
+        if a["nome"] in ANTE_DAL_MODELLO:
+            # IL BATTENTE ARRIVA GIA' NEL SISTEMA DEL CARDINE: il suo modellatore lo
+            # posa con l'origine sul perno, X verso il bordo libero, Y l'altezza -
+            # cioe' la stessa convenzione di `pezzi_anta`. Quindi si istanzia senza
+            # trasformazione, e il nodo Door non sa nemmeno che questa e' diversa
+            # dalle altre.
+            righe += ['[node name="Mesh" parent="%s" instance=ExtResource("%s")]'
+                      % (nome, ANTE_DAL_MODELLO[a["nome"]]), '']
+            righe += ['[node name="Col" type="CollisionShape3D" parent="%s"]' % nome,
+                      'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, 0)' % (L / 2, HA / 2),
+                      'shape = SubResource("s_%d")' % idx[(round(L, 3), round(HA, 3), round(T, 3))], '']
+            continue
         for k, (lungo, alto, lato, sx, sy, sz, etichetta) in enumerate(pezzi_anta(a)):
             chiave = (round(sx, 3), round(sy, 3), round(sz, 3))
             suffisso = "Mesh" if etichetta == "Anta" else "%s%d" % (etichetta, k)
@@ -979,6 +1003,7 @@ SCRIVONO = {
     "bagno_blender.py": "bagno.glb",
     "divulgazione_blender.py": "divulgazione.glb",
     "impianti_blender.py": "impianti.glb",
+    "porta_magazzino_blender.py": "porta_magazzino.glb",
 }
 
 

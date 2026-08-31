@@ -2791,3 +2791,45 @@ sessioni due controlli e zero coperture.
 `niente_metallo_addosso()` guarda adesso **il filo oltre al valore**, perché è il filo che
 decide. Validato iniettando il difetto: rimessa la vecchia riga, accusa water e bidet per
 nome; rimessa quella giusta, tace.
+
+## D-140 — Il battente del magazzino è un modello, e sta in un .glb suo
+
+*«Quello che hai messo ora è una merda.»* Era otto scatole — nervature, griglia,
+portalucchetto — e i pezzi erano quelli giusti; solo che erano scatole, e da un metro
+si vedeva. **Una porta di lamiera la fa la vernice, cioè la texture, non il rilievo.**
+
+Sostituito con *Metal door* di tboiston (CC-BY, **338 facce**). Poly Haven non aveva
+niente di adatto — solo portoni e serrande — quindi Sketchfab e download a mano.
+
+**Quello che rende il modello usabile è che i pezzi sono separati**: `Main_Low`,
+`Handle_Low`, `HandleBase_Low`, `Frame_Low`, `Hinges_Low`. Il telaio ce l'abbiamo già,
+lo disegna `osservatorio_blender.py` dai vani, e montarne un secondo darebbe due mostre
+incastrate; si tiene il solo battente. Con tutto fuso in una mesh sola non si sarebbe
+potuto separare senza tagliare a mano.
+
+**E sta in un `.glb` tutto suo** perché *ruota*: un pezzo che gira ha bisogno di un nodo
+con l'origine sul cardine, e dentro `osservatorio.glb` — che è una mesh sola —
+girerebbe l'edificio. Il modellatore lo posa nella stessa convenzione di
+`geometria.pezzi_anta` (X dal cardine al bordo libero, Y l'altezza, Z lo spessore
+centrato), così in scena si istanzia **senza trasformazione** e il nodo `Door` non sa
+nemmeno che questa anta è diversa dalle altre nove. Il banco continua a misurarla:
+113° liberi, si ferma a 90.
+
+Il nome degli oggetti **non sopravvive all'import**: l'importatore glTF chiama gli
+oggetti come la *mesh*, e qui tutte e cinque si chiamano `defaultMaterial`. Si
+riconoscono dalla geometria — il pannello è il pezzo largo e sottile, il telaio quello
+che lo contiene, i cardini una striscia sul filo — che è comunque il criterio più
+solido di un nome.
+
+**L'ordine delle operazioni è costato un giro.** Il modello ha UNA maniglia, sulla faccia
+da cui l'autore l'ha fotografata; una porta vera ce l'ha su tutte e due, e senza, la
+faccia verso il corridoio — quella da cui la porta si apre davvero — è una lastra liscia
+e il giocatore preme `E` davanti a niente. Lo specchio era stato fatto subito dopo
+l'import, **prima** della scala: la correzione uniforme delle maniglie riscrive
+`o.scale` per intero e cancellava il `-1` che faceva lo specchio. Le due copie finivano
+sovrapposte sulla stessa faccia. Adesso prima si cuoce la posa nella mesh, poi si
+specchia una mesh ferma — e `raddrizza_normali` dopo lo specchio non è un di più:
+specchiare inverte l'avvolgimento delle facce, e in Godot una faccia avvolta al
+contrario si illumina con la normale sbagliata, cioè esce nera.
+
+`metallicFactor` non dichiarato, quindi 1,0: **ottava volta**. Azzerato.

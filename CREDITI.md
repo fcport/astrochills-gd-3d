@@ -72,6 +72,21 @@ Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuz
 > by thethieme (https://sketchfab.com/thethieme) licensed under CC-BY-4.0
 > (http://creativecommons.org/licenses/by/4.0/)
 
+**Metal door** — il battente della porta del magazzino. Lamiera verniciata con
+maniglia a leva e bocchetta a chiave, 338 facce. Quella fatta a mano aveva i pezzi
+giusti — nervature, griglia, portalucchetto — ma erano scatole, e da un metro si
+vedeva: una porta di lamiera la fa la vernice, cioè la texture, non il rilievo. Del
+modello si tiene **solo il battente**: il telaio ce l'abbiamo già, lo disegna
+`osservatorio_blender.py` dai vani.
+Autore: [tboiston](https://sketchfab.com/tboiston).
+Fonte: <https://sketchfab.com/3d-models/metal-door-5174e00a43a541e8bdd0f407c6502877>
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> This work is based on "Metal door"
+> (https://sketchfab.com/3d-models/metal-door-5174e00a43a541e8bdd0f407c6502877)
+> by tboiston (https://sketchfab.com/tboiston) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
 ## Tutto il resto
 
 Gli altri modelli e tutte le texture sono **CC0**: nessuna attribuzione richiesta.

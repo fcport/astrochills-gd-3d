@@ -141,21 +141,24 @@ A_MANO = {
         " alta con la catena e' di cinquant'anni prima. E lo sporco e' voluto - non"
         " un rudere, un sanitario vecchio."),
     "porta_magazzino": (
-        ("porta_magazzino.zip", "metal_door_-_gameready.zip", "metal_door_gameready.zip"),
-        "https://sketchfab.com/3d-models/metal-door-gameready-2497028f443744e78891604323dab4ac",
-        "SPLEEN VISION", "CC-BY-4.0",
-        'This work is based on "metal door - gameready" '
-        "(https://sketchfab.com/3d-models/metal-door-gameready-2497028f443744e78891604323dab4ac) "
-        "by SPLEEN VISION (https://sketchfab.com/spleen.vision) licensed under "
-        "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
-        "Porta di lamiera verniciata da locale tecnico: maniglia a leva, targhetta"
-        " smaltata e feritoie di aerazione in basso. Quella fatta a mano aveva i"
-        " pezzi giusti - nervature, griglia, portalucchetto - ma erano scatole, e da"
-        " un metro si vedeva che erano scatole: una porta di lamiera la fa la"
-        " VERNICE, cioe' la texture, non il rilievo."
-        "\n\nLA TARGHETTA DICE HEIZRAUM, e va ridipinta: e' l'unico difetto del"
-        " modello, ed e' un difetto di texture, che e' il tipo che si sa correggere"
-        " (vedi tools/fai_listello.py, che una texture se la disegna da zero)."),
+        ("porta_magazzino.zip", "metal_door.zip"),
+        "https://sketchfab.com/3d-models/metal-door-5174e00a43a541e8bdd0f407c6502877",
+        "tboiston", "CC-BY-4.0",
+        'This work is based on "Metal door" '
+        "(https://sketchfab.com/3d-models/metal-door-5174e00a43a541e8bdd0f407c6502877) "
+        "by tboiston (https://sketchfab.com/tboiston) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "Porta di lamiera verniciata grigia con maniglia a leva e bocchetta a chiave."
+        " Quella fatta a mano aveva i pezzi giusti - nervature, griglia,"
+        " portalucchetto - ma erano scatole, e da un metro si vedeva che erano"
+        " scatole: una porta di lamiera la fa la VERNICE, cioe' la texture, non il"
+        " rilievo."
+        "\n\nTRECENTOTRENTOTTO FACCE, e i pezzi SEPARATI: Main_Low,"
+        " Handle_Low, HandleBase_Low, Frame_Low, Hinges_Low. E' la differenza fra un"
+        " modello che si puo' usare e uno che no - il telaio ce l'abbiamo gia', lo"
+        " disegna Blender dai vani, e quello che serve e' il solo BATTENTE con"
+        " l'origine sul cardine. Con tutto fuso in una mesh sola non si sarebbe"
+        " potuto separare senza tagliare a mano."),
     "termosifone_bagno": (
         ("termosifone_bagno.zip", "old_radiator.zip"),
         "https://sketchfab.com/3d-models/old-radiator-8a1a2e0263aa401591c1e87d824a79ef",

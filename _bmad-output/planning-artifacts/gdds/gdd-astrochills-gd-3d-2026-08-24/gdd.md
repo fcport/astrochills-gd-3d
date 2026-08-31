@@ -412,13 +412,13 @@ imparato abbastanza da sapere che ciò che vede è impossibile.
 | 5 | **Accensione e collegamento PC** | sequenza nell'ordine giusto: montatura, camera di ripresa, camera di guida, software; l'ordine sbagliato non fa riconoscere i dispositivi | nessun punteggio: si passa o si ripete | il software riconosce dispositivi che non hai collegato, o non riconosce quelli collegati |
 | 6 | **Plate solving** | scatti una posa breve, il software confronta il campo col catalogo e dice dove stai puntando | dalla precisione del solving | ti dà coordinate che non esistono nel catalogo, o un oggetto che da lì, in quella stagione, non sarebbe visibile |
 | 7 | **Targeting** | apri il planetario, filtri per tipo, altezza sull'orizzonte, difficoltà, scegli il soggetto | nessun punteggio proprio: determina il moltiplicatore di valore e se la commessa è soddisfatta | nel planetario compare un oggetto che non è in nessun catalogo. Ha coordinate precise. È visibile stanotte |
-| 8 | **Focus** | muovi il focheggiatore finché le stelle sono punti minimi e non dischetti | dalla distanza dal punto di fuoco ottimale sulla curva a V | le stelle non vanno mai a fuoco del tutto. Oppure ci vanno, ma la forma che assumono non è quella di una stella |
+| 8 | **Focus** | muovi il focheggiatore finché le stelle sono punti minimi e non dischetti; ogni posizione visitata lascia un punto sul grafico, e dopo due passate la curva a V dice da che parte andare | dal diametro delle stelle a fine fase (HFD): pieno sotto `focus_best_hfd`, zero sopra `focus_max_hfd` | le stelle non vanno mai a fuoco del tutto. Oppure ci vanno, ma la forma che assumono non è quella di una stella |
 | 9 | **Dark e flat** | checklist: tappo, cinque dark; pannello illuminato, cinque flat; nell'ordine, senza saltare passi | dalla completezza e dall'ordine | i dark non sono neri: c'è qualcosa nelle immagini scattate col tappo |
 | 10 | **Autoguida** | calibri la guida, avvii il loop, osservi il grafico degli errori: due linee che devono stare basse e stabili | dall'errore RMS medio durante la posa | la guida insegue qualcosa. Ma non è la stella che hai selezionato |
 | 11 | **Posa** | imposti esposizione e numero di frame, avvii, la macchina lavora da sola | vedi sotto | i frame acquisiti sono più di quelli impostati. O meno. O la sequenza è finita ma sono passati tre minuti |
 
-> **[ASSUMPTION]** I criteri di punteggio delle fasi 2, 3, 6, 8, 9 e 10 sono proposti qui e
-> non ancora implementati: esistono solo le fasi 1, 4, 7 e 11. La fase 1 costa dieci minuti
+> **[ASSUMPTION]** I criteri di punteggio delle fasi 2, 3, 6, 9 e 10 sono proposti qui e
+> non ancora implementati: esistono le fasi 1, 4, 7, 8 e 11. La fase 1 costa dieci minuti
 > di notte sulla carta e sei secondi reali in gioco: il budget qui è intento di progetto, e
 > nessuna fase lo consuma ancora davvero. *Cosa* si misura è deciso; le
 > soglie numeriche si tarano quando la fase esiste.

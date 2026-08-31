@@ -41,6 +41,16 @@ extends Resource
 ## arcominuti al secondo. Sotto, il punteggio sale linearmente fino a 100.
 @export var polar_max_drift_rate: float = 0.2
 
+## Diametro delle stelle (HFD, in pixel) al quale la fase del fuoco dà 100.
+##
+## STA UN FILO SOPRA IL MINIMO CHE L'OTTICA PUÒ DARE, e non è generosità: il minimo
+## esatto è un passo su milleottocento, e chiederlo trasformerebbe una fase di
+## mestiere in una lotteria di precisione. Sotto questa soglia si prende pieno.
+@export var focus_best_hfd: float = 2.7
+
+## Diametro al quale la fase del fuoco dà 0. In mezzo il punteggio scende lineare.
+@export var focus_max_hfd: float = 6.5
+
 ## La curva a scaglioni del payout: dalla qualità aggregata alle lire.
 ##
 ## Ogni voce è `{min_score, lire}`, ordinata per `min_score` crescente: si legge lo

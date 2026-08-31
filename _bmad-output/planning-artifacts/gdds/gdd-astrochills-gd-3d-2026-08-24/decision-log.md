@@ -3787,3 +3787,74 @@ copia è deliberata: `crt/` non conosce `world/` — è un sistema generico che 
 `Control` e non sa nemmeno di stare in un osservatorio. Importare il giocatore per due
 costanti aprirebbe una porta che la tabella dei confini tiene chiusa. Il giorno in cui la
 sensibilità diventerà un'impostazione, sarà un dato che arriva a tutti e due da fuori.
+
+## D-167 — La fase 8: si mette a fuoco cercando, non eseguendo
+
+**31 agosto 2026.** «Vai con la prossima fase, quale potrebbe essere?» Fra le sette non
+implementate, **il fuoco** è quella da fare adesso, e per tre ragioni che si sommano.
+
+**Vive tutta sul CRT.** Livellamento e bilanciamento sono gesti sulla montatura, e la
+montatura in gioco non si tocca. Il focheggiatore invece è un motore con due pulsanti e un
+numero: sta dove il giocatore è già seduto.
+
+**È la prima fase in cui si CERCA.** L'allineamento polare si esegue — c'è una deriva, la
+si annulla. Il targeting si sceglie. Qui nessuno dice dove sia il fuoco: si vedono sette
+stelle e quanto sono grosse, e si stringono. Il traguardo è visibile a occhio senza che
+nessuno lo scriva, che è la stessa proprietà per cui la fase polare funziona.
+
+**Cade nel posto giusto del ciclo.** Il ciclo foto era targeting → posa, cioè scegli e
+aspetti. Adesso è targeting → fuoco → posa: fra la scelta e l'attesa c'è un mestiere.
+
+**LA CURVA A V SI DISEGNA DA SOLA, ed è la cosa che insegna la fase.** Ogni posizione
+visitata lascia un punto sul grafico in basso; dopo due passate il giocatore vede la forma
+— due rami che scendono verso un minimo — e capisce da che parte andare. È come si mette a
+fuoco davvero, e non c'è tutorial che lo spieghi meglio del grafico stesso. Il grafico si
+scala **sui punti visitati** e non sulla corsa meccanica: scalato sulla corsa metterebbe il
+fuoco sempre nello stesso punto dello schermo, e la fase si giocherebbe guardando il centro
+del riquadro invece delle stelle.
+
+**Non è una V, è un'iperbole,** `sqrt(min² + (pendenza·Δ)²)`, e la differenza si sente
+giocando. Una V vera ha il vertice a punta: ci passi sopra e non senti niente. La curva
+vera dell'ottica lontano è indistinguibile da una retta e vicino si arrotonda, e
+quell'arrotondamento **è** la sensazione di «ci sono quasi». È anche la formula con cui gli
+autofocus veri interpolano il minimo.
+
+**Il minimo non è zero, ed è giusto così:** a fuoco perfetto una stella resta un dischetto,
+perché l'atmosfera la allarga. È il seeing, e per questo il punteggio pieno non chiede
+diametro nullo ma `focus_best_hfd`, un filo sopra il minimo dell'ottica: **chiedere il
+minimo esatto vorrebbe dire chiedere un passo esatto su milleottocento**, cioè trasformare
+una fase di mestiere in una lotteria di precisione.
+
+**Più le stelle sono larghe più sono fioche,** ed è la sola ragione per cui il campo si
+legge a colpo d'occhio: la luce di una stella è sempre la stessa, e spalmarla su un disco
+più grande la diluisce. Un campo in cui i dischi crescono restando luminosi sembrerebbe
+migliorare mentre peggiora.
+
+**Il numero sul display non aiuta, e non deve.** L'encoder mostra passi veri con uno
+scostamento estratto a caso a ogni montaggio. Senza, il giocatore imparerebbe un numero
+invece di una curva, e la fase diventerebbe «porta il display a zero», cioè niente.
+
+**Il limite è dichiarato:** il fuoco sta al centro della corsa meccanica e ci resta. Chi
+gioca molte notti può impararlo. La cura non è un numero casuale — è la **deriva termica**,
+che nella realtà sposta il fuoco di qualche decina di passi per grado mentre la notte si
+raffredda. Quando ci sarà una temperatura, `best_position` diventerà il suo punto di
+partenza e la fase non cambierà di una riga: continuerà a chiedere quanto sono grosse le
+stelle.
+
+**Due misure che nessun file conteneva, e che adesso il banco stampa.** La zona di
+punteggio pieno è larga **124 passi**, cioè **0,62 secondi di dito** a 200 passi/s: nasce da
+tre numeri che stanno in due posti diversi (`min_hfd` e `slope` nel .tres, `focus_best_hfd`
+in `Tuning`), e se qualcuno ne cambia uno la fase diventa una lotteria o un regalo senza che
+una riga di codice cambi. E al fermo meccanico il diametro è 9,31 contro una soglia dello
+zero a 6,50: anche il peggio possibile vale zero, come deve.
+
+**Che si possa VINCERE l'ho misurato giocandola.** `tools/prova_fuoco.tscn` cerca il minimo
+come lo cercherebbe una persona la prima notte — vai da una parte, se peggiora torna
+indietro — e resta deliberatamente stupida: con la formula della curva troverebbe il minimo
+al primo colpo e non proverebbe niente. Referto: **punteggio 100 in quattro secondi e
+mezzo**, cinque inversioni.
+
+**Nessuna misura non è misura perfetta.** Prima del primo `_process` il diametro vale zero,
+e zero è più piccolo del minimo possibile: chi premesse INVIO nel fotogramma in cui la fase
+compare si porterebbe via 100 senza aver toccato niente. `score()` restituisce 0 finché non
+c'è un campione — la stessa clausola che la fase polare scrive al contrario.

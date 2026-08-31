@@ -21,6 +21,7 @@ const OVERRIDE_PATH := "user://tuning_override.cfg"
 const POSITIVE_KEYS := [
 	"night_length_min", "game_min_per_sec", "pose_time_scale",
 	"polar_score_window_sec", "polar_max_drift_rate",
+	"focus_best_hfd", "focus_max_hfd",
 ]
 
 var profile: TuningProfile
@@ -41,6 +42,10 @@ var polar_score_window_sec: float:
 	get: return profile.polar_score_window_sec
 var polar_max_drift_rate: float:
 	get: return profile.polar_max_drift_rate
+var focus_best_hfd: float:
+	get: return profile.focus_best_hfd
+var focus_max_hfd: float:
+	get: return profile.focus_max_hfd
 ## La curva del payout, letta SEMPRE da qui — mai `load()` diretto sul `.tres` — così
 ## un override esterno futuro passerebbe da questa superficie come gli altri numeri.
 var payout_tiers: Array[Dictionary]:

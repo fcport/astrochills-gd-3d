@@ -9,6 +9,8 @@ game_min_per_sec = 0.6
 pose_time_scale = 1.0
 polar_score_window_sec = 8.0
 polar_max_drift_rate = 0.2
+focus_best_hfd = 2.7
+focus_max_hfd = 6.5
 payout_tiers = Array[Dictionary]([{
 &"lire": 500,
 &"min_score": 0

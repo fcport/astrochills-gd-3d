@@ -1,12 +1,13 @@
-[gd_resource type="Resource" script_class="NightPlan" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="NightPlan" load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://core/night_plan.gd" id="1_plan"]
 [ext_resource type="PackedScene" path="res://phases/polar/phase_polar.tscn" id="2_polar"]
 [ext_resource type="PackedScene" path="res://phases/targeting/phase_targeting.tscn" id="3_targeting"]
 [ext_resource type="PackedScene" path="res://phases/imaging/phase_imaging.tscn" id="4_imaging"]
 [ext_resource type="PackedScene" path="res://phases/dome/phase_dome.tscn" id="5_dome"]
+[ext_resource type="PackedScene" path="res://phases/focus/phase_focus.tscn" id="6_focus"]
 
 [resource]
 script = ExtResource("1_plan")
 setup_phases = Array[PackedScene]([ExtResource("5_dome"), ExtResource("2_polar")])
-photo_phases = Array[PackedScene]([ExtResource("3_targeting"), ExtResource("4_imaging")])
+photo_phases = Array[PackedScene]([ExtResource("3_targeting"), ExtResource("6_focus"), ExtResource("4_imaging")])

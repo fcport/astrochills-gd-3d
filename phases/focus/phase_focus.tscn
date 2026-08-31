@@ -1,0 +1,13 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://phases/focus/phase_focus.gd" id="1_phase"]
+[ext_resource type="Script" path="res://phases/focus/focus_screen.gd" id="2_screen"]
+[ext_resource type="Resource" path="res://phases/focus/sources/honest_vcurve.tres" id="3_truth"]
+
+[node name="PhaseFocus" type="Node"]
+script = ExtResource("1_phase")
+truth = ExtResource("3_truth")
+
+[node name="FocusScreen" type="Control" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_screen")

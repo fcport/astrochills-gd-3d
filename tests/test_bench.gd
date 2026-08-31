@@ -25,6 +25,7 @@ extends Node
 
 
 const SHUTTER_PATH := "res://phases/dome/sources/honest_shutter.tres"
+const VCURVE_PATH := "res://phases/focus/sources/honest_vcurve.tres"
 const HONEST_PATH := "res://phases/polar/sources/honest_drift.tres"
 const WANDERING_PATH := "res://phases/polar/sources/wandering_drift.tres"
 const CATALOG_PATH := "res://phases/targeting/sources/honest_catalog.tres"
@@ -66,6 +67,8 @@ func _ready() -> void:
 	print("=== BANCO DI COLLAUDO — Astrochill ===")
 	print("")
 	_check_honest_shutter()
+	print("")
+	_check_honest_vcurve()
 	print("")
 	_check_honest_drift()
 	print("")
@@ -212,6 +215,88 @@ func _check_honest_shutter() -> void:
 		% [v_inter, "" if is_zero_approx(v_inter) else "   <-- ATTESO: 0"])
 
 
+## La curva a V del fuoco (fase 8): deterministica, con un minimo dove dice di
+## averlo, simmetrica, e — la cosa che conta davvero — con una zona di punteggio
+## pieno LARGA ABBASTANZA DA CENTRARE.
+##
+## QUELLA LARGHEZZA NON SI LEGGE IN NESSUN FILE: nasce da tre numeri che stanno in
+## due posti diversi — `min_hfd` e `slope` nel .tres della sorgente, `focus_best_hfd`
+## in `Tuning` — e dice quanti passi di focheggiatore separano il pieno dal non
+## pieno. Se qualcuno cambia uno dei tre, la fase diventa una lotteria o un regalo
+## senza che una riga di codice cambi. Qui si misura, in passi e in decimi di
+## secondo di dito.
+func _check_honest_vcurve() -> void:
+	print("-- HonestVCurve: il fuoco sta dove la curva dice")
+	var src := _load_source(VCURVE_PATH) as HonestVCurve
+	if src == null:
+		return
+	print("   dal .tres: fuoco a %.0f passi, minimo %.2f, pendenza %.4f"
+		% [src.best_position, src.min_hfd, src.slope])
+
+	var i := FocusInput.new()
+	i.position = src.best_position + 300.0
+	i.seconds_since_move = 3.0
+	var a := src.sample(i, 0.016)
+	var b := src.sample(i, 0.99)
+	print("   sample(i, 0.016) = %.4f" % a)
+	print("   sample(i, 0.99 ) = %.4f" % b)
+	print("   -> %s" % ("DETERMINISTICA" if is_equal_approx(a, b)
+		else "NON deterministica  <-- ATTESO: deterministica"))
+
+	# Al fuoco il diametro e' il minimo dichiarato, e non zero: l'atmosfera non lo
+	# permette, e una sorgente che desse zero starebbe raccontando un'ottica che
+	# non esiste.
+	i.position = src.best_position
+	var al_fuoco := src.sample(i, 0.016)
+	print("   al fuoco: %.4f (atteso %.4f)%s"
+		% [al_fuoco, src.min_hfd,
+			"" if is_equal_approx(al_fuoco, src.min_hfd) else "   <-- ATTESO: il minimo"])
+
+	# Avvicinandosi il diametro deve CALARE, in modo monotono, e da tutte e due le
+	# parti allo stesso modo: una curva sbilanciata insegnerebbe a cercare il fuoco
+	# sempre dalla stessa parte.
+	print("   avvicinandosi il diametro deve calare, e i due rami coincidere:")
+	var precedente := INF
+	for d in [800.0, 400.0, 200.0, 100.0, 0.0]:
+		i.position = src.best_position + d
+		var destra := src.sample(i, 0.016)
+		i.position = src.best_position - d
+		var sinistra := src.sample(i, 0.016)
+		var cala := destra < precedente
+		var pari := is_equal_approx(destra, sinistra)
+		precedente = destra
+		var nota := ""
+		if not cala:
+			nota = "   <-- ATTESO: minore del precedente"
+		elif not pari:
+			nota = "   <-- ATTESO: i due rami uguali"
+		print("      %+5.0f passi -> %.3f   %+5.0f passi -> %.3f%s"
+			% [d, destra, -d, sinistra, nota])
+
+	# La zona del pieno, misurata: fin dove il diametro resta sotto la soglia di
+	# `Tuning`. Si cerca camminando, un passo per volta, invece di invertire la
+	# formula: cosi' la misura resta vera anche il giorno in cui la curva non sara'
+	# piu' un'iperbole.
+	var largo := 0.0
+	while largo < PhaseFocus.TRAVEL:
+		i.position = src.best_position + largo
+		if src.sample(i, 0.016) > Tuning.focus_best_hfd:
+			break
+		largo += 1.0
+	print("   punteggio pieno entro %.0f passi dal fuoco (%.2f s di dito a %.0f passi/s)"
+		% [largo, largo / PhaseFocus.STEP_RATE, PhaseFocus.STEP_RATE])
+	if largo < 30.0 or largo > 400.0:
+		print("      <-- nota: fuori dai 30-400 passi che rendono la fase giocabile")
+
+	# E al fermo meccanico il punteggio deve essere zero: se anche il peggio
+	# possibile prendesse punti, la fase non misurerebbe niente.
+	i.position = src.best_position + PhaseFocus.TRAVEL
+	var al_fermo := src.sample(i, 0.016)
+	print("   al fermo (%.0f passi): %.2f, soglia dello zero %.2f%s"
+		% [PhaseFocus.TRAVEL, al_fermo, Tuning.focus_max_hfd,
+			"" if al_fermo >= Tuning.focus_max_hfd else "   <-- nota: il peggio prende punti"])
+
+
 func _check_honest_drift() -> void:
 	print("-- HonestDrift: deve essere DETERMINISTICA")
 	var src := _load_source(HONEST_PATH) as HonestDrift
@@ -301,6 +386,7 @@ func _check_wandering_drift() -> void:
 ## nuova si aggiunge QUI dentro e in nessun altro posto.
 const SOURCE_PATHS := [
 	"res://phases/dome/sources/honest_shutter.tres",
+	"res://phases/focus/sources/honest_vcurve.tres",
 	"res://phases/polar/sources/honest_drift.tres",
 	"res://phases/polar/sources/wandering_drift.tres",
 	"res://phases/targeting/sources/honest_catalog.tres",

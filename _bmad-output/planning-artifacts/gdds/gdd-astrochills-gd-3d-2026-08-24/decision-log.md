@@ -3127,3 +3127,24 @@ fatto l'opposto: via il dettaglio fine, le chiazze intere.
 Il numero che torna è la frazione di pixel che contava come macchia — il 24,2% qui — e
 serve a sapere se il passo ha fatto qualcosa: a zero non c'era niente da togliere e la
 riga in `SET` è rumore.
+
+## D-152 — Il monitor era sfasato per una ragione scaduta
+
+Monitor e tastiera stavano su due mezzerie diverse, a venti centimetri l'una
+dall'altra: ci si siede diritti sulla tastiera e lo schermo è di sbieco.
+
+Accanto a quello scostamento c'era il suo motivo, scritto: «al centro esatto occupava
+il posto che serve al mouse». **Era vero il giorno in cui è stato scritto** — allora il
+mouse stava a +0,38, cioè dallo stesso lato. Poi il mouse è passato a destra, a −0,38,
+con una sua nota che spiega perché («chi si siede guarda la vetrata, quindi la sua
+destra cade su −Z»), e nessuno è tornato a rileggere la nota del monitor.
+
+Il mouse adesso occupa z 1,53-1,71 e il monitor centrato va da 1,76 a 2,24: **non si
+toccano nemmeno**. Il vincolo non esiste più da mesi.
+
+È il modo tipico in cui questo progetto sbaglia, ed è diverso dal numero preso a caso:
+un numero **giusto quando è stato scritto**, sopravvissuto alla ragione che lo teneva
+su. Un commento che spiega un valore lo protegge dal caso e non lo protegge da questo —
+anzi lo peggiora, perché chi passa legge la spiegazione, la trova sensata e tira
+dritto. L'unica difesa è che il vincolo lo misuri qualcosa: dove esiste un banco (le
+porte, le plafoniere, le ripetizioni) questo non succede.

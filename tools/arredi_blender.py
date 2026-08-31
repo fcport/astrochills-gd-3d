@@ -87,10 +87,19 @@ def postazione(zc, accesa):
     """
     x0, _z0, _x1, _z1, alt = IMPRONTE["Consolle"]
     y_piano = alt
-    # il monitor scostato a sinistra di venti centimetri: al centro esatto
-    # occupava il posto che serve al mouse, e una postazione con tastiera,
-    # monitor e mouse tutti sulla stessa mezzeria non e' una postazione.
-    posati = posa_modello(MONITOR, (x0 + 0.03, zc - 0.04, x0 + 0.53, zc + 0.44, 0.42),
+    # MONITOR E TASTIERA SULLA STESSA MEZZERIA, che e' quella della sedia. Stava
+    # scostato di venti centimetri, e il motivo scritto accanto era che al centro
+    # avrebbe occupato il posto del mouse - vero quando il mouse stava a +0,38, cioe'
+    # dallo stesso lato. Poi il mouse e' passato a destra, a -0,38, e quel motivo e'
+    # scaduto senza che nessuno tornasse a leggerlo: restava un monitor sfasato di
+    # venti centimetri rispetto alla tastiera, che davanti si vede subito - ci si
+    # siede diritti sulla tastiera e lo schermo e' di sbieco.
+    #
+    # E' il modo tipico in cui questo progetto sbaglia: non un numero preso a caso,
+    # ma un numero giusto il giorno che e' stato scritto, sopravvissuto alla ragione
+    # che lo teneva su. Il mouse adesso sta a 1,62 e il monitor centrato va da 1,76 a
+    # 2,24: non si toccano nemmeno.
+    posati = posa_modello(MONITOR, (x0 + 0.03, zc - 0.24, x0 + 0.53, zc + 0.24, 0.42),
                           gradi=0.0, appoggio=y_piano)
     # lo schermo acceso: in partita ci andra' il display vero, qui basta che si veda
     # che e' acceso, ed e' l'unica luce propria della stanza

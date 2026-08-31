@@ -7,6 +7,33 @@
 ; LA PORTATA DELL'INTERAZIONE invece non sta qui: `INTERACT_RANGE` la scrive nel
 ; raggio, e il raggio non ha vincoli da rispettare.
 ;
+; LA LUCE DI PROSSIMITÀ è la `Prossimita` sotto la camera, e serve a una regola
+; non scritta dei giochi al buio: quello che ti sfiora non è mai una macchia nera.
+; Il nero del fondo stanza è voluto e resta — questa lampada muore a due metri e
+; mezzo — ma un mobile a mezzo metro deve avere una forma, o si cammina sbattendo
+; contro rettangoli invisibili e il buio smette di essere atmosfera e diventa un
+; difetto.
+;
+; TRE SCELTE CHE LA RENDONO INVISIBILE COME SORGENTE, e sono il punto:
+;   - sta 40 cm SOTTO l'occhio, non sull'occhio. Una lampada esattamente dove
+;     guardi illumina solo ciò che vedi e da lì non fa ombra: tutto viene piatto,
+;     come col flash. Dal petto la luce arriva radente e la forma si legge.
+;   - `light_specular = 0`: senza, ogni superficie lucida ti restituisce un
+;     puntino che ti segue per la stanza, e la lampada finta si vede.
+;   - `shadow_enabled = true`, che sembra uno spreco per una lampada da niente e
+;     invece è metà del suo lavoro. Senza ombre la luce attraversa i muri: col
+;     banco, misurata dalla stanza accanto, alzava il pavimento di 173 livelli su
+;     255 attraverso l'intonaco. E soprattutto, senza ombre un oggetto vicino
+;     viene illuminato ma non ne proietta nessuna, cioè resta una sagoma piatta —
+;     e la forma di quello che hai accanto è tutto ciò che si voleva.
+;
+; ENERGIA 0,3, e non è un numero scelto guardando. Tarata col banco
+; `tools/prova_prossimita.gd`, che misura di quanto si alza una parete a varie
+; distanze: +66 livelli a 70 cm, +22 a un metro e mezzo, zero da 2,5 in poi, e la
+; stanza accanto non se ne accorge. Chi la cambia rilancia quel banco — e badi che
+; misuri l'INTONACO: sulla prima parete che il banco aveva pescato, un battente di
+; noce, la stessa lampada dava trenta livelli invece di duecento, e la taratura
+; usciva sbagliata di dieci volte.
 ; `collision_layer = 2` è il layer GIOCATORE (vedi `Interactable.LAYER_PLAYER` e
 ; `project.godot`, sezione `layer_names/3d_physics`): il corpo sta su un layer
 ; suo perché il raggio dell'interazione, che cerca mondo e interagibili, non
@@ -33,6 +60,16 @@ shape = SubResource("CapsuleShape3D_player")
 [node name="Camera" type="Camera3D" parent="."]
 unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.65, 0)
+
+[node name="Prossimita" type="OmniLight3D" parent="Camera"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.4, 0)
+light_color = Color(0.7, 0.76, 0.92, 1)
+light_energy = 0.3
+light_specular = 0.0
+shadow_enabled = true
+shadow_bias = 0.03
+omni_range = 3.0
+omni_attenuation = 1.8
 
 [node name="InteractRay" type="RayCast3D" parent="Camera"]
 unique_name_in_owner = true

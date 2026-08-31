@@ -2040,3 +2040,68 @@ vedeva giocando, e non avrei saputo distinguere le due cause.
 **Il controllo.** Dopo la corsa il banco toglie di mezzo il corpo e pretende che
 l'anta arrivi ad `apertura_gradi`. Validato iniettando la resa: basta spegnere il
 `_physics_process` quando l'anta è bloccata e tutte e sette si fermano a 8 gradi.
+
+## D-105 — Una lampada addosso al giocatore: si vede quello che sfiori, non la stanza
+
+**Richiesta.** Il nero molto nero resta — è deciso, è l'atmosfera — ma stando vicino
+a qualcosa si deve vedere un pochino di più. È una convenzione reale dei giochi al
+buio, e la sua assenza si legge come un difetto: si cammina sbattendo contro
+rettangoli invisibili.
+
+**Cosa NON si è fatto.** Alzare la luce ambientale. Sarebbe stata la strada di due
+righe, e avrebbe schiarito il fondo della stanza — cioè avrebbe pagato la
+prossimità con l'unica cosa che il buio doveva dare.
+
+**Cosa si è fatto.** Una `OmniLight3D` sul giocatore, 40 cm sotto l'occhio, energia
+0,3, portata 3 m, caduta 1,8, `light_specular = 0`. La posizione bassa non è un
+dettaglio: una lampada sull'occhio illumina solo ciò che vedi e da lì non fa ombra,
+quindi appiattisce tutto come un flash. Dal petto arriva radente e la forma si legge.
+
+**Le ombre sono accese, e sembrava uno spreco.** Sono metà del lavoro: senza, la
+luce attraversa i muri (misurato: +173 livelli sul pavimento della stanza accanto) e
+soprattutto un oggetto vicino viene illuminato senza proiettare ombra, cioè resta
+una sagoma piatta. La forma di quello che hai accanto è tutto il punto.
+
+**Numeri.** Una parete passa da 7 a 73 su 255 a settanta centimetri, da 7 a 29 a un
+metro e mezzo, e da 2,5 m in poi non cambia di un livello. Il buio comincia dove
+cominciava prima.
+
+## D-106 — Il banco della luce ha sbagliato bersaglio tre volte, e ogni volta diceva che andava tutto bene
+
+Vale come voce a sé, perché è la parte che ha richiesto quasi tutto il lavoro e
+perché tre volte su tre il banco **passava** mentre misurava la cosa sbagliata.
+
+1. **Misurava una stanza illuminata.** Le plafoniere erano accese: la lampada
+   aggiungeva pochi livelli su una parete che ne aveva già centoventi. Adesso il
+   banco spegne tutto: la domanda è cosa fa questa luce *in una stanza al buio*.
+
+2. **Misurava un battente di noce credendo fosse un muro.** Il criterio geometrico
+   («parete piana e verticale») accetta benissimo una porta. Con l'albedo del noce la
+   stessa lampada dava +30 livelli invece di +215: la taratura ne usciva sbagliata di
+   dieci volte, e sembrava prudente. Ora il punto di misura si cerca partendo dalle
+   plafoniere — stanno al centro dei locali per costruzione — e si pretende un metro e
+   mezzo di campo libero per parte, altrimenti si sta misurando un angolo. Il primo
+   bersaglio accettato aveva uno stipite a venti centimetri, e quel pezzo di muro si
+   prendeva da solo tutta la luce.
+
+3. **Diceva che la luce non passava i muri, e la sua spia guardava il retro della
+   parete.** Quella faccia dà le spalle alla lampada: resta nera che la luce le arrivi
+   o no. Con la lampada a quaranta di energia il banco riportava fuga zero. Si misura
+   il **pavimento** della stanza accanto — sempre a un metro e mezzo dalla lampada,
+   sempre rivolto verso di lei, in qualunque stanza — e lì la fuga è saltata fuori:
+   +173 livelli.
+
+**Il controllo che ha retto tutto** è il quarto: non il valore al centro
+dell'inquadratura ma il **98º percentile** dell'immagine, cioè la superficie più
+chiara che la lampada illumina. È quello che ha smascherato il bersaglio di noce —
+il centro leggeva 37, e nella stessa foto l'intonaco lì accanto era a 239.
+
+Tutti e quattro validati per iniezione: energia 0,02 fa fallire «da vicino non si
+vede niente», 2,0 fa fallire «è una stanza illuminata», portata 12 m fa fallire «sta
+schiarendo il fondo», e la fuga risponde all'energia in modo monotòno (+0,0 / +0,2 /
++4,3 a 0,3 / 1 / 3,5).
+
+**Limite dichiarato.** La fuga si misura dietro *una* parete. Nel punto che il banco
+sceglie oggi la stanza accanto è profonda abbastanza che, all'energia scelta, la fuga
+non sia misurabile nemmeno a ombre spente: le ombre restano accese per la resa e
+perché in una stanza più stretta quel margine non c'è.

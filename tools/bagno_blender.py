@@ -268,25 +268,66 @@ def portasalviette():
 
 
 def termosifone():
-    """A elementi, sotto la finestra. Undici colonnine e due collettori.
+    """Radiatore di GHISA A COLONNE, che e' quello che stava in un bagno di allora.
 
-    SMALTATO BIANCO, non lamiera: un radiatore di ghisa verniciato non ha niente
-    della lamiera segnata delle plafoniere, e con quella addosso sembrava arrugginito
-    sotto la finestra di un bagno pulito.
+    Prima era fatto di lastre piatte, ed era un radiatore d'acciaio a piastre: quelli
+    sono degli anni Duemila. Il ghisa a colonne si riconosce da tre cose, e sono tutte
+    e tre geometria:
+
+      * LE COLONNE SONO TONDE, due per elemento, e si vedono una per una. Le piastre
+        d'acciaio sono un muro liscio, la ghisa e' una fila di tubi.
+      * OGNI ELEMENTO HA IL SUO CAPPELLO in cima e il suo piede: non e' un pannello
+        unico, sono pezzi imbullonati uno accanto all'altro, e il profilo a onda che
+        ne esce e' la firma del radiatore di ghisa.
+      * I NIPPLI FRA UN ELEMENTO E L'ALTRO, cioe' i raccordi filettati che li tengono
+        insieme. Sono piccoli e sono quello che dice "questo si smonta".
+
+    Piu' la valvola da una parte, il detentore dall'altra e lo sfiato in cima: un
+    radiatore senza rubinetti e' un mobile.
     """
     x0, z0, x1, z1, alto = IMPRONTE["Termo"]
-    basso, cima = 0.18, alto - 0.03
-    n = 11
+    M = "Radiatore"
+    piede, cima = 0.14, alto - 0.04
+    # sta staccato dal muro: dietro un termosifone ci passa la mano
+    zc = z1 - 0.115
+    passo_z = 0.075                       # le due colonne di uno stesso elemento
+    za, zb = zc - passo_z / 2, zc + passo_z / 2
+
+    n = 12
+    larghezza = x1 - x0 - 0.10
+    passo = larghezza / (n - 1.0)
     for k in range(n):
-        x = x0 + 0.05 + (x1 - x0 - 0.10) * k / (n - 1.0)
-        scatola("Ceramica", x - 0.017, x + 0.017, basso, cima, z0 + 0.02, z1 - 0.02)
-    for y in (basso, cima):
-        scatola("Ceramica", x0 + 0.03, x1 - 0.03, y - 0.022, y + 0.022,
-                z0 + 0.035, z1 - 0.035)
-    # le due mensole a muro e la valvola
+        x = x0 + 0.05 + passo * k
+        for zz in (za, zb):
+            cilindro(M, x, zz, piede, cima, 0.026, seg=10)
+        # il cappello e il piede dell'elemento: uniscono le due colonne, e il loro
+        # profilo affiancato fa l'onda che si riconosce da lontano
+        for (y0, y1) in ((cima - 0.045, cima + 0.010), (piede - 0.010, piede + 0.045)):
+            cilindro_orizz(M, x, (y0 + y1) / 2, zc, "z", passo_z + 0.052,
+                           (y1 - y0) / 2, seg=10)
+        # il nipplo verso l'elemento successivo
+        if k < n - 1:
+            for zz in (za, zb):
+                cilindro_orizz(M, x + passo / 2, (piede + cima) / 2, zz, "x",
+                               passo - 0.052, 0.016, seg=8)
+
+    # i due collettori, che attraversano tutto: sono quelli che portano l'acqua
+    for y in (cima - 0.018, piede + 0.018):
+        for zz in (za, zb):
+            cilindro_orizz(M, (x0 + x1) / 2, y, zz, "x", larghezza + 0.10, 0.018, seg=8)
+
+    # i piedini
     for xx in (x0 + 0.10, x1 - 0.10):
-        scatola("Inox", xx - 0.012, xx + 0.012, basso - 0.03, basso, z1 - 0.06, z1)
-    cilindro("Inox", x0 + 0.05, (z0 + z1) / 2, basso - 0.10, basso, 0.014, seg=8)
+        scatola(M, xx - 0.022, xx + 0.022, 0.0, piede - 0.005, zc - 0.05, zc + 0.05)
+
+    # LA VALVOLA e il detentore, uno per capo, e lo sfiato in cima. Sono i tre pezzi
+    # che dicono che ci passa dentro dell'acqua.
+    cilindro("Inox", x0 + 0.02, zc, piede + 0.010, piede + 0.075, 0.020, seg=10)
+    cilindro_orizz("Inox", x0 - 0.01, piede + 0.018, zc, "x", 0.06, 0.014, seg=8)
+    cilindro("Inox", x0 + 0.02, zc, piede + 0.075, piede + 0.115, 0.026, seg=10)
+    cilindro("Inox", x1 - 0.02, zc, piede + 0.010, piede + 0.070, 0.018, seg=10)
+    cilindro_orizz("Inox", x1 + 0.01, piede + 0.018, zc, "x", 0.06, 0.014, seg=8)
+    cilindro_orizz("Inox", x1 - 0.03, cima - 0.010, zc, "x", 0.035, 0.010, seg=8)
 
 
 # --- i sanitari: da fuori se ci sono, segnaposto se no ------------------------
@@ -658,7 +699,7 @@ termosifone()
 sanitari()
 
 _prova = prova_ingiallisci()
-oggetti = finisci(morbidi=("Ceramica", "CeramicaVecchia", "Inox"))
+oggetti = finisci(morbidi=("Ceramica", "CeramicaVecchia", "Inox", "Radiatore"))
 
 # IL GUSCIO NON HA IMPRONTA, ED E' GIUSTO COSI'. Rivestimento, listello e pavimento
 # non sono arredi: sono uno strato di un centimetro incollato a superfici che la
@@ -736,5 +777,7 @@ scatta("bagno.png", (5.90, 1.62, 8.80), (8.10, 0.75, 7.05), lente=24.0)
 scatta("bagno-lavabo.png", (6.60, 1.62, 8.10), (5.05, 1.20, 8.55), lente=24.0)
 # l'armadio e la finestra
 scatta("bagno-armadio.png", (5.60, 1.62, 7.20), (7.90, 1.10, 9.20), lente=22.0)
+# il termosifone sotto la finestra, da vicino: le colonne di ghisa si devono contare
+scatta("bagno-termo.png", (6.10, 1.20, 8.30), (6.90, 0.45, 9.30), lente=30.0)
 # il listello da vicino: e' il pezzo che data la stanza, va guardato
 scatta("bagno-listello.png", (6.30, 1.55, 7.60), (8.10, 1.52, 7.30), lente=45.0)

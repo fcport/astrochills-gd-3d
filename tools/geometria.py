@@ -855,7 +855,11 @@ ARREDI_BAGNO = [
     ("Pensile",     5.00, 6.60, 5.60, 6.92, 2.05),
     # sotto la finestra, e piu' basso del davanzale: un termosifone davanti a un
     # vetro e' normale, un mobile no. Allineato al vano vero, che va da 6,20 a 7,20.
-    ("Termo",       6.20, 9.25, 7.20, 9.40, 0.75),
+    # 20 cm di profondita' e non 15: un radiatore di ghisa a due colonne e'
+    # profondo tredici centimetri e sta staccato dal muro di quattro, o non ci
+    # passa la mano per pulirci dietro. Con quindici le colonne uscivano
+    # dall'impronta.
+    ("Termo",       6.20, 9.20, 7.20, 9.40, 0.75),
     # il portasciugamani a muro, fra la porta e il lavabo
     ("Portasalv",   5.00, 7.30, 5.12, 7.95, 1.30),
 ]

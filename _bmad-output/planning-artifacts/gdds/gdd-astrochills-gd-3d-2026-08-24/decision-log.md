@@ -2461,3 +2461,34 @@ controllo lo accusa.
 controllo che grida su codice sano (D-122, la conversione doppia), e un controllo che
 salta il caso che non sa gestire. L'ultimo è il più difficile da notare, perché
 assomiglia a un successo.
+
+## D-125 — Il radiatore è di ghisa a colonne, e non si scarica
+
+**Correzione.** Il termosifone era fatto di lastre piatte: quello è un radiatore
+d'acciaio a piastre, cioè degli anni Duemila. In un bagno del 1999 c'è la ghisa a
+colonne.
+
+**Perché modellato e non preso da fuori.** Su Sketchfab ce ne sono, e sono tutti
+*arrugginiti* — la stessa trappola che è già costata due giri con i sanitari: vecchio
+non vuol dire sporco. Ma soprattutto un radiatore a colonne è **geometria regolare**,
+non una superficie curva continua come un lavabo: dodici elementi identici fatti di
+cilindri e raccordi. È il caso in cui modellare costa meno che scaricare, e dà una
+verniciatura coerente col resto della stanza invece che una ruggine da correggere.
+
+**Tre cose lo fanno leggere come ghisa**, e sono tutte geometria: le colonne tonde due
+per elemento (le piastre d'acciaio sono un muro liscio, la ghisa è una fila di tubi);
+il cappello e il piede di ogni elemento, il cui profilo affiancato fa l'onda che si
+riconosce da lontano; i nippli fra un elemento e l'altro, che dicono «questo si
+smonta». Più valvola, detentore e sfiato: un radiatore senza rubinetti è un mobile.
+
+**Due difetti visti solo nel render.** Gli era stata data la trama del metallo, che è
+grigio azzurra: collegata al Base Color ne prende il posto — il colore serve solo dove
+la mappa viene *moltiplicata* — e il radiatore usciva grigio ferro invece che bianco.
+Una ghisa smaltata è liscia: la texture non ce l'ha. E non era fra i materiali
+sfumati, quindi le colonne tonde uscivano sfaccettate.
+
+**E il bianco era dalla parte sbagliata.** Scritto 0,84 usciva a 236 in sRGB, cioè
+ventiquattro livelli **più chiaro** dei sanitari invece che appena più scuro: quei
+numeri finiscono nel Base Color di Blender, che è lineare, mentre i 212 dei sanitari
+sono in sRGB. 0,62 lineare fa 202. Stesso fattore 2,4 dell'anta del magazzino — e
+nessuno se ne accorge finché non li si mette accanto.

@@ -92,6 +92,18 @@ COLORI = {
     # segnaposto dei sanitari e come tinta con cui invecchiare il bidet, che di
     # bidet vecchi non ne esiste uno con licenza libera.
     "CeramicaVecchia": (0.82, 0.79, 0.71),
+    # LA GHISA VERNICIATA DEL RADIATORE. Appena piu' calda e appena piu' scura della
+    # ceramica dei sanitari: uno smalto a fuoco su ghisa ingiallisce piu' di uno
+    # smalto ceramico, e in vent'anni la differenza si vede. Appena - non e' sporco.
+    #
+    # 0,62 E NON 0,84, e la differenza e' tutta nello spazio colore. Questi numeri
+    # finiscono nel Base Color di Blender, che e' LINEARE; i 212 su 255 a cui stanno
+    # i sanitari sono in sRGB. Scritto 0,84 il radiatore usciva a 236 in sRGB, cioe'
+    # VENTIQUATTRO LIVELLI PIU' CHIARO dei sanitari invece che appena piu' scuro -
+    # l'opposto di quello che si voleva, e nessuno se ne accorge finche' non li si
+    # mette accanto. 0,62 lineare fa 205 in sRGB. E' lo stesso scarto di fattore 2,4
+    # che fece uscire l'anta del magazzino a meta' della tinta del suo telaio.
+    "Radiatore":      (0.62, 0.60, 0.55),
 }
 RUVIDEZZA = {"Metallo": 0.45, "Inox": 0.28, "Rame": 0.35, "Schermo": 0.12,
              "Acceso": 0.20, "Gomma": 0.75, "Ceramica": 0.25, "Smalto": 0.30,
@@ -102,7 +114,10 @@ RUVIDEZZA = {"Metallo": 0.45, "Inox": 0.28, "Rame": 0.35, "Schermo": 0.12,
              "Specchio": 0.06, "Spugna": 0.90, "Armadietto": 0.42,
              # 0,38 contro i 0,25 della ceramica nuova: lo smalto vecchio non
              # specchia piu', ed e' meta' di quello che lo fa leggere vecchio
-             "CeramicaVecchia": 0.38}
+             "CeramicaVecchia": 0.38,
+             # un radiatore verniciato non specchia: 0,42 contro i 0,25 della
+             # ceramica smaltata. E' quello che distingue la ghisa dalla porcellana
+             "Radiatore": 0.42}
 METALLICI = ("Metallo", "Inox", "Rame", "Ferro")
 # I materiali la cui texture va MOLTIPLICATA per il colore invece che sostituirlo.
 # Di norma il colore e' solo un ripiego per quando la texture manca, e collegare la
@@ -140,6 +155,12 @@ TEXTURE = {
     # plafoniere: quella e' scrostata, e un armadio di servizio di un osservatorio in
     # funzione e' vecchio, non un rudere
     "Armadietto":   ("metallo", 0.70),
+    # IL RADIATORE NON HA TEXTURE, e la prima versione ce l'aveva. Gli si era data
+    # la trama del metallo, che e' grigio azzurra: collegata al Base Color ne prende
+    # il posto - il colore serve solo dove la mappa viene MOLTIPLICATA - e il
+    # radiatore usciva grigio ferro invece che bianco verniciato. Una ghisa smaltata
+    # e' liscia e uniforme: la trama non ce l'ha, e la forma gliela danno le sue
+    # dodici colonne.
     "Plastica":     ("plastica", 0.35),
     # IL BAGNO. 0,75 a muro: la texture porta cinque piastrelle per lato, quindi
     # ognuna viene 15 cm - il formato del rivestimento di allora. A terra 1,20 su

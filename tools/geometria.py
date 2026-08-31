@@ -49,16 +49,35 @@ INTERNI = [
 MURI = PERIMETRO + INTERNI
 
 # --- aperture: (x, z, larghezza REALE, orientamento, tipo, nome) -------------
+# TUTTE LE PORTE INTERNE HANNO LO STESSO VANO, ed e' 1,06 - cioe' 90 cm di luce
+# netta una volta tolti gli 8 cm di mostra per parte. La porta 90 e' la misura di
+# serie di un edificio pubblico italiano, e SERVE ricordarsi perche' prima erano
+# fra 1,30 e 1,40.
+#
+# Non era generosita': e' che la pianta di questo edificio e' dimezzata (D-028)
+# mentre le altezze sono vere. Le stanze si sono ristrette, le porte no, e il
+# risultato e' che in gioco leggevano come vani da capannone - 2,10 di altezza per
+# 1,24 di luce fa un rapporto di 1,7, mentre una porta vera sta sopra il 2,3. Il
+# difetto si vede solo camminandoci dentro, perche' in pianta 1,30 e' un numero
+# ragionevole.
+#
+# Restano fuori le due che una misura ce l'hanno per un motivo: l'INGRESSO, che e'
+# una via di fuga con il maniglione, e il MAGAZZINO, che e' una porta di servizio da
+# 90 di vano e 74 di luce.
+#
+# I vani si sono stretti TENENDO FERMO IL CENTRO, non il bordo: lasciando la
+# coordinata dichiarata, ogni porta sarebbe scivolata di dieci-quindici centimetri
+# verso il suo montante, e in due casi verso l'angolo.
+VANO_PORTA = 1.06
+
 APERTURE = [
     (20.0, 19, 1.20, "h", "porta",    "ingresso"),   # un battente solo, antipanico
-    (17.6, 8.2, 1.40, "h", "porta",   "cucina"),
-    (16.5, 9.5, 1.40, "v", "porta",   "corridoio -> spazio"),
-    # 1,30 e non 1,60: era la piu' larga dell'edificio, e in mezzo a porte da
-    # 1,30-1,40 un vano da 1,60 legge come un errore di disegno.
-    (12.9, 8.8, 1.30, "h", "porta",   "pc -> corridoio"),
+    (17.94, 8.2, VANO_PORTA, "h", "porta",   "cucina"),
+    (16.5, 9.84, VANO_PORTA, "v", "porta",   "corridoio -> spazio"),
+    (13.14, 8.8, VANO_PORTA, "h", "porta",   "pc -> corridoio"),
     (7.35, 13, 0.90, "h", "porta",    "magazzino"),
-    (11.6, 13, 1.30, "h", "porta",    "bagno"),
-    (0.65, 13, 1.30, "h", "porta",   "disimpegno"),
+    (11.84, 13, VANO_PORTA, "h", "porta",    "bagno"),
+    (0.89, 13, VANO_PORTA, "h", "porta",   "disimpegno"),
     # UNA SOLA APERTURA SUL MURO DELLA CUPOLA, E NON SI ATTRAVERSA. C'era anche
     # una porta, e serviva solo a raddoppiare un collegamento che il corridoio
     # gia' fa: dalla sala di controllo si passa dal corridoio, e verso la cupola

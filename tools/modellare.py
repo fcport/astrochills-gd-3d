@@ -28,6 +28,34 @@ COLORI = {
     "LegnoUfficio": (0.72, 0.60, 0.44),
     "LegnoCucina":  (0.52, 0.41, 0.29),
     "LegnoTeche":   (0.34, 0.26, 0.20),
+    # IL LEGNO DEL PENSILE DEL BAGNO, e non e' quello delle teche. Il pensile usava
+    # LegnoTeche - noce scuro verniciato, la mappa piu' scura del progetto: 65 su
+    # 255 di media. In una sala illuminata su una libreria funziona; appeso in un
+    # bagno al buio, e per giunta con l'interno in ombra, il mobile spariva - ad
+    # anta aperta si vedeva un rettangolo nero con dentro un ripiano nero. Qui va
+    # un legno medio, che a mezza luce si legge ancora come legno.
+    "LegnoBagno":   (0.17, 0.10, 0.06),
+    # L'INTERNO DEI MOBILI E' CHIARO, ed e' una cosa vera prima che una comodita':
+    # un mobile degli anni Novanta ha la cassa impiallacciata fuori e il melamminico
+    # bianco dentro. Ed e' anche l'unico modo perche' aprire un'anta mostri qualcosa
+    # invece di un buco: dentro un pensile non entra luce, e legno scuro in ombra
+    # e' nero comunque lo si illumini.
+    "InternoMobile": (0.68, 0.67, 0.63),
+    # LE COSE DENTRO IL PENSILE, e sono TINTE PIATTE apposta. La prima stesura usava
+    # `Carta` e `Plastica`, che una mappa ce l'hanno: quattro oggetti da pochi
+    # centimetri, visibili solo ad anta aperta, hanno portato il .glb del bagno da
+    # 13,9 a 18,5 MB - 3,9 MB di texture per una scatola di garze. Su un rotolo di
+    # carta largo undici centimetri la mappa non si vede: si vede il colore.
+    "Cartone":      (0.28, 0.18, 0.10),
+    "Rotolo":       (0.80, 0.78, 0.74),
+    "Flacone":      (0.08, 0.16, 0.28),
+    # L'ALCOL DENATURATO E' ROSA, ed e' rosa per legge italiana dal 1926: il
+    # colorante serve a renderlo riconoscibile e imbevibile. In un pensile di un
+    # bagno italiano quella bottiglia c'e', e il suo colore da solo dice il
+    # paese. Era di `Vetrina` - vetro con alpha 0,06 - e dentro un mobile in
+    # ombra non si vedeva affatto: un oggetto trasparente al buio non e' un
+    # oggetto trasparente, e' un oggetto assente.
+    "Alcol":        (0.35, 0.04, 0.13),
     # i dorsi dei libri: cartonati e telati, non tavole
     "LibroRosso":   (0.42, 0.16, 0.14),
     "LibroBlu":     (0.16, 0.22, 0.36),
@@ -126,7 +154,10 @@ RUVIDEZZA = {"Metallo": 0.45, "Inox": 0.28, "Rame": 0.35, "Schermo": 0.12,
              "CeramicaVecchia": 0.38,
              # un radiatore verniciato non specchia: 0,42 contro i 0,25 della
              # ceramica smaltata. E' quello che distingue la ghisa dalla porcellana
-             "Radiatore": 0.42, "Cromo": 0.14}
+             "Radiatore": 0.42, "Cromo": 0.14,
+             "LegnoBagno": 0.45, "InternoMobile": 0.62,
+             "Cartone": 0.85, "Rotolo": 0.92, "Flacone": 0.35,
+             "Alcol": 0.22}
 METALLICI = ("Metallo", "Inox", "Rame", "Ferro")
 # I materiali la cui texture va MOLTIPLICATA per il colore invece che sostituirlo.
 # Di norma il colore e' solo un ripiego per quando la texture manca, e collegare la
@@ -151,6 +182,7 @@ TEXTURE = {
     "LegnoUfficio": ("legno-ufficio", 1.10),
     "LegnoCucina":  ("legno-cucina", 0.80),
     "LegnoTeche":   ("legno-teche", 0.70),
+    "LegnoBagno":   ("legno-porte", 0.55),
     "Ante":         ("legno-porte", 1.00),
     "Telai":        ("legno-porte", 1.00),
     # La porta del magazzino e il suo controtelaio: lamiera verniciata, non legno.

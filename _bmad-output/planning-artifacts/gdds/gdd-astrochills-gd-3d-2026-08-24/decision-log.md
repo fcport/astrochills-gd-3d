@@ -2674,3 +2674,61 @@ molto più di sei centimetri di larghezza, ed è anche giusto.
 numero che non si può andare a guardare: costringe a rifare a mano il conto della griglia
 per sapere in che angolo cercare. Con le coordinate ci si va, e in questo caso è servito
 a capire in tre tentativi qual era il limite invece di indovinarlo.
+
+## D-135 — Le porte interne sono tutte da 90, e il perché non era generosità
+
+Erano fra **1,30 e 1,40 di vano** — da 1,14 a 1,24 di luce netta — e in gioco leggevano
+come vani da capannone. Adesso sono tutte **1,06 di vano, 0,90 di luce**: la *porta 90*,
+misura di serie di un edificio pubblico italiano.
+
+La causa non era una scelta sbagliata in pianta: **la pianta di questo edificio è
+dimezzata (D-028) mentre le altezze sono vere.** Le stanze si sono ristrette, le porte
+no. 2,10 di altezza per 1,24 di luce fa un rapporto di 1,7; una porta vera sta sopra il
+2,3. In pianta 1,30 è un numero ragionevole, ed è per questo che il difetto si vede solo
+camminandoci dentro.
+
+Restano fuori le due che una misura ce l'hanno per un motivo: l'**ingresso** (via di fuga
+col maniglione) e il **magazzino** (porta di servizio da 90 di vano). I vani si sono
+stretti tenendo fermo il **centro** e non il bordo: lasciando la coordinata dichiarata,
+ogni porta sarebbe scivolata di dieci-quindici centimetri verso il suo montante.
+
+Effetto collaterale misurato: tutte le porte adesso girano libere fino a **118°** invece
+che fra 102 e 117.
+
+E il vano della porta del bagno era **ricopiato a mano** dentro `bagno_blender.py`
+(`PORTA = (5.80, 7.10)`), insieme a quello della finestra. Adesso li legge da
+`geometria`: senza, il rivestimento sarebbe rimasto tagliato dov'era la porta prima —
+una striscia di intonaco in mezzo alle piastrelle, che in un render notturno non si
+distingue da un difetto della texture.
+
+## D-136 — Lo stesso legno disegnato da due programmi dava due legni
+
+Il pensile aperto era un buco nero con dentro un ripiano nero, e le cause erano tre,
+tutte e tre reali:
+
+1. **La mappa era la più scura del progetto.** `LegnoTeche` — noce verniciato per le
+   teche — sta a **65 su 255** di media. Su una libreria in una sala illuminata funziona;
+   appesa in un bagno al buio sparisce. Il pensile usa adesso `LegnoBagno`, cioè
+   `legno-porte`, un legno medio che a mezza luce si legge ancora come legno.
+2. **La tinta veniva moltiplicata di qua e non di là.** In Blender quel materiale non sta
+   fra i `TINTI`: la mappa parla da sola. Nel `.tscn` invece `albedo_color` moltiplica
+   sempre. Lo stesso legno, disegnato da due programmi con due formule diverse, dava due
+   legni — e l'anta usciva più scura della cassa a cui è attaccata. **Lo stesso difetto
+   c'era su tutte e sette le porte**: battente quasi nero (`0,38`) incastrato in una
+   mostra color miele. Bianco pieno da tutte e due le parti.
+3. **Dentro un pensile non entra luce.** Un mobile di quegli anni è impiallacciato fuori
+   e melamminico bianco dentro, e quella verità è anche l'unica cosa che rende
+   l'apertura leggibile.
+
+**E un pensile vuoto è un pensile che non vale la pena aprire.** Il meccanismo può essere
+perfetto — e lo è, il banco lo misura — ma se dietro l'anta non c'è niente, aprirla è una
+cosa che si fa una volta. Quattro oggetti, e devono essere di quel posto: alcol, garze,
+sapone, rotoli. L'alcol è **rosa**, perché per legge italiana lo è dal 1926, e quel
+colore da solo dice il paese.
+
+Erano di `Carta` e `Plastica`, che una mappa ce l'hanno: quattro oggetti da pochi
+centimetri, visibili solo ad anta aperta, avevano portato il `.glb` da 13,9 a **18,5 MB**
+— 3,9 MB di texture per una scatola di garze. Adesso sono tinte piatte: 14,1 MB. Su un
+rotolo largo undici centimetri la mappa non si vede, si vede il colore. E la bottiglia,
+che era di vetro con alpha 0,06, dentro un mobile in ombra non si vedeva affatto: **un
+oggetto trasparente al buio non è un oggetto trasparente, è un oggetto assente.**

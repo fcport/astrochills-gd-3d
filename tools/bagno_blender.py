@@ -59,7 +59,7 @@ for _m in ("geometria", "modellare"):
     if _m in sys.modules:
         importlib.reload(sys.modules[_m])
 from geometria import (ante_mobili, ARREDI_BAGNO, impronta_utile,   # noqa: E402
-                       SALA_BAGNO, SPESS_PIASTRELLA, W_SILL)
+                       SALA_BAGNO, scalati, SPESS_PIASTRELLA, W_SILL)
 from modellare import (COLORI, cilindro, cilindro_orizz, esporta,   # noqa: E402
                        finisci, raddrizza_normali, usa_le_ridotte,
                        lampada, posa_modello, prepara_render, pulisci, scatola,
@@ -75,9 +75,25 @@ IMPRONTE = {n: (x0, z0, x1, z1, h) for (n, x0, z0, x1, z1, h) in ARREDI_BAGNO}
 X0, Z0, X1, Z1 = SALA_BAGNO[0]
 
 # il vano della porta sul muro nord e quello della finestra sul muro sud: il
-# rivestimento si interrompe li', e il listello con lui
-PORTA = (5.80, 7.10)
-FINESTRA = (6.20, 7.20)
+# rivestimento si interrompe li', e il listello con lui.
+#
+# LETTI DA GEOMETRIA, NON RICOPIATI. Erano due coppie di numeri scritte a mano che
+# per caso coincidevano con l'apertura vera, e il giorno in cui le porte interne
+# sono state ristrette per uniformarle il rivestimento del bagno sarebbe rimasto
+# tagliato dov'era la porta prima - una striscia di intonaco in mezzo alle
+# piastrelle, che in un render notturno non si distingue da un difetto della texture.
+def vano(nome):
+    """Dove cade un'apertura, in metri di gioco lungo il muro che la porta."""
+    _, aperture, _, _, _, _ = scalati()
+    for (px, pz, w, o, _t, n) in aperture:
+        if n == nome:
+            a = px if o == "h" else pz
+            return (a, a + w)
+    raise KeyError("apertura sconosciuta: %s" % nome)
+
+
+PORTA = vano("bagno")
+FINESTRA = vano("finestra bagno")
 
 # Il rivestimento arriva a 1,60 e il listello sono gli ultimi 8 cm. Non 2,00 e non
 # fino al soffitto: 1,60 e' l'altezza a cui si fermava il rivestimento nei bagni di
@@ -273,19 +289,59 @@ def pensile():
     non si fa piu' qui. Lo fa `geometria.impronta_utile()`, su ogni lato che tocchi
     un muro, perche' fatto a mano e' stato dimenticato tre volte di fila: prima la
     schiena, poi il fianco ovest, poi il fianco sud dell'armadio.
+
+    FUORI IL LEGNO, DENTRO IL BIANCO. Aperto, il pensile mostrava un buco nero con
+    dentro un ripiano nero, e la colpa non era della luce: la cassa era di
+    `LegnoTeche`, la mappa piu' scura del progetto (65 su 255), e dentro un pensile
+    la luce non entra comunque. Un mobile di quegli anni e' impiallacciato fuori e
+    melamminico bianco dentro - e quella verita' e' anche quello che rende
+    l'apertura leggibile.
     """
     x0, z0, x1, z1, alto = impronta_utile("Pensile")
     basso, cima = 1.45, alto
     zf = filo_anta("pensile bagno")[1]
-    S = 0.018
-    M = "LegnoTeche"
+    S, L = 0.018, 0.004       # spessore della cassa, e del rivestimento interno
+    M, D = "LegnoBagno", "InternoMobile"
     for (a, b) in ((x0, x0 + S), (x1 - S, x1)):          # fianchi
         scatola(M, a, b, basso, cima, z0, zf)
     for (a, b) in ((basso, basso + S), (cima - S, cima)):  # fondo e cielo
         scatola(M, x0, x1, a, b, z0, zf)
-    scatola(M, x0, x1, basso, cima, z0, z0 + 0.012)      # schiena
+    scatola(M, x0, x1, basso, cima, z0, z0 + 0.010)      # schiena, di fuori
+    # e il vano dentro, foderato: schiena, fianchi, cielo e fondo
+    ix0, ix1, iy0, iy1 = x0 + S, x1 - S, basso + S, cima - S
+    scatola(D, ix0, ix1, iy0, iy1, z0 + 0.010, z0 + 0.010 + L)
+    for (a, b) in ((ix0, ix0 + L), (ix1 - L, ix1)):
+        scatola(D, a, b, iy0, iy1, z0 + 0.014, zf)
+    for (a, b) in ((iy0, iy0 + L), (iy1 - L, iy1)):
+        scatola(D, ix0, ix1, a, b, z0 + 0.014, zf)
     mezzo = (basso + cima) / 2
-    scatola(M, x0 + S, x1 - S, mezzo - 0.008, mezzo + 0.008, z0 + 0.012, zf - 0.004)
+    scatola(D, ix0, ix1, mezzo - 0.008, mezzo + 0.008, z0 + 0.014, zf - 0.004)
+    dentro_il_pensile(ix0, ix1, iy0 + L, mezzo + 0.008, z0 + 0.014, zf - 0.004)
+
+
+def dentro_il_pensile(x0, x1, ripiano_basso, ripiano_alto, z0, z1):
+    """Quello che ci sta dentro: e' un bagno di servizio, non una vetrina.
+
+    UN PENSILE VUOTO E' UN PENSILE CHE NON VALE LA PENA APRIRE. Il meccanismo puo'
+    essere perfetto - e lo e', il banco lo misura - ma se dietro l'anta non c'e'
+    niente, aprirla e' una cosa che si fa una volta. Quattro oggetti bastano, e
+    devono essere QUATTRO OGGETTI DI QUEL POSTO: in un osservatorio, nel pensile
+    del bagno, ci stanno l'alcol, una scatola di garze, il sapone di scorta e i
+    rotoli. Non un set da toeletta.
+    """
+    zc = (z0 + z1) / 2
+    # sul ripiano basso: la bottiglia di alcol e il flacone del sapone
+    cilindro("Alcol", x0 + 0.07, zc, ripiano_basso, ripiano_basso + 0.19, 0.032, seg=12)
+    cilindro("Flacone", x0 + 0.07, zc, ripiano_basso + 0.19, ripiano_basso + 0.215, 0.014, seg=8)
+    scatola("Flacone", x0 + 0.15, x0 + 0.21, ripiano_basso, ripiano_basso + 0.14,
+            zc - 0.028, zc + 0.028)
+    # la scatola di garze, coricata
+    scatola("Cartone", x0 + 0.26, x0 + 0.40, ripiano_basso, ripiano_basso + 0.075,
+            zc - 0.045, zc + 0.045)
+    # sul ripiano alto: due rotoli in piedi
+    for k in (0, 1):
+        cilindro("Rotolo", x0 + 0.09 + k * 0.13, zc, ripiano_alto + 0.008,
+                 ripiano_alto + 0.108, 0.055, seg=14)
 
 
 def sopra_il_lavabo():

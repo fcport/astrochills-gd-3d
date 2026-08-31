@@ -99,11 +99,7 @@ def tscn():
              '[ext_resource type="Texture2D" path="res://assets/textures/metallo/color.jpg" id="16_met_c"]',
              '[ext_resource type="Texture2D" path="res://assets/textures/metallo/normal.jpg" id="17_met_n"]',
              '[ext_resource type="Texture2D" path="res://assets/textures/metallo/roughness.jpg" id="18_met_r"]',
-             # il noce del pensile del bagno: stessa storia delle ante di legno, ma
-             # l'anta di un mobile ha la venatura piu' fitta di quella di una porta
-             '[ext_resource type="Texture2D" path="res://assets/textures/legno-teche/color.jpg" id="20_teche_c"]',
-             '[ext_resource type="Texture2D" path="res://assets/textures/legno-teche/normal.jpg" id="21_teche_n"]',
-             '[ext_resource type="Texture2D" path="res://assets/textures/legno-teche/roughness.jpg" id="22_teche_r"]', '']
+             '']
     dims = sorted(set((round(b[3], 3), round(b[4], 3), round(b[5], 3)) for b in blocchi)
                   | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
                      for a in ante_porte() for p in pezzi_anta(a)}
@@ -128,7 +124,14 @@ def tscn():
         righe.append('')
     for nome, col in [("mat_muro", "0.78, 0.76, 0.72"), ("mat_pav", "0.42, 0.40, 0.38"),
                       ("mat_soff", "0.60, 0.60, 0.62"), ("mat_pass", "0.55, 0.45, 0.32"), ("mat_prato", "0.20, 0.26, 0.17"),
-                      ("mat_auto", "0.45, 0.13, 0.13"), ("mat_rec", "0.35, 0.33, 0.30"), ("mat_tetto", "0.24, 0.22, 0.21"), ("mat_anta", "0.38, 0.28, 0.19"), ("mat_dome", "0.86, 0.87, 0.88"), ("mat_tele", "0.30, 0.33, 0.38"),
+                      ("mat_auto", "0.45, 0.13, 0.13"), ("mat_rec", "0.35, 0.33, 0.30"), ("mat_tetto", "0.24, 0.22, 0.21"), # L'ANTA E IL SUO TELAIO SONO LO STESSO LEGNO, e per sette porte non lo
+                      # sembravano. Il telaio lo disegna Blender, l'anta nasce qui, e
+                      # tutti e due usano la mappa `legno-porte`: solo che di la' il
+                      # materiale NON e' fra i TINTI - la mappa parla da sola - e qui
+                      # veniva moltiplicata per 0,38. Il risultato era un battente
+                      # quasi nero incastrato in una mostra color miele, e si vedeva
+                      # da qualunque punto del corridoio. Bianco pieno, come di la'.
+                      ("mat_anta", "1, 1, 1"), ("mat_dome", "0.86, 0.87, 0.88"), ("mat_tele", "0.30, 0.33, 0.38"),
                       # la porta del magazzino: lamiera verniciata verde-grigio
                       # 0,73 QUI VUOL DIRE 0,50 LA'. La stessa lamiera e' tinta in
                       # due file - il telaio in Blender, l'anta qui - e la tinta
@@ -144,7 +147,7 @@ def tscn():
                       # la quarta volta che questo fattore 2,4 morde in questo
                       # progetto, e qui morderebbe peggio che altrove - un'anta e la
                       # cassa a cui e' attaccata devono essere lo STESSO legno.
-                      ("mat_teche", "0.638, 0.570, 0.511"),
+                      ("mat_teche", "1, 1, 1"),
                       ("mat_armadietto", "0.808, 0.825, 0.803"),
                       ("mat_specchio", "0.862, 0.877, 0.892"),
                       ("mat_feritoia", "0.264, 0.284, 0.293"),
@@ -183,15 +186,21 @@ def tscn():
                       'uv1_triplanar = true',
                       'uv1_scale = Vector3(0.8, 0.8, 0.8)']
         if nome == "mat_teche":
-            righe += ['albedo_texture = ExtResource("20_teche_c")',
+            # LO STESSO LEGNO DELLA CASSA, E SENZA TINTA. Qui c'era il noce delle
+            # teche moltiplicato per un colore scuro, e il risultato era un'anta piu'
+            # scura del mobile a cui e' attaccata: in Blender quel materiale la tinta
+            # NON la moltiplica - non sta fra i TINTI - e qui invece si'. Lo stesso
+            # legno disegnato da due programmi con due formule diverse da' due legni.
+            # Bianco pieno, la mappa parla da sola, come di la'.
+            righe += ['albedo_texture = ExtResource("7_anta_c")',
                       'normal_enabled = true',
-                      'normal_texture = ExtResource("21_teche_n")',
-                      'roughness_texture = ExtResource("22_teche_r")',
+                      'normal_texture = ExtResource("8_anta_n")',
+                      'roughness_texture = ExtResource("9_anta_r")',
+                      'roughness = 0.45',
                       'uv1_triplanar = true',
-                      # piu' fitta di quella delle porte: un'anta di pensile e' larga
-                      # sessanta centimetri, e con la scala della porta ci starebbe
-                      # dentro mezza venatura
-                      'uv1_scale = Vector3(2.2, 2.2, 2.2)']
+                      # 1,82 = una ripetizione ogni 55 cm, che e' la scala con cui
+                      # `modellare.TEXTURE` cuoce le UV della cassa in Blender
+                      'uv1_scale = Vector3(1.82, 1.82, 1.82)']
         if nome == "mat_armadietto":
             righe += ['albedo_texture = ExtResource("16_met_c")',
                       'normal_enabled = true',

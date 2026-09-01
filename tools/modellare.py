@@ -163,6 +163,11 @@ COLORI = {
     # ghiere sono ABS stampato. Separarli costa un nome e in cambio la scatola
     # smette di essere una macchia nera sola.
     "PlasticaNera":   (0.10, 0.10, 0.11),
+    # IL FUNGO DEL QUADRO ELETTRICO. Rosso di sicurezza, e scuro per la stessa
+    # ragione degli altri due cappucci: un pulsante e' plastica pigmentata. Questo
+    # e' un filo piu' acceso perche' e' un ARRESTO D'EMERGENZA - la norma vuole
+    # che si veda da lontano, ed e' l'unico pezzo colorato di tutto il quadro.
+    "PulsanteRete":   (0.55, 0.06, 0.05),
     # La scatola di derivazione e il corrugato: PVC grigio da impianto, quello che
     # in un edificio dell'85 corre a vista sui muri di servizio.
     "ScatolaImpianto": (0.47, 0.48, 0.47),
@@ -196,7 +201,7 @@ RUVIDEZZA = {"Metallo": 0.45, "Inox": 0.28, "Rame": 0.35, "Schermo": 0.12,
              # ABS stampato: opaco, ma non gessoso. I cappucci un filo piu' lisci
              # perche' sono quelli che una mano tocca mille volte.
              "PlasticaGialla": 0.55, "PulsanteApre": 0.38,
-             "PulsanteChiude": 0.38,
+             "PulsanteChiude": 0.38, "PulsanteRete": 0.36,
              "PlasticaNera": 0.52, "ScatolaImpianto": 0.62,
              "Corrugato": 0.70,
              "SerigrafiaApre": 0.60, "SerigrafiaChiude": 0.60}
@@ -965,7 +970,17 @@ def usa_le_ridotte(pezzi, cartella, metallico=None):
             for pezzo, nostro in nostre.items():
                 if pezzo not in vecchio:
                     continue
-                via_ = os.path.join(dentro, nostro)
+                # IL SET GIUSTO, quando ce n'e' piu' d'uno. Un modello con due
+                # materiali - cassa e anta di un quadro elettrico - porta due
+                # famiglie di mappe, e `prendi_modello.riduci()` gliele tiene
+                # separate con il loro prefisso. Qui lo si ritrova dal nome
+                # dell'immagine ORIGINALE, che e' l'unica cosa che dice a quale
+                # set apparteneva. Senza, i due materiali prendono lo stesso file
+                # e il modello esce con la faccia sbagliata da una parte.
+                capo = vecchio[:vecchio.rfind(pezzo)]
+                via_ = os.path.join(dentro, capo + "rid_" + nostro)
+                if not os.path.exists(via_):
+                    via_ = os.path.join(dentro, nostro)
                 if not os.path.exists(via_):
                     break
                 nodo.image = bpy.data.images.load(via_, check_existing=True)

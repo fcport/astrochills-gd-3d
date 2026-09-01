@@ -135,3 +135,13 @@ signal telescope_aim_changed(ha_gradi: float, dec_gradi: float)
 ## SOLO QUANDO CAMBIA, come `dome_button_changed`: un tubo fermo per dieci minuti
 ## non deve dirlo trentaseimila volte.
 signal telescope_slewing_changed(moving: bool)
+
+
+## C'È CORRENTE, o non c'è più.
+##
+## Lo dice il quadro in facciata quando qualcuno preme il fungo rosso. Le luci le
+## stacca il quadro stesso, che le ha in elenco; questo segnale è per tutto il
+## RESTO di quello che il GDD affida al contatore — «PC, monitor, montatura» — che
+## oggi non lo ascolta ancora. Sta sul bus e non è un signal diretto proprio per
+## questo: gli ascoltatori saranno più di uno e non si conoscono fra loro.
+signal mains_changed(on: bool)

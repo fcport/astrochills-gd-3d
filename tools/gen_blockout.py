@@ -168,6 +168,10 @@ def tscn():
              '[ext_resource type="Script" path="res://world/dark_adaptation.gd" id="39_occhio"]',
              '[ext_resource type="Script" path="res://world/telescope_mount.gd" id="40_montatura"]',
              '[ext_resource type="Script" path="res://world/dome_azimuth.gd" id="41_azimut"]',
+             '[ext_resource type="PackedScene" path="res://assets/models/quadro_elettrico.glb" id="42_quadro"]',
+             '[ext_resource type="Script" path="res://world/mains.gd" id="43_rete"]',
+             '[ext_resource type="Script" path="res://world/interactables/panel_door.gd" id="44_anta"]',
+             '[ext_resource type="Script" path="res://world/interactables/mains_button.gd" id="45_fungo"]',
              '']
     dims = sorted(set((round(b[3], 3), round(b[4], 3), round(b[5], 3)) for b in blocchi)
                   | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
@@ -366,6 +370,7 @@ def tscn():
               'shader_parameter/scala_a = 150.0', 'shader_parameter/scala_b = 233.0',
               'shader_parameter/densita_a = 0.16', 'shader_parameter/densita_b = 0.09',
               'shader_parameter/raggio_stella = 0.26',
+              'shader_parameter/antialias = 1.0',
               'shader_parameter/luminosita = 1.0',
               'shader_parameter/via_lattea = 0.35',
               'shader_parameter/polo_galattico = Vector3(0.42, 0.78, -0.46)', '',
@@ -455,6 +460,19 @@ def tscn():
               '[sub_resource type="BoxShape3D" id="s_occhio"]',
               'size = Vector3(%.3f, %.3f, %.3f)'
               % (_SX1 - _SX0 - 0.20, H_TETTO, _SZ1 - _SZ0 - 0.20), '',
+              # I DUE BERSAGLI DEL QUADRO ELETTRICO. Il raggio del giocatore deve
+              # distinguere l'ANTA dal FUNGO - sono due gesti diversi e il prompt
+              # deve dire quale - quindi sono due corpi, non uno.
+              #
+              # IL FUNGO E' PIU' GRANDE DI COM'E', ed e' voluto: il cappello vero
+              # misura tre centimetri, e un bersaglio da tre centimetri a un metro
+              # e mezzo si prende solo mirando con cura. Sei centimetri e' il
+              # compromesso di sempre fra la forma e il dito - lo stesso che
+              # portano i tasti della pulsantiera.
+              '[sub_resource type="BoxShape3D" id="s_quadro_anta"]',
+              'size = Vector3(0.294, 0.362, 0.054)', '',
+              '[sub_resource type="BoxShape3D" id="s_quadro_fungo"]',
+              'size = Vector3(0.060, 0.060, 0.040)', '',
               # IL COPIONE DELLA POSTAZIONE STA SULLA RADICE, ed e' l'unico script
               # di questa scena che non sia un interagibile: sedersi non e' una
               # proprieta' del monitor, e' una sequenza fra il monitor, il corpo del
@@ -1040,8 +1058,10 @@ def tscn():
 
     # le placche: la geometria sta nel modello, qui c'e' il corpo che il raggio
     # colpisce. Un pezzo di muro non serve a fermare nessuno, serve a essere visto.
+    spie = []
     for (nome, x, z, nx, nz) in punti_interruttori():
         pulito = nome.replace(" -> ", "_a_").replace(" ", "_")
+        spie.append("Interruttore_%s/Spia" % pulito)
         sx, sz = (L_PLACCA, 0.05) if nz else (0.05, L_PLACCA)
         chiave = (round(sx, 3), round(A_PLACCA, 3), round(sz, 3))
         comandate = comandate_da(nome)
@@ -1334,6 +1354,74 @@ def tscn():
                                         for n in LUCI_ROSSE), '',
               '[node name="Collision" type="CollisionShape3D" parent="OcchioAlBuio"]',
               'shape = SubResource("s_occhio")', '']
+
+    # ------------------------------------------------------------------
+    # IL QUADRO ELETTRICO, in facciata accanto all'ingresso.
+    #
+    # DOVE, E PERCHE' PROPRIO LI'. E' il contatore che il GDD mette «in facciata,
+    # lato sud», e sta a destra della porta perche' a sinistra ci sbatte l'anta:
+    # l'ingresso si apre verso il prato e il battente spazza il muro da quella
+    # parte. Un metro e quarantacinque al centro e' l'altezza a cui si montano -
+    # si legge in piedi e si preme senza chinarsi.
+    #
+    # LE LAMPADE SONO TUTTE, e le porta `nodo_luce`, che a questo punto del
+    # generatore le contiene gia' tutte - plafoniere, luci rosse della cupola e le
+    # due applique esterne. Scriverne un elenco a mano qui vorrebbe dire
+    # dimenticarne una il giorno che se ne aggiunge una, e il sintomo sarebbe una
+    # lampada che resta accesa a corrente staccata: il difetto piu' silenzioso che
+    # questo impianto possa avere.
+    _qx, _qy, _qz = 11.55, 1.45, 9.60
+    righe += ['[node name="QuadroElettrico" type="Node3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
+              % (_qx, _qy, _qz),
+              'script = ExtResource("43_rete")',
+              # E NON SOLO LE PLAFONIERE. Ci vanno anche le SPIE delle placche - sono
+              # neon alimentati dalla rete, e una spia accesa a corrente staccata e'
+              # il primo dettaglio che tradisce un impianto finto - e la luce che il
+              # MONITOR getta sulla scrivania. La sonda `tools/prova_rete.gd` cerca
+              # per conto suo ogni luce della scena e pretende che dopo lo scatto
+              # siano tutte spente: e' l'unico modo di accorgersi di una lampada
+              # dimenticata qui dentro.
+              'luci = [%s]' % ", ".join(
+                  ['NodePath("../%s/Accesa")' % nodo_luce[n] for n in sorted(nodo_luce)]
+                  + ['NodePath("../%s")' % s_ for s_ in spie]
+                  + ['NodePath("../LuceMonitor")']), '',
+              '[node name="Modello" parent="QuadroElettrico" instance=ExtResource("42_quadro")]', '',
+              # L'ANTA. Il corpo di collisione e' FRATELLO della mesh e non figlio,
+              # come per i tasti della pulsantiera: il modello e' una scena
+              # istanziata e dentro non ci si appende niente. Il collegamento fra il
+              # corpo invisibile e il pezzo che gira passa da `anta`.
+              #
+              # IL VERSO E' -1 PERCHE' IL CARDINE E' A DESTRA, e non e' una scelta:
+              # lo ha misurato `quadro_elettrico_blender.py` guardando quale dei due
+              # spigoli verticali si muove di meno chiudendo l'anta.
+              # IL CORPO DELL'ANTA HA L'ORIGINE SUL CARDINE, come il nodo che ruota
+              # nel modello: cosi' ruotandolo il bersaglio segue il battente invece
+              # di restare piantato nel vano. Con il corpo centrato sull'anta la
+              # collisione restava chiusa a quadro aperto, e il prompt compariva
+              # davanti al vuoto.
+              '[node name="Anta" type="StaticBody3D" parent="QuadroElettrico"]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.147, 0.000, 0.170)',
+              'script = ExtResource("44_anta")',
+              'prompt_text = "Apri il quadro"',
+              'anta = NodePath("../Modello/Anta")',
+              'verso = -1', '',
+              '[node name="Col" type="CollisionShape3D" parent="QuadroElettrico/Anta"]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.147, 0.000, 0.027)',
+              'shape = SubResource("s_quadro_anta")', '',
+              # IL FUNGO E' FIGLIO DELL'ANTA, perche' e' avvitato sull'anta: aprendo
+              # il quadro se ne va con lei, e non resta appeso a mezz'aria davanti
+              # al cablaggio. Sporge due centimetri oltre la lamiera, quindi dove i
+              # due bersagli si sovrappongono il raggio prende lui - che e' quello
+              # che deve succedere.
+              '[node name="Fungo" type="StaticBody3D" parent="QuadroElettrico/Anta"]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.100, -0.090, 0.075)',
+              'script = ExtResource("45_fungo")',
+              'prompt_text = "Dai corrente"',
+              'rete = NodePath("../..")',
+              'cappello = NodePath("../../Modello/Anta/Fungo")', '',
+              '[node name="Col" type="CollisionShape3D" parent="QuadroElettrico/Anta/Fungo"]',
+              'shape = SubResource("s_quadro_fungo")', '']
 
     righe += ['[node name="Player" parent="." instance=ExtResource("1_player")]',
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, 0.000, %.3f)' % (21.7 * K, 17.0 * K), '', '',

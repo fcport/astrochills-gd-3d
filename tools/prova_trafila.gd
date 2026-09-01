@@ -49,6 +49,11 @@ const VISTE := {
 	# Sulla passerella, all'altezza dell'oculare (2,29 m): è la posa in cui Federico
 	# ha fotografato la propria ombra proiettata sul tubo del telescopio.
 	"oculare": [Vector3(4.00, 0.59, 2.50), Vector3(2.60, 2.10, 2.50)],
+	# Il quadro elettrico in facciata, da un metro: e' la distanza da cui lo si
+	# guarda per premerlo.
+	"quadro": [Vector3(11.55, 0.0, 10.70), Vector3(11.55, 1.45, 9.60)],
+	# Mirando il fungo rosso, che e' un bersaglio suo e ha un prompt suo.
+	"fungo": [Vector3(11.60, 0.0, 10.55), Vector3(11.597, 1.360, 9.845)],
 }
 
 ## Le lampade che nella fotografia erano spente: la sala e il corridoio. La cucina

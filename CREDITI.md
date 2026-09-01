@@ -87,6 +87,20 @@ Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuz
 > by tboiston (https://sketchfab.com/tboiston) licensed under CC-BY-4.0
 > (http://creativecommons.org/licenses/by/4.0/)
 
+**Small Fuse Box** — il quadro elettrico in facciata, accanto all'ingresso. È il
+contatore che il GDD mette lì: governa le luci di tutto l'edificio e si arma a mano,
+di notte, uscendo. Del modello contano **due mesh separate**, cassa e anta — un
+quadro che non si apre è una scatola sul muro — e arriva con l'anta spalancata a 58
+gradi: `tools/quadro_elettrico_blender.py` la chiude per costruzione e deduce da
+quale spigolo si è mosso di meno dove sta il cardine. Il **fungo rosso** non c'è nel
+modello e lo mettiamo noi, che è la stessa regola del pilastro sotto il telescopio:
+si modella il pezzo che manca e che deve muoversi.
+Autore: [big guy](https://sketchfab.com/ondra.lit).
+> This work is based on "Small Fuse Box"
+> (https://sketchfab.com/3d-models/small-fuse-box-1818361dc6554d17bef8c0400959f93f)
+> by big guy (https://sketchfab.com/ondra.lit) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
 **Dispensador de toalla de papel** — il distributore di salviette del bagno.
 Del modello si prende solo la **forma**: la calotta arrotondata, il labbro da cui
 esce il foglio e il fondo rastremato sono tre curve, e con le scatole non si fanno.

@@ -43,6 +43,21 @@ const GROUP := &"crt_monitor"
 
 func _ready() -> void:
 	add_to_group(GROUP)
+	# IL MONITOR STA ATTACCATO ALLA RETE come tutto il resto, e staccando la
+	# corrente si deve spegnere: e' la prima cosa che il GDD affida al contatore
+	# («governa PC, monitor, montatura e luci»), e un CRT che continua a brillare
+	# con il quadro staccato smaschera tutto l'impianto in un colpo solo.
+	#
+	# SI SPEGNE IL VETRO E NON LA FASE: quello che gira dentro il computer resta
+	# dov'e', e riaccendendo si ritrova la stessa schermata. Un monitor spento non
+	# e' un programma chiuso, ed e' la differenza fra togliere la corrente al
+	# tubo catodico e riavviare la notte.
+	Events.mains_changed.connect(_su_rete)
+
+
+func _su_rete(acceso: bool) -> void:
+	if _screen != null:
+		_screen.visible = acceso
 
 
 ## Il monitor della scena, o `null` se non ce n'è. È il ripiego per chi si è

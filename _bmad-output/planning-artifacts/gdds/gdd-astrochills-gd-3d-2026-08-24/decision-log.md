@@ -5151,3 +5151,144 @@ banco togliendogli i denti proprio dove servivano. La sorgente adesso pubblica i
 separati: il banco pinna la finestra, e per l'orizzonte controlla la COERENZA
 (`available == in_window AND alt >= orizzonte`) invece delle sigle — cosi' resta vero anche il
 giorno in cui lo strumento verra' alzato.
+
+## D-194 — Le stelle non cambiavano: si accendevano e si spegnevano
+
+Federico: «una cosa che ha poco senso sono le stelle che cambiano se muovo la
+visuale».
+
+Non era scintillio. Le stelle vere tremolano di INTENSITA' — l'aria che si muove — e
+quello sarebbe stato un pregio; queste si accendevano e si spegnevano, di esistenza,
+tutte insieme, mentre la camera ruotava.
+
+**LA CAUSA E' ARITMETICA E NON ARTISTICA.** Il dischetto di una stella misura poco
+piu' di mezzo pixel: girando, il suo centro passa da una parte all'altra del confine
+fra due pixel e la stella o viene campionata o non viene campionata. E' l'aliasing
+piu' vecchio del mondo, ed e' invisibile A FERMO — che e' esattamente il motivo per
+cui non era stato notato quando il cielo e' stato scritto e guardato in uno scatto.
+
+**LA CURA NON E' INGRANDIRE, E' ALLARGARE CONSERVANDO LA LUCE.** Si porta il raggio
+della stella ad almeno un pixel e si divide la luminosita' per l'area guadagnata:
+copre sempre lo stesso numero di fotoni, distribuiti su almeno un pixel. Ingrandire e
+basta darebbe un cielo di palline; cosi' le stelle stanno ferme e cambiano solo di
+intensita', che e' quello che fanno davvero.
+
+**QUANTO CIELO STA IN UN PIXEL SI MISURA, non si dichiara**: dipende dalla
+risoluzione e dal campo visivo, e una costante scritta nello shader sarebbe giusta su
+un solo schermo. `dFdx`/`dFdy` sulla direzione di vista dicono di quanto cambia il
+cielo fra un pixel e il suo vicino, che e' esattamente la domanda.
+
+**MISURATO** (`tools/prova_cielo.gd`): si gira la camera di un ventesimo di grado
+alla volta — meno di un pixel — e si guarda quanta luce cambia fra due fotogrammi
+consecutivi. Il fondo non cambia a quella scala, quindi tutto quello che si muove
+sono le stelle.
+
+    stelle allargate a un pixel   tremolio medio 0,31%   peggiore 0,73%
+    stelle sotto il pixel (CRUDO) tremolio medio 1,13%   peggiore 3,44%
+
+E la luce totale del fotogramma SALE con la correzione (3768 contro 2219): le stelle
+sotto il pixel non erano solo instabili, per meta' del tempo non venivano disegnate
+affatto.
+
+**IL DIFETTO SI PUO' RIMETTERE**, e questa e' la parte che rende la sonda una sonda:
+lo shader ha un `antialias` che a zero riporta le stelle sotto il pixel. Senza quel
+confronto il referto avrebbe detto «tremolio 0,31%» e nessuno avrebbe saputo se e'
+poco o tanto.
+
+## D-195 — Il quadro elettrico, e tre modi di sbagliare che si assomigliano
+
+Federico voleva il quadro in facciata: si apre, si chiude, e il pulsante rosso stacca
+o da' corrente a tutto. Il GDD lo aveva gia' scritto — «il contatore, in facciata,
+governa PC, monitor, montatura e luci, e nel 1999 si riarma a mano, e per farlo
+bisogna uscire al buio».
+
+**STACCARE NON GIRA GLI INTERRUTTORI.** Quando la corrente torna si riaccende quello
+che era acceso PRIMA: non tutto, e non niente. E' come funziona un impianto vero ed
+e' anche l'unica versione che non irrita — chi aveva spento la sala divulgazione non
+se la ritrova accesa al ritorno. E una placca girata durante il blackout non si
+perde: la lampada resta spenta (non c'e' corrente) ma la POSIZIONE cambia, e si vede
+quando la corrente torna.
+
+**IL PULSANTE ROSSO NON C'ERA NEL MODELLO.** Il .gltf ha due mesh — cassa e anta — e
+dentro c'e' il cablaggio, sull'anta un cartello di pericolo, e basta. Il fungo lo
+mettiamo noi, ed e' la stessa regola del pilastro sotto il telescopio: si modella il
+pezzo che manca e che deve muoversi, non si reinventa quello che c'e'. A fungo e non
+a leva perche' e' un arresto d'emergenza: si preme col palmo, al buio, ed e'
+esattamente il gesto di chi esce di notte ad armare il quadro.
+
+**L'ANTA ARRIVA APERTA E IL CARDINE SI DEDUCE.** Nel modello l'anta e' ruotata di 58
+gradi — l'autore l'ha fotografata cosi' — e la si chiude PER COSTRUZIONE (parallela
+alla faccia, appoggiata sopra) invece di sottrarre l'angolo dichiarato: cosi' il
+risultato non dipende da quanto era spalancata. Il cardine invece e' un dato che il
+modello porta senza dichiararlo: chiudendo, uno dei due spigoli verticali fa un arco
+di 27 cm e l'altro di 21 — quello fermo e' la cerniera. Sceglierlo a caso avrebbe
+funzionato la meta' delle volte.
+
+### I tre errori, che sono lo stesso errore visto da tre parti
+
+**UNO: DUE SISTEMI DI COORDINATE NELLO STESSO FILE.** I mattoni di `modellare`
+lavorano in coordinate DI GIOCO (x e z in pianta, y in alto) e le convertono da sole;
+il resto dello script lavora in coordinate di BLENDER, perche' maneggia matrici di
+oggetti importati. Il fungo e' stato costruito con le seconde passate alla prima: e'
+finito sottoterra, dietro il muro, con l'asse verticale. Nel provino non c'era, e non
+c'era nessun errore.
+
+**DUE: SPOSTARE UN'ORIGINE E' DUE MOSSE CHE SI ANNULLANO** — la mesh indietro nelle
+sue coordinate, l'oggetto avanti nel mondo. Farne una sola, o scrivere `location`
+DOPO aver assegnato `matrix_world`, sposta l'oggetto per davvero: l'anta e' finita
+mezzo metro sopra la cassa, con il quadro spalancato sul proprio cablaggio.
+
+**TRE: IL RIDUTTORE DI TEXTURE FONDE TUTTI I SET IN UNO.** `prendi_modello.riduci()`
+rinomina ogni mappa in `color.jpg`/`normal.png`/`roughness.jpg`, il che va benissimo
+finche' il modello ha UN materiale. Il quadro ne ha due — cassa e anta — e finivano
+negli stessi tre file: il primo arrivato vinceva, il secondo veniva scartato in
+silenzio (`if os.path.exists: continue`), e in gioco cassa e anta si ritrovavano la
+stessa faccia. Adesso, con piu' di un set, ognuno tiene il proprio prefisso; con un
+set solo i nomi restano quelli di sempre e nessun modello gia' fatto cambia. E il
+suffisso `_rid_` non e' un vezzo: senza, il file ridotto si sarebbe chiamato come il
+proprio sorgente (`fuse_box_door` + `normal.png` = `fuse_box_door_normal.png`), quindi
+«esisteva gia'» e non veniva ridotto — le mappe di colore uscivano perche' cambiano
+estensione, le normali no.
+
+**Tutti e tre hanno la stessa forma**: nessun errore, nessun avviso, e un modello
+plausibile che e' sbagliato. Li ha trovati il PROVINO, che e' l'unica cosa che
+guarda.
+
+## D-196 — Un nodo del modello e un nodo del gioco possono chiamarsi uguale
+
+Due volte di fila, nella stessa ora: `find_child("Fungo")` trovava la mesh rossa
+dentro il modello invece del corpo che la comanda, e `find_child("Anta")` trovava la
+lamiera invece dell'interagibile. In tutti e due i casi il cast falliva, e il referto
+diceva **«il pulsante non si trova»** con il pulsante montato e funzionante.
+
+E' la stessa lezione gia' scritta per il monitor, la cupola e la montatura, arrivata
+da una direzione nuova: **i nomi non sono indirizzi**. Qui pero' non e' nemmeno
+questione di spostamenti — sono due nodi diversi che si chiamano uguale a ragione,
+perche' uno E' il fungo e l'altro lo comanda. Adesso `MainsButton` e `PanelDoor`
+hanno il loro gruppo e il loro `find_in`, come tutto il resto di `world/`.
+
+E la sonda della rete guarda anche una cosa che sembrava scontata: **il raggio del
+giocatore, mirando il fungo, prende il fungo**. Un bersaglio coperto da un altro non
+da' nessun errore — davanti al quadro semplicemente non compare il prompt.
+
+## D-197 — Il quadro spegne quello che ha in elenco, quindi l'elenco non si controlla
+
+La prova che il fungo stacchi la corrente non e' chiedere al quadro se ha spento le
+lampade del quadro: quella e' la sua stessa lista ricopiata in due posti, cioe' un
+controllo che si da' ragione da solo. `tools/prova_rete.gd` cerca invece per conto
+proprio OGNI luce dell'albero e pretende che dopo lo scatto siano tutte spente.
+
+**E ne ha trovate nove dimenticate al primo colpo**: la luce che il monitor getta
+sulla scrivania e le otto spie al neon delle placche. Sono esattamente il tipo di
+oggetto che si dimentica — non illuminano niente, e una spia accesa a corrente
+staccata e' il primo dettaglio che tradisce un impianto finto.
+
+**TRE LUCI RESTANO ACCESE PER FORZA**, ed e' scritto nella sonda invece che dedotto:
+la Luna e il cielo stanno fuori dal contatore, e la luce di prossimita' non e' una
+lampada — e' l'aiuto di lettura che segue la testa del giocatore, e non ha un
+interruttore da nessuna parte. Ogni altra luce che sopravviva allo scatto e' un
+difetto.
+
+    a corrente data       20 luci accese nella scena
+    a corrente staccata    0
+    a corrente ridata     20, le stesse

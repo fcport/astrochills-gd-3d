@@ -247,6 +247,24 @@ A_MANO = {
         "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
         "Postazione completa del 1990: monitor, TASTIERA, MOUSE A PALLINA e case",
     ),
+    "quadro_elettrico": (
+        ("quadro_elettrico.zip", "small_fuse_box.zip"),
+        "https://sketchfab.com/3d-models/small-fuse-box-1818361dc6554d17bef8c0400959f93f",
+        "big guy", "CC-BY-4.0",
+        'This work is based on "Small Fuse Box" '
+        "(https://sketchfab.com/3d-models/small-fuse-box-1818361dc6554d17bef8c0400959f93f) "
+        "by big guy (https://sketchfab.com/ondra.lit) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "Quadretto elettrico da esterno con l'ANTA SEPARATA dalla cassa, e la"
+        " separazione e' tutto: un quadro che non si apre e' una scatola sul muro."
+        " E' il contatore che il GDD mette in facciata - quello che governa PC,"
+        " monitor, montatura e luci, e che nel 1999 si riarma A MANO, di notte,"
+        " uscendo."
+        "\n\nIL PULSANTE ROSSO E' DIPINTO, non modellato: nel .gltf ci sono due sole"
+        " mesh, cassa e anta. Il tasto che si preme lo mettiamo noi sopra la sua"
+        " serigrafia, come il pilastro sotto il telescopio - e' la stessa regola,"
+        " si modella solo il pezzo che il modello scaricato non ha e che deve"
+        " muoversi."),
     "telefono_ufficio": (
         ("telefono_ufficio.zip", "phone.zip"),
         "https://sketchfab.com/3d-models/phone-eaa0a0cbce964b2099b955f5ea241eee",
@@ -274,12 +292,23 @@ def prendi_a_mano(cartella):
     # scarica di rinominare a mano, e un passo a mano in piu' e' un passo che prima o
     # poi si sbaglia. Si accetta il nome dell'autore E il nostro.
     nomi = (zip_atteso,) if isinstance(zip_atteso, str) else tuple(zip_atteso)
-    cartella_zip = os.path.join(DEST, "_da_scaricare")
+    # E DUE CARTELLE AMMESSE, per la stessa ragione dei nomi: «la cartella dove
+    # mettiamo i modelli» ha due letture ovvie - `assets/models/_da_scaricare` e
+    # `assets/models/esterni/_da_scaricare` - e chi scarica ne sceglie una senza
+    # pensarci. Pretenderne una sola vuol dire far fallire lo script con un
+    # «MANCA» mentre il file c'e', a venti centimetri di distanza.
+    cartelle_zip = [os.path.join(DEST, "_da_scaricare"),
+                    os.path.join(os.path.dirname(DEST), "_da_scaricare")]
+    cartella_zip = cartelle_zip[0]
     archivio = os.path.join(cartella_zip, nomi[0])
-    for n in nomi:
-        if os.path.exists(os.path.join(cartella_zip, n)):
-            archivio = os.path.join(cartella_zip, n)
-            break
+    for c in cartelle_zip:
+        for n in nomi:
+            if os.path.exists(os.path.join(c, n)):
+                archivio = os.path.join(c, n)
+                break
+        else:
+            continue
+        break
     if not os.path.exists(os.path.join(fuori, "scene.gltf")):
         if not os.path.exists(archivio):
             print("MANCA %s." % cartella)
@@ -322,18 +351,48 @@ def riduci(cartella_texture):
         radice = os.path.splitext(nome.lower())[0]
         return any(radice.endswith(s) for s in che_cosa)
 
-    for n in os.listdir(cartella_texture):
+    # UN MODELLO PUO' AVERE PIU' DI UN SET, e per un pezzo questo non lo sapeva.
+    # Il quadro elettrico ne porta due - `Fuse_box_main_*` e `fuse_box_door_*` -
+    # e finivano tutti e due negli stessi tre file: il primo arrivato vinceva, il
+    # secondo veniva scartato in silenzio (`if os.path.exists: continue`), e in
+    # gioco la cassa e l'anta si ritrovavano la stessa faccia. Nessun errore,
+    # nessun avviso, e il difetto si vede solo guardando il modello.
+    #
+    # Con un set solo i nomi restano quelli piatti di sempre - `color.jpg` - e
+    # nessuno dei modelli gia' fatti cambia. Con piu' set ognuno tiene il proprio
+    # prefisso, e `modellare.usa_le_ridotte()` lo ritrova dal nome dell'immagine
+    # originale.
+    def prefisso(nome):
+        radice = os.path.splitext(nome)[0]
+        for s in ("_baseColor", "_diffuse", "_albedo", "_normal",
+                  "_metallicRoughness", "_roughness"):
+            i = radice.lower().rfind(s.lower())
+            if i > 0:
+                return radice[:i].lower()
+        return radice.lower()
+
+    candidati = [n for n in os.listdir(cartella_texture)
+                 if n.lower() not in ("color.jpg", "normal.png", "roughness.jpg")
+                 and (e_una(n.lower(), ("_basecolor", "_diffuse", "_albedo",
+                                        "_normal", "_metallicroughness", "_roughness")))]
+    set_ = sorted({prefisso(n) for n in candidati})
+    molti = len(set_) > 1
+    for n in candidati:
         b = n.lower()
-        if b in ("color.jpg", "normal.png", "roughness.jpg"):
-            continue                      # gia' nostro: non si riduce due volte
+        # `_rid_` E NON SOLO IL PREFISSO, o il file ridotto si chiama come il suo
+        # sorgente: `fuse_box_door` + `normal.png` fa esattamente
+        # `fuse_box_door_normal.png`, cioe' l'originale a 4096 - che «esiste gia'»
+        # e quindi non viene ridotto. Le mappe di colore uscivano (l'estensione
+        # cambia da .jpeg a .jpg) e le normali no, in silenzio.
+        capo = (prefisso(n) + "_rid_") if molti else ""
         if e_una(b, ("_basecolor", "_diffuse", "_albedo")):
-            lavori.append((n, "color.jpg", None))
+            lavori.append((n, capo + "color.jpg", None))
         elif e_una(b, ("_normal",)):
-            lavori.append((n, "normal.png", None))
+            lavori.append((n, capo + "normal.png", None))
         elif e_una(b, ("_metallicroughness", "_roughness")):
             # nel glTF la rugosita' e' il canale VERDE e la metallicita' il BLU:
             # si estrae il verde, il blu si butta.
-            lavori.append((n, "roughness.jpg", 1))
+            lavori.append((n, capo + "roughness.jpg", 1))
     for sorgente, destino, canale in lavori:
         fuori = os.path.join(cartella_texture, destino)
         if os.path.exists(fuori):

@@ -61,6 +61,13 @@ uniform float luminosita : hint_range(0.0, 8.0) = 1.0;
 // La Via Lattea: un velo, non una fascia da poster.
 uniform float via_lattea : hint_range(0.0, 1.0) = 0.35;
 
+// QUANTO SI ALLARGA UNA STELLA PER STARE DENTRO UN PIXEL. Uno e' la correzione
+// piena; zero la toglie, e si vede subito cosa toglie - le stelle tornano a
+// spegnersi e riaccendersi tutte insieme mentre si gira la testa. Serve a
+// `tools/prova_cielo.gd`, che misura proprio quel tremolio: una sonda che non
+// puo' vedere il difetto che sorveglia non sta sorvegliando niente.
+uniform float antialias : hint_range(0.0, 1.0) = 1.0;
+
 // Il polo del piano galattico: la fascia passa perpendicolare a questa direzione.
 // Non e' l'astronomia vera - il cielo di questo gioco non e' mappato su un catalogo
 // e non deve esserlo (D-171: non si dichiara quello che non si e' modellato) - e'
@@ -103,7 +110,7 @@ float rumore(vec3 p) {
 // Uno strato di stelle. Torna gia' colorato: le stelle non sono tutte bianche, e
 // quel poco di colore che hanno e' la sola cosa che le fa leggere come stelle
 // invece che come polvere sullo schermo.
-vec3 strato(vec3 dir, float scala, float densita) {
+vec3 strato(vec3 dir, float scala, float densita, float pixel) {
 	vec3 p = dir * scala;
 	vec3 cella = floor(p);
 	vec3 d = dadi(cella);
@@ -112,11 +119,25 @@ vec3 strato(vec3 dir, float scala, float densita) {
 	}
 	// Il quarto centrale della cella: cosi' il dischetto non sborda mai.
 	vec3 centro = cella + vec3(0.25) + 0.5 * vec3(d.x, d.y, fract(d.z * 71.3));
-	float dist = length(p - centro) / raggio_stella;
+	// UNA STELLA NON PUO' ESSERE PIU' PICCOLA DI UN PIXEL, e questa e' la riga che
+	// toglie il difetto piu' fastidioso di tutto il cielo. Il dischetto disegnato
+	// misura poco piu' di mezzo pixel: girando la testa il suo centro passa da una
+	// parte all'altra del pixel e la stella si ACCENDE E SI SPEGNE, mille volte,
+	// tutte insieme. Non e' scintillio - le stelle vere scintillano di intensita',
+	// non di esistenza - ed e' l'aliasing piu' classico che ci sia.
+	//
+	// LA CURA NON E' INGRANDIRE, E' ALLARGARE CONSERVANDO LA LUCE. Si porta il
+	// raggio ad almeno un pixel e si divide la luminosita' per l'area guadagnata:
+	// la stella copre sempre lo stesso numero di fotoni, distribuiti su almeno un
+	// pixel. Ingrandire e basta darebbe un cielo di palline; questo da' stelle che
+	// stanno ferme e cambiano solo di intensita', che e' quello che fanno davvero.
+	float r_cella = max(raggio_stella, pixel * scala * antialias);
+	float conserva = (raggio_stella * raggio_stella) / (r_cella * r_cella);
+	float dist = length(p - centro) / r_cella;
 	// Il profilo: nucleo pieno e alone che muore in fretta. Elevato al quadrato
 	// perche' una stella e' un punto, non una macchia.
 	float disco = max(0.0, 1.0 - dist);
-	disco = disco * disco * disco;
+	disco = disco * disco * disco * conserva;
 	// LA MAGNITUDINE E' DISTRIBUITA, non uniforme: poche stelle forti e molte
 	// deboli. Alla quarta potenza il sorteggio piatto diventa una distribuzione in
 	// cui la stella luminosa e' rara - che e' quello che si vede alzando la testa.
@@ -146,7 +167,15 @@ void sky() {
 	fascia *= 0.45 + 0.55 * rumore(dir * 9.0);
 	fondo += vec3(0.85, 0.88, 1.00) * fascia * via_lattea * 0.010;
 
-	vec3 stelle = strato(dir, scala_a, densita_a) + strato(dir, scala_b, densita_b);
+	// QUANTO CIELO STA IN UN PIXEL, in radianti. Si misura invece di dichiararlo:
+	// dipende dalla risoluzione e dal campo visivo, e una costante scritta qui
+	// sarebbe giusta su un solo schermo. `dFdx` e `dFdy` dicono di quanto cambia la
+	// direzione di vista fra questo pixel e il suo vicino, che e' esattamente la
+	// domanda.
+	float pixel = 0.5 * (length(dFdx(dir)) + length(dFdy(dir)));
+
+	vec3 stelle = strato(dir, scala_a, densita_a, pixel)
+			+ strato(dir, scala_b, densita_b, pixel);
 
 	// LE STELLE SI SPENGONO SULL'ORIZZONTE, e non e' un vezzo: l'aria che si
 	// attraversa guardando basso e' molte volte quella che si attraversa guardando

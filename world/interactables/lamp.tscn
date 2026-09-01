@@ -84,11 +84,37 @@ shape = SubResource("ShapeLamp")
 ; La luce della cucina che la lampada fa. Da rotta lampeggia (energia variata in
 ; `_process`), da riparata resta stabile. OmniLight3D collocato all'altezza della
 ; lampadina, cosi' la stanza si illumina da li'.
+;
+; L'OMBRA NON E' UN DETTAGLIO: SENZA, QUESTA LAMPADA ATTRAVERSA I MURI. Nasceva
+; senza `shadow_enabled` e con sei metri di portata, cioe' una sorgente da 2,2 che
+; passava i venti centimetri del muro della cucina come se non ci fossero: in sala
+; divulgazione, a luci SPENTE, faceva sul pavimento una chiazza di cui non si vedeva
+; la sorgente. Misurata spegnendo una lampada per volta (`tools/prova_trafila.gd`),
+; era l'unica a contare qualcosa: 32 livelli su 255 sul pavimento, contro meno di
+; 0,05 di tutte le altre diciotto messe insieme. E' esattamente la ragione per cui
+; la lampada di RIMBALZO delle plafoniere e' stata tolta e non si puo' rimettere -
+; c'e' scritto in `gen_blockout.py`, ed era gia' scritto quando questa e' arrivata
+; dal vecchio mondo.
+;
+; PORTATA E POTENZA DA LAMPADA DA TAVOLO. Sei metri e 2,2 di energia sono i numeri
+; di una plafoniera (la vera plafoniera della cucina sta a 2,1), non di una
+; lampadina su un bancone. Tre metri e 0,9 illuminano il piano di lavoro e muoiono
+; prima della porta, che e' quello che fa una lampada da tavolo.
+;
+; SPECULARE QUASI ZERO: sulle piastrelle dell'alzatina il riflesso portava i canali
+; a saturazione e faceva il nucleo bianco. Stessa cura delle plafoniere.
 [node name="Light" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
 light_color = Color(0.95, 0.92, 0.78, 1)
-light_energy = 2.2
-omni_range = 6.0
+light_energy = 0.9
+light_specular = 0.05
+omni_range = 3.0
+shadow_enabled = true
+; Bias piccoli, e il caso li impone: la lampadina sta 42 cm dall'alzatina e il muro
+; ne e' spesso 20. Il default di `shadow_normal_bias` e' 1,0 - un metro - e
+; sposterebbe il campione dell'ombra dall'altra parte del muro, cioe' in sala.
+shadow_normal_bias = 0.05
+shadow_bias = 0.02
 
 ; Il ronzio posizionale del neon rotto: stream sintetizzato in codice da lamp.gd (nessun
 ; asset). Posizionale (AudioStreamPlayer3D) cosi' chi si allontana lo sente attenuarsi — il

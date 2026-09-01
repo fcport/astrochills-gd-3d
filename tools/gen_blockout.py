@@ -861,7 +861,27 @@ def tscn():
               # QUANDO LE FASI AVRANNO UN CONTENUTO questo numero andra' rifatto, e va
               # detto adesso: un campo grigio pieno e del testo verde su nero non
               # emettono la stessa luce. Si rimisura con tools/prova_postazione.gd.
-              'light_energy = 0.14', 'light_color = Color(0.876, 1.0, 0.931, 1)',
+              # MAGENTA, E LO DECIDE FEDERICO CONTRO LA MISURA. Il colore qui sopra
+              # e' quello che il tubo emette davvero, misurato; magenta non lo e'.
+              # Ma un grigio-verde pallidissimo, addosso a una cassa beige, non si
+              # legge come "lo schermo fa luce" - si legge come una lampada in piu'
+              # accesa da qualche parte, ed e' cosi' che e' stato letto: «quelle
+              # luci dal nulla». Una luce che DESCRIVE la sua sorgente vale piu' di
+              # una che la misura. Il magenta e' il fosforo che un CRT non ha e che
+              # tutti gli danno, e attorno a un monitor si legge subito.
+              #
+              # L'ENERGIA SALE UN PO', NON DI TUTTO IL DOVUTO, E LA DIFFERENZA E'
+              # IL PUNTO. Luminanza del bianco-verde: 0,97; del magenta: 0,60. Per
+              # fare la stessa LUCE servirebbe 0,23 - e a 0,23, guardato invece che
+              # calcolato, la cassa beige e la tastiera diventano rosa anche con la
+              # plafoniera accesa: lo stesso difetto del verde saturo di prima,
+              # cambiato di tinta. Con un colore saturo l'energia giusta e' MENO di
+              # quella equivalente, perche' quello che si nota non e' quanto
+              # illumina ma quanto TINGE. 0,17 lascia il monitor padrone del buio -
+              # a luci spente la consolle e' magenta e non c'e' dubbio da dove
+              # venga - e a luci accese resta un velo sul beige invece di una mano
+              # di vernice.
+              'light_energy = 0.17', 'light_color = Color(1.0, 0.45, 0.88, 1)',
               'light_specular = 0.10',
               'omni_range = 2.4', 'omni_attenuation = 1.6',
               'shadow_normal_bias = 0.05', 'shadow_bias = 0.02',

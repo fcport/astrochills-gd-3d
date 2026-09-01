@@ -3092,8 +3092,8 @@ material_override = SubResource("mat_vetro_est")
 
 [node name="LuceMonitor" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.950, 1.020, 2.000)
-light_energy = 0.14
-light_color = Color(0.876, 1.0, 0.931, 1)
+light_energy = 0.17
+light_color = Color(1.0, 0.45, 0.88, 1)
 light_specular = 0.10
 omni_range = 2.4
 omni_attenuation = 1.6
@@ -3584,7 +3584,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.340, 0.000, 8.400)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.850, 0.900, 1.900)
 
 [node name="Lampada" parent="." instance=ExtResource("30_lampada")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.900, 0.900, 1.900)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.900, 0.900, 2.020)
 
 [node name="SequenceChime" parent="." instance=ExtResource("31_chime")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.550, 1.100, 2.000)

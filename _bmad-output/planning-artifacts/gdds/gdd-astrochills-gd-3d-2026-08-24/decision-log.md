@@ -4560,3 +4560,94 @@ scrive nel log ogni fotogramma sopra i venti millisecondi con la posizione del g
 secondi dall'avvio, nelle sole build di debug, al massimo venti volte. Una sonda sintetica
 arriva fin dove arriva; quando il difetto lo vede una persona e non una misura, si mette la
 misura addosso alla persona.
+
+## D-181 — Una luce senza ombra non sta nella stanza dove l'hai messa
+
+Federico, due fotografie: «perche' nella sala, quando tutto e' chiuso, ci sono queste luci
+dal nulla? Quella riflessa per terra e anche quella riflessa nel muro. Ma poi che cazzo hai
+messo in cucina».
+
+Tre domande e due colpevoli, e nessuno dei due era quello che avrei indagato per primo.
+
+**IL METODO E' LA SOTTRAZIONE, non l'ipotesi.** «Una macchia luminosa in una stanza spenta»
+ha almeno quattro spiegazioni — una lampada accesa che non si vede, una luce che passa un
+muro, un materiale emissivo, un riflesso speculare — e a occhio si sceglie sempre quella che
+si aveva gia' in testa. `tools/prova_trafila.gd` non sceglie: fissa la telecamera, spegne
+**una sorgente per volta** e riscatta. Quella che spegnendosi fa sparire la macchia *e'* la
+macchia.
+
+    dalla sala divulgazione, a luci spente, verso la libreria:
+      Lampada/Light            19,13 su tutta l'immagine   32,03 sul pavimento
+      tutte le altre 18        sotto 0,05                  sotto 0,05
+
+Una sola sorgente, e non e' nella stanza: e' la **lampada da tavolo del bancone della
+cucina**, di la' dal muro. Nata senza `shadow_enabled`, con 2,2 di energia e sei metri di
+portata: venti centimetri di muro non la fermavano affatto.
+
+**LO SBAGLIO ERA GIA' SCRITTO, in questo repository, in italiano, a venti righe di distanza
+da dove serviva.** In `gen_blockout.py` c'e' un blocco intitolato «LA LAMPADA DI RIMBALZO NON
+C'E' PIU', E NON SI PUO' RIMETTERE», che spiega per trenta righe che una luce senza ombre
+attraversa un muro come se non ci fosse — misurato: il magazzino passava da 0,06 a 24,15
+spegnendo tutto tranne il bagno. La lampada della cucina e' arrivata dal vecchio mondo col
+trasloco e nessuno le ha applicato la lezione, perche' era una lezione **sulle plafoniere**.
+Una regola scritta accanto al caso che l'ha generata non protegge il caso successivo.
+
+**E LA SECONDA DOMANDA AVEVA LA STESSA RISPOSTA.** «Che cazzo hai messo in cucina» era la
+stessa lampadina vista da vicino: `LAMPADA_CUCINA` la metteva a meta' del bancone, cioe' a
+**trenta centimetri** dall'alzatina. A trenta centimetri l'irraggiamento porta tutti e tre i
+canali oltre l'unita', e tre canali saturi fanno una macchia bianca. E' — di nuovo alla
+lettera, alla stessa distanza — il difetto gia' misurato e corretto sull'applique rossa della
+cupola, dove passare da 0,30 a 0,50 aveva fatto calare il picco di quattro volte.
+
+Rimedio: ombre accese con bias piccoli (0,05 e 0,02: il muro e' venti centimetri, e il
+default di `shadow_normal_bias` e' **un metro**), portata da 6,0 a 3,0, energia da 2,2 a 0,9
+— che sono i numeri di una lampada da tavolo e non di una plafoniera, visto che la vera
+plafoniera della cucina sta a 2,1 — e diciotto centimetri dal bordo del piano invece di
+trenta dal muro. L'energia sta in `lamp.gd` e non nella scena: `_enter_fixed()` la riscrive,
+e cambiarla solo nel `.tscn` non avrebbe fatto niente.
+
+    dopo, stessa vista, stessa sonda:
+      Lampada/Light            sotto 0,05                  sotto 0,05
+      Luce_cucina (dalla porta) 0,04                        0,12
+
+**LA TERZA LUCE NON ERA UN DIFETTO, e va detto perche' e' la meta' interessante.** Il velo
+arancione sul muro e' la **spia dell'interruttore**: 0,008 di energia su 35 cm, misurata a
+0,22 livelli su 255. Un interruttore italiano di quegli anni la spia ce l'ha, e si accende
+quando la luce e' **spenta** — serve a trovarlo al buio. Letto da chi gioca e' diventato «una
+luce dal nulla», il che dice che il pezzo funziona e la sua **grammatica** no: nessuno ha mai
+spiegato al giocatore che quel puntino e' un interruttore. Non si tocca la lampada; semmai si
+insegna a leggerla.
+
+**LA SONDA HA MENTITO AL PRIMO GIRO, ed e' stata la sua stessa autoverifica a dirlo.** La
+prima passata dava a ventitre' lampade su ventitre' lo stesso identico scarto — 68,35 —
+perche' l'immagine di riferimento era stata scattata prima che la telecamera fosse in posa, e
+tutte le altre erano confrontate con quella. E' D-179 parola per parola: *un numero che non
+cambia quando cambi la causa non sta misurando quella causa*. Adesso la sonda scatta due volte
+senza toccare niente e stampa lo scarto fra i due — deve essere zero, e lo e'.
+
+## D-182 — La luce che descrive la sua sorgente batte quella che la misura
+
+Federico, mentre guardava le stesse fotografie: «il monitor dovrebbe fare luce magenta non
+bianca».
+
+Il colore del `LuceMonitor` non era stato scelto: era stato **misurato**. Con il CRT vero nel
+`SubViewport`, la sonda leggeva 156 178 166 su 255 — un grigio-verde pallidissimo — e
+normalizzato veniva (0,88 1,00 0,93), che a due centesimi e' il `tint` del vetro del tubo
+dichiarato nello shader. Due numeri indipendenti che si erano incontrati da soli: il segno
+che la luce descriveva la stessa cosa che si vedeva.
+
+E dopo tutto questo il colore giusto e' un altro, perche' **misurare l'emissione non e' la
+stessa cosa che rendere leggibile la sorgente**. Un bianco-verde pallidissimo, addosso a una
+cassa beige, non dice «lo schermo e' acceso»: dice «c'e' un'altra lampada accesa da qualche
+parte» — ed e' esattamente cosi' che e' stato letto, nella stessa frase delle luci dal nulla.
+Il magenta e' il fosforo che un CRT non ha e che tutti gli attribuiscono; attorno a un monitor
+si legge al primo colpo d'occhio.
+
+L'energia sale da 0,14 a 0,23, e non per fare piu' luce: la luminanza del bianco-verde e' 0,97
+e quella del magenta 0,60. A parita' di energia illuminerebbe un terzo di meno, e 0,14 era
+stato scelto misurando il rapporto due a uno fra lo schermo e la maschera nera che gli fa da
+cornice — sotto quel rapporto la cornice smette di leggersi come cornice. 0,23 per 0,60 fa
+0,138: la stessa luce di prima, di un altro colore.
+
+Vale come precedente: quando la misura e la leggibilita' vanno in direzioni diverse, si scrive
+da che parte si e' andati e perche', invece di lasciare il numero misurato a fare da alibi.

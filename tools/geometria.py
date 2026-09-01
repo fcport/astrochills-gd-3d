@@ -1592,7 +1592,15 @@ SEDILE_MONITOR = (0.42, 0.172)
 # controllo lo direbbe, perche' nessuno guarda cosa c'e' SOPRA un piano.
 _BANCONE = [_a for _a in ARREDI_CUCINA if _a[0] == "CucinaBase"][0]
 MOKA = (_BANCONE[1] + 0.50, _BANCONE[5], (_BANCONE[2] + _BANCONE[4]) / 2)
-LAMPADA_CUCINA = (_BANCONE[3] - 0.70, _BANCONE[5], (_BANCONE[2] + _BANCONE[4]) / 2)
+# LA LAMPADA STA SUL FILO DEL PIANO, non in mezzo: a meta' bancone la lampadina
+# resta a TRENTA centimetri dall'alzatina, e a trenta centimetri l'irraggiamento
+# porta tutti e tre i canali oltre l'unita' - cioe' una macchia BIANCA sulle
+# piastrelle. E' lo stesso difetto, alla stessa distanza, gia' misurato e corretto
+# sull'applique rossa della cupola: li' si e' passati da 0,30 a 0,50 e il picco e'
+# calato di quattro volte. Diciotto centimetri dal bordo la portano a 0,42 dal
+# muro, che e' anche dove una lampada da tavolo sta davvero - la si accende per
+# vedere quello che si ha DAVANTI, non l'intonaco dietro.
+LAMPADA_CUCINA = (_BANCONE[3] - 0.70, _BANCONE[5], _BANCONE[4] - 0.18)
 
 # Il letto, come lo vuole Godot: il centro della sua impronta.
 #

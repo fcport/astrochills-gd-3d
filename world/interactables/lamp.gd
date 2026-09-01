@@ -68,9 +68,16 @@ const HUM_VOL_DB := -14.0
 ## L'illuminazione della cucina che la lampada fa: fioca e intermittente da rotta, piena e
 ## stabile da riparata. L'energia varia in `_process` (irregolare, tipo neon) attorno a
 ## questi estremi mentre lampeggia; a FIXED resta ferma su `ENERGY_STABLE`.
-const ENERGY_STABLE := 2.2
-const ENERGY_FLICKER_MIN := 0.15
-const ENERGY_FLICKER_MAX := 2.6
+##
+## I NUMERI SONO SCESI DI DUE VOLTE E MEZZO, e non è una regolazione a gusto: a 2,2
+## questa lampadina su un bancone era più forte della plafoniera che le sta sopra
+## (2,1), e con sei metri di portata e nessuna ombra illuminava la stanza accanto
+## attraverso il muro. Portata e ombra le sistema `lamp.tscn`; qui si sistema
+## l'energia, che il codice riscrive a ogni cambio di stato — cambiarla solo nella
+## scena non avrebbe fatto niente, perché `_enter_fixed()` la sovrascrive.
+const ENERGY_STABLE := 0.9
+const ENERGY_FLICKER_MIN := 0.06
+const ENERGY_FLICKER_MAX := 1.1
 
 ## Il neon rotto non lampeggia a ritmo fisso: sta acceso a scatti di durata variabile,
 ## poi crolla per un attimo. Questi sono gli estremi degli intervalli fra un cambio di

@@ -25,7 +25,12 @@ extends Interactable
 const GROUP := &"dome_button"
 
 ## Di quanto rientra il cappello quando lo premi, in metri.
-const TRAVEL := 0.012
+##
+## QUATTRO MILLIMETRI E NON DODICI, ed e' la corsa vera di un pulsante industriale:
+## a dodici il cappuccio della pulsantiera - che ne sporge dieci - rientrava DIETRO
+## la propria targhetta e spariva. Nello scatto il tasto premuto non c'era, e il
+## sintomo sembrava un problema di colore.
+const TRAVEL := 0.004
 
 ## Oltre questa distanza il dito si stacca da solo. Poco più della portata del
 ## raggio del giocatore (1,20 m): chi indietreggia di un passo lascia il pulsante.
@@ -38,18 +43,35 @@ const REACH := 1.5
 ## Che cosa c'è scritto sulla targhetta, e quindi nel prompt.
 @export var action_name: String = "Apri la cupola"
 
-@onready var _cap: Node3D = get_node_or_null("Cappello")
+## I PEZZI CHE RIENTRANO QUANDO SI PREME, e sono PIU' DI UNO: il cappuccio e la
+## freccia serigrafata sopra. Nascono da due materiali diversi, e l'esportatore
+## glTF fa una mesh per materiale - non c'e' modo di darli come un pezzo solo senza
+## dipingere la freccia sul cappuccio, che a questa scala sarebbe tre pixel. Con un
+## nodo solo la freccia restava sospesa a mezz'aria mentre il tasto scendeva.
+##
+## Vuoto, si ricade su un figlio chiamato `Cappello`: e' com'era prima, e vale per
+## i pulsanti costruiti da primitive invece che importati.
+@export var cap_paths: Array[NodePath] = []
 
 var _held := false
 var _user: Node3D
-var _rest := Vector3.ZERO
+var _caps: Array[Node3D] = []
+var _rest: Array[Vector3] = []
 
 
 func _ready() -> void:
 	add_to_group(GROUP)
 	prompt_text = action_name
-	if _cap != null:
-		_rest = _cap.position
+	for p in cap_paths:
+		var n := get_node_or_null(p)
+		if n is Node3D:
+			_caps.append(n)
+	if _caps.is_empty():
+		var solo := get_node_or_null("Cappello")
+		if solo is Node3D:
+			_caps.append(solo)
+	for c in _caps:
+		_rest.append(c.position)
 	interacted.connect(_on_interacted)
 
 
@@ -98,10 +120,9 @@ func _on_interacted(by: Node3D) -> void:
 	# si apre, la si guarda.
 	if by.has_method("set_movement_locked"):
 		by.set_movement_locked(true)
-	if _cap != null:
-		# Rientra lungo la propria normale: il cappello guarda in avanti come tutto
-		# il pulsante, e «dentro» è meno Z locale.
-		_cap.position = _rest + Vector3(0.0, 0.0, -TRAVEL)
+	# Rientra lungo la propria normale: il cappello guarda in avanti come tutto
+	# il pulsante, e «dentro» è meno Z locale.
+	_muovi(-TRAVEL)
 	Events.dome_button_changed.emit(signi(direction))
 
 
@@ -110,9 +131,13 @@ func _lascia() -> void:
 	if _user != null and is_instance_valid(_user) and _user.has_method("set_movement_locked"):
 		_user.set_movement_locked(false)
 	_user = null
-	if _cap != null:
-		_cap.position = _rest
+	_muovi(0.0)
 	Events.dome_button_changed.emit(0)
+
+
+func _muovi(dentro: float) -> void:
+	for i in _caps.size():
+		_caps[i].position = _rest[i] + Vector3(0.0, 0.0, dentro)
 
 
 ## Quanto si è lontani, MISURATO SUL PAVIMENTO e non in linea d'aria: il pulsante

@@ -4252,3 +4252,68 @@ adesso è scritta in due posti, e il banco ne misura uno solo.
 proprio +Z, e lasciato dritto guarda dalla parte sbagliata. Non lo dice nessun errore e non
 lo prende nessun collaudo numerico: si vede guardando la foto, ed è per questo che la sonda
 scatta una foto invece di limitarsi a contare.
+
+
+## D-175 — Non un quadro a muro: una pulsantiera che penzola
+
+**1 settembre 2026.** «Nessuno dei due modelli funziona. Mi servono altri siti oltre a
+Sketchfab. Forse ho cercato male?» Aveva cercato male tutti e due — io per primo.
+
+**La parola sbagliata era «panel».** Cercavo «control panel» e «industrial button», e quelle
+due parole restituiscono scatoloni da parete. L'oggetto che serviva ha un altro nome: è una
+**pulsantiera pensile**, quella dei paranchi e dei montacarichi, e in inglese la si trova
+sotto *elevator*, *lift call button*, *pendant station*. Cambiata la parola, i risultati
+cambiano del tutto. È il difetto di ricerca più banale che ci sia, e mi è costato due giri.
+
+**Sui siti alternativi, il referto onesto.** Poly Haven non ha niente (interrogata: solo
+`Power Box 01` e `Utility Box`, scatole elettriche senza pulsanti). Free3D risponde 403,
+Open3DModel dà zero risultati. Fab e BlenderKit — le due alternative vere — bloccano il
+browser automatico con Cloudflare, quindi da lì non ho potuto verificare nulla e non ho
+mandato link. Quello che **ha** funzionato è un tipo di fonte diverso: **TraceParts**, il
+CAD dei costruttori, dove la Schneider Harmony **XAC-A (XACA271)** c'è con le sue quote.
+
+**E allora si è modellata, che è l'eccezione e non la regola.** Su Sketchfab la pulsantiera
+pensile non esiste: sei formulazioni diverse dell'interrogazione — «crane pendant control»,
+«hoist remote control», «pendant station», «winch remote» — danno zero risultati pertinenti.
+Ma qui modellare è lecito per una ragione precisa: **la forma non è inventata**. È un
+oggetto documentato di cui ho la foto di catalogo e le quote, ed è fatto di quattro volumi —
+scatola stondata, soffietto, due tasti Ø22, cavo. Trecentoventi facce. La differenza fra
+questo e il «quadrato con due pallini» di D-174 non è l'abilità: è che quello copiava
+un'idea vaga di quadro, questo copia un pezzo che esiste.
+
+**Perché pensile è meglio di murale, e non è una resa.** Un quadro avvitato obbliga a stare
+dove sta lui. La cupola la si guarda aprire da sotto, muovendosi: una pulsantiera la si
+prende in mano e la si porta dove si guarda. È esattamente il motivo per cui nei capannoni
+si usa quella.
+
+**Verde e rosso contro il vero.** Sull'oggetto reale i due cappucci sono neri tutti e due, e
+li distingue solo la freccia. Qui APRE è verde e CHIUDE è rosso: è una bugia deliberata,
+perché due dischi neri identici a un metro e mezzo sono la stessa incomprensibilità di
+prima. Le frecce restano — sono loro a dire **quale verso**, il colore dice solo **quale dei
+due**.
+
+**IL TASTO VERDE NON C'ERA, E SEMBRAVA UN PROBLEMA DI COLORE.** Nel primo scatto in gioco
+APRE era invisibile: un buco nero nella targhetta nera. La prima diagnosi — «il verde sotto
+la luce ambrata non riflette niente» — era vera e non era la causa. La causa è che
+`TRAVEL` valeva **12 mm su un cappuccio che ne sporgeva 8**: premuto, il tasto rientrava
+*dietro* la propria targhetta e spariva. Nessun controllo lo vedeva — risultava schiacciato,
+si rialzava, la cupola si apriva — perché la corsa era giusta come *comportamento* e
+sbagliata come *geometria*. Adesso la sonda misura sulle mesh quanto il cappuccio avanza
+oltre il pezzo nero più avanzato e pretende che sia più della corsa; alzando `TRAVEL` a 12
+il controllo grida. La luce ambrata resta un problema vero, e si paga con un filo di
+emissione sui due cappucci: 0,45, che legge come colore e non come spia accesa.
+
+**E il verso era di nuovo sbagliato, al contrario di prima.** Il quadro vecchio aveva la
+faccia sul proprio −Z, il modello importato ce l'ha sul +Z: copiando la riga di rotazione
+di D-174 la pulsantiera si è trovata rivolta verso l'intonaco, con i tasti sepulti nel muro
+— **e si premevano lo stesso**, perché il raggio del giocatore li colpiva da dietro. Tutti i
+controlli passavano. Adesso la sonda tira un raggio dal centro del tasto nel verso in cui il
+cappuccio sporge e pretende di trovare aria: con la rotazione sbagliata trova il muro a un
+centimetro. Terza volta che un comando montato al contrario passa i collaudi: il difetto non
+è la rotazione, è che nessuno chiedeva mai **da che parte guarda**.
+
+**Dondola, e non serve a niente.** Un pendolo smorzato vero — ω' = −(g/L)·sin θ − c·ω,
+integrato in tre sottopassi perché a trenta fotogrammi Eulero esplicito *guadagna* energia e
+invece di fermarsi sbandiera. Oscilla parallela al muro e non perpendicolare, o a metà corsa
+entrerebbe nell'intonaco. Non cambia nessun esito ed è esattamente per questo che si nota:
+è l'unica cosa nella stanza che risponde a chi la tocca.

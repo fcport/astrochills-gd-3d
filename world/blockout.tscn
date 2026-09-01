@@ -23,6 +23,8 @@
 [ext_resource type="Script" path="res://world/desk_station.gd" id="24_postazione"]
 [ext_resource type="Script" path="res://world/interactables/crt_monitor.gd" id="25_crt"]
 [ext_resource type="Script" path="res://world/interactables/dome_button.gd" id="34_quadro"]
+[ext_resource type="Script" path="res://world/interactables/pendant_sway.gd" id="35_dondolo"]
+[ext_resource type="PackedScene" path="res://assets/models/pulsantiera.glb" id="36_pensile"]
 [ext_resource type="PackedScene" path="res://crt/crt_screen.tscn" id="26_vetro"]
 [ext_resource type="Script" path="res://world/dome_shutter.gd" id="27_cupola"]
 [ext_resource type="PackedScene" path="res://world/interactables/bed.tscn" id="28_letto"]
@@ -1149,33 +1151,17 @@ tonemap_white = 3.0
 [sub_resource type="BoxShape3D" id="s_monitor"]
 size = Vector3(0.386, 0.420, 0.430)
 
-[sub_resource type="StandardMaterial3D" id="mat_quadro"]
-albedo_color = Color(0.62, 0.65, 0.58, 1)
+[sub_resource type="BoxShape3D" id="s_pulsante"]
+size = Vector3(0.040, 0.040, 0.030)
+
+[sub_resource type="BoxMesh" id="m_staffa"]
+size = Vector3(0.075, 0.095, 0.060)
+
+[sub_resource type="StandardMaterial3D" id="mat_staffa"]
+albedo_color = Color(0.52, 0.53, 0.50, 1)
 metallic = 0.0
 metallic_specular = 0.30
-roughness = 0.60
-
-[sub_resource type="StandardMaterial3D" id="mat_pulsante"]
-albedo_color = Color(0.09, 0.09, 0.10, 1)
-metallic = 0.0
-metallic_specular = 0.45
-roughness = 0.35
-
-[sub_resource type="BoxShape3D" id="s_quadro"]
-size = Vector3(0.300, 0.220, 0.110)
-
-[sub_resource type="BoxMesh" id="m_quadro"]
-size = Vector3(0.300, 0.220, 0.110)
-
-[sub_resource type="CylinderMesh" id="m_pulsante"]
-top_radius = 0.026
-bottom_radius = 0.026
-height = 0.030
-radial_segments = 16
-rings = 1
-
-[sub_resource type="BoxShape3D" id="s_pulsante"]
-size = Vector3(0.064, 0.064, 0.055)
+roughness = 0.65
 
 [sub_resource type="StandardMaterial3D" id="mat_apre"]
 albedo_color = Color(0.10, 0.50, 0.16, 1)
@@ -2635,62 +2621,36 @@ leaves = Array[NodePath]([NodePath("../Osservatorio/Cupola/PortelloBasso"), Node
 open_offset = Array[Vector3]([Vector3(0, 0, 0), Vector3(0, 0, 0)])
 open_rotation_deg = Array[Vector3]([Vector3(90, 0, 0), Vector3(90, 0, 0)])
 
-[node name="QuadroCupola" type="StaticBody3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0.160, 1.500, 4.800)
-[node name="Col" type="CollisionShape3D" parent="QuadroCupola"]
-shape = SubResource("s_quadro")
+[node name="StaffaCupola" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.095, 1.980, 4.800)
+mesh = SubResource("m_staffa")
+material_override = SubResource("mat_staffa")
 
-[node name="Cassa" type="MeshInstance3D" parent="QuadroCupola"]
-mesh = SubResource("m_quadro")
-material_override = SubResource("mat_quadro")
+[node name="Pulsantiera" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.150, 1.950, 4.800)
+script = ExtResource("35_dondolo")
 
-[node name="PulsanteApre" type="StaticBody3D" parent="QuadroCupola"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.088, 0.052, -0.067)
+[node name="Modello" parent="Pulsantiera" instance=ExtResource("36_pensile")]
+
+[node name="PulsanteApre" type="StaticBody3D" parent="Pulsantiera"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.444, 0.038)
 script = ExtResource("34_quadro")
 direction = 1
 action_name = "Apri la cupola"
+cap_paths = [NodePath("../Modello/PulsanteApre"), NodePath("../Modello/SerigrafiaApre")]
 
-[node name="Col" type="CollisionShape3D" parent="QuadroCupola/PulsanteApre"]
+[node name="Col" type="CollisionShape3D" parent="Pulsantiera/PulsanteApre"]
 shape = SubResource("s_pulsante")
 
-[node name="Cappello" type="Node3D" parent="QuadroCupola/PulsanteApre"]
-
-[node name="Mesh" type="MeshInstance3D" parent="QuadroCupola/PulsanteApre/Cappello"]
-transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 0, -0.006)
-mesh = SubResource("m_pulsante")
-material_override = SubResource("mat_apre")
-
-[node name="TargaApre" type="Label3D" parent="QuadroCupola"]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.028, 0.052, -0.058)
-text = "APRE"
-font_size = 64
-pixel_size = 0.0007
-modulate = Color(0.93, 0.91, 0.86, 1)
-outline_size = 0
-
-[node name="PulsanteChiude" type="StaticBody3D" parent="QuadroCupola"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.088, -0.052, -0.067)
+[node name="PulsanteChiude" type="StaticBody3D" parent="Pulsantiera"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.490, 0.038)
 script = ExtResource("34_quadro")
 direction = -1
 action_name = "Chiudi la cupola"
+cap_paths = [NodePath("../Modello/PulsanteChiude"), NodePath("../Modello/SerigrafiaChiude")]
 
-[node name="Col" type="CollisionShape3D" parent="QuadroCupola/PulsanteChiude"]
+[node name="Col" type="CollisionShape3D" parent="Pulsantiera/PulsanteChiude"]
 shape = SubResource("s_pulsante")
-
-[node name="Cappello" type="Node3D" parent="QuadroCupola/PulsanteChiude"]
-
-[node name="Mesh" type="MeshInstance3D" parent="QuadroCupola/PulsanteChiude/Cappello"]
-transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 0, -0.006)
-mesh = SubResource("m_pulsante")
-material_override = SubResource("mat_chiude")
-
-[node name="TargaChiude" type="Label3D" parent="QuadroCupola"]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.028, -0.052, -0.058)
-text = "CHIUDE"
-font_size = 64
-pixel_size = 0.0007
-modulate = Color(0.93, 0.91, 0.86, 1)
-outline_size = 0
 
 [node name="ControlloPC" parent="." instance=ExtResource("4_arredi")]
 

@@ -1614,7 +1614,7 @@ LETTO = ((_LETTO[1] + _LETTO[3]) / 2, (_LETTO[2] + _LETTO[4]) / 2 + SCARTO_LETTO
 
 # La cupola come volume: dove sta il giocatore quando "sta a guardare".
 # Raggio piu' corto di quello della calotta, per non toccare i muri.
-# IL QUADRO DELLA CUPOLA: due pulsanti a muro, APRE e CHIUDE.
+# IL COMANDO DELLA CUPOLA: due pulsanti, APRE e CHIUDE.
 #
 # SUL MURO OVEST, che e' l'unico cieco della sala del telescopio: il muro sud ha la
 # porta del disimpegno e l'interruttore della luce, quello est la vetrata verso la
@@ -1642,8 +1642,30 @@ LETTO = ((_LETTO[1] + _LETTO[3]) / 2, (_LETTO[2] + _LETTO[4]) / 2 + SCARTO_LETTO
 #
 # PERCHE' NON DA' FASTIDIO A CHI SALE: la passerella anulare, centrata sulla cupola,
 # arriva a 1,93 di raggio e non tocca ne' questo muro ne' questa quota.
-QUADRO_CUPOLA = (0.16, 1.50, 4.80)      # centro della scatola, coordinate di gioco
-QUADRO_MISURA = (0.30, 0.22, 0.11)      # larghezza, altezza, sporgenza dal muro
+#
+# NON E' PIU' UN QUADRO A MURO, E' UNA PULSANTIERA CHE PENZOLA (D-175). Il muro e la
+# quota qui sotto restano gli stessi - erano giusti, ed erano costati due pose
+# sbagliate - ma quello che ci sta appeso e' cambiato: una Harmony XAC-A gialla al
+# capo di un cavo, che e' l'oggetto che chiunque abbia visto un capannone riconosce
+# senza che nessuno glielo spieghi. La differenza non e' estetica: un quadro
+# avvitato al muro obbliga a stare dove sta lui, una pulsantiera la si prende in
+# mano e la si porta dove si guarda - e qui si guarda in alto, la cupola che si apre.
+#
+# LA QUOTA E' QUELLA DELLA STAFFA, non dei pulsanti: il modello ha l'origine in cima
+# al proprio cavo perche' DONDOLA, e i pulsanti gli cadono trenta centimetri sotto
+# piu' l'altezza del corpo. A 1,95 di staffa i due tasti si trovano a 1,46 e 1,51 -
+# cioe' dentro la linea di mira di chi guarda avanti, che e' il numero che il quadro
+# vecchio aveva sbagliato.
+#
+# LO SCOSTAMENTO DAL MURO E' IL SUO MEZZO SPESSORE PIU' UN CENTIMETRO: appesa, la
+# pulsantiera sbatte contro l'intonaco e ci resta appoggiata, che e' come stanno
+# davvero. Un centimetro di franco perche' quando dondola non ci entri dentro.
+PULSANTIERA_STAFFA = (0.15, 1.95, 4.80)   # dove il cavo esce dalla scatola di derivazione
+PULSANTIERA_CAVO = 0.30                   # quanto cavo, dalla staffa alla cuffia
+# I due tasti nello spazio del MODELLO (y verso il basso dall'origine): servono a
+# generare le collisioni, e sono gli stessi numeri di `pulsantiera_blender.py`.
+PULSANTIERA_TASTI = {"apre": -0.444, "chiude": -0.490}
+PULSANTIERA_FACCIA = 0.038                # quanto sporge il cappuccio, in Z di modello
 
 ATTIVITA_CUPOLA = (2.20, 2.00)     # raggio, altezza del cilindro
 # (nome, x, z, nx, nz, quota). Le esterne stanno piu' in alto, sopra l'architrave.

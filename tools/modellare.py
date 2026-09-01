@@ -149,6 +149,23 @@ COLORI = {
     # mestiere lo fa lo speculare: legge come cromo lucido senza dipendere
     # dall'ambiente. Sesta volta che questa trappola si presenta.
     "Cromo":          (0.72, 0.74, 0.76),
+    # LA PULSANTIERA PENSILE. Il giallo e' quello dell'ABS delle Telemecanique
+    # Harmony XAC-A, e non e' un giallo qualsiasi: e' saturo e virato al bruno,
+    # perche' un giallo puro sotto una luce bianca esce limone e sembra un giocattolo.
+    # Il verde e il rosso dei due cappucci stanno SCURI apposta - un pulsante e' di
+    # plastica pigmentata, non una spia: se lo si schiarisce per farlo "leggere"
+    # smette di sembrare premibile e comincia a sembrare acceso.
+    "PlasticaGialla": (0.66, 0.42, 0.02),
+    "PulsanteApre":   (0.09, 0.46, 0.14),
+    "PulsanteChiude": (0.50, 0.07, 0.05),
+    # La serigrafia bianca delle frecce: bianco sporco, non bianco carta.
+    # SONO DUE MATERIALI IDENTICI, e il doppione e' voluto. L'esportatore fa una
+    # mesh per materiale: con una serigrafia sola le due frecce finirebbero nello
+    # stesso oggetto, e premendo APRE rientrerebbe il cappuccio lasciando la
+    # freccia sospesa a mezz'aria. Separarli qui costa un nome; separarli dopo
+    # vorrebbe dire tagliare una mesh in Godot.
+    "SerigrafiaApre":   (0.88, 0.87, 0.83),
+    "SerigrafiaChiude": (0.88, 0.87, 0.83),
 }
 RUVIDEZZA = {"Metallo": 0.45, "Inox": 0.28, "Rame": 0.35, "Schermo": 0.12,
              "Acceso": 0.20, "Gomma": 0.75, "Ceramica": 0.25, "Smalto": 0.30,
@@ -166,7 +183,12 @@ RUVIDEZZA = {"Metallo": 0.45, "Inox": 0.28, "Rame": 0.35, "Schermo": 0.12,
              "LegnoBagno": 0.45, "InternoMobile": 0.62,
              "Cartone": 0.85, "Rotolo": 0.92, "Flacone": 0.35,
              "Alcol": 0.22,
-             "Distributore": 0.55}
+             "Distributore": 0.55,
+             # ABS stampato: opaco, ma non gessoso. I cappucci un filo piu' lisci
+             # perche' sono quelli che una mano tocca mille volte.
+             "PlasticaGialla": 0.55, "PulsanteApre": 0.38,
+             "PulsanteChiude": 0.38,
+             "SerigrafiaApre": 0.60, "SerigrafiaChiude": 0.60}
 METALLICI = ("Metallo", "Inox", "Rame", "Ferro")
 # I materiali la cui texture va MOLTIPLICATA per il colore invece che sostituirlo.
 # Di norma il colore e' solo un ripiego per quando la texture manca, e collegare la
@@ -397,6 +419,19 @@ def materiale(nome):
         # sta la placca, non fare luce - quella, pochissima, la fa la sua lampada.
         b.inputs["Emission Strength"].default_value = 1.0
         b.inputs["Roughness"].default_value = 0.25
+    if nome in ("PulsanteApre", "PulsanteChiude"):
+        # UN FILO DI EMISSIONE, E NON E' UN VEZZO. Nella cupola la luce e' ambrata,
+        # e sotto una luce ambrata un verde pigmentato non riflette quasi niente:
+        # nella prima prova in gioco il tasto APRE era LETTERALMENTE INVISIBILE -
+        # un disco nero sulla targhetta nera - mentre il rosso, che l'ambra la
+        # rilancia, si vedeva. Non e' un problema di scelta del verde: e' che il
+        # colore riflesso dipende dalla luce, e questo deve leggersi comunque.
+        # A 0,45 legge come COLORE e non come spia accesa; piu' su diventerebbe
+        # una lampadina, e i due tasti sembrerebbero gia' premuti.
+        c = COLORI[nome]
+        b.inputs["Emission Color"].default_value = (c[0] * 1.3, c[1] * 1.3,
+                                                    c[2] * 1.3, 1.0)
+        b.inputs["Emission Strength"].default_value = 0.45
     if nome == "Insegna":
         # il pannello luminoso di un distributore: acceso anche quando la sala e' spenta
         b.inputs["Emission Color"].default_value = (0.98, 0.70, 0.42, 1.0)

@@ -148,7 +148,79 @@ func _trova() -> bool:
 	print("[quadro] camera: %s   strato del pulsante: %d   puo' interagire: %s"
 		% ["c'e'" if _cam != null else "MANCA", _apre.collision_layer,
 			_apre.can_interact()])
+	_c_e_aria_davanti(_apre, "APRE")
+	_c_e_aria_davanti(_chiude, "CHIUDE")
+	_sporge_piu_di_quanto_rientra(_apre, "APRE")
+	_sporge_piu_di_quanto_rientra(_chiude, "CHIUDE")
 	return true
+
+
+## IL CAPPUCCIO SPORGE PIU' DI QUANTO RIENTRA?
+##
+## Se la corsa supera la sporgenza, premendo il tasto SPARISCE dentro la propria
+## targhetta: il giocatore lo tiene premuto e non vede piu' niente sotto il dito.
+## E' successo - `TRAVEL` era 12 mm su un cappuccio che ne sporgeva 8 - e nessuno
+## dei controlli di questa sonda lo vedeva: il pulsante risultava schiacciato, si
+## rialzava, la cupola si apriva. Si e' visto SOLO guardando lo scatto, dove il
+## tasto verde semplicemente non c'era, e il sintomo sembrava un problema di colore.
+##
+## Si misura sulle mesh: quanto il cappuccio avanza, lungo il proprio +Z, oltre il
+## pezzo nero piu' avanzato (la targhetta e la ghiera, che sono lo stesso materiale).
+func _sporge_piu_di_quanto_rientra(b: DomeButton, come: String) -> void:
+	var modello := b.get_parent().get_node_or_null("Modello")
+	if modello == null:
+		return
+	var avanti := b.global_transform.basis.z
+	var cappuccio := _quanto_avanza(modello.get_node_or_null(NodePath(b.name)), avanti)
+	var nero := _quanto_avanza(modello.get_node_or_null(NodePath("Gomma")), avanti)
+	var sporgenza := cappuccio - nero
+	if sporgenza > DomeButton.TRAVEL:
+		print("[quadro] ok: %s sporge %.0f mm e rientra di %.0f: resta visibile premuto"
+			% [come, sporgenza * 1000.0, DomeButton.TRAVEL * 1000.0])
+		return
+	_guasti += 1
+	print("[quadro] %s SPARISCE QUANDO LO PREMI: sporge %.0f mm e rientra di %.0f"
+		% [come, sporgenza * 1000.0, DomeButton.TRAVEL * 1000.0]
+		+ "   <-- ATTESO: sporgenza maggiore della corsa")
+
+
+## Fin dove arriva una mesh lungo una direzione, in metri dall'origine del mondo.
+func _quanto_avanza(n: Node, verso: Vector3) -> float:
+	var m := n as MeshInstance3D
+	if m == null:
+		return 0.0
+	var scatola := m.get_aabb()
+	var piu_avanti := -INF
+	for i in 8:
+		piu_avanti = maxf(piu_avanti,
+			(m.global_transform * scatola.get_endpoint(i)).dot(verso))
+	return piu_avanti
+
+
+## IL TASTO GUARDA DENTRO LA STANZA, O DENTRO IL MURO?
+##
+## E' il difetto che si e' gia' presentato due volte e che nessun altro controllo di
+## questa sonda vede: un comando montato al contrario si trova lo stesso col raggio
+## — il giocatore gli arriva dall'altra parte e ne colpisce il DIETRO — e si preme
+## lo stesso. Passa tutto, e in gioco si vede una scatola gialla girata verso
+## l'intonaco con i tasti sepolti dentro il muro.
+##
+## Si chiede al mondo tirando un raggio dal centro del tasto NEL VERSO IN CUI IL
+## CAPPUCCIO SPORGE: davanti a un comando ci deve essere aria. Mezzo metro basta,
+## ed e' meno della portata del braccio.
+func _c_e_aria_davanti(b: DomeButton, come: String) -> void:
+	var avanti := b.global_transform.basis.z
+	var q := PhysicsRayQueryParameters3D.create(
+		b.global_position, b.global_position + avanti * 0.5)
+	q.collision_mask = Interactable.LAYER_WORLD
+	var urto := _cam.get_world_3d().direct_space_state.intersect_ray(q)
+	if urto.is_empty():
+		print("[quadro] ok: %s sporge verso la stanza" % come)
+		return
+	_guasti += 1
+	print("[quadro] %s SPORGE CONTRO %s a %.2f m   <-- ATTESO: aria davanti al tasto"
+		% [come, (urto["collider"] as Node).name,
+			b.global_position.distance_to(urto["position"] as Vector3)])
 
 
 ## CHI C'E' INTORNO AL QUADRO, e a che distanza.
@@ -188,10 +260,17 @@ func _raccogli(n: Node, qui: Vector3, dentro: Array[String]) -> void:
 func _mira(b: DomeButton) -> void:
 	var p := b.global_position
 	# DAVANTI AL PULSANTE, LUNGO LA SUA NORMALE, e non «un po' piu' a sud»: il
-	# quadro adesso sta su un muro diverso e guarda verso +X. La prima stesura
-	# metteva il giocatore sempre a -Z e lo faceva guardare di taglio: nella foto si
-	# vedeva il quadro di profilo e mezzo schermo dentro il muro.
-	var davanti := -b.global_transform.basis.z
+	# comando sta sul muro ovest e guarda verso +X. La prima stesura metteva il
+	# giocatore sempre a -Z e lo faceva guardare di taglio: nella foto si vedeva il
+	# quadro di profilo e mezzo schermo dentro il muro.
+	#
+	# IL VERSO E' +Z E NON -Z: il cappuccio sporge lungo il proprio +Z, ed e' quello
+	# il davanti. Con il segno vecchio - che era giusto per il quadro di primitive,
+	# fatto al contrario - la sonda piazzava il giocatore DENTRO IL MURO, dall'altra
+	# parte. Tutti i controlli passavano lo stesso (fuori dall'edificio c'e' aria, e
+	# il raggio della sonda il pulsante lo trovava) e falliva solo la pressione
+	# vera, perche' il raggio DEL GIOCATORE sbatteva prima nell'intonaco.
+	var davanti := b.global_transform.basis.z
 	davanti = Vector3(davanti.x, 0.0, davanti.z).normalized()
 	var dove := p + davanti * VICINO
 	_player.global_position = Vector3(dove.x, 0.0, dove.z)
@@ -224,7 +303,7 @@ func _c_e_da_stare_in_piedi(dove: Vector3) -> void:
 	var nomi: Array[String] = []
 	for u in urti:
 		var n := u["collider"] as Node
-		if n != null and not (n is DomeButton) and n.name != "QuadroCupola":
+		if n != null and not (n is DomeButton) and n.name != "Modello":
 			nomi.append(n.name)
 	if nomi.is_empty():
 		print("[quadro] ok: davanti al comando si sta in piedi")

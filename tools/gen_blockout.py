@@ -20,7 +20,9 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        H_INTERRUTTORE, L_PLACCA, A_PLACCA, SP_PLACCA,
                        LETTO, MOKA, LAMPADA_CUCINA, ATTIVITA_CUPOLA,
                        CASSA_MONITOR, VETRO_MONITOR, SEDILE_MONITOR,
-                       BOMBATURA_MONITOR, FRANCO_VETRO, QUADRO_CUPOLA, QUADRO_MISURA
+                       BOMBATURA_MONITOR, FRANCO_VETRO,
+                       PULSANTIERA_STAFFA, PULSANTIERA_TASTI,
+                       PULSANTIERA_FACCIA
 )
 
 MURI, APERTURE, PAVIMENTI, SOFFITTI, SALA, (_CX, _CZ) = scalati()
@@ -147,6 +149,8 @@ def tscn():
              '[ext_resource type="Script" path="res://world/desk_station.gd" id="24_postazione"]',
              '[ext_resource type="Script" path="res://world/interactables/crt_monitor.gd" id="25_crt"]',
              '[ext_resource type="Script" path="res://world/interactables/dome_button.gd" id="34_quadro"]',
+             '[ext_resource type="Script" path="res://world/interactables/pendant_sway.gd" id="35_dondolo"]',
+             '[ext_resource type="PackedScene" path="res://assets/models/pulsantiera.glb" id="36_pensile"]',
              '[ext_resource type="PackedScene" path="res://crt/crt_screen.tscn" id="26_vetro"]',
              '[ext_resource type="Script" path="res://world/dome_shutter.gd" id="27_cupola"]',
              '[ext_resource type="PackedScene" path="res://world/interactables/bed.tscn" id="28_letto"]',
@@ -337,34 +341,26 @@ def tscn():
               # dell'interazione sbatte, e senza non c'e' nessun prompt.
               '[sub_resource type="BoxShape3D" id="s_monitor"]',
               'size = Vector3(%.3f, %.3f, %.3f)' % CASSA_MONITOR[3:], '',
-              # IL QUADRO DELLA CUPOLA. La scatola e' cio' contro cui sbatte il
-              # raggio dell'interazione; i due pulsanti sono due cilindri che
-              # sporgono, e servono solo a farlo leggere come un quadro e non come
-              # una scatola di derivazione. Modello vero quando arrivera' il pack:
-              # il riferimento e' su Sketchfab, vedi CREDITI.md.
-              # LA CASSA E' CHIARA E I PULSANTI SCURI, non il contrario: un quadro
-              # con lo stesso valore del muro e' una macchia che non si trova, e i
-              # pulsanti si devono staccare da lui e non dall'intonaco. Il grigio
-              # verdolino e' quello dei quadri elettrici degli anni Ottanta.
-              '[sub_resource type="StandardMaterial3D" id="mat_quadro"]',
-              'albedo_color = Color(0.62, 0.65, 0.58, 1)',
-              'metallic = 0.0', 'metallic_specular = 0.30', 'roughness = 0.60', '',
-              '[sub_resource type="StandardMaterial3D" id="mat_pulsante"]',
-              'albedo_color = Color(0.09, 0.09, 0.10, 1)',
-              'metallic = 0.0', 'metallic_specular = 0.45', 'roughness = 0.35', '',
-              '[sub_resource type="BoxShape3D" id="s_quadro"]',
-              'size = Vector3(%.3f, %.3f, %.3f)' % QUADRO_MISURA, '',
-              '[sub_resource type="BoxMesh" id="m_quadro"]',
-              'size = Vector3(%.3f, %.3f, %.3f)' % QUADRO_MISURA, '',
-              '[sub_resource type="CylinderMesh" id="m_pulsante"]',
-              'top_radius = 0.026', 'bottom_radius = 0.026', 'height = 0.030',
-              'radial_segments = 16', 'rings = 1', '',
-              # LA COLLISIONE DEL PULSANTE E' UNA SCATOLA e non un cilindro: il
-              # raggio del giocatore la deve trovare anche mirando di sbieco, e
-              # mezzo centimetro di margine attorno al cappello vale piu' di una
-              # forma esatta.
+              # LA PULSANTIERA PENSILE (D-175). Del quadro a muro non resta niente:
+              # cassa, pulsanti e targhette erano primitive grigie, e adesso il
+              # corpo arriva da `assets/models/pulsantiera.glb`. Qui restano solo
+              # le due cose che un modello non porta - la collisione che il raggio
+              # deve trovare, e la scatola di derivazione da cui esce il cavo.
+              #
+              # LA COLLISIONE E' PIU' GRANDE DEL CAPPUCCIO: 40 mm di scatola su un
+              # tasto da 22. Non e' sciatteria, e' mira: il cappuccio vero e'
+              # bombato e visto di sbieco offre due centimetri scarsi, che a un
+              # metro e mezzo vogliono dire un puntamento al grado. Fra i due tasti
+              # restano sei millimetri, quindi nessuno dei due ruba l'altro.
               '[sub_resource type="BoxShape3D" id="s_pulsante"]',
-              'size = Vector3(0.064, 0.064, 0.055)', '',
+              'size = Vector3(0.040, 0.040, 0.030)', '',
+              # La scatola di derivazione: un cavo che esce dal nulla e' peggio di
+              # nessun cavo. Grigia come i corrugati dell'impianto.
+              '[sub_resource type="BoxMesh" id="m_staffa"]',
+              'size = Vector3(0.075, 0.095, 0.060)', '',
+              '[sub_resource type="StandardMaterial3D" id="mat_staffa"]',
+              'albedo_color = Color(0.52, 0.53, 0.50, 1)',
+              'metallic = 0.0', 'metallic_specular = 0.30', 'roughness = 0.65', '',
               # VERDE E ROSSO, E ACCESI. Dentro una cupola al buio un verde spento
               # e un rosso spento sono due dischi neri: l'emissione bassa li fa
               # leggere come pulsanti senza trasformarli in lampadine.
@@ -481,66 +477,58 @@ def tscn():
               'open_offset = Array[Vector3]([Vector3(0, 0, 0), Vector3(0, 0, 0)])',
               'open_rotation_deg = Array[Vector3]([Vector3(90, 0, 0), Vector3(90, 0, 0)])', '',
               # --- il quadro della cupola, con i suoi due pulsanti -------------
-              # I PULSANTI GUARDANO DENTRO LA STANZA, cioe' verso -Z: il quadro sta
-              # sul muro sud e chi lo usa gli sta davanti, dando le spalle al muro.
-              # Ruotati di 90 gradi attorno a X perche' un cilindro nasce in piedi e
-              # un pulsante sporge in orizzontale.
-              '[node name="QuadroCupola" type="StaticBody3D" parent="."]',
-              # RUOTATO DI -90 GRADI attorno alla verticale: sta sul muro ovest e
-              # deve guardare dentro la stanza, cioe' verso +X. Tutto quello che gli
-              # sta appeso - pulsanti e targhette - si gira con lui, che e' la
-              # ragione per cui sono figli e non fratelli.
-              # IL SEGNO E' STATO MISURATO, non dedotto: con l'altra rotazione i
-              # pulsanti finivano DIETRO la loro stessa cassa, dentro il muro. Il
-              # raggio del giocatore trovava la scatola e non il pulsante, e il
-              # referto diceva «lo vedo ma non si preme» - che e' il sintomo esatto
-              # di un comando montato al contrario.
-              'transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, %.3f, %.3f, %.3f)'
-              % QUADRO_CUPOLA,
-              '[node name="Col" type="CollisionShape3D" parent="QuadroCupola"]',
-              'shape = SubResource("s_quadro")', '',
-              '[node name="Cassa" type="MeshInstance3D" parent="QuadroCupola"]',
-              'mesh = SubResource("m_quadro")',
-              'material_override = SubResource("mat_quadro")', '']
+              # LA SCATOLA DI DERIVAZIONE sta ferma sul muro e NON e' figlia della
+              # pulsantiera: quella dondola, e una scatola avvitata all'intonaco che
+              # dondola insieme al cavo sarebbe la cosa che rompe l'illusione invece
+              # di reggerla. E' il punto fisso da cui il cavo esce.
+              '[node name="StaffaCupola" type="MeshInstance3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
+              % (PULSANTIERA_STAFFA[0] - 0.055, PULSANTIERA_STAFFA[1] + 0.030,
+                 PULSANTIERA_STAFFA[2]),
+              'mesh = SubResource("m_staffa")',
+              'material_override = SubResource("mat_staffa")', '',
+              # LA PULSANTIERA, girata di +90 gradi attorno alla verticale perche' i
+              # suoi tasti devono guardare dentro la stanza, cioe' verso +X.
+              #
+              # IL SEGNO E' L'OPPOSTO DI QUELLO DEL QUADRO VECCHIO, e non e' un
+              # ripensamento: il quadro aveva la faccia sul proprio -Z (i pulsanti
+              # erano piazzati a z negativa dentro la cassa), il modello importato
+              # ce l'ha sul +Z. Stessa parete, stesso verso nel mondo, rotazione
+              # opposta. Copiando la riga di prima la pulsantiera si e' trovata
+              # rivolta verso l'intonaco con i tasti sepolti dentro il muro - e
+              # SI PREMEVANO LO STESSO, perche' il raggio del giocatore li
+              # colpiva da dietro. Adesso la sonda tira un raggio dal tasto nel
+              # verso in cui sporge e pretende di trovare aria.
+              '[node name="Pulsantiera" type="Node3D" parent="."]',
+              'transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, %.3f, %.3f, %.3f)'
+              % PULSANTIERA_STAFFA,
+              'script = ExtResource("35_dondolo")', '',
+              '[node name="Modello" parent="Pulsantiera" instance=ExtResource("36_pensile")]', '']
 
-    # I DUE PULSANTI, ciascuno un corpo per conto suo: e' la differenza fra un
-    # quadro che si usa e un quadro che si guarda. Il raggio del giocatore colpisce
-    # il pulsante, non la scatola, e il prompt dice che cosa fa QUEL pulsante.
-    # La scatola dietro non ha piu' script: e' un ostacolo, non un comando.
-    _faccia = -QUADRO_MISURA[2] / 2
-    for _nome, _verso, _dy, _mat, _targa, _prompt in [
-            ("PulsanteApre", 1, 0.052, "mat_apre", "APRE", "Apri la cupola"),
-            ("PulsanteChiude", -1, -0.052, "mat_chiude", "CHIUDE", "Chiudi la cupola")]:
-        righe += ['[node name="%s" type="StaticBody3D" parent="QuadroCupola"]' % _nome,
-                  'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.088, %.3f, %.3f)'
-                  % (_dy, _faccia - 0.012),
+    # I DUE TASTI, ciascuno un corpo per conto suo: e' la differenza fra un comando
+    # che si usa e uno che si guarda. Il raggio del giocatore colpisce IL TASTO, non
+    # la scatola gialla, e il prompt dice che cosa fa QUEL tasto.
+    #
+    # I CORPI SONO FRATELLI DELLA MESH E NON FIGLI, e la ragione e' che il modello e'
+    # una scena istanziata: dentro non ci si appende niente senza aprirla. Il
+    # collegamento fra il corpo invisibile e il cappuccio che si vede passa da
+    # `cap_paths`, che il pulsante risolve a runtime.
+    for _nome, _verso, _chiave, _prompt in [
+            ("PulsanteApre", 1, "apre", "Apri la cupola"),
+            ("PulsanteChiude", -1, "chiude", "Chiudi la cupola")]:
+        righe += ['[node name="%s" type="StaticBody3D" parent="Pulsantiera"]' % _nome,
+                  'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, %.3f, %.3f)'
+                  % (PULSANTIERA_TASTI[_chiave], PULSANTIERA_FACCIA),
                   'script = ExtResource("34_quadro")',
                   'direction = %d' % _verso,
-                  'action_name = "%s"' % _prompt, '',
-                  '[node name="Col" type="CollisionShape3D" parent="QuadroCupola/%s"]' % _nome,
-                  'shape = SubResource("s_pulsante")', '',
-                  # Il cappello sta sotto un Node3D vuoto perche' e' QUELLO che
-                  # rientra quando si preme: muovere la mesh direttamente vorrebbe
-                  # dire che `dome_button.gd` debba conoscerne la rotazione.
-                  '[node name="Cappello" type="Node3D" parent="QuadroCupola/%s"]' % _nome, '',
-                  '[node name="Mesh" type="MeshInstance3D" parent="QuadroCupola/%s/Cappello"]' % _nome,
-                  'transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 0, -0.006)',
-                  'mesh = SubResource("m_pulsante")',
-                  'material_override = SubResource("%s")' % _mat, '',
-                  # LA TARGHETTA E' META' DEL LAVORO: un pulsante senza targhetta e'
-                  # un pallino, e un pallino non dice che cosa fa. `Label3D` perche'
-                  # una scritta su una texture, a questa scala, sarebbe illeggibile.
-                  '[node name="Targa%s" type="Label3D" parent="QuadroCupola"]' % _targa.capitalize(),
-                  # GIRATA DI MEZZO GIRO: un `Label3D` si legge dal proprio +Z, e
-                  # lasciata dritta la scritta usciva SPECCHIATA - «ERPA» al posto di
-                  # «APRE». Si vede solo guardandola, ed e' esattamente per questo che
-                  # la sonda scatta una foto invece di limitarsi a contare.
-                  'transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.028, %.3f, %.3f)'
-                  % (_dy, _faccia - 0.003),
-                  'text = "%s"' % _targa,
-                  'font_size = 64', 'pixel_size = 0.0007',
-                  'modulate = Color(0.93, 0.91, 0.86, 1)',
-                  'outline_size = 0', '']
+                  'action_name = "%s"' % _prompt,
+                  # Il cappuccio E la freccia: sono due mesh perche' sono due
+                  # materiali, e devono rientrare insieme o la freccia resta sospesa
+                  # a mezz'aria mentre il tasto scende.
+                  'cap_paths = [NodePath("../Modello/%s"), NodePath("../Modello/%s")]'
+                  % (_nome, _nome.replace("Pulsante", "Serigrafia")), '',
+                  '[node name="Col" type="CollisionShape3D" parent="Pulsantiera/%s"]' % _nome,
+                  'shape = SubResource("s_pulsante")', '']
 
     righe += [
               '[node name="ControlloPC" parent="." instance=ExtResource("4_arredi")]', '',
@@ -1673,7 +1661,10 @@ print("scritto %s  -  %d blocchi, %d dimensioni distinte" % (out, len(blocchi), 
 # controlla che i valori che contano ci siano davvero.
 _scritto = io.open(out, encoding="utf-8").read()
 _attesi = [("ambient_light_energy = 0.035", "la luce ambientale della notte"),
-           ('34_quadro', "il quadro della cupola: senza, la notte non comincia"),
+           ('34_quadro', "i tasti della cupola: senza, la notte non comincia"),
+           ('[node name="Pulsantiera" type="Node3D"', "la pulsantiera pensile"),
+           ('cap_paths = [NodePath("../Modello/PulsanteApre")',
+            "il collegamento fra il tasto e il cappuccio che rientra"),
            ("tonemap_mode = 3", "il tonemapping ACES"),
            ("shadow_normal_bias = 0.45", "i bias delle ombre delle plafoniere"),
            ('locale = "la cucina"', "il nome del locale nel prompt"),

@@ -3090,8 +3090,8 @@ material_override = SubResource("mat_vetro_est")
 
 [node name="LuceMonitor" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.950, 1.020, 2.000)
-light_energy = 0.18
-light_color = Color(1.0, 0.46, 0.10, 1)
+light_energy = 0.09
+light_color = Color(1.0, 0.64, 0.36, 1)
 light_specular = 0.10
 omni_range = 2.4
 omni_attenuation = 1.6

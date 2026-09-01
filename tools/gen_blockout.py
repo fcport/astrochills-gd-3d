@@ -878,16 +878,25 @@ def tscn():
               # vede arancione.
               #
               # L'ENERGIA NON COMPENSA TUTTO IL DOVUTO, E LA DIFFERENZA E' IL PUNTO.
-              # Luminanza del bianco-verde: 0,97; dell'ambra: 0,55. Per fare la
-              # stessa LUCE servirebbe 0,25 - e a quel livello, guardato invece che
-              # calcolato, la cassa beige e la tastiera si tingono anche con la
-              # plafoniera accesa: e' lo stesso difetto del verde saturo di prima,
-              # cambiato di tinta. Con un colore saturo l'energia giusta e' MENO di
-              # quella equivalente, perche' quello che si nota non e' quanto illumina
-              # ma quanto TINGE. 0,18 lascia il monitor padrone del buio - a luci
-              # spente la consolle e' ambra e non c'e' dubbio da dove venga - e a
-              # luci accese resta un velo sul beige invece di una mano di vernice.
-              'light_energy = 0.18', 'light_color = Color(1.0, 0.46, 0.10, 1)',
+              # Luminanza del bianco-verde: 0,97; dell'ambra: 0,60. Per fare la
+              # stessa LUCE servirebbe 0,23. Con un colore saturo l'energia giusta e'
+              # MENO di quella equivalente, perche' quello che si nota non e' quanto
+              # illumina ma quanto TINGE - e la strada verso il numero e' stata di
+              # scendere tre volte, guardando, con Federico che a ogni giro diceva
+              # ancora troppo:
+              #     0,23  la cassa beige e la tastiera diventano arancioni anche a
+              #           plafoniera accesa: la tinta ha mangiato il materiale
+              #     0,13  al buio va, a luci accese il beige e' ancora ambrato
+              #     0,09  a luci accese la cassa torna beige; al buio la consolle
+              #           e' un alone caldo e lo schermo resta la cosa piu' chiara
+              # Il collaudo di questo numero e' a DUE SCENE, e sono in disaccordo
+              # fra loro: al buio si vuole che il monitor si veda, a luce accesa che
+              # non si veda affatto. Quello giusto e' il piu' basso che regge la
+              # prima, non il piu' alto che regge la seconda.
+              # E LO SPECULARE RESTA A 0,10: e' il riflesso del vetro sulla
+              # scrivania lucida, cioe' l'unica cosa che dice che li' c'e' un tubo e
+              # non un adesivo. Abbassando l'energia non e' cresciuto.
+              'light_energy = 0.09', 'light_color = Color(1.0, 0.64, 0.36, 1)',
               'light_specular = 0.10',
               'omni_range = 2.4', 'omni_attenuation = 1.6',
               'shadow_normal_bias = 0.05', 'shadow_bias = 0.02',

@@ -22,6 +22,7 @@ const POSITIVE_KEYS := [
 	"night_length_min", "game_min_per_sec", "pose_time_scale",
 	"polar_score_window_sec", "polar_max_drift_rate",
 	"focus_best_hfd", "focus_max_hfd",
+	"cooling_full_drop", "cooling_zero_drop",
 ]
 
 var profile: TuningProfile
@@ -42,6 +43,12 @@ var polar_score_window_sec: float:
 	get: return profile.polar_score_window_sec
 var polar_max_drift_rate: float:
 	get: return profile.polar_max_drift_rate
+var cooling_full_drop: float:
+	get: return profile.cooling_full_drop
+
+var cooling_zero_drop: float:
+	get: return profile.cooling_zero_drop
+
 var focus_best_hfd: float:
 	get: return profile.focus_best_hfd
 var focus_max_hfd: float:

@@ -429,11 +429,12 @@ manutenzione** (D-168). Si fanno quando si installa la montatura, quando le si c
 carico sopra, e quando qualcuno ci ha messo le mani — non ogni sera. `phases/polar/` resta
 nel repository, non cambia di una riga, ed è ancora la prova dell'AC2 della storia 1.1.
 
-> **[ASSUMPTION]** I criteri di punteggio delle fasi 3, 4, 5, 7 e 9 sono proposti qui e non
-> ancora implementati: esistono le fasi 1, 2, 6, 8 e 10. La fase 1 costa dieci minuti di
-> notte sulla carta e sei secondi reali in gioco, la 2 quindici e una ventina di secondi: il
-> budget qui è intento di progetto, e nessuna fase lo consuma ancora davvero. *Cosa* si
-> misura è deciso; le soglie numeriche si tarano quando la fase esiste.
+> **[ASSUMPTION]** I criteri di punteggio delle fasi 4, 5, 7 e 9 sono proposti qui e non
+> ancora implementati: esistono le fasi 1, 2, 3, 6, 8 e 10. La fase 1 costa dieci minuti di
+> notte sulla carta e sei secondi reali in gioco, la 2 quindici e una ventina di secondi, la
+> 3 venticinque e una quarantina: il budget qui è intento di progetto, e nessuna fase lo
+> consuma ancora davvero. *Cosa* si misura è deciso; le soglie numeriche si tarano quando la
+> fase esiste.
 
 #### La posa, in dettaglio
 

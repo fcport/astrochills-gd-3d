@@ -70,6 +70,8 @@ func _ready() -> void:
 	print("")
 	_check_honest_bus()
 	print("")
+	_check_honest_peltier()
+	print("")
 	_check_honest_vcurve()
 	print("")
 	_check_honest_drift()
@@ -390,6 +392,7 @@ const SOURCE_PATHS := [
 	"res://phases/dome/sources/honest_shutter.tres",
 	"res://phases/focus/sources/honest_vcurve.tres",
 	"res://phases/startup/sources/honest_bus.tres",
+	"res://phases/cooling/sources/honest_peltier.tres",
 	"res://phases/polar/sources/honest_drift.tres",
 	"res://phases/polar/sources/wandering_drift.tres",
 	"res://phases/targeting/sources/honest_catalog.tres",
@@ -2010,3 +2013,73 @@ func _check_honest_bus() -> void:
 		var avuto: int = src.sample(caso[1], 0.016)
 		print("   %-52s -> %d%s" % [caso[0], avuto,
 			"" if avuto == atteso else "   <-- ATTESO: %d" % atteso])
+
+
+const PELTIER_PATH := "res://phases/cooling/sources/honest_peltier.tres"
+
+
+func _cooling_input(setpoint: float, temperature: float, t: float) -> CoolingInput:
+	var i := CoolingInput.new()
+	i.setpoint = setpoint
+	i.temperature = temperature
+	i.seconds_running = t
+	return i
+
+
+func _check_honest_peltier() -> void:
+	print("-- HonestPeltier: la cella scende di tanto sotto l'ambiente, e non di piu'")
+	var src := _load_source(PELTIER_PATH) as HonestPeltier
+	if src == null:
+		return
+	var fondo := src.floor_temperature()
+	print("   dal .tres: ambiente %+.1f, salto massimo %.1f -> fondo %+.1f"
+		% [src.ambient, src.max_drop, fondo])
+
+	# Determinismo: `delta` non deve entrare da nessuna parte.
+	var i_det := _cooling_input(-20.0, 0.0, 3.0)
+	var a := src.sample(i_det, 0.016)
+	var b := src.sample(i_det, 0.99)
+	print("   sample(i, 0.016) = %+.4f, sample(i, 0.99) = %+.4f -> %s"
+		% [a, b, "DETERMINISTICA" if is_equal_approx(a, b)
+			else "NON deterministica  <-- ATTESO: deterministica"])
+
+	# Chiedendo entro i margini si ottiene quello che si e' chiesto.
+	var dentro := _cooling_input(fondo + 6.0, fondo + 6.0, 5.0)
+	var v := src.sample(dentro, 0.016)
+	print("   arrivati a un setpoint raggiungibile, la velocita' e' %+.4f gradi/s%s"
+		% [v, "" if is_zero_approx(v) else "   <-- ATTESO: 0, ci si resta"])
+
+	# Chiedendo oltre il fondo NON ci si arriva, e si ondeggia: due istanti diversi
+	# dello stesso ciclo devono dare due equilibri diversi.
+	var t1 := src.equilibrium(_cooling_input(fondo - 20.0, fondo, 0.0))
+	var t2 := src.equilibrium(_cooling_input(fondo - 20.0, fondo, src.wobble_period * 0.25))
+	print("   chiedendo venti gradi oltre il fondo: equilibrio %+.2f e %+.2f%s"
+		% [t1, t2, "" if absf(t2 - t1) > 0.3
+			else "   <-- ATTESO: due istanti diversi, due valori diversi"])
+	if mini(roundi(t1 * 100.0), roundi(t2 * 100.0)) < roundi((fondo - src.wobble - 0.01) * 100.0):
+		print("   ma si scende sotto il fondo  <-- ATTESO: il fondo e' un fondo")
+
+	# La cella lavora in proporzione a quello che le si chiede, e satura.
+	var poco := src.duty(_cooling_input(src.ambient - 10.0, 0.0, 0.0))
+	var tanto := src.duty(_cooling_input(fondo, 0.0, 0.0))
+	var troppo := src.duty(_cooling_input(fondo - 30.0, 0.0, 0.0))
+	print("   cella: dieci gradi sotto l'ambiente %d%%, al fondo %d%%, oltre %d%%%s"
+		% [roundi(poco * 100.0), roundi(tanto * 100.0), roundi(troppo * 100.0),
+			"" if poco < tanto and is_equal_approx(tanto, troppo) and is_equal_approx(troppo, 1.0)
+			else "   <-- ATTESO: cresce, e si ferma al 100%"])
+
+	# LA DISCESA, integrata come la integra la fase: quanto ci mette ad arrivare.
+	# Il passo e' fisso perche' una misura che dipende dal frame rate non e' una
+	# misura.
+	var passo := 1.0 / 60.0
+	var bersaglio := fondo + 4.0
+	var caso := _cooling_input(bersaglio, src.ambient_temperature(), 0.0)
+	var secondi := 0.0
+	while absf(caso.temperature - bersaglio) > 0.1 and secondi < 300.0:
+		caso.temperature += src.sample(caso, passo) * passo
+		caso.seconds_running = secondi
+		secondi += passo
+	var lunga := secondi > 90.0
+	print("   dall'ambiente a %+.0f gradi: %.1f s%s"
+		% [bersaglio, secondi,
+			"   <-- nota: piu' di un minuto e mezzo di attesa" if lunga else ""])

@@ -4083,3 +4083,73 @@ blockout, con la cassa chiara e i pulsanti scuri — un quadro che ha lo stesso 
 Junction Box (220V)* di uliana (CC-BY, 1712 facce), che è esattamente la scatola verniciata
 grigio-verde con la targa e il triangolo che starebbe su quel muro. Sta in CREDITI.md come
 riferimento, non come asset: non è stato scaricato né usato.
+
+
+## D-172 — La fase 3: il mestiere non è aspettare, è scegliere quanto chiedere
+
+**1 settembre 2026.** Terza fase del nuovo elenco (D-168): il raffreddamento della camera.
+
+**Il pericolo era l'attesa vuota.** «Imposti la temperatura e aspetti» è una fase che si
+gioca da sola, e le fasi che si giocano da sole sono tempo che il giocatore paga senza
+decidere niente. La decisione c'è, ed è una sola: **quanto freddo chiedere**. Il rumore del
+chip si dimezza ogni sei gradi in meno, quindi più giù è meglio; ma un Peltier scende di
+trentotto gradi sotto l'ambiente e non di più, e quello che gli chiedi oltre non lo ottiene —
+resta al massimo, non ci arriva, e la temperatura ondeggia. Una temperatura che ondeggia non
+è un dettaglio: i dark si scattano alla stessa temperatura delle pose, e una serie presa
+mentre il sensore balla non corrisponde più a niente.
+
+**Come si capisce dov'è il limite: guardando la percentuale, non la temperatura.** Il
+pannello mostra quanto sta lavorando la cella, ed è l'unica lettura che dice se quello che
+hai chiesto si può TENERE. Nessuno scrive da nessuna parte che sopra il novanta per cento non
+si regge — non c'è nemmeno una tacca sulla barra — e si impara vedendo la temperatura
+ballare. È la stessa diagnosi della fase 2, con un numero al posto di una porta muta.
+
+**`runs_in_background()` è `true`, e questa è la fase che se lo merita.** Imposti il setpoint
+e mentre il sensore scende vai a fare il caffè. È quello che fa chiunque abbia mai
+raffreddato una camera.
+
+**Il punteggio conta i gradi scesi DALLA PARTENZA, non una temperatura assoluta**, e questa
+è la scelta che rende la fase a prova di meteo. La fase non sa quanto faccia freddo in
+cupola — non ha nessun campo che lo contenga: chiede a `truth` la temperatura di partenza,
+che con la cella spenta è quella dell'ambiente, e conta da lì. Il giorno in cui la notte
+avrà un tempo atmosferico, questa fase non cambierà di una riga.
+
+**Due fattori che si moltiplicano, e non si sommano.** Freddo per stabilità. Una temperatura
+bassissima che balla non vale «un po' meno» di una buona: non vale niente, perché i dark non
+corrisponderanno. Il prodotto è l'unica forma che dice questo.
+
+**Tre difetti trovati misurando, e nessuno si vedeva dal codice.**
+
+*Il sensore nasceva a zero gradi.* `_temperature` partiva dal valore di default della
+variabile invece che dall'ambiente, e il punteggio contava i gradi scesi da uno zero
+inventato: chiedendo meno ventotto ne mancavano tre per il pieno, e il referto diceva 87
+invece di 100. La cura non è stata scrivere il numero nella fase — sarebbe stata la fase a
+decidere un'osservazione — ma aggiungere `ambient_temperature()` al contratto della
+sorgente. È il termometro della camera, ed è la prima cosa che una sorgente bugiarda vorrà
+falsificare.
+
+*Chiedere troppo non si pagava.* La prima stesura faceva ondeggiare la temperatura di mezzo
+grado ogni undici secondi, e il referto diceva «cella al 100%, temperatura ferma, punteggio
+pieno» — il contrario di quello che la fase deve insegnare. Il colpevole non era la soglia
+ma la fisica: il sensore ha una costante di tempo di sei secondi e si comporta da filtro, e
+un'oscillazione più rapida della propria inerzia la smorza a un quarto. La cura è anche più
+vera: una cella satura non oscilla per conto suo, **segue l'ambiente** — il vento gira, la
+cupola si muove di un grado in mezzo minuto, e senza margine di regolazione il sensore se lo
+porta dietro tutto. Un grado e due ogni ventisei secondi, e adesso si vede.
+
+*La finestra di stabilità era troppo corta.* A sei secondi, chi confermava mentre la
+temperatura passava per il massimo la trovava ferma e si portava via il pieno di una camera
+che stava ballando. Dieci secondi, e non c'è più nessun istante del ciclo in cui sembri
+stabile. Il numero non è a gusto: viene dal periodo della deriva.
+
+**Le misure, dalla sonda `tools/prova_freddo.tscn`.** Chiedendo **meno ventotto** — cella
+all'89%, dentro i margini — si arriva a **100 in quaranta secondi**. Chiedendo **meno
+quarantacinque** — cella al 100%, impossibile — nei venticinque secondi successivi alla
+stabilizzazione il punteggio oscilla **fra 0 e 55**: non si prende un buon voto nemmeno
+scegliendo l'istante migliore. Ed è così che la sonda deve giudicare una cosa che ondeggia:
+non «quanto vale adesso» ma «quanto può valere al massimo», che è ciò che farebbe un
+giocatore che aspetta il momento buono per premere INVIO.
+
+**Il limite dichiarato, ed è lo stesso del fuoco:** finché l'ambiente è fisso nel `.tres`, il
+setpoint migliore è sempre lo stesso e chi gioca molte notti lo impara. La cura non è un
+numero casuale, è il meteo — e quando ci sarà, arriverà da lì con una riga sola.

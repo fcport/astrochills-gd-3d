@@ -46,6 +46,17 @@ extends Resource
 ## STA UN FILO SOPRA IL MINIMO CHE L'OTTICA PUÒ DARE, e non è generosità: il minimo
 ## esatto è un passo su milleottocento, e chiederlo trasformerebbe una fase di
 ## mestiere in una lotteria di precisione. Sotto questa soglia si prende pieno.
+## Quanti gradi sotto la temperatura di partenza valgono il punteggio pieno della
+## fase 3, e sotto quanti non vale niente.
+##
+## SI MISURA UNA DISCESA, NON UNA TEMPERATURA, ed e' la ragione per cui questi due
+## numeri sopravvivranno al meteo: la fase conta i gradi dalla temperatura che ha
+## letto al primo fotogramma, che e' quella della cupola. Trentuno perche' una cella
+## a due stadi ne fa trentotto e chiederglieli tutti la manda in saturazione: il
+## pieno si prende restando appena al di qua del limite, non oltrepassandolo.
+@export var cooling_full_drop: float = 31.0
+@export var cooling_zero_drop: float = 8.0
+
 @export var focus_best_hfd: float = 2.7
 
 ## Diametro al quale la fase del fuoco dà 0. In mezzo il punteggio scende lineare.

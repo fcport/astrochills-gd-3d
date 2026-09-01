@@ -28,7 +28,18 @@ const LIMITE := 90.0
 ## Quanto si aspetta prima di premere INVIO su una fase che si vuole solo passare.
 ## Non zero: una fase appena montata non ha ancora disegnato niente, e chiuderla
 ## nel fotogramma in cui nasce proverebbe che la notte scorre, non che si vede.
-const RESPIRO := 0.8
+const RESPIRO := 1.6
+
+## COME SI SUPERA LA FASE DELL'ACCENSIONE, che con il solo INVIO non finisce mai:
+## il cursore resta sulla prima riga e le altre due non le collega nessuno. Accendi
+## e collega la montatura, scendi, accendi e collega la camera, scendi, collega la
+## ruota, e l'ultimo INVIO chiude. Non e' una scorciatoia: e' esattamente quello che
+## fa il giocatore, tasto per tasto.
+const COPIONE_STARTUP: Array[StringName] = [
+	&"startup_act", &"startup_act", &"startup_down",
+	&"startup_act", &"startup_act", &"startup_down",
+	&"startup_act", &"startup_act",
+]
 
 ## Quanto si gioca la fase d'arrivo prima dello scatto. Al fuoco serve: un
 ## pannello fotografato appena montato mostra il riquadro del grafico vuoto, cioè
@@ -46,6 +57,8 @@ var _seduto := false
 var _premuto := false
 var _arrivato := false
 var _ultimo_secondo := 0
+var _battuta := 0
+var _posto := Vector3.INF
 
 
 func _ready() -> void:
@@ -80,8 +93,14 @@ func _process(d: float) -> void:
 		return
 
 	_tempo += d
-	if not _seduto and _conto > 5:
-		_siediti()
+	if _posto == Vector3.INF:
+		var p0 := Player.find_in(get_tree())
+		if p0 != null:
+			# DOVE SI ERA, prima di andare in cupola: la sedia sta li', e chi non ci
+			# torna fotografa un muro. La prima stesura di questa sonda si sedeva
+			# subito e poi si teletrasportava al quadro, e lo scatto finale inquadrava
+			# il quadro della cupola invece del monitor.
+			_posto = p0.global_position
 		return
 	if _tempo > LIMITE:
 		print("[vetro] NON CI SI ARRIVA: dopo %.0f s si è fermi su '%s'"
@@ -166,6 +185,11 @@ func _avanza() -> void:
 	if _tempo - _da_quando < RESPIRO or _tempo - _ultimo_invio < RESPIRO:
 		return
 	_ultimo_invio = _tempo
+	if _corrente == &"startup":
+		if _battuta < COPIONE_STARTUP.size():
+			_manda(COPIONE_STARTUP[_battuta])
+			_battuta += 1
+			return
 	# UN TASTO E NON UN'AZIONE. `action_press` non genera nessun evento — mette solo
 	# lo stato — e le conferme si leggono in `_unhandled_input`, che senza evento non
 	# viene mai chiamato. Ma nemmeno un `InputEventAction` va bene: si riconosce dal
@@ -174,6 +198,15 @@ func _avanza() -> void:
 	# fase ci legge la propria conferma, com'e' scritto in `project.godot`.
 	var e := InputEventKey.new()
 	e.physical_keycode = KEY_ENTER
+	e.pressed = true
+	Input.parse_input_event(e)
+
+
+## Manda un'azione per nome. Serve alle fasi che hanno piu' di un tasto: il tasto
+## fisico va bene per le conferme, ma non per dire «scendi di una riga».
+func _manda(azione: StringName) -> void:
+	var e := InputEventAction.new()
+	e.action = azione
 	e.pressed = true
 	Input.parse_input_event(e)
 
@@ -203,6 +236,13 @@ func _su_fase(chiave: StringName) -> void:
 	_corrente = chiave
 	_da_quando = _tempo
 	_premuto = false
+	if chiave != &"dome" and not _seduto:
+		# La cupola e' aperta: si torna alla postazione e ci si siede, che e' quello
+		# che il giocatore fa appena finito di tenere premuto.
+		var p0 := Player.find_in(get_tree())
+		if p0 != null and _posto != Vector3.INF:
+			p0.global_position = _posto
+		_siediti()
 	if chiave == _fino and chiave == &"focus":
 		# Si muove il focheggiatore, se no il grafico è un riquadro vuoto.
 		Input.action_press(&"focus_out")

@@ -49,3 +49,6 @@ assets/textures/
 __pycache__/
 *.pyc
 .gstack/
+
+# Scatti di confronto: materiale da guardare, non da versionare.
+_confronto/

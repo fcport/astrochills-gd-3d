@@ -147,25 +147,31 @@ func _siediti() -> void:
 ## comando spariva e il referto diceva «battente 0.000, tasto false, fase gira»:
 ## il meccanismo era sano, era la mano della sonda ad aprirsi.
 func _apri_la_cupola() -> void:
-	# LA CUPOLA NON SI APRE PIU' DAL PC (D-171): il comando sta su un quadro a muro,
-	# in cupola. La sonda fa quello che farebbe il giocatore - ci va, lo prende, e
-	# tiene premuto - saltando solo la camminata, che qui non prova niente.
-	var quadro := DomePanel.find_in(get_tree())
+	# LA CUPOLA SI APRE DAL QUADRO IN CUPOLA (D-171, D-174): si mira il pulsante
+	var quadro := _pulsante_apre()
 	if quadro == null:
-		print("[vetro] NON C'E' IL QUADRO della cupola")
+		print("[vetro] NON C'E' IL PULSANTE della cupola")
 		_fine()
 		return
-	if not quadro.is_active():
-		var p := Player.find_in(get_tree())
-		if p == null:
-			print("[vetro] NON C'E' IL GIOCATORE")
-			_fine()
-			return
-		var q := quadro.global_position
-		p.global_position = Vector3(q.x, 0.0, q.z - 1.0)
-		quadro.interact(p)
-	# Si ripreme a ogni fotogramma: la finestra che perde il fuoco rilascia le azioni.
-	Input.action_press(&"dome_open")
+	var p := Player.find_in(get_tree())
+	if p == null:
+		print("[vetro] NON C'E' IL GIOCATORE")
+		_fine()
+		return
+	# SI RIMIRA A OGNI FOTOGRAMMA: dopo il teletrasporto la capsula si assesta, e
+	# una mira vecchia di un frame passa sopra il pulsante.
+	var q := quadro.global_position
+	p.global_position = Vector3(q.x, 0.0, q.z - 0.85)
+	p.look_at(Vector3(q.x, 0.0, q.z), Vector3.UP)
+	var cam := p.camera()
+	if cam != null:
+		cam.look_at(q, Vector3.UP)
+	if not Input.is_action_pressed(&"interact"):
+		Input.action_press(&"interact")
+		var e := InputEventAction.new()
+		e.action = &"interact"
+		e.pressed = true
+		Input.parse_input_event(e)
 	var s := DomeShutter.find_in(get_tree())
 	if s == null:
 		print("[vetro] NESSUN BATTENTE nel gioco")
@@ -173,9 +179,19 @@ func _apri_la_cupola() -> void:
 		return
 	if int(_tempo) > _ultimo_secondo:
 		_ultimo_secondo = int(_tempo)
-		print("[vetro]   %2d s: battente %.3f  quadro in mano %s  comando %d"
-			% [_ultimo_secondo, s.aperture(), quadro.is_active(), quadro.direction()])
-	# La fase si chiude da sola a fine corsa: non c'e' piu' niente da confermare.
+		print("[vetro]   %2d s: battente %.3f  pulsante premuto %s"
+			% [_ultimo_secondo, s.aperture(), quadro.is_held()])
+	if s.aperture() >= 0.999:
+		Input.action_release(&"interact")
+
+
+## Il pulsante che apre, fra i due del quadro.
+func _pulsante_apre() -> DomeButton:
+	for b in DomeButton.all_in(get_tree()):
+		var p := b as DomeButton
+		if p != null and p.direction > 0:
+			return p
+	return null
 
 ## INVIO, e non una volta sola: una fase che non l'ha ancora ricevuto — perché
 ## stava nascendo, perché il gating dell'input non era ancora acceso — resterebbe

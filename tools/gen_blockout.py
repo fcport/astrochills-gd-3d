@@ -146,7 +146,7 @@ def tscn():
              # siede. Il modello non sa niente di tutto questo, e non deve.
              '[ext_resource type="Script" path="res://world/desk_station.gd" id="24_postazione"]',
              '[ext_resource type="Script" path="res://world/interactables/crt_monitor.gd" id="25_crt"]',
-             '[ext_resource type="Script" path="res://world/interactables/dome_panel.gd" id="34_quadro"]',
+             '[ext_resource type="Script" path="res://world/interactables/dome_button.gd" id="34_quadro"]',
              '[ext_resource type="PackedScene" path="res://crt/crt_screen.tscn" id="26_vetro"]',
              '[ext_resource type="Script" path="res://world/dome_shutter.gd" id="27_cupola"]',
              '[ext_resource type="PackedScene" path="res://world/interactables/bed.tscn" id="28_letto"]',
@@ -357,8 +357,27 @@ def tscn():
               '[sub_resource type="BoxMesh" id="m_quadro"]',
               'size = Vector3(%.3f, %.3f, %.3f)' % QUADRO_MISURA, '',
               '[sub_resource type="CylinderMesh" id="m_pulsante"]',
-              'top_radius = 0.022', 'bottom_radius = 0.022', 'height = 0.030',
-              'radial_segments = 12', 'rings = 1', '',
+              'top_radius = 0.026', 'bottom_radius = 0.026', 'height = 0.030',
+              'radial_segments = 16', 'rings = 1', '',
+              # LA COLLISIONE DEL PULSANTE E' UNA SCATOLA e non un cilindro: il
+              # raggio del giocatore la deve trovare anche mirando di sbieco, e
+              # mezzo centimetro di margine attorno al cappello vale piu' di una
+              # forma esatta.
+              '[sub_resource type="BoxShape3D" id="s_pulsante"]',
+              'size = Vector3(0.064, 0.064, 0.055)', '',
+              # VERDE E ROSSO, E ACCESI. Dentro una cupola al buio un verde spento
+              # e un rosso spento sono due dischi neri: l'emissione bassa li fa
+              # leggere come pulsanti senza trasformarli in lampadine.
+              '[sub_resource type="StandardMaterial3D" id="mat_apre"]',
+              'albedo_color = Color(0.10, 0.50, 0.16, 1)',
+              'emission_enabled = true', 'emission = Color(0.12, 0.70, 0.20, 1)',
+              'emission_energy_multiplier = 0.40',
+              'metallic = 0.0', 'roughness = 0.45', '',
+              '[sub_resource type="StandardMaterial3D" id="mat_chiude"]',
+              'albedo_color = Color(0.55, 0.08, 0.06, 1)',
+              'emission_enabled = true', 'emission = Color(0.78, 0.11, 0.08, 1)',
+              'emission_energy_multiplier = 0.40',
+              'metallic = 0.0', 'roughness = 0.45', '',
               # Il vetro: un quad della misura ESATTA del tubo, un millimetro davanti
               # alla sua faccia piu' avanzata e un millimetro dietro il bordo della
               # cassa, che quindi lo inquadra da se'. La cornice nera attorno
@@ -469,22 +488,52 @@ def tscn():
               '[node name="QuadroCupola" type="StaticBody3D" parent="."]',
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
               % QUADRO_CUPOLA,
-              'script = ExtResource("34_quadro")', '',
               '[node name="Col" type="CollisionShape3D" parent="QuadroCupola"]',
               'shape = SubResource("s_quadro")', '',
               '[node name="Cassa" type="MeshInstance3D" parent="QuadroCupola"]',
               'mesh = SubResource("m_quadro")',
-              'material_override = SubResource("mat_quadro")', '',
-              '[node name="Apre" type="MeshInstance3D" parent="QuadroCupola"]',
-              'transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 0.065, %.3f)'
-              % (-QUADRO_MISURA[2] / 2 - 0.010),
-              'mesh = SubResource("m_pulsante")',
-              'material_override = SubResource("mat_pulsante")', '',
-              '[node name="Chiude" type="MeshInstance3D" parent="QuadroCupola"]',
-              'transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, -0.065, %.3f)'
-              % (-QUADRO_MISURA[2] / 2 - 0.010),
-              'mesh = SubResource("m_pulsante")',
-              'material_override = SubResource("mat_pulsante")', '',
+              'material_override = SubResource("mat_quadro")', '']
+
+    # I DUE PULSANTI, ciascuno un corpo per conto suo: e' la differenza fra un
+    # quadro che si usa e un quadro che si guarda. Il raggio del giocatore colpisce
+    # il pulsante, non la scatola, e il prompt dice che cosa fa QUEL pulsante.
+    # La scatola dietro non ha piu' script: e' un ostacolo, non un comando.
+    _faccia = -QUADRO_MISURA[2] / 2
+    for _nome, _verso, _dy, _mat, _targa, _prompt in [
+            ("PulsanteApre", 1, 0.052, "mat_apre", "APRE", "Apri la cupola"),
+            ("PulsanteChiude", -1, -0.052, "mat_chiude", "CHIUDE", "Chiudi la cupola")]:
+        righe += ['[node name="%s" type="StaticBody3D" parent="QuadroCupola"]' % _nome,
+                  'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.088, %.3f, %.3f)'
+                  % (_dy, _faccia - 0.012),
+                  'script = ExtResource("34_quadro")',
+                  'direction = %d' % _verso,
+                  'action_name = "%s"' % _prompt, '',
+                  '[node name="Col" type="CollisionShape3D" parent="QuadroCupola/%s"]' % _nome,
+                  'shape = SubResource("s_pulsante")', '',
+                  # Il cappello sta sotto un Node3D vuoto perche' e' QUELLO che
+                  # rientra quando si preme: muovere la mesh direttamente vorrebbe
+                  # dire che `dome_button.gd` debba conoscerne la rotazione.
+                  '[node name="Cappello" type="Node3D" parent="QuadroCupola/%s"]' % _nome, '',
+                  '[node name="Mesh" type="MeshInstance3D" parent="QuadroCupola/%s/Cappello"]' % _nome,
+                  'transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 0, -0.006)',
+                  'mesh = SubResource("m_pulsante")',
+                  'material_override = SubResource("%s")' % _mat, '',
+                  # LA TARGHETTA E' META' DEL LAVORO: un pulsante senza targhetta e'
+                  # un pallino, e un pallino non dice che cosa fa. `Label3D` perche'
+                  # una scritta su una texture, a questa scala, sarebbe illeggibile.
+                  '[node name="Targa%s" type="Label3D" parent="QuadroCupola"]' % _targa.capitalize(),
+                  # GIRATA DI MEZZO GIRO: un `Label3D` si legge dal proprio +Z, e
+                  # lasciata dritta la scritta usciva SPECCHIATA - «ERPA» al posto di
+                  # «APRE». Si vede solo guardandola, ed e' esattamente per questo che
+                  # la sonda scatta una foto invece di limitarsi a contare.
+                  'transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.028, %.3f, %.3f)'
+                  % (_dy, _faccia - 0.003),
+                  'text = "%s"' % _targa,
+                  'font_size = 64', 'pixel_size = 0.0007',
+                  'modulate = Color(0.93, 0.91, 0.86, 1)',
+                  'outline_size = 0', '']
+
+    righe += [
               '[node name="ControlloPC" parent="." instance=ExtResource("4_arredi")]', '',
               '[node name="Cucina" parent="." instance=ExtResource("5_cucina")]', '',
               '[node name="Divulgazione" parent="." instance=ExtResource("6_divulg")]', '',

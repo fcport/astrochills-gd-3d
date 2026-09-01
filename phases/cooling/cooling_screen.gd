@@ -20,10 +20,10 @@ extends Control
 const DESIGN_SIZE := Vector2(256, 192)
 
 ## Colori del fosforo verde, gli stessi delle altre viste.
-const BG := Color(0.02, 0.06, 0.03)
-const FG := Color(0.62, 1.0, 0.68)
-const DIM := Color(0.30, 0.58, 0.34)
-const FAINT := Color(0.18, 0.34, 0.20)
+const BG := Phosphor.BG
+const FG := Phosphor.FG
+const DIM := Phosphor.DIM
+const FAINT := Phosphor.FAINT
 
 const MARGIN := 8
 

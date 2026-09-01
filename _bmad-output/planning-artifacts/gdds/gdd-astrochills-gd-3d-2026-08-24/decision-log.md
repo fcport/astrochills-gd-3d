@@ -4153,3 +4153,102 @@ giocatore che aspetta il momento buono per premere INVIO.
 **Il limite dichiarato, ed è lo stesso del fuoco:** finché l'ambiente è fisso nel `.tres`, il
 setpoint migliore è sempre lo stesso e chi gioca molte notti lo impara. La cura non è un
 numero casuale, è il meteo — e quando ci sarà, arriverà da lì con una riga sola.
+
+
+## D-173 — Il fosforo diventa ambra, e smette di stare in tredici posti
+
+**1 settembre 2026.** «Mettilo ambra, e anche la luce che emette deve essere di quel
+colore.» Federico ha guardato tre scatti dello stesso pannello dentro il monitor — verde,
+blu DOS, ambra — e ha scelto.
+
+**Perché ambra, e non è gusto.** Chi lavora di notte non guarda uno schermo luminoso:
+l'occhio ci mette venti minuti ad adattarsi al buio e un lampo di bianco glieli azzera. È
+per questo che le sale di controllo degli osservatori hanno le luci rosse, ed è per questo
+che un monitor monocromatico caldo era la scelta di chi poi doveva salire in cupola e vedere
+qualcosa. Il fosforo P3, l'ambra, esisteva ed era comune quanto il P1 verde. Il blu DOS era
+il più leggibile dei tre e il più vero come *software* — nel '99 quello girava in DOS — ma è
+anche il più luminoso, e in una stanza buia è la scelta peggiore.
+
+**La palette stava in tredici file.** Sei fasi, terminale, BBS, menu post-foto, riepilogo,
+vendita, stacking: ognuno dichiarava le stesse quattro `Color` copiate a mano. Finché la
+palette non cambia sono solo tredici copie brutte; il giorno in cui cambia sono tredici
+occasioni di dimenticarne una, e la schermata dimenticata resta di un altro colore per
+sempre senza che nessun collaudo se ne accorga. Adesso c'è `core/phosphor.gd`, e sta in
+`core/` e non in `crt/` per la tabella dei confini: `phases/` può vedere solo `core/`.
+
+**La luce che il monitor butta nella stanza è cambiata con lui**, e la regola era già
+scritta: la luce di un monitor è quello che il monitor emette. Il colore passa
+dal grigio-verde all'ambra pallido, e l'energia da 0,14 a 0,17 — un colore più saturo ha
+meno luminanza (0,81 contro 0,97), quindi a parità di energia illumina un quinto in meno.
+
+**Il difetto che ha richiesto due ore invece di dieci minuti: il colore giusto usciva
+sbagliato.** Un ambra scritto come lo si vuole — `Color(1.0, 0.75, 0.32)` — dentro il
+monitor appariva **giallo crema**. Ho provato ad abbassare il guadagno dello shader, a
+saturare di più, a cambiare il tint del vetro: tutto inutile, perché stavo curando il
+sintomo. La diagnosi è arrivata da due immagini della stessa cosa: **il pannello fotografato
+fuori dal mondo 3D era ambra perfetto**, lo stesso pannello dentro il monitor era crema. Il
+colpevole è il **tonemapping ACES** della scena, che comprime i valori alti e nel farlo
+sposta gli arancioni verso il giallo. La cura è pre-compensare — i numeri in `phosphor.gd`
+sono più rossi e meno verdi di quello che si vuole ottenere — e la riga che lo spiega sta in
+testa al file, perché senza qualcuno li «correggerà» e rifarà tutto il giro.
+
+**Il guadagno dello shader scende da 1,15 a 1,0**, e non è cosmesi: sopra 1 il canale rosso
+dell'ambra saturava, e ACES trasformava la saturazione in giallo. Con il rosso sotto la
+soglia il colore resta quello che è.
+
+**Come si giudica questa palette:** sempre dentro il monitor, mai a schermo pulito. Le due
+viste non sono la stessa immagine, e la differenza fra loro è esattamente il difetto che ha
+mangiato il tempo.
+
+
+## D-174 — Due pulsanti veri, e la sonda che saltava il pezzo che si rompeva
+
+**1 settembre 2026.** «Stavo testando il quadro della cupola: non funziona, e non si
+capisce.» Aveva ragione su tutti e due i punti, e i due difetti erano lo stesso difetto.
+
+**Non funzionava, e la sonda diceva di sì.** `tools/prova_quadro.tscn` chiamava
+`interact()` sul quadro **a mano**, saltando il raggio con cui il giocatore trova le cose.
+Verde su tutta la linea, e in gioco niente. Le due cause, misurate dopo aver rifatto la
+sonda con un raggio vero: il raggio dell'interazione arriva a **1,20 m** e il quadro stava a
+**1,35 m di altezza**, cioè sotto la linea di mira di chi guarda avanti — per trovarlo
+bisognava abbassare lo sguardo di venti gradi; e la fase 1, finita dopo la prima apertura,
+si portava via il comando, quindi tornando in cupola più tardi i pulsanti erano inerti.
+
+**Una sonda che salta il pezzo che si rompe non è una sonda.** È la lezione che vale più del
+resto: chiamare direttamente il metodo che il gioco raggiunge attraverso una catena — raggio,
+prompt, azione — collauda il metodo e non la catena. La sonda nuova mette la testa del
+giocatore davanti al pulsante, gli fa mirare, e tiene premuto `E`. Ha trovato subito anche un
+terzo difetto che nessuno aveva visto: dopo il teletrasporto la capsula si assesta sul
+pavimento di un centimetro, e una mira fatta un fotogramma prima passa **quattro gradi**
+sopra il bersaglio.
+
+**Non si capiva, ed era un giudizio giusto.** «Un quadrato con due pallini»: due cilindri
+grigi su una scatola grigia, senza scritte e senza colore. Nessuno ci vedrebbe un comando.
+Adesso i pulsanti sono **due oggetti distinti**, si mirano uno per uno, e ciascuno ha:
+
+- un **colore** — verde per APRE, rosso per CHIUDE, con un filo di emissione perché in una
+  cupola al buio un verde spento e un rosso spento sono due dischi neri;
+- una **targhetta scritta**, `Label3D`, perché un pulsante senza targhetta è un pallino e un
+  pallino non dice che cosa fa;
+- un **prompt suo** — «Apri la cupola», «Chiudi la cupola» — invece di un generico «usa il
+  quadro»;
+- e il **cappello che rientra di dodici millimetri** mentre lo tieni premuto: è l'unico modo
+  che ha di dire «ti ho sentito» a chi lo guarda da mezzo metro.
+
+**Il gesto cambia, ed è quello standard**: miri il pulsante e tieni premuto `E`. Prima
+bisognava «prendere» il quadro con `E` e poi comandarlo con le frecce della tastiera — un
+comando che sta nel mondo si preme dove sta, non da tastiera.
+
+**Il quadro adesso funziona anche a fase finita**, e per farlo il battente ha dovuto
+prendersi una responsabilità in più: quando nessuna fase della cupola è viva, è
+`world/dome_shutter.gd` a integrare il comando dei pulsanti. Questo file **nomina la chiave
+di una fase** — l'unica eccezione alla regola per cui `world/` non sa che `phases/` esista —
+e la ragione è concreta: finché la fase è viva è lei a possedere l'apertura (ADR-001), e due
+integratori sullo stesso motore vorrebbero dire una cupola che va a doppia velocità. Si
+nomina la chiave e non si chiama niente. Il prezzo dichiarato è che la velocità del motore
+adesso è scritta in due posti, e il banco ne misura uno solo.
+
+**E le scritte uscivano specchiate.** «ERPA» invece di «APRE»: un `Label3D` si legge dal
+proprio +Z, e lasciato dritto guarda dalla parte sbagliata. Non lo dice nessun errore e non
+lo prende nessun collaudo numerico: si vede guardando la foto, ed è per questo che la sonda
+scatta una foto invece di limitarsi a contare.

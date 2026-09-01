@@ -22,9 +22,9 @@ extends Control
 
 const DESIGN_SIZE := Vector2(256, 192)
 
-const BG := Color(0.02, 0.06, 0.03)
-const FG := Color(0.62, 1.0, 0.68)
-const DIM := Color(0.30, 0.58, 0.34)
+const BG := Phosphor.BG
+const FG := Phosphor.FG
+const DIM := Phosphor.DIM
 
 var _font: SystemFont
 var _night_index := 1

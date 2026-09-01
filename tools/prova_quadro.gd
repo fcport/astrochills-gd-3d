@@ -1,14 +1,14 @@
-## Il quadro a muro apre la cupola? E smette di aprirla se ti allontani?
+## I due pulsanti della cupola: si MIRANO e si tengono premuti, come nel gioco.
 ##
-## DUE DOMANDE, E LA SECONDA È QUELLA CHE FA ESISTERE IL QUADRO. Che due pulsanti
-## comandino un motore lo prova anche il banco. Il fatto che li si debba tenere
-## premuti STANDO LÌ — che non si possa aprire la cupola da seduti in sala
-## controllo — è l'intera ragione per cui la fase 1 ha lasciato il CRT (D-171), e
-## se il vincolo di distanza non funzionasse la fase sarebbe tornata dov'era senza
-## che nessuno se ne accorgesse.
+## PERCHÉ QUESTA SONDA È STATA RIFATTA. La prima chiamava `interact()` sul quadro a
+## mano, saltando il raggio con cui il giocatore trova le cose. Diceva «tutto a
+## posto» su un oggetto che in gioco non rispondeva: il raggio arriva a 1,20 m e il
+## quadro stava a 1,35 di altezza, cioè sotto la linea di mira di chi guarda
+## avanti. Una sonda che salta il pezzo che si rompe non è una sonda.
 ##
-## È una scena e non uno `--script`: carica il gioco vero, con la notte e
-## l'orchestratore.
+## Adesso si fa quello che fa il giocatore: gli si mette la testa davanti al
+## pulsante, gli si fa mirare, e si tiene premuto `E`. Se il raggio non lo trova,
+## la sonda lo dice.
 ##
 ##     Godot_v4.7.2-stable_win64.exe --path . tools/prova_quadro.tscn
 ##
@@ -20,22 +20,19 @@ const FUORI := "user://quadro.png"
 ## Quanto si aspetta al massimo che la cupola arrivi a fine corsa.
 const LIMITE := 20.0
 
-## Dove si mette il giocatore per usare il quadro, e dove lo si manda per provare
-## che il comando si stacchi. Otto metri sono la sala controllo.
-# Un metro e mezzo e non novanta centimetri: a novanta il quadro finisce dietro il
-# riquadro del prompt, in basso al centro dello schermo, e la foto sembra mostrare
-# un muro nudo. Resta comunque dentro i due metri di REACH.
-const VICINO := 1.5
-const LONTANO := 8.0
+## A che distanza si mette il giocatore. Sotto la portata del raggio (1,20 m).
+const VICINO := 0.85
 
 var _scena: Node
-var _quadro: DomePanel
 var _player: Node3D
+var _cam: Camera3D
+var _apre: DomeButton
+var _chiude: DomeButton
 var _tempo := 0.0
 var _conto := 0
 var _guasti := 0
-var _finita := false
 var _passo := 0
+var _da_quando := 0.0
 var _scattato := false
 
 
@@ -44,10 +41,6 @@ func _ready() -> void:
 
 
 func _monta() -> void:
-	Events.phase_finished.connect(func(chiave: StringName, punteggio: int) -> void:
-		if chiave == &"dome":
-			_finita = true
-			print("[quadro] la fase 'dome' si è chiusa da sola con %d" % punteggio))
 	var scena: Node = load("res://main.tscn").instantiate()
 	get_tree().root.add_child(scena)
 	get_tree().current_scene = scena
@@ -62,102 +55,151 @@ func _process(d: float) -> void:
 	if _conto < 5:
 		return
 
-	if _quadro == null:
-		_quadro = DomePanel.find_in(get_tree())
-		_player = Player.find_in(get_tree())
-		if _quadro == null or _player == null:
-			print("[quadro] NON C'È IL QUADRO nel mondo (o non c'è il giocatore)")
-			_fine()
-			return
-		print("[quadro] quadro a %s, giocatore a %s"
-			% [_v(_quadro.global_position), _v(_player.global_position)])
-		_chi_c_e_intorno()
-		_avvicina(VICINO)
+	if _apre == null and not _trova():
 		return
 
 	match _passo:
 		0:
-			# Prima di toccare niente: i pulsanti non devono comandare da soli.
-			Input.action_press(&"dome_open")
-			_verifica("il quadro non preso non comanda niente", _quadro.direction() == 0)
-			_quadro.interact(_player)
-			_verifica("dopo E il quadro è in mano", _quadro.is_active())
-			_passo = 1
+			_mira(_apre)
+			_avanti()
 		1:
-			# SI RIPREME OGNI FOTOGRAMMA: quando la finestra perde il fuoco, Godot
-			# rilascia da sé tutte le azioni. È la lezione di `prova_vetro`.
-			Input.action_press(&"dome_open")
+			# SI RIMIRA A OGNI FOTOGRAMMA. Dopo il teletrasporto la capsula del
+			# giocatore si assesta sul pavimento di un centimetro, e la mira fatta un
+			# frame prima non punta piu' dove puntava: il raggio passava quattro gradi
+			# sopra il pulsante e trovava la scatola dietro.
+			_mira(_apre)
+			# IL RAGGIO LO TROVA? È la domanda che la prima sonda non ha mai fatto.
+			var visto := _mirato()
+			_verifica("mirando APRE il raggio trova il pulsante giusto", visto == _apre)
+			if visto != null:
+				print("[quadro] il prompt dice: «%s»" % visto.prompt())
+			_avanti()
+		2:
+			_mira(_apre)
+			_tieni_premuto()
 			var s := DomeShutter.find_in(get_tree())
-			if s == null:
-				print("[quadro] NESSUN BATTENTE nel mondo")
-				_fine()
-				return
-			if not _scattato and s.aperture() > 0.25:
+			if not _scattato and s != null and s.aperture() > 0.2:
 				_scattato = true
 				_scatta()
-			if s.aperture() >= 0.999:
-				print("[quadro] cupola aperta in %.2f s tenendo premuto" % _tempo)
-				_passo = 2
-			elif _tempo > LIMITE:
-				print("[quadro] NON SI APRE: dopo %.0f s l'apertura è %.3f, comando %d"
-					% [LIMITE, s.aperture(), _quadro.direction()])
+			if s != null and s.aperture() >= 0.999:
+				print("[quadro] cupola aperta in %.2f s tenendo premuto APRE"
+					% (_tempo - _da_quando))
+				_verifica("il pulsante risulta schiacciato mentre lo tieni",
+					_apre.is_held())
+				_molla()
+				_avanti()
+			elif _tempo - _da_quando > LIMITE:
+				print("[quadro] NON SI APRE: dopo %.0f s l'apertura e' %.3f, premuto %s"
+					% [LIMITE, s.aperture() if s != null else -1.0, _apre.is_held()])
 				_fine()
-			return
-		2:
-			_verifica("la fase si è chiusa da sola a fine corsa", _finita)
-			# IL VINCOLO: si va in sala controllo col pulsante ancora premuto.
-			_avvicina(LONTANO)
-			_passo = 3
 		3:
-			Input.action_press(&"dome_open")
-			_passo = 4
+			# LASCIANDO IL TASTO IL MOTORE SI FERMA: è il comando a uomo presente.
+			_verifica("mollato E, il pulsante si rialza", not _apre.is_held())
+			_mira(_chiude)
+			_avanti()
 		4:
-			_verifica("da otto metri il quadro si lascia da solo", not _quadro.is_active())
-			_verifica("e il comando si stacca", _quadro.direction() == 0)
-			Input.action_release(&"dome_open")
-			print("[quadro] %s" % ("tutto a posto" if _guasti == 0
-				else "%d COSE NON TORNANO" % _guasti))
-			_fine()
+			_mira(_chiude)
+			_verifica("mirando CHIUDE il raggio trova l'altro pulsante",
+				_mirato() == _chiude)
+			_avanti()
+		5:
+			_mira(_chiude)
+			# E QUI SI PROVA LA COSA CHE PRIMA NON FUNZIONAVA: la fase 1 è finita da
+			# un pezzo, e il quadro deve comandare lo stesso.
+			_tieni_premuto()
+			var s2 := DomeShutter.find_in(get_tree())
+			if _tempo - _da_quando > 2.0:
+				_molla()
+				print("[quadro] due secondi di CHIUDE a fase finita: apertura %.3f"
+					% s2.aperture())
+				_verifica("a fase finita il pulsante CHIUDE chiude davvero",
+					s2.aperture() < 0.98)
+				print("[quadro] %s" % ("tutto a posto" if _guasti == 0
+					else "%d COSE NON TORNANO" % _guasti))
+				_fine()
 
 
-## CHI C'È INTORNO AL QUADRO, e a che distanza.
+func _trova() -> bool:
+	_player = Player.find_in(get_tree())
+	if _player == null:
+		print("[quadro] NON C'E' IL GIOCATORE")
+		_fine()
+		return false
+	_cam = _player.camera()
+	for b in DomeButton.all_in(get_tree()):
+		var p := b as DomeButton
+		if p.direction > 0:
+			_apre = p
+		else:
+			_chiude = p
+	if _apre == null or _chiude == null:
+		print("[quadro] NON CI SONO I DUE PULSANTI nel mondo")
+		_fine()
+		return false
+	print("[quadro] APRE a %s, CHIUDE a %s"
+		% [_v(_apre.global_position), _v(_chiude.global_position)])
+	print("[quadro] camera: %s   strato del pulsante: %d   puo' interagire: %s"
+		% ["c'e'" if _cam != null else "MANCA", _apre.collision_layer,
+			_apre.can_interact()])
+	return true
+
+
+## Mette il giocatore davanti al pulsante e glielo fa guardare.
 ##
-## Serve perché la prima posa lo aveva messo DENTRO IL VANO DELLA PORTA, e dalla
-## foto non si capiva: si vedeva una porta di legno e nessun quadro. Le tuple di
-## `geometria.py` dicono dove comincia un vano, non dove finisce, e dedurre l'una
-## dall'altra e' esattamente il modo in cui si sbaglia di mezzo metro.
-func _chi_c_e_intorno() -> void:
-	var qui := _quadro.global_position
-	var vicini: Array[String] = []
-	_raccogli(get_tree().root, qui, vicini)
-	vicini.sort()
-	print("[quadro] intorno al quadro, entro 1,2 m:")
-	for r in vicini.slice(0, 10):
-		print("[quadro]   %s" % r)
+## LA TESTA E IL CORPO SI GIRANO SEPARATAMENTE: il corpo fa l'imbardata, la camera
+## il beccheggio. Girando tutto il corpo verso un bersaglio più alto dei piedi si
+## inclina anche la camera, che sta un metro e settanta più su, e si finisce a
+## fotografare il tetto — già pagato una volta.
+func _mira(b: DomeButton) -> void:
+	var p := b.global_position
+	_player.global_position = Vector3(p.x, 0.0, p.z - VICINO)
+	_player.look_at(Vector3(p.x, 0.0, p.z), Vector3.UP)
+	if _cam != null:
+		_cam.look_at(p, Vector3.UP)
 
 
-func _raccogli(n: Node, qui: Vector3, dentro: Array[String]) -> void:
-	var t := n as Node3D
-	if t != null and t != _quadro and not _quadro.is_ancestor_of(t):
-		var d := t.global_position.distance_to(qui)
-		if d < 1.2 and t.global_position != Vector3.ZERO:
-			dentro.append("%.2f m  %-24s %s" % [d, t.name, _v(t.global_position)])
-	for f in n.get_children():
-		_raccogli(f, qui, dentro)
+## Che cosa sta guardando adesso il giocatore, chiesto al mondo con un raggio come
+## il suo: stessa origine, stessa portata, stesso strato.
+func _mirato() -> DomeButton:
+	if _cam == null:
+		return null
+	var spazio := _cam.get_world_3d().direct_space_state
+	var da := _cam.global_position
+	var a := da - _cam.global_transform.basis.z * Player.INTERACT_RANGE
+	var q := PhysicsRayQueryParameters3D.create(da, a)
+	q.collision_mask = Interactable.LAYER_INTERACTABLE
+	q.collide_with_areas = false
+	var hit := spazio.intersect_ray(q)
+	if hit.is_empty():
+		# SENZA MASCHERA, per sapere se il raggio non colpisce NIENTE o colpisce
+		# qualcos'altro: sono due guasti diversi con lo stesso sintomo.
+		var q2 := PhysicsRayQueryParameters3D.create(da, a)
+		var h2 := spazio.intersect_ray(q2)
+		print("[quadro]   il raggio da %s verso %s non trova interagibili; senza filtro: %s"
+			% [_v(da), _v(a), h2["collider"].name if not h2.is_empty() else "niente"])
+		return null
+	return hit["collider"] as DomeButton
 
 
-## Mette il giocatore a `quanto` metri dal quadro, dentro la stanza, e glielo fa
-## GUARDARE: uno scatto preso senza girare la testa fotografa la parete dietro, e
-## non prova che il quadro si veda. La prima stesura faceva cosi', e la foto
-## mostrava due interruttori della luce a otto metri di distanza.
-func _avvicina(quanto: float) -> void:
-	var p := _quadro.global_position
-	_player.global_position = Vector3(p.x, 0.0, p.z - quanto)
-	# SOLO IMBARDATA, MAI BECCHEGGIO. `look_at` su un bersaglio piu' alto inclina
-	# tutto il corpo, e la camera - che sta a un metro e settanta sopra i piedi -
-	# finisce a guardare il tetto: la seconda foto era un soffitto. Il bersaglio si
-	# mette alla quota del corpo, e il quadro entra in campo da se'.
-	_player.look_at(Vector3(p.x, _player.global_position.y, p.z), Vector3.UP)
+## Tiene premuto `E`. Serve sia lo STATO (che il pulsante legge ogni fotogramma)
+## sia l'EVENTO (che il giocatore trasforma in `interact`): `action_press` da sola
+## non genera eventi, e `parse_input_event` da sola non lascia lo stato premuto.
+func _tieni_premuto() -> void:
+	if not Input.is_action_pressed(&"interact"):
+		Input.action_press(&"interact")
+		var e := InputEventAction.new()
+		e.action = &"interact"
+		e.pressed = true
+		Input.parse_input_event(e)
+
+
+func _molla() -> void:
+	Input.action_release(&"interact")
+
+
+func _avanti() -> void:
+	_passo += 1
+	_da_quando = _tempo
 
 
 func _scatta() -> void:
@@ -174,7 +216,7 @@ func _verifica(cosa: String, vero: bool) -> void:
 		print("[quadro] ok: %s" % cosa)
 		return
 	_guasti += 1
-	print("[quadro] %s   <-- ATTESO, e non è così" % cosa)
+	print("[quadro] %s   <-- ATTESO, e non e' cosi'" % cosa)
 
 
 func _v(p: Vector3) -> String:

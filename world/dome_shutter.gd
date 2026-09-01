@@ -58,8 +58,30 @@ const FOLLOW_SPEED := 0.30
 ## Dove il mondo crede che sia il battente adesso.
 var _current := 0.0
 
+## La chiave della fase che, quando c'è, comanda lei il motore.
+##
+## SÌ, QUESTO FILE NOMINA UNA FASE, ed è l'unica eccezione alla regola per cui
+## `world/` non sa che `phases/` esista. La ragione è concreta: il quadro deve
+## funzionare SEMPRE — anche a notte inoltrata, quando la fase 1 è finita da un
+## pezzo e il giocatore torna in cupola perché sono arrivate le nuvole. Ma finché
+## la fase è viva è LEI che integra il comando (è il suo stato osservabile, ADR-001)
+## e due integratori sullo stesso motore vorrebbero dire cupola a doppia velocità.
+## Si nomina la chiave e si sta zitti: non si chiama niente, non si cerca niente.
+const PHASE_KEY := &"dome"
+
+## Quanto corre il motore quando è questo file a comandarlo, in frazioni di corsa
+## al secondo. È lo stesso numero di `HonestShutter.motor_speed`, ed è la stessa
+## cupola: se un giorno il motore cambierà, cambieranno tutti e due, e il banco
+## misura solo il primo. È il prezzo dichiarato di avere due padroni dello stesso
+## meccanismo in due momenti diversi della notte.
+const MOTOR_SPEED := 0.16
+
 ## L'ultimo valore annunciato dal bus: dove il battente deve arrivare.
 var _target := 0.0
+
+## Che cosa sta tenendo premuto una mano sul quadro, e se c'è una fase che comanda.
+var _button := 0
+var _phase_alive := false
 
 ## I nodi risolti una volta sola, con la loro posa da cupola chiusa.
 var _leaves: Array[Node3D] = []
@@ -77,6 +99,9 @@ func _ready() -> void:
 	# ragione a non credere più al pannello. Chiudere all'alba è anche quello che
 	# si fa con una cupola vera.
 	Events.dawn_reached.connect(_on_dawn)
+	Events.dome_button_changed.connect(_on_button)
+	Events.phase_started.connect(_on_phase_started)
+	Events.phase_finished.connect(_on_phase_finished)
 
 	# La posa di partenza è quella di scena — cupola chiusa — e la si applica
 	# comunque: `_apply` a zero non muove niente, ma lascia il nodo in uno stato
@@ -85,6 +110,13 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	# QUANDO NESSUNA FASE COMANDA, COMANDA IL QUADRO. È ciò che rende i due pulsanti
+	# un comando vero e non la scenografia di una fase: a notte inoltrata, con la
+	# fase 1 finita da ore, premere CHIUDE deve chiudere la cupola.
+	if not _phase_alive and _button != 0:
+		_target = clampf(_target + MOTOR_SPEED * _button * delta, 0.0, 1.0)
+		Events.dome_aperture_changed.emit(_target)
+
 	if is_equal_approx(_current, _target):
 		return
 	_current = move_toward(_current, _target, FOLLOW_SPEED * delta)
@@ -94,6 +126,20 @@ func _process(delta: float) -> void:
 ## Il fatto dal bus. Si prende il valore e basta: chi l'ha detto non interessa.
 func _on_aperture_changed(fraction: float) -> void:
 	_target = clampf(fraction, 0.0, 1.0)
+
+
+func _on_button(direction: int) -> void:
+	_button = signi(direction)
+
+
+func _on_phase_started(key: StringName) -> void:
+	if key == PHASE_KEY:
+		_phase_alive = true
+
+
+func _on_phase_finished(key: StringName, _score: int) -> void:
+	if key == PHASE_KEY:
+		_phase_alive = false
 
 
 func _on_dawn() -> void:

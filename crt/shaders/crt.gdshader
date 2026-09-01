@@ -16,8 +16,8 @@ uniform float scanline_strength : hint_range(0.0, 1.0) = 0.30;
 uniform float scanline_count : hint_range(60.0, 600.0) = 240.0;
 uniform float aberration : hint_range(0.0, 0.02) = 0.0018;
 uniform float vignette : hint_range(0.0, 2.0) = 0.35;
-uniform float brightness : hint_range(0.0, 3.0) = 1.15;
-uniform vec3 tint : source_color = vec3(0.86, 1.0, 0.92);
+uniform float brightness : hint_range(0.0, 3.0) = 1.0;
+uniform vec3 tint : source_color = vec3(1.0, 0.96, 0.90);
 
 // Quanta parte del VETRO occupa l'immagine, sui due assi. Vale (1, 1) quando il
 // tubo ha lo stesso rapporto del viewport, ed e' il caso normale.

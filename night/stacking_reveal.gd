@@ -40,9 +40,9 @@ signal revealed()
 
 const DESIGN_SIZE := Vector2(256, 192)
 
-const BG := Color(0.02, 0.06, 0.03)
-const FG := Color(0.62, 1.0, 0.68)
-const DIM := Color(0.30, 0.58, 0.34)
+const BG := Phosphor.BG
+const FG := Phosphor.FG
+const DIM := Phosphor.DIM
 
 ## Durata dell'emersione, in secondi di gioco. SEGNAPOSTO (FR22): un tempo
 ## plausibile, non tarato. `_process` riceve il `delta` scalato da `Engine.time_scale`,

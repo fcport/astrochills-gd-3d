@@ -1627,13 +1627,16 @@ LETTO = ((_LETTO[1] + _LETTO[3]) / 2, (_LETTO[2] + _LETTO[4]) / 2 + SCARTO_LETTO
 # 1,63. Il quadro sta a 2,10, cioe' quasi mezzo metro piu' in la' - la mano che
 # cerca l'interruttore non deve trovare il comando della cupola.
 #
-# A CHE ALTEZZA. 1,35 m al centro: e' la quota dei quadri elettrici, e nessuno
-# mette un comando dove ci si deve chinare.
+# A CHE ALTEZZA. 1,50 m al centro, e il numero viene dal GIOCATORE e non dalla
+# norma: la camera sta a 1,70 e il raggio dell'interazione arriva a 1,20 m. A
+# 1,35 i pulsanti cadevano sotto la linea di mira e per trovarli bisognava
+# guardare in basso di venti gradi - il quadro sembrava non funzionare, e
+# funzionava. A 1,50 si mirano guardando appena in giu', come si fa davvero.
 #
 # PERCHE' NON DA' FASTIDIO A CHI SALE: dista 4 m dal centro della cupola, e la
 # passerella anulare arriva a 1,93.
-QUADRO_CUPOLA = (2.10, 1.35, 6.35)      # centro della scatola, coordinate di gioco
-QUADRO_MISURA = (0.22, 0.30, 0.10)      # larghezza, altezza, sporgenza dal muro
+QUADRO_CUPOLA = (2.10, 1.50, 6.35)      # centro della scatola, coordinate di gioco
+QUADRO_MISURA = (0.30, 0.22, 0.11)      # larghezza, altezza, sporgenza dal muro
 
 ATTIVITA_CUPOLA = (2.20, 2.00)     # raggio, altezza del cilindro
 # (nome, x, z, nx, nz, quota). Le esterne stanno piu' in alto, sopra l'architrave.

@@ -5347,3 +5347,105 @@ decimo, cioe' la montatura di prima, e la sonda rivede lo sfarfallio. La colonna
 **E LA SONDA CONTROLLA ANCHE CHE IL TUBO SI MUOVA**: una montatura ferma darebbe
 zero cambi in tutte e tre le prove e passerebbe a pieni voti. A fine centraggio il
 residuo dev'essere sotto la soglia di arrivo, e lo e' — zero.
+
+## D-199 Prendere in mano un oggetto senza toglierlo dal mondo
+
+Federico: «una cosa che mi piacerebbe sarebbe poter raccogliere alcuni oggetti e che
+ti restano in mano e ci sia la fisica».
+
+**IL MODO OVVIO E' SBAGLIATO, E NON LO DICE NESSUNO.** Tenere qualcosa in mano in
+prima persona si fa in una riga: si riparenta l'oggetto alla camera. Da quel momento
+non e' piu' un corpo, e' un pezzo di testa - ti segue perfetto, e attraversa i muri,
+i tavoli e il telescopio. Nessun errore, nessun avviso: solo la moka dentro
+l'intonaco quando ti avvicini troppo a una parete.
+
+**QUI L'OGGETTO NON VIENE PORTATO, VIENE RINCORSO.** Resta un corpo libero, e a ogni
+passo di fisica gli si assegna la velocita' che lo condurrebbe dove sta la mano. Se
+in mezzo c'e' un muro, vince il muro. E' la differenza fra appoggiare una cosa su un
+ripiano e infilarcela dentro.
+
+**TRE ACCORGIMENTI, E TUTTI E TRE SONO STATI MISURATI PRIMA DI ESSERE SCRITTI.**
+
+1. **Il tetto alla velocita'.** La velocita' che «porta la' in un tick» e' enorme, e
+   a quella velocita' un corpo salta oltre un tramezzo prima che il motore se ne
+   accorga.
+2. **La collisione lungo il percorso** (`continuous_cd`), perche' anche sei metri al
+   secondo sono dieci centimetri per fotogramma: quanto uno spessore di intonaco.
+3. **La mano non spinge dentro cio' che si tocca gia'.** Questa e' la meno ovvia e ha
+   fatto la differenza piu' grande. Il motore le compenetrazioni le risolve DOPO
+   averle viste, e va benissimo per un oggetto che cade; ma la mano ogni tick
+   riassegna la velocita' che punta dentro il muro, quindi il solver ricomincia da
+   capo sessanta volte al secondo e l'affondamento diventa uno STATO. Tolta la
+   componente entrante - la stessa cosa che `move_and_slide` fa per il giocatore -
+   la mano contro un muro scivola invece di attraversarlo.
+
+                                    dentro un tramezzo da 10 cm
+    appesa alla camera              33,0 cm   cioe' nella stanza accanto
+    rincorsa, senza i punti 2 e 3    8,9 cm
+    piu' collisione sul percorso     6,8 cm
+    piu' la componente entrante      0,9 cm   appoggiata alla superficie
+
+**IL PESO SI SENTE PERCHE' IL TETTO SCENDE CON LA MASSA**, e non c'e' nessun'altra
+simulazione di sforzo: alla radice della massa, cosi' a quattro chili la mano va a
+meta' velocita' e a sedici a un quarto. Diviso per la massa netta, una cassa da dieci
+chili non si sposterebbe affatto; con la radice resta faticosa ma trasportabile - che
+e' la differenza fra pesante e inchiodata al pavimento.
+
+**LO STRAPPO VUOLE DUE NUMERI COME IL VIAGGIO DEL TELESCOPIO** (D-198). Un oggetto
+che sbatte contro uno stipite resta indietro per qualche centesimo di secondo, ed e'
+giusto; uno rimasto DIETRO un muro ci resta. Con la sola distanza cadrebbe di mano a
+ogni urto: e' il TEMPO a distinguere l'urto dalla separazione. Un metro e dieci per
+piu' di un terzo di secondo, e la mano molla.
+
+**E NON SI AZZERA LA VELOCITA' POSANDO**, che e' il lancio: l'oggetto se ne va con
+quella che aveva in mano. Girarsi di scatto e mollare lo scaglia, posarlo fermo lo
+posa. Non c'e' nessun comando «lancia» da nessuna parte - c'e' la fisica, che e'
+quello che era stato chiesto.
+
+**CON LE MANI PIENE `E` POSA, SEMPRE**, anche guardando una porta. L'alternativa lo
+spiega: se `E` aprisse la porta quando ne guardo una e posasse quando non ne guardo
+nessuna, lo stesso tasto farebbe due cose a seconda di dove sto guardando, e posare
+qualcosa vicino a una porta diventerebbe una lotta. Chi deve aprire una porta posa
+quello che ha in mano, come nella vita.
+
+**`Carryable` NON EREDITA DA `Interactable`, e non e' una scelta.** Quella e' la
+classe di cio' che si usa STANDO DOV'E': uno `StaticBody3D`, che ferma il giocatore
+proprio perche' non si sposta. Un oggetto che si porta in giro dev'essere un
+`RigidBody3D`. In GDScript l'ereditarieta' e' singola e fra i due non esiste un
+antenato comune: il giocatore li tiene in due variabili tipizzate invece che in una
+sola con un cast fortunato. Un raggio solo, due letture.
+
+**LA SPINTA COL CORPO ERA MEZZA MECCANICA MANCANTE.** `CharacterBody3D` non sposta i
+corpi rigidi che urta - il cinematico scivola e prosegue, il rigido non se ne accorge
+- e una scatola che non si smuove quando ci cammini dentro e' un sasso dipinto.
+L'impulso e' proporzionale alla massa, cosi' da' a tutti la stessa velocita': un
+valore fisso manderebbe le cose leggere in orbita e non muoverebbe le pesanti.
+
+**MISURATO** (`tools/prova_mani.gd`): si costruisce un banco con un muro, si prende
+la scatola e SI CAMMINA DENTRO IL MURO - il corpo si ferma, la mano no, quindi ogni
+tick chiede all'oggetto di stare dove non puo' stare. E' l'unico momento in cui le
+due implementazioni danno risultati diversi.
+
+    mirandola                 il prompt dice «Raccogli la scatola»
+    presa                     0,000 m da dove la mano la vuole
+    camminando nel muro       0,009 m dentro l'intonaco, su 10 cm di spessore
+    posata                    si ferma sul pavimento a y=0,072 (attesi 0,080)
+    allontanandosi di 6 m     la mano molla dopo 0,37 s (la soglia dice 0,35)
+    camminandoci contro       si sposta di 0,218 m
+
+**IL DIFETTO SI RIMETTE**, ed e' per questo che `mano_rigida` e' `@export` e non una
+costante: `MANO_RIGIDA=1` torna al teletrasporto, e la sonda vede la scatola finire a
+33 cm dentro un muro spesso 10 - cioe' dall'altra parte. Senza quel confronto il
+referto direbbe «non e' entrata nel muro» e nessuno saprebbe se il merito e' della
+fisica o del fatto che il muro non e' mai stato toccato.
+
+**GLI OGGETTI VERI NON CI SONO ANCORA, e la ragione sta scritta in `gen_blockout.py`:
+«fra un posto vuoto e un posto occupato male, vuoto legge meglio».** La minutaglia
+sulla consolle - penne, fogli, telefono - e' fusa nella mesh della stanza e non e'
+raccoglibile senza rifare il generatore; e quattro cubi grigi posati in giro sarebbero
+esattamente il segnaposto che quella decisione rifiuta. Il meccanismo si prova su
+`tools/banco_mani.tscn`, una stanza vuota con quattro scatole da mezzo chilo, due, sei
+e quindici: li' i cubi sono la cosa giusta, perche' un banco dev'essere brutto e
+sgombro o si finisce per giudicare l'arredamento. Il GDD, al paragrafo «Inventario e
+oggetti», e' ancora DA SCRIVERE: quali oggetti si raccolgono e' una decisione che non
+si prende scrivendo codice.

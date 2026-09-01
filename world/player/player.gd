@@ -120,6 +120,29 @@ const PITCH_LIMIT := deg_to_rad(89.0)
 ## dell'ADR sarebbe violato anche rispettandone la lettera.
 const INTERACT_RANGE := 1.2
 
+## DOVE STA LA MANO: davanti all'occhio e un po' più in basso, in metri.
+##
+## I 55 cm sono la distanza a cui si tiene una cosa che si sta guardando — più
+## vicino si va di occhi incrociati, più lontano è un braccio teso, che è un
+## altro gesto e stanca a vederlo. Sta dentro `INTERACT_RANGE` di proposito: ciò
+## che si può raccogliere lo si può anche posare dov'è, senza fare un passo.
+##
+## I 12 cm SOTTO non sono un dettaglio estetico: al centro esatto l'oggetto copre
+## il mirino e metà di dove si sta andando. Tenendolo sotto la linea di vista si
+## cammina guardando la stanza e l'oggetto resta in basso, dove sta una mano.
+const DISTANZA_MANO := 0.55
+const ALTEZZA_MANO := -0.12
+
+## Con quanta forza il giocatore sposta ciò che urta camminando, in newton-secondi
+## per chilo. Un oggetto per terra che non si smuove quando ci cammini dentro
+## denuncia la finzione più di quanto la fisica la costruisca: la lattina va presa
+## a calci anche da chi non aveva intenzione di raccoglierla.
+##
+## Proporzionale alla massa, quindi l'impulso dà la stessa VELOCITÀ a tutti: due
+## e mezzo, cioè poco più della camminata. Un valore fisso manderebbe le cose
+## leggere in orbita e non muoverebbe le pesanti.
+const SPINTA := 2.5
+
 ## Le azioni che questo controller legge. Servono a rilasciarle in blocco quando
 ## il controllo torna: vedi `set_enabled()`.
 const OWN_ACTIONS: Array[StringName] = [
@@ -160,6 +183,27 @@ var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 
 
 ## L'interagibile che il giocatore sta guardando adesso, o null.
 var _focus: Interactable = null
+
+## L'oggetto da raccogliere che sta guardando adesso, o null.
+##
+## DUE VARIABILI E NON UNA, e non è pigrizia: `Interactable` è uno `StaticBody3D`
+## e `Carryable` un `RigidBody3D`, che in GDScript non hanno nessun antenato
+## comune sotto `PhysicsBody3D`. Tenerli in un solo campo vorrebbe dire tipizzarlo
+## `Node` e chiamare i metodi per nome — cioè scoprire a runtime, e in silenzio,
+## quello che qui si scopre compilando.
+var _mirato: Carryable = null
+
+## Quello che ha in mano, o null. Uno solo: si hanno due mani ma un solo mirino,
+## e non c'è un gesto per dire in quale delle due.
+var _in_mano: Carryable = null
+
+## Come l'oggetto era girato rispetto alla testa quando l'ho preso.
+##
+## SI CONSERVA COM'ERA invece di raddrizzarlo. Raccogliendo, l'oggetto scatterebbe
+## all'orientamento canonico — la moka che si gira da sola col beccuccio in
+## avanti — e quello scatto dice «sono un gioco» a voce alta. Preso storto resta
+## storto, e lo si raddrizza girandosi.
+var _presa := Basis.IDENTITY
 
 ## Se il giocatore è accovacciato adesso.
 var _accovacciato := false
@@ -246,9 +290,16 @@ func set_enabled(value: bool) -> void:
 		# controller il giocatore ripartirebbe alla velocità che aveva quando è
 		# stato spento, e sembrerebbe spinto.
 		velocity = Vector3.ZERO
+		# E QUELLO CHE SI HA IN MANO SI POSA. Da spento questo controller non
+		# aggiorna più la mano, quindi l'oggetto resterebbe fermo a mezz'aria
+		# dove eravamo — e `desk_camera` porta il corpo sotto il pavimento, cioè
+		# se lo trascinerebbe dietro nella cantina. Sedersi al monitor con la
+		# moka in mano vuol dire posare la moka, come nella vita.
+		if _in_mano != null:
+			_in_mano.lascia()
 		# E il prompt sparisce: un controller spento che lascia a schermo «[E]
 		# Usa il monitor» inviterebbe a premere un tasto che non risponde.
-		_set_focus(null)
+		_mostra_mira(null, null)
 		# Il cursore torna visibile: se il giocatore non guarda più intorno,
 		# tenerglielo catturato è solo un modo per non fargli chiudere la finestra.
 		# `_mouse_free` non si tocca: registra ciò che ha chiesto LUI, e questo
@@ -290,7 +341,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"ui_release_mouse"):
 		_mouse_free = true
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-		_set_focus(null)
+		_mostra_mira(null, null)
 		return
 
 	if not _is_controlling():
@@ -308,12 +359,24 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if event.is_action_pressed(&"interact"):
+		# CON LE MANI PIENE, `E` POSA — sempre, anche guardando una porta.
+		#
+		# È l'unica regola senza ambiguità, e l'alternativa lo mostra: se `E`
+		# aprisse la porta quando ne guardo una e posasse quando non ne guardo
+		# nessuna, lo stesso tasto farebbe due cose a seconda di dove sto
+		# guardando, e posare qualcosa vicino a una porta diventerebbe una lotta.
+		# Chi deve aprire una porta posa quello che ha in mano, come nella vita.
+		if _in_mano != null:
+			_in_mano.lascia()
+			return
 		# Si rilegge la mira ADESSO invece di fidarsi di `_focus`, che è stato
 		# calcolato nell'ultimo tick di fisica. Fra un tick e l'altro il mouse
 		# può aver girato la testa di mezzo giro: senza questa riconferma si
 		# interagirebbe col monitor guardando la parete.
-		_set_focus(_look_at_interactable())
-		if _focus != null:
+		_aggiorna_mira()
+		if _mirato != null:
+			_prendi(_mirato)
+		elif _focus != null:
 			_focus.interact(self)
 
 
@@ -366,7 +429,14 @@ func _physics_process(delta: float) -> void:
 	velocity.z = move_toward(velocity.z, target.z, ACCELERATION * delta)
 
 	move_and_slide()
-	_set_focus(_look_at_interactable())
+	_spingi_cio_che_urto()
+	_aggiorna_mira()
+	# LA MANO SI PUNTA DOPO `move_and_slide()`, cioè dopo che il corpo è dove sarà
+	# per tutto questo tick. Puntandola prima, l'oggetto inseguirebbe la posizione
+	# del fotogramma precedente e resterebbe indietro di un passo — di poco, e
+	# sempre, cioè fluttuando dietro la spalla mentre si cammina.
+	if _in_mano != null:
+		_in_mano.punta(_trasformata_mano())
 
 
 ## Porta capsula e occhio verso l'altezza voluta. `t` è quanto avvicinarsi in
@@ -399,11 +469,27 @@ func _c_e_spazio_sopra() -> bool:
 	return spazio.intersect_ray(domanda).is_empty()
 
 
-## Cosa sto guardando. Il raggio parte dalla camera, quindi «guardare» e
-## «puntare» sono la stessa cosa e non c'è un secondo criterio da tenere allineato.
-func _look_at_interactable() -> Interactable:
+## Cosa sto guardando, e cosa dice il prompt di conseguenza. Il raggio parte dalla
+## camera, quindi «guardare» e «puntare» sono la stessa cosa e non c'è un secondo
+## criterio da tenere allineato.
+##
+## UN SOLO RAGGIO PER DUE GERARCHIE: si spara una volta e si prova a leggere ciò
+## che ha colpito prima come interagibile e poi come oggetto da raccogliere. Due
+## raycast — uno per tipo — sarebbero due risposte che possono divergere, e
+## divergono proprio nel caso che conta: una moka appoggiata su un interruttore.
+func _aggiorna_mira() -> void:
 	if not _is_controlling():
-		return null
+		_mostra_mira(null, null)
+		return
+	# CON LE MANI PIENE NON SI MIRA NIENTE, perché `E` posa comunque (vedi
+	# `_unhandled_input`). Continuare a mostrare «Apri il quadro» mentre l'unica
+	# cosa che quel tasto fa è posare la moka sarebbe una riga che mente.
+	if _in_mano != null:
+		_focus = null
+		_mirato = null
+		_mirino.set_attivo(true)
+		_prompt.show_prompt(_in_mano.prompt_posa())
+		return
 	# `RayCast3D` aggiorna la propria collisione all'inizio del tick di fisica,
 	# cioè PRIMA di `move_and_slide()`: senza questa riga si leggerebbe un
 	# risultato calcolato sulla posizione del frame precedente, e al confine
@@ -411,34 +497,95 @@ func _look_at_interactable() -> Interactable:
 	# giocatore.
 	_ray.force_raycast_update()
 	if not _ray.is_colliding():
-		return null
-	# Ciò che il raggio colpisce per primo e non è un interagibile è un
-	# occlusore: un muro davanti al monitor va rispettato, non attraversato.
-	var hit := _ray.get_collider() as Interactable
-	if hit == null or not hit.can_interact():
-		return null
-	return hit
-
-
-func _set_focus(value: Interactable) -> void:
-	if _focus == value:
-		# Stesso oggetto, ma il TESTO del prompt puo' essere cambiato: un
-		# interagibile a piu' tempi (la moka, 3.3) cambia riga a ogni azione
-		# mentre lo si continua a guardare. Si rilegge e si ri-mostra, cosi' il
-		# prompt segue i tempi del rituale invece di restare congelato al primo.
-		# `show_prompt` e' idempotente, quindi ri-chiamarlo ogni tick e' innocuo.
-		if _focus != null:
-			_prompt.show_prompt(_focus.prompt())
+		_mostra_mira(null, null)
 		return
-	_focus = value
+	var colpito := _ray.get_collider()
+	# Ciò che il raggio colpisce per primo e non è né l'uno né l'altro è un
+	# occlusore: un muro davanti al monitor va rispettato, non attraversato.
+	var usabile := colpito as Interactable
+	if usabile != null and not usabile.can_interact():
+		usabile = null
+	_mostra_mira(usabile, colpito as Carryable)
+
+
+## Scrive la mira e ne mostra il prompt. I due casi non si sovrappongono mai — un
+## corpo è statico o rigido, non tutti e due — ma il metodo li prende insieme
+## perché il MIRINO è uno solo, e aprirlo da due punti diversi è il modo sicuro
+## di vederlo aperto quando non c'è niente da fare.
+func _mostra_mira(usabile: Interactable, oggetto: Carryable) -> void:
+	var stesso := usabile == _focus and oggetto == _mirato
+	_focus = usabile
+	_mirato = oggetto
+	var riga := ""
+	if _focus != null:
+		riga = _focus.prompt()
+	elif _mirato != null:
+		riga = _mirato.prompt()
+	if stesso and riga.is_empty():
+		return
 	# Il mirino si apre e il prompt compare insieme, dallo STESSO punto: sono due
 	# facce della stessa notizia - «questo si puo' usare» - e tenerle in due posti
 	# e' il modo sicuro di vederle divergere.
-	_mirino.set_attivo(_focus != null)
-	if _focus == null:
+	_mirino.set_attivo(not riga.is_empty())
+	if riga.is_empty():
 		_prompt.hide_prompt()
 	else:
-		_prompt.show_prompt(_focus.prompt())
+		# Il TESTO si riscrive anche a bersaglio invariato: un interagibile a piu'
+		# tempi (la moka, 3.3) cambia riga a ogni azione mentre lo si continua a
+		# guardare. Cosi' il prompt segue i tempi del rituale invece di restare
+		# congelato al primo. `show_prompt` e' idempotente.
+		_prompt.show_prompt(riga)
+
+
+## Raccoglie un oggetto e si ricorda come lo si è preso.
+func _prendi(oggetto: Carryable) -> void:
+	_in_mano = oggetto
+	# LA PRESA È RELATIVA ALLA TESTA, non assoluta: girandosi, l'oggetto gira con
+	# noi mantenendo l'angolo che aveva quando l'abbiamo afferrato. In coordinate
+	# del mondo resterebbe invece rivolto a nord mentre gli si cammina intorno.
+	_presa = _cam.global_basis.orthonormalized().inverse() \
+		* oggetto.global_basis.orthonormalized()
+	oggetto.posato.connect(_su_oggetto_posato, CONNECT_ONE_SHOT)
+	oggetto.prendi(self)
+	oggetto.punta(_trasformata_mano())
+
+
+## L'oggetto non è più in mano — posato da noi o strappato via da un muro. In
+## tutti e due i casi arriva di qui: senza, chi lo teneva continuerebbe a puntare
+## una mano a una cosa che è per terra due stanze fa.
+func _su_oggetto_posato() -> void:
+	_in_mano = null
+
+
+## Dove la mano vuole l'oggetto, adesso.
+func _trasformata_mano() -> Transform3D:
+	var testa := _cam.global_transform
+	var xf := Transform3D()
+	xf.basis = testa.basis.orthonormalized() * _presa
+	xf.origin = testa.origin \
+		- testa.basis.z * DISTANZA_MANO \
+		+ testa.basis.y * ALTEZZA_MANO
+	return xf
+
+
+## Spinge i corpi liberi contro cui si è appena camminato.
+##
+## `CharacterBody3D` NON LO FA DA SÉ, e la cosa sorprende sempre: il corpo cinematico
+## scivola contro il rigido e prosegue, il rigido non se ne accorge. Senza queste
+## righe si attraverserebbe una pila di scatole senza scomporla — che è il difetto
+## che denuncia la finzione più di qualunque texture.
+func _spingi_cio_che_urto() -> void:
+	for i in get_slide_collision_count():
+		var urto := get_slide_collision(i)
+		var corpo := urto.get_collider() as RigidBody3D
+		if corpo == null:
+			continue
+		# La NORMALE punta verso di noi: l'oggetto va spinto dall'altra parte.
+		# Nel punto dell'urto e non nel centro, così una scatola presa a un
+		# angolo gira invece di scivolare via dritta.
+		corpo.apply_impulse(
+			-urto.get_normal() * SPINTA * corpo.mass,
+			urto.get_position() - corpo.global_position)
 
 
 func _release_own_actions() -> void:

@@ -5292,3 +5292,58 @@ difetto.
     a corrente data       20 luci accese nella scena
     a corrente staccata    0
     a corrente ridata     20, le stesse
+
+## D-198 — «SLEWING» lampeggiava perche' era una domanda, non uno stato
+
+Federico: «spesso vedo comparire e scomparire in maniera spasmodica la scritta
+SLEWING sul monitor».
+
+**NON ERA UN PROBLEMA DI SCRITTA.** `telescope_slewing_changed` non muove solo sette
+lettere: a tubo in viaggio lo schermo NON DISEGNA il soggetto (a meta' slew il campo
+inquadrato non e' quello, e mostrare la stella dove sara' inviterebbe a premere SYNC
+prima dell'arrivo) e INVIO non conferma. Una montatura che si dichiarava in viaggio
+per un fotogramma ogni tre decimi di secondo faceva lampeggiare l'oggetto e ignorava
+in silenzio una pressione ogni venti.
+
+**LA CAUSA: TRE NUMERI CHE NON SI PARLAVANO.** La fase riannuncia il puntamento ogni
+centesimo di grado (per non riempire il bus); la montatura si dichiarava arrivata
+sotto mezzo decimo, e dentro quella banda i motori NON si muovevano affatto. Il
+cielo intanto gira di 0,15 gradi al secondo vero. Quindi: il tubo restava piantato,
+il bersaglio scappava, il residuo cresceva fino a superare il mezzo decimo, il
+motore recuperava tutto in un fotogramma, e si ricominciava. Un termostato senza
+isteresi, con il cielo al posto della temperatura.
+
+**IL VIAGGIO E' UNO STATO, NON UNA DOMANDA CHE SI RIFA' OGNI FOTOGRAMMA.** Adesso
+comincia quando qualcuno manda il tubo lontano davvero (`partenza_gradi`, mezzo
+grado) e finisce quando ci e' arrivato (`ARRIVATO`, mezzo decimo). Due soglie
+diverse: e' l'isteresi di qualunque termostato, e serve qui per la stessa ragione —
+perche' la grandezza misurata attraversa la soglia avanti e indietro da sola.
+
+**MEZZO GRADO NON E' UN NUMERO DI GUSTO.** La pulsantiera muove il tubo di mezzo
+grado al secondo contro i dodici del motore: centrando a mano il residuo resta sotto
+il centesimo. Il cielo deriva di 0,15 gradi al secondo. Un GOTO sposta il tubo di
+decine di gradi. Fra il caso piu' grande che NON deve accendere la scritta e il piu'
+piccolo che DEVE c'e' un fattore cento, e mezzo grado sta comodamente in mezzo.
+
+**E LA BANDA MORTA E' SPARITA, che e' l'altra meta' della cura.** Una equatoriale
+insegue il cielo di continuo: ogni fotogramma `move_toward` copre un
+quattrocentesimo di grado, esattamente quanto serve. Prima non inseguiva —
+rincorreva a scatti, ed e' quello che alimentava il lampeggio.
+
+**MISURATO** (`tools/prova_slew.gd`): si guida la montatura a mano, un fotogramma
+simulato alla volta, con gli stessi numeri delle fasi, e si contano i CAMBI DI STATO
+sul bus per tre gesti diversi.
+
+                          prima            adesso
+    GOTO di 40 gradi      2 cambi          2 cambi      giusto tutte e due le volte
+    inseguendo, 20 s      95 cambi         0            2,4 lampeggi al secondo
+    centrando a mano, 4 s 96 cambi         0            12 lampeggi al secondo
+
+**IL DIFETTO SI RIMETTE**, ed e' per questo che le due soglie sono `@export` e non
+`const`: `SENZA_ISTERESI=1` riporta `partenza_gradi` a zero e la banda morta a mezzo
+decimo, cioe' la montatura di prima, e la sonda rivede lo sfarfallio. La colonna
+«prima» qui sopra e' misurata cosi', non ricordata.
+
+**E LA SONDA CONTROLLA ANCHE CHE IL TUBO SI MUOVA**: una montatura ferma darebbe
+zero cambi in tutte e tre le prove e passerebbe a pieni voti. A fine centraggio il
+residuo dev'essere sotto la soglia di arrivo, e lo e' — zero.

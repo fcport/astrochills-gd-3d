@@ -49,8 +49,47 @@ const GROUP := &"telescope_mount"
 ## sta lavorando, poco abbastanza da non essere un'attesa.
 const VELOCITA := 12.0
 
-## Quanto vicino all'angolo chiesto si considera arrivati, in gradi.
+## Quanto vicino all'angolo chiesto si considera ARRIVATI, in gradi.
 const ARRIVATO := 0.05
+
+## Da quanto lontano si considera PARTITI, in gradi. NON è la stessa soglia, e la
+## differenza fra le due è tutto il punto.
+##
+## PERCHÉ DUE SOGLIE E NON UNA. Con una soglia sola «in viaggio» è una domanda che
+## si rifà da zero a ogni fotogramma: bersaglio lontano, sì; motore che chiude il
+## divario, no; cielo che gira e lo riapre, sì. Il tubo insegue il cielo per tutta
+## la notte, quindi quel divario si riapre in continuazione, e la risposta
+## sfarfalla. Con due soglie il viaggio è uno STATO: comincia quando qualcuno
+## manda il tubo lontano davvero, e finisce quando ci è arrivato. È l'isteresi di
+## qualunque termostato, e serve qui per la stessa ragione — perché la grandezza
+## misurata attraversa la soglia avanti e indietro da sola.
+##
+## MEZZO GRADO, e il numero viene dai gesti che ci sono. La pulsantiera muove il
+## tubo di mezzo grado al secondo contro i dodici del motore: centrando a mano il
+## divario resta sotto il centesimo di grado, e centrare non è viaggiare. Il cielo
+## deriva di un sesto di grado al secondo: inseguire non è viaggiare. Un GOTO
+## sposta il tubo di decine di gradi, e quello è un viaggio. Fra il caso più
+## grande che non deve accendere la scritta e il più piccolo che deve, c'è un
+## fattore cento: mezzo grado sta comodamente in mezzo.
+##
+## È `@export` E NON `const` PERCHÉ SI DEVE POTER RIMETTERE IL DIFETTO: a zero le
+## due soglie tornano una sola, e `tools/prova_slew.gd` rivede lo sfarfallio che
+## questa riga toglie.
+@export var partenza_gradi := 0.5
+
+## La BANDA MORTA dei motori: sotto questo errore, in gradi, non si muovono.
+##
+## ZERO, cioè non ce n'è, ed è così che va: una montatura equatoriale insegue il
+## cielo di continuo, e ogni fotogramma `move_toward` copre il pochissimo che
+## serve — un quattrocentesimo di grado. Prima qui c'era una banda di mezzo
+## decimo, ereditata dalla soglia di arrivo, e il tubo ci restava piantato dentro
+## finché il cielo non se ne andava abbastanza, poi recuperava di scatto: non
+## inseguiva, rincorreva.
+##
+## SI PUÒ RIMETTERE, ed è il motivo per cui è un parametro e non una riga tolta:
+## con questa a mezzo decimo e `partenza_gradi` a zero la montatura torna
+## esattamente com'era, e `tools/prova_slew.gd` rivede lo sfarfallio.
+@export var banda_morta_gradi := 0.0
 
 ## Di quanto la rotazione zero dell'asse polare è lontana dal meridiano, in gradi.
 ##
@@ -97,6 +136,10 @@ var _dec := 90.0
 var _ha_v := 0.0
 var _dec_v := 90.0
 
+## Il tubo sta facendo un VIAGGIO: acceso da `punta()` quando il bersaglio è
+## lontano, spento in `_process()` quando ci è arrivato. Vedi `partenza_gradi`.
+var _viaggia := false
+
 ## L'ultimo «si muove» detto sul bus, per non ripetersi.
 var _annunciato := false
 
@@ -131,6 +174,11 @@ func _ready() -> void:
 func punta(ha_gradi: float, dec_gradi: float) -> void:
 	_ha_v = wrapf(ha_gradi, -180.0, 180.0)
 	_dec_v = clampf(dec_gradi, -90.0, 90.0)
+	# IL VIAGGIO COMINCIA QUI, e non in `_process()`: è il momento in cui qualcuno
+	# ha mandato il tubo da un'altra parte, e l'unico in cui si può distinguere un
+	# comando nuovo da un inseguimento che continua.
+	if _residuo() > partenza_gradi:
+		_viaggia = true
 
 
 ## PORTALA LI' ADESSO, senza il motore.
@@ -144,12 +192,21 @@ func piazza(ha_gradi: float, dec_gradi: float) -> void:
 	punta(ha_gradi, dec_gradi)
 	_ha = _ha_v
 	_dec = _dec_v
+	# Non è un viaggio: è già arrivata. `punta()` qui sopra può aver acceso il
+	# viaggio, e senza questa riga resterebbe acceso su una montatura ferma.
+	_viaggia = false
 	_scrivi()
 
 
-## Vero mentre gli assi si stanno ancora muovendo.
+## Vero mentre il tubo sta facendo un VIAGGIO — non mentre si muove di un
+## centesimo di grado per stare dietro al cielo. Vedi `partenza_gradi`.
 func in_moto() -> bool:
-	return absf(_ha - _ha_v) > ARRIVATO or absf(_dec - _dec_v) > ARRIVATO
+	return _viaggia
+
+
+## Quanto manca ad arrivare, in gradi: il peggiore dei due assi.
+func _residuo() -> float:
+	return maxf(absf(_ha - _ha_v), absf(_dec - _dec_v))
 
 
 ## Da dove parte il raggio: il centro dell'apertura, in coordinate del mondo.
@@ -172,14 +229,19 @@ static func find_in(tree: SceneTree) -> TelescopeMount:
 
 
 func _process(delta: float) -> void:
-	# IL FATTO SI ANNUNCIA ANCHE QUANDO IL TUBO NON SI MUOVE, e per questo il
-	# confronto sta PRIMA dell'uscita anticipata: e' l'istante in cui si ferma
-	# quello che interessa a chi aspetta, e uscendo prima non lo direbbe mai.
-	var muove := in_moto()
-	if muove != _annunciato:
-		_annunciato = muove
-		Events.telescope_slewing_changed.emit(muove)
-	if not muove:
+	# IL VIAGGIO FINISCE QUANDO SI E' ARRIVATI, e l'arrivo si guarda PRIMA di
+	# tutto il resto: e' l'istante in cui il tubo si ferma quello che interessa a
+	# chi aspetta, e uscendo prima non lo si direbbe mai.
+	if _viaggia and _residuo() <= ARRIVATO:
+		_viaggia = false
+	if _viaggia != _annunciato:
+		_annunciato = _viaggia
+		Events.telescope_slewing_changed.emit(_viaggia)
+	# SI INSEGUE ANCHE FUORI DAL VIAGGIO: i motori si fermano solo quando non c'è
+	# più niente da recuperare, non quando la scritta si spegne. Vedi
+	# `banda_morta_gradi`, che a zero rende questa riga la sola uscita anticipata
+	# che serve — se il residuo è nullo, non c'è nulla da scrivere.
+	if _residuo() <= banda_morta_gradi:
 		return
 	var passo := VELOCITA * delta
 	_ha = move_toward(_ha, _ha_v, passo)

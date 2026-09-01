@@ -4932,3 +4932,112 @@ taratura si verifica:
 
 Quattro distanze, zero guasti: la lampada rivela ancora quello che si sfiora, muore ancora a
 due metri e mezzo, e ancora non passa i muri. E' cambiata solo la cosa che si era scoperta.
+
+## D-188 — La cupola non copia l'azimut del telescopio, e non ci va nemmeno vicino
+
+Federico: «il telescopio deve effettivamente ruotare assieme alla cupola quando facciamo il
+go to. Soprattutto la rotazione della cupola secondo me non e' scontatissima, dobbiamo
+capirla».
+
+Aveva ragione, e i numeri lo dicono meglio di qualunque intuizione. **Non e' una correzione
+all'azimut del telescopio: e' un altro numero.**
+
+Il conto giusto non parte dal telescopio, parte dall'**apertura**: si prende la retta di vista
+e si chiede dove incontra la sfera della cupola. Le due cose coincidono solo se l'apertura sta
+nel centro della sfera, e su una equatoriale tedesca non ci sta mai — il tubo lavora **di
+fianco** al pilastro. Sulla geometria vera di questo osservatorio (sfera di raggio 2,50 col
+centro a 3,38 m, apertura a 1,86 m e fino a un metro fuori asse):
+
+    apertura 1,05 m fuori asse   azimut telescopio   azimut cupola   scarto
+      puntando a 30° di altezza         180°             155°         -25°
+                 60°                    180°             147°         -33°
+                 75°                    180°             130°         -50°
+                 88°                    180°              96°         -84°
+
+Due cause si sommano: il braccio della declinazione, e il fatto che l'apertura stia **un metro
+e mezzo sotto** il centro della sfera. Nessuna delle due si vede guardando la scena, ed e' per
+questo che il difetto sarebbe stato invisibile: da dentro la cupola il proprio raggio non si
+vede.
+
+**DUE CONSEGUENZE GIOCABILI, dagli stessi numeri.** Dopo un ribaltamento al meridiano la cupola
+deve saltare di cinquanta-ottanta gradi, perche' il tubo passa dall'altra parte del pilastro. E
+**sotto i quaranta gradi di altezza il telescopio non vede fuori affatto** — non per colpa
+della cupola, ma perche' il raggio esce sotto la linea di gronda e trova il tetto e i muri.
+Misurato: due pose su dodici, a 28 e 30 gradi, finiscono contro `M5_1` e `M7_1`. E' l'orizzonte
+di questo edificio, ed e' un dato che il targeting dovra' conoscere.
+
+**ASSERVITA E NON A MANO, contro il GDD.** La fase 7 diceva «porti la fessura sull'azimut del
+telescopio, e ce la riporti durante la posa». Federico: «ho paura che farlo a mano sia una
+rottura di coglioni». Ha ragione, e la regola che decide il progetto ce l'ha gia': *se una fase
+nessuno la farebbe davvero, si cambia il documento*. Con scarti che cambiano di continuo mentre
+il cielo gira, girare la cupola a mano non e' un rituale — e' un metronomo. **Il ciclo foto
+perde i suoi dieci minuti di fase 7 e il budget della notte va rifatto.** La pulsantiera resta
+come comando manuale.
+
+**LA POSA DEL MODELLO ANDAVA TOLTA, e la taratura si e' fatta misurando.** Il `.glb` non nasce
+a zero: porta la posa dei render di controllo (-60° e -20°). Il nodo la sottrae per ritrovare
+lo zero — che e' il polo. Poi restava da capire quanto valesse un angolo orario, e invece di
+ragionarci si e' portato il telescopio a valori noti leggendo dove finiva la mira:
+
+    asse ar   dec      altezza   azimut    che vuol dire
+       0       90       +43,1      -1      il POLO (l'altezza vale la latitudine)
+      90        0       +46,6     178      il meridiano a sud: angolo orario ZERO
+       0        0        -0,6      89      l'orizzonte a est: angolo orario -90
+     180        0        +1,3     -90      l'orizzonte a ovest: angolo orario +90
+
+Tre righe indipendenti, stesso scarto: novanta gradi. Non ha nessun significato fisico — e'
+dove il modello aveva il tubo — ed e' esattamente per questo che andava misurato.
+
+**E LA MIRA E' UN PEZZO DEL MODELLO, non un indovinello del gioco.** `telescopio_blender.py`
+appende ad AsseDec un empty sull'asse ottico, all'altezza dell'apertura: il modello DICHIARA
+dove guarda. Indovinarlo dalla mesh del tubo era gia' stato provato e sta scritto li': la retta
+di regressione della nuvola di vertici dava 62 gradi dove il tubo ne faceva 43, perche' in
+quella nuvola ci sono anche cercatore, anelli e bulloni.
+
+## D-189 — Una sonda che spara contro un oggetto senza collisione dice sempre che va bene
+
+La prova che la cupola punti dove serve non e' «la calotta ha girato» (girerebbe anche col
+conto sbagliato) e non «l'azimut e' quello atteso» (sarebbe il mio conto ricopiato in due
+posti, cioe' un controllo che si da' ragione da solo). E' una sola: si tira il raggio del
+telescopio e si guarda se incontra il guscio.
+
+**E per due giri interi non ha incontrato niente, perche' il guscio NON ESISTE.** Calotta e
+portelli arrivano dal `.glb` come sole `MeshInstance3D`: in gioco nessuno ci sbatte contro,
+quindi nessuno gli ha mai dato un corpo. Il raggio passava attraverso la cupola come se non ci
+fosse, e il referto diceva soddisfatto «nessun puntamento guarda il guscio».
+
+**L'ha scoperto solo il difetto iniettato.** La sonda nasce con un interruttore che BLOCCA la
+cupola, e con la cupola bloccata la maggior parte dei puntamenti deve finire contro la lamiera.
+Passavano tutte e dodici. Un controllo che dice «va bene» in tutti e due i mondi non e' un
+controllo, ed e' la terza volta in questo progetto (D-176, D-178, D-185): **il collaudo di un
+collaudo e' fargli vedere il difetto**.
+
+La cura: il corpo glielo si da' per la durata della prova, con la MESH VERA
+(`create_trimesh_shape`). Non una sfera con un buco parametrico — quella sarebbe di nuovo il
+mio conto ricopiato, e la fenditura vera si allarga salendo e i portelli aperti si accavallano
+oltre lo zenit.
+
+Col guscio che finalmente esiste:
+
+    cupola asservita     12 pose: 10 libere, 2 sotto la gronda, 0 contro la cupola
+    cupola BLOCCATA      12 pose:  1 libera,  2 sotto la gronda, 9 contro la cupola
+
+**E ANCHE LE POSE DI PROVA ERANO SBAGLIATE, per una ragione geometrica che vale la pena
+sapere**: le prime otto stavano quasi tutte in alto, e attorno allo zenit la fenditura si
+allarga (1,60 m in basso, 2,40 allo zenit) mentre i portelli aperti si accavallano oltre la
+verticale. Li' c'e' un buco largo sessanta gradi e qualunque puntamento esce comunque, con la
+cupola girata bene o girata male. Le pose che misurano qualcosa sono quelle a mezza altezza e
+sparse in azimut.
+
+## D-190 — Una cupola chiusa non si slega
+
+Federico, tre parole e uno screenshot: «e' tutto spostato aiuto».
+
+L'asservimento partiva al primo fotogramma della notte e portava la fessura sull'azimut del
+telescopio a riposo — quasi centottanta gradi. Il giocatore entrava in cupola e vedeva la
+calotta girare mezzo giro sotto i piedi, per allineare una fenditura **ancora chiusa**.
+
+Non e' solo estetica, ed e' la ragione per cui la riga si scrive senza rimpianti: una cupola
+vera non si slega mentre e' chiusa. Non c'e' niente da allineare, e il motore lo si accende
+quando serve. Adesso l'inseguimento ascolta `Events.dome_aperture_changed` e sta fermo sotto il
+cinque per cento di apertura; la calotta nasce dove il modello l'ha messa.

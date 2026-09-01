@@ -34,6 +34,8 @@
 [ext_resource type="Shader" path="res://world/shaders/cielo.gdshader" id="37_cielo"]
 [ext_resource type="Script" path="res://world/sky_light.gd" id="38_lucecielo"]
 [ext_resource type="Script" path="res://world/dark_adaptation.gd" id="39_occhio"]
+[ext_resource type="Script" path="res://world/telescope_mount.gd" id="40_montatura"]
+[ext_resource type="Script" path="res://world/dome_azimuth.gd" id="41_azimut"]
 
 [sub_resource type="BoxMesh" id="m_0"]
 size = Vector3(0.018, 0.018, 0.032)
@@ -2634,6 +2636,20 @@ script = ExtResource("27_cupola")
 leaves = Array[NodePath]([NodePath("../Osservatorio/Cupola/PortelloBasso"), NodePath("../Osservatorio/Cupola/PortelloAlto")])
 open_offset = Array[Vector3]([Vector3(0, 0, 0), Vector3(0, 0, 0)])
 open_rotation_deg = Array[Vector3]([Vector3(90, 0, 0), Vector3(90, 0, 0)])
+
+[node name="Telescopio" type="Node3D" parent="."]
+script = ExtResource("40_montatura")
+asse_ar = NodePath("../Osservatorio/Telescopio/Polo/AssePolare")
+asse_de = NodePath("../Osservatorio/Telescopio/Polo/AssePolare/Declinazione/AsseDec")
+mira = NodePath("../Osservatorio/Telescopio/Polo/AssePolare/Declinazione/AsseDec/Mira")
+ar_riposo_gradi = -60.0
+dec_riposo_gradi = -20.0
+
+[node name="CupolaAzimut" type="Node3D" parent="."]
+script = ExtResource("41_azimut")
+calotta = NodePath("../Osservatorio/Cupola")
+raggio = 2.50
+fessura_a_riposo = 180.0
 
 [node name="Pulsantiera" type="Node3D" parent="."]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.150, 1.950, 4.800)

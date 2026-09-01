@@ -1674,6 +1674,27 @@ PULSANTIERA_TASTI = {"apre": -0.444, "chiude": -0.490}
 PULSANTIERA_FACCIA = 0.038                # quanto sporge il cappuccio, in Z di modello
 
 ATTIVITA_CUPOLA = (2.20, 2.00)     # raggio, altezza del cilindro
+
+# --- il telescopio: la posa in cui lo si trova, e il contratto degli assi -----
+#
+# LA POSA STA QUI E NON NEL MODELLATORE perche' la leggono in due.
+# `telescopio_blender.py` la applica ai perni prima di esportare, cosi' nei render di
+# controllo il telescopio ha una posa sensata; `gen_blockout.py` la scrive nel nodo
+# che in partita muove gli assi, il quale deve poterla TOGLIERE per sapere dov'e' lo
+# zero. Scritta due volte, il giorno che cambia il gioco punterebbe sessanta gradi
+# piu' in la' senza che niente dia errore.
+#
+# IL CONTRATTO: ZERO E' IL RIPOSO, cioe' il tubo parallelo all'asse polare col
+# contrappeso in basso - che in cielo vuol dire il POLO. Da li' la declinazione
+# bascula e l'ascensione retta gira. In Godot i due perni ruotano attorno al proprio
+# Y locale (in Blender era Z: la conversione a Y-alto del glTF li scambia).
+AR_RIPOSO_GRADI = -60.0
+DEC_RIPOSO_GRADI = -20.0
+
+# La latitudine del posto: Montegrimano (PU). L'asse polare si inclina di tanto, e
+# l'altezza del polo sull'orizzonte VALE la latitudine - e' la stessa cosa detta due
+# volte, ed e' il controllo piu' semplice che il modello sia montato dritto.
+LATITUDINE = 43.9
 # (nome, x, z, nx, nz, quota). Le esterne stanno piu' in alto, sopra l'architrave.
 APPLIQUE = [
     ("cupola1", 2.60, 0.10, 0.0, +1.0, H_APPLIQUE),   # muro nord, sopra il varco

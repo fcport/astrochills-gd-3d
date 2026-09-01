@@ -19,6 +19,7 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        H_APPLIQUE, NOME_LOCALE, LUCE_MONITOR, SEMPRE_ACCESE,
                        H_INTERRUTTORE, L_PLACCA, A_PLACCA, SP_PLACCA,
                        LETTO, ATTIVITA_CUPOLA, CUPOLA, SALA_TELESCOPIO,
+                       AR_RIPOSO_GRADI, DEC_RIPOSO_GRADI,
                        CASSA_MONITOR, VETRO_MONITOR, SEDILE_MONITOR,
                        BOMBATURA_MONITOR, FRANCO_VETRO,
                        PULSANTIERA_STAFFA, PULSANTIERA_TASTI,
@@ -165,6 +166,8 @@ def tscn():
              '[ext_resource type="Shader" path="res://world/shaders/cielo.gdshader" id="37_cielo"]',
              '[ext_resource type="Script" path="res://world/sky_light.gd" id="38_lucecielo"]',
              '[ext_resource type="Script" path="res://world/dark_adaptation.gd" id="39_occhio"]',
+             '[ext_resource type="Script" path="res://world/telescope_mount.gd" id="40_montatura"]',
+             '[ext_resource type="Script" path="res://world/dome_azimuth.gd" id="41_azimut"]',
              '']
     dims = sorted(set((round(b[3], 3), round(b[4], 3), round(b[5], 3)) for b in blocchi)
                   | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
@@ -526,6 +529,36 @@ def tscn():
               'NodePath("../Osservatorio/Cupola/PortelloAlto")])',
               'open_offset = Array[Vector3]([Vector3(0, 0, 0), Vector3(0, 0, 0)])',
               'open_rotation_deg = Array[Vector3]([Vector3(90, 0, 0), Vector3(90, 0, 0)])', '',
+              # --- LA MONTATURA CHE SI MUOVE ----------------------------------
+              # I due perni arrivano dal .glb dentro la gerarchia dell'inseguimento;
+              # `Mira` e' l'empty che il modellatore appende ad AsseDec sull'asse
+              # ottico, ed e' il modo in cui il MODELLO dichiara dove guarda invece
+              # di lasciarlo indovinare al gioco.
+              #
+              # LA POSA VIENE DA `geometria.py` E NON DA QUI: la stessa che il
+              # modellatore applica ai perni prima di esportare. Il nodo la sottrae
+              # per ritrovare lo zero, che e' il polo. Un numero ribattuto a mano
+              # avrebbe fatto puntare il telescopio sessanta gradi piu' in la' in
+              # modo perfettamente plausibile.
+              '[node name="Telescopio" type="Node3D" parent="."]',
+              'script = ExtResource("40_montatura")',
+              'asse_ar = NodePath("../Osservatorio/Telescopio/Polo/AssePolare")',
+              'asse_de = NodePath("../Osservatorio/Telescopio/Polo/AssePolare/'
+              'Declinazione/AsseDec")',
+              'mira = NodePath("../Osservatorio/Telescopio/Polo/AssePolare/'
+              'Declinazione/AsseDec/Mira")',
+              'ar_riposo_gradi = %.1f' % AR_RIPOSO_GRADI,
+              'dec_riposo_gradi = %.1f' % DEC_RIPOSO_GRADI, '',
+              # --- LA CUPOLA CHE LO INSEGUE -----------------------------------
+              # Ruota il nodo `Cupola` del modello, che ha l'origine sull'asse alla
+              # quota di gronda e si porta dietro calotta e portelli. Il raggio e'
+              # quello della sfera; la fessura a riposo guarda -Z, che in azimut
+              # (misurato come atan2(x, z)) vale 180.
+              '[node name="CupolaAzimut" type="Node3D" parent="."]',
+              'script = ExtResource("41_azimut")',
+              'calotta = NodePath("../Osservatorio/Cupola")',
+              'raggio = %.2f' % DOME_R,
+              'fessura_a_riposo = 180.0', '',
               # --- il quadro della cupola, con i suoi due pulsanti -------------
               # LA SCATOLA DI DERIVAZIONE NON STA PIU' QUI. Era un cubo grigio messo
               # a mano sopra il cavo, e Federico l'ha bocciato per quello che era:
@@ -1859,7 +1892,11 @@ _attesi = [("ambient_light_energy = 0.035", "la luce ambientale della notte"),
            # solo perche' il difetto gliel'ho iniettato apposta. Legata al suo script,
            # la riga e' di un nodo solo.
            ('script = ExtResource("39_occhio")\nluci = [NodePath("../Luce_cupola1/Accesa")',
-            "l'occhio che si fa il buio, con le sue lampade")]
+            "l'occhio che si fa il buio, con le sue lampade"),
+           # Senza la mira il gioco non sa dove guarda il telescopio, e senza saperlo
+           # la cupola non puo' inseguirlo: e' l'anello che tiene insieme i due.
+           ('AsseDec/Mira")', "la mira del telescopio"),
+           ('script = ExtResource("41_azimut")', "la cupola che insegue")]
 _mancanti = ["  MANCA NEL .tscn   %s (%s)" % (t, perche)
              for (t, perche) in _attesi if t not in _scritto]
 if _mancanti:

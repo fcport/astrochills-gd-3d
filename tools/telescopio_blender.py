@@ -46,13 +46,14 @@ QUI = os.path.dirname(os.path.abspath(__file__))
 if QUI not in sys.path:
     sys.path.insert(0, QUI)
 from modellare import uv_a_scatola, applica_texture   # noqa: E402
-from geometria import R_PASS, W_PASS, H_PASS, SP_PASS   # noqa: E402
+from geometria import (R_PASS, W_PASS, H_PASS, SP_PASS,   # noqa: E402
+                       AR_RIPOSO_GRADI, DEC_RIPOSO_GRADI, LATITUDINE)
 
 RADICE = os.path.dirname(QUI)
 USCITA = os.path.join(RADICE, "assets", "models", "telescopio.glb")
 MODELLO = os.path.join(RADICE, "assets", "models", "esterni", "telescopio_riflettore")
 
-LATITUDINE = 43.9      # Montegrimano (PU): l'asse polare si inclina di tanto
+# LATITUDINE arriva da geometria.py: la leggono anche il gioco e i controlli
 AZIMUT = 0.0           # dove guarda il polo: 0 = verso -Y di Blender, il nord del blockout
 
 # --- il pilastro, l'unica cosa che modelliamo noi ----------------------------
@@ -74,8 +75,8 @@ L_TUBO = 1.50
 # Il modello arriva col tubo parallelo all'asse polare: e' la posizione di riposo di
 # una equatoriale tedesca, quella in cui il contrappeso sta in basso. Da li' si ruota
 # per puntare, e questa e' la posa in cui il giocatore lo trova.
-AR_POSA = math.radians(-60.0)
-DEC_POSA = math.radians(-20.0)
+AR_POSA = math.radians(AR_RIPOSO_GRADI)
+DEC_POSA = math.radians(DEC_RIPOSO_GRADI)
 
 # --- come sono divisi i cinquantacinque pezzi --------------------------------
 # I nomi del modello sono parlanti (Xaxis, Yaxis, Load, Main, Rim, Scope) e la
@@ -355,6 +356,34 @@ asse_de_riposo = asse_de.matrix_world.copy()           # AsseDec a zero
 dec_su_ar = asse_ar.matrix_world.inverted() @ declinazione.matrix_world
 tubo_su_dec = asse_de.matrix_world.inverted() @ tubo.matrix_world
 peso_su_ar = asse_ar.matrix_world.inverted() @ contrappeso.matrix_world
+# --- LA MIRA: il modello dichiara dove guarda --------------------------------
+# UN EMPTY IN CIMA AL TUBO, sull'asse ottico, appeso ad AsseDec. Sembra un
+# dettaglio e invece e' il contratto fra chi modella e chi in partita deve puntare:
+# senza, il gioco dovrebbe INDOVINARE l'asse ottico dalla mesh del tubo - e sopra
+# c'e' scritto, con i numeri, come va a finire: la retta di regressione della
+# nuvola di punti dava 62 gradi dove il tubo ne faceva 43, perche' in quella nuvola
+# ci sono anche cercatore, anelli, bulloni e culatta.
+#
+# E SERVE ALLA CUPOLA PRIMA CHE AL TELESCOPIO. Per sapere dove il raggio buca la
+# calotta non basta la direzione: serve il PUNTO DA CUI PARTE, perche' su una
+# equatoriale tedesca l'apertura sta fino a un metro fuori dall'asse del pilastro e
+# due metri sotto il centro della sfera. Con l'origine sbagliata l'azimut della
+# cupola sbaglia di decine di gradi. Vedi `world/dome_azimuth.gd`.
+#
+# STA SULL'ASSE, NON SUL BORDO: si prende il vertice del tubo piu' avanti lungo
+# l'asse ottico e lo si PROIETTA sull'asse. Il vertice piu' avanti in assoluto sta
+# sul labbro del tubo, cioe' fuori centro di mezzo diametro, e da li' partirebbe un
+# raggio parallelo a quello vero ma spostato - che e' l'errore piu' facile da fare
+# e il piu' difficile da vedere.
+_inv_de = asse_de_riposo.inverted()
+_dir_loc = (asse_de_riposo.to_3x3().inverted() @ verso_cielo).normalized()
+_avanti = max((_inv_de @ (tubo.matrix_world @ v.co) for v in tubo.data.vertices),
+              key=lambda p: p.dot(_dir_loc))
+_apertura = asse_de_riposo @ (_dir_loc * _avanti.dot(_dir_loc))
+mira = perno("Mira", asse_de, _apertura, verso_cielo)
+print("  mira: apertura a %.2f m dal pavimento, %.2f m fuori dall'asse del pilastro"
+      % (_apertura.z, math.hypot(_apertura.x - P.x, _apertura.y - P.y)))
+
 for nodo, angolo in ((asse_ar, AR_POSA), (asse_de, DEC_POSA)):
     nodo.matrix_basis = nodo.matrix_basis @ Matrix.Rotation(angolo, 4, "Z")
 bpy.context.view_layer.update()

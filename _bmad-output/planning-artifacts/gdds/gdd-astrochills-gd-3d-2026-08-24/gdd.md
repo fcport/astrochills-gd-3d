@@ -102,7 +102,8 @@ accordo con l'artista.
 ### Antefatto e motivazioni
 
 **Il progetto ha già un prototipo giocato, e questo GDD parte da lì.** Tre mesi di codice
-hanno prodotto tre fasi su dieci (allineamento polare, targeting, sequenza di imaging),
+hanno prodotto tre fasi delle dieci di allora (allineamento polare, targeting, sequenza
+di imaging — la polare è poi uscita dall'elenco serale, D-168),
 entrambe le code del ciclo (stacking, vendita), l'osservatorio in una scena sola, il
 terminale d'acquisto, la BBS, e la telemetria per notte. Non esistono ancora: le rotture
 delle fasi, le venti notti, la metanarrazione, i finali, l'albero degli upgrade, la rete di
@@ -210,8 +211,9 @@ secondo lasci spazio.
 ARRIVI, 21:00    scendi dalla macchina, il posto è al buio
   |
   +-- SETUP        fasi 1-5, una volta sola, valido fino all'alba
-  |                (livellamento, bilanciamento, allineamento polare,
-  |                 accensione e collegamento PC, plate solving)
+  |                (apertura della cupola, accensione e collegamento,
+  |                 raffreddamento della CCD, dark e flat,
+  |                 sincronizzazione del puntamento)
   |
   +-- CICLO 2, ripetuto finché vuoi
   |
@@ -364,26 +366,32 @@ Ogni fase ne consuma. I valori sotto sono il riferimento di progetto, da tarare 
 | # | Fase | Notte 1 | Notte 20 | Cosa la accorcia |
 |---|---|---|---|---|
 | 1 | Apertura della cupola | 10 | 10 | **mai** — è il tempo del motore |
-| 2 | Livellamento | 20 | **0** | livella motorizzata |
-| 3 | Bilanciamento | 20 | 2 | si impara: diventa una checklist |
-| 4 | Allineamento polare | **60** | 10 | software di polar align |
-| 5 | Accensione e collegamento PC | 15 | 2 | si impara entro la notte 2 |
-| 6 | Plate solving | 15 | 5 | plate-solver locale |
-| | **Setup — una volta a notte** | **140** | **29** | |
-| 7 | Targeting | 15 | 15 | **mai** |
+| 2 | Accensione e collegamento | 15 | 2 | si impara entro la notte 2 |
+| 3 | Raffreddamento della CCD | 25 | 15 | raffreddamento più potente — poco: è fisica, non abilità |
+| 4 | Dark e flat | 30 | 3 | libreria dark + flat panel |
+| 5 | Sincronizzazione del puntamento | 30 | 5 | plate solving |
+| | **Setup — una volta a notte** | **110** | **35** | |
+| 6 | Targeting | 15 | 15 | **mai** |
+| 7 | Rotazione della cupola | 10 | 2 | cupola motorizzata a inseguimento |
 | 8 | Focus | 20 | 0 | focuser motorizzato con autofocus |
-| 9 | Dark e flat | 30 | 3 | libreria dark + flat panel |
-| 10 | Autoguida | 20 | 5 | autoguider OAG |
-| 11 | **Posa** | **40** | 40 | **mai** — la durata la sceglie il giocatore |
+| 9 | Autoguida | 20 | 5 | autoguider OAG |
+| 10 | **Posa** | **40** | 40 | **mai** — la durata la sceglie il giocatore |
 | — | Stacking | 15 | 15 | |
 | — | Vendita | 10 | 10 | |
-| | **Ciclo foto — ripetibile** | **150** | **88** | |
+| | **Ciclo foto — ripetibile** | **130** | **87** | |
 
-**Cosa producono questi numeri.** Notte 1: setup più due foto occupano 440 minuti; ne
-restano 100, ai quali si sommano gli 80 delle due pose — **20 minuti reali di libertà su
-60**. Notte 20: setup più tre foto occupano 293 minuti; ne restano 247, più i 120 delle
-pose — **41 minuti reali su 60**. L'automazione raddoppia il tempo libero, e lo fa in modo
-leggibile dal giocatore.
+**Cosa producono questi numeri.** Notte 1: setup più due foto occupano 370 minuti; ne
+restano 170, ai quali si sommano gli 80 delle due pose — **28 minuti reali di libertà su
+60**. Notte 20: setup più tre foto occupano 296 minuti; ne restano 244, più i 120 delle
+pose — **40 minuti reali su 60**. L'automazione aggiunge dodici minuti reali di libertà, e
+lo fa in modo leggibile dal giocatore.
+
+**Il setup è più leggero di quanto fosse in progetto, ed è il prezzo della verità** (D-168).
+Livellamento, bilanciamento e allineamento polare valevano cento minuti della prima notte, e
+sono le tre cose che in un osservatorio con la montatura sul pilastro **non si fanno ogni
+sera**: si fanno quando la montatura la si installa. Il rituale serale di un osservatorio
+fisso è più corto di quello di chi il telescopio se lo porta sul prato, e fingere il
+contrario avrebbe fatto pagare al giocatore un'ora di gesti che nessuno fa.
 
 #### Le tre regole invarianti
 
@@ -392,36 +400,40 @@ fotografare e quanto a lungo. Nessun upgrade li tocca, in nessuna configurazione
 
 **2. L'automazione compra tempo pagando in qualità.** Ogni upgrade che automatizza una fase
 **fissa il punteggio di quella fase a un valore garantito ma non ottimo** — per esempio 70
-su 100 per il polar align automatico. Un giocatore che quella fase la sa fare bene ottiene
+su 100 per la sincronizzazione fatta dal plate solving. Un giocatore che quella fase la sa fare bene ottiene
 di più a mano. Questo tiene in equilibrio D-006: automatizzare tutto massimizza il tempo e
 riduce il valore di ogni singola foto, e la scelta resta al giocatore ogni notte.
 
 **3. Le rotture seguono l'ordine inverso della tecnicità.** Si guastano prima le fasi
-silenziose e meditative (livellamento, allineamento polare), per ultime quelle tecniche
+silenziose e meditative (rotazione della cupola, raffreddamento della CCD), per ultime quelle tecniche
 (plate solving, imaging). Quando arriva il turno delle fasi tecniche, il giocatore ha già
 imparato abbastanza da sapere che ciò che vede è impossibile.
 
-#### Le undici fasi
+#### Le dieci fasi
 
 | # | Fase | Il gesto | Parametri e punteggio | Come si rompe |
 |---|---|---|---|---|
 | 1 | **Apertura della cupola** | dal pannello sul PC, due pulsanti a uomo presente: SU apre, GIÙ chiude, il motore va finché tieni il dito e si ferma dov'è appena lo lasci. Si esce solo a cupola aperta | nessun punteggio: si passa o si ripete | il pannello dice APERTA e in cupola i battenti non si sono mossi. Oppure si aprono da soli, mentre guardi altrove |
-| 2 | **Livellamento** | tre viti, la bolla d'aria va portata dentro il cerchio; se esageri da un lato devi compensare dall'altro | dalla distanza finale della bolla dal centro | la bolla non sta ferma: si sposta da sola mentre la guardi |
-| 3 | **Bilanciamento** | sposti i contrappesi sull'asse finché il telescopio resta fermo in ogni posizione | dalla deriva residua alla prova di rilascio | il telescopio tende sempre nella stessa direzione, ovunque metti i pesi |
-| 4 | **Allineamento polare** | metodo della deriva: osservi una stella nel reticolo, correggi azimuth e altitudine, aspetti, riosservi | 0 a **0,2 arcmin/s** di deriva, 100 a deriva nulla; media su **8 secondi reali** perché non si possa truccare correggendo un istante prima di chiudere | la stella deriva in direzioni impossibili. Poi non è una stella |
-| 5 | **Accensione e collegamento PC** | sequenza nell'ordine giusto: montatura, camera di ripresa, camera di guida, software; l'ordine sbagliato non fa riconoscere i dispositivi | nessun punteggio: si passa o si ripete | il software riconosce dispositivi che non hai collegato, o non riconosce quelli collegati |
-| 6 | **Plate solving** | scatti una posa breve, il software confronta il campo col catalogo e dice dove stai puntando | dalla precisione del solving | ti dà coordinate che non esistono nel catalogo, o un oggetto che da lì, in quella stagione, non sarebbe visibile |
-| 7 | **Targeting** | apri il planetario, filtri per tipo, altezza sull'orizzonte, difficoltà, scegli il soggetto | nessun punteggio proprio: determina il moltiplicatore di valore e se la commessa è soddisfatta | nel planetario compare un oggetto che non è in nessun catalogo. Ha coordinate precise. È visibile stanotte |
+| 2 | **Accensione e collegamento** | dai corrente agli apparecchi e li fai riconoscere al software. Nessun ordine è scritto da nessuna parte: una porta aperta a un apparecchio spento resta muta, e accendere l'interruttore dopo non basta — va rilasciata col RESET. La ruota portafiltri non ha un interruttore: prende corrente dalla camera, e questo lo schermo non lo dice | nessun punteggio: si passa o si ripete | il software riconosce dispositivi che non hai collegato, o perde quelli collegati mentre guardi altrove |
+| 3 | **Raffreddamento della CCD** | scegli la temperatura di lavoro e aspetti che si stabilizzi. Troppo freddo per la notte che c'è e il refrigeratore va al 100% senza tenerla: la temperatura oscilla, e i dark scattati a una temperatura che balla non valgono | dalla distanza dal setpoint e dalla sua stabilità — che è la stessa cosa che rende validi i dark | la temperatura scende sotto il possibile. Poi i dark scattati a quella temperatura contengono qualcosa |
+| 4 | **Dark e flat** | checklist: tappo, cinque dark; pannello illuminato, cinque flat; nell'ordine, senza saltare passi | dalla completezza e dall'ordine | i dark non sono neri: c'è qualcosa nelle immagini scattate col tappo |
+| 5 | **Sincronizzazione del puntamento** | all'accensione la montatura non sa dove sta guardando. Il software la manda su una stella nota, tu la centri nel reticolo e premi SYNC; da lì il GOTO va dove dici | dall'errore residuo di puntamento, che però si vede **dopo**: è l'oggetto scentrato nel campo della fase 6 | la stella che ti chiede di centrare non è dove il catalogo dice che sia. Poi è il catalogo a cambiare idea |
+| 6 | **Targeting** | apri il planetario, filtri per tipo, altezza sull'orizzonte, difficoltà, scegli il soggetto | nessun punteggio proprio: determina il moltiplicatore di valore e se la commessa è soddisfatta | nel planetario compare un oggetto che non è in nessun catalogo. Ha coordinate precise. È visibile stanotte |
+| 7 | **Rotazione della cupola** | porti la fessura sull'azimut del telescopio. E ce la riporti durante la posa, perché il cielo gira e la cupola no: è l'unica fase che ti fa alzare dalla sedia mentre la macchina lavora | dalla frazione di posa in cui il telescopio ha guardato attraverso la fessura invece che contro il guscio | la cupola si muove da sola. Poi si muove nel verso sbagliato |
 | 8 | **Focus** | muovi il focheggiatore finché le stelle sono punti minimi e non dischetti; ogni posizione visitata lascia un punto sul grafico, e dopo due passate la curva a V dice da che parte andare | dal diametro delle stelle a fine fase (HFD): pieno sotto `focus_best_hfd`, zero sopra `focus_max_hfd` | le stelle non vanno mai a fuoco del tutto. Oppure ci vanno, ma la forma che assumono non è quella di una stella |
-| 9 | **Dark e flat** | checklist: tappo, cinque dark; pannello illuminato, cinque flat; nell'ordine, senza saltare passi | dalla completezza e dall'ordine | i dark non sono neri: c'è qualcosa nelle immagini scattate col tappo |
-| 10 | **Autoguida** | calibri la guida, avvii il loop, osservi il grafico degli errori: due linee che devono stare basse e stabili | dall'errore RMS medio durante la posa | la guida insegue qualcosa. Ma non è la stella che hai selezionato |
-| 11 | **Posa** | imposti esposizione e numero di frame, avvii, la macchina lavora da sola | vedi sotto | i frame acquisiti sono più di quelli impostati. O meno. O la sequenza è finita ma sono passati tre minuti |
+| 9 | **Autoguida** | calibri la guida, avvii il loop, osservi il grafico degli errori: due linee che devono stare basse e stabili | dall'errore RMS medio durante la posa | la guida insegue qualcosa. Ma non è la stella che hai selezionato |
+| 10 | **Posa** | imposti esposizione e numero di frame, avvii, la macchina lavora da sola | vedi sotto | i frame acquisiti sono più di quelli impostati. O meno. O la sequenza è finita ma sono passati tre minuti |
 
-> **[ASSUMPTION]** I criteri di punteggio delle fasi 2, 3, 6, 9 e 10 sono proposti qui e
-> non ancora implementati: esistono le fasi 1, 4, 7, 8 e 11. La fase 1 costa dieci minuti
-> di notte sulla carta e sei secondi reali in gioco: il budget qui è intento di progetto, e
-> nessuna fase lo consuma ancora davvero. *Cosa* si misura è deciso; le
-> soglie numeriche si tarano quando la fase esiste.
+**Livellamento, bilanciamento e allineamento polare non sono spariti: sono diventati
+manutenzione** (D-168). Si fanno quando si installa la montatura, quando le si cambia il
+carico sopra, e quando qualcuno ci ha messo le mani — non ogni sera. `phases/polar/` resta
+nel repository, non cambia di una riga, ed è ancora la prova dell'AC2 della storia 1.1.
+
+> **[ASSUMPTION]** I criteri di punteggio delle fasi 3, 4, 5, 7 e 9 sono proposti qui e non
+> ancora implementati: esistono le fasi 1, 2, 6, 8 e 10. La fase 1 costa dieci minuti di
+> notte sulla carta e sei secondi reali in gioco, la 2 quindici e una ventina di secondi: il
+> budget qui è intento di progetto, e nessuna fase lo consuma ancora davvero. *Cosa* si
+> misura è deciso; le soglie numeriche si tarano quando la fase esiste.
 
 #### La posa, in dettaglio
 

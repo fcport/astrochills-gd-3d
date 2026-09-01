@@ -3858,3 +3858,121 @@ mezzo**, cinque inversioni.
 e zero è più piccolo del minimo possibile: chi premesse INVIO nel fotogramma in cui la fase
 compare si porterebbe via 100 senza aver toccato niente. `score()` restituisce 0 finché non
 c'è un campione — la stessa clausola che la fase polare scrive al contrario.
+
+
+## D-168 — Un telescopio sul pilastro non si allinea ogni notte
+
+**1 settembre 2026.** «Un telescopio fisso ha bisogno della polare?» La domanda è arrivata
+mentre stavo per costruire la fase successiva, e la risposta è **no**. C'è voluto un GDD
+intero per non accorgersene, e una riga di Federico per vederlo.
+
+**Che cosa era sbagliato.** L'allineamento polare col metodo della deriva è la fase più
+lunga del setup — sessanta minuti della prima notte — ed è un'operazione che si fa **una
+volta**, quando la montatura la si installa sul pilastro, con le chiavi in mano. Poi resta
+allineata per anni. Il rito serale della deriva è di chi il telescopio se lo carica in
+macchina e lo rimonta ogni volta sul prato. In un osservatorio con la montatura imbullonata
+su una colonna di cemento, rifarlo ogni sera è come rifare le fondamenta prima di entrare in
+casa. Lo stesso vale per il **livellamento** (si livella la colonna, non la notte) e per il
+**bilanciamento** (si bilancia quando si cambia il carico, cioè quando si monta un'altra
+camera).
+
+**Che cosa si fa davvero.** All'accensione una montatura non sa dove sta guardando: si punta
+una stella brillante e nota, la si centra, si preme SYNC, e da lì il GOTO va dove gli dici.
+È la prima cosa della sera in ogni osservatorio, ed è un gesto migliore di quello che
+sostituisce — nella polare fermi la stella dov'è, nella sincronizzazione la porti al centro:
+il traguardo è più leggibile, e lo stesso reticolo racconta due mestieri diversi.
+
+**Il nuovo elenco, dieci fasi.** Setup: apertura della cupola, accensione e collegamento,
+raffreddamento della CCD, dark e flat, sincronizzazione del puntamento. Ciclo foto:
+targeting, rotazione della cupola, fuoco, autoguida, posa. Il **plate solving** smette di
+essere una fase e diventa l'**upgrade della sincronizzazione**: è la regola 2 del GDD
+applicata alla lettera — compri tempo e paghi in qualità.
+
+**Che cosa entra, e perché è vero.** Il *raffreddamento della CCD* è quello che fa chi
+accende una ST-8 nel '99: imposti il setpoint e aspetti, e il mestiere sta nello scegliere
+quanto freddo chiedere alla notte che c'è — troppo, e il Peltier va al 100% senza tenerlo, la
+temperatura balla e i dark non corrispondono più. La *rotazione della cupola* è la cosa che
+rende una cupola una cupola: la fessura va portata sull'azimut del telescopio, e ci va
+riportata durante la posa, perché il cielo gira e la cupola no. È l'unica fase che fa alzare
+il giocatore dalla sedia mentre la macchina lavora, ed è un regalo per un gioco che si gioca
+camminando.
+
+**Il rischio dichiarato.** La rotazione della cupola e la sua apertura sono lo stesso gesto —
+tieni premuto — e due fasi con lo stesso gesto sono una ripetizione finché non si dimostra il
+contrario. Qui la differenza c'è (un bersaglio da centrare, e l'obbligo di tornarci) ma va
+verificata in gioco: se annoia, la via d'uscita è fonderla con la fase 1.
+
+**Che cosa NON è successo.** Le tre fasi tolte non sono state cancellate: sono manutenzione,
+e torneranno quando qualcuno avrà messo le mani sulla montatura. `phases/polar/` resta nel
+repository e non cambia di una riga — è ancora la prova dell'AC2 della storia 1.1,
+rieseguibile con `git diff` da quando esiste il progetto. È uscita dal piano della notte
+(`data/night_plan.tres`), che è esattamente il posto in cui ADR-002 dice che si decide chi
+gioca stanotte: nessun file di codice ha dovuto sapere che la polare non c'è più.
+
+**Il conto della notte cambia, e si dichiara.** Il setup della prima notte passa da 140 a 110
+minuti, e il tempo libero da 20 a 28 minuti reali: l'automazione non raddoppia più il tempo
+libero, ne aggiunge dodici. Il rituale serale di un osservatorio fisso è più corto di quello
+di chi lavora sul prato, e truccare i numeri per far tornare una frase scritta prima sarebbe
+stato il modo peggiore di scoprirlo.
+
+
+## D-169 — La fase 2: si accende leggendo, non ricordando
+
+**1 settembre 2026.** Prima fase del nuovo elenco (D-168): accensione e collegamento della
+strumentazione.
+
+**Il pericolo era la filastrocca.** Il GDD la descriveva come «sequenza nell'ordine giusto:
+montatura, camera, guida, software; l'ordine sbagliato non fa riconoscere i dispositivi», e
+scritta così sarebbe stata la fase peggiore del gioco: un ordine da imparare a memoria e poi
+ripetere venti notti, cioè una tassa travestita da mestiere. La prima notte si sbaglia, si
+legge da qualche parte come si fa, e da lì in poi si esegue senza guardare.
+
+**Che cosa c'è al suo posto: diagnosi.** Non c'è nessun ordine scritto da nessuna parte. C'è
+un bus che risponde o non risponde, una tabella che dice quale porta è muta, e un registro
+che racconta che cosa hai fatto. Chi legge quello che c'è scritto arriva in fondo la prima
+notte senza sapere niente — che è quello che fa chi accende un osservatorio davvero.
+
+**L'ordine conta lo stesso, ma come conseguenza.** Aprire la porta a un apparecchio spento la
+lascia in mano a un driver che ci ha già parlato e non ci riprova: accendere l'interruttore
+dopo non serve, ci vuole il RESET. È il comportamento di un bus seriale vero, ed è l'unica
+ragione per cui questa fase si può sbagliare. Cade fuori dalla sorgente **senza un caso
+speciale**: `HonestBus` guarda `powered_when`, cioè com'era l'alimentazione nell'istante del
+tentativo, e quel bit non torna indietro da solo.
+
+**Il solo pezzo da dedurre.** La ruota portafiltri non ha un interruttore: prende i suoi
+dodici volt dalla camera. Lo schermo non lo scrive da nessuna parte — dice solo che la sua
+porta è muta — e il giocatore lo mette insieme. Un messaggio che dicesse «accendi prima la
+camera» trasformerebbe la deduzione in una lettura, ed è per non scriverlo che questa fase ha
+un mestiere.
+
+**Che si possa sbagliare e rimediare l'ho misurato giocandola.**
+`tools/prova_accensione.tscn` fa lo sbaglio naturale — collega per prima la ruota, che è
+l'ultima riga e sembra la più facile — accende la camera dopo, e verifica che la porta sia
+**ancora muta**; poi resetta, ricollega, e verifica che risponda. Sette verifiche, tutte
+verdi. E il controllo che conta l'ho validato iniettando il difetto che esiste per prendere:
+con `HonestBus` che ignora `powered_when` — cioè con la porta che guarisce da sola — la sonda
+grida su due righe.
+
+**Il registro riempie lo schermo con una cosa vera.** La prima stesura lasciava metà pannello
+vuoto. Invece di allargare la tabella ho messo quello che un software di controllo ha
+davvero: quattro righe di log che scorrono, `POWER ON: CAMERA`, `NO RESPONSE ON CFW`, `PORT
+CFW RELEASED`. Si scrivono **dopo** aver sentito `truth`, mai nel momento in cui il driver
+finisce: il registro racconta i fatti e non le intenzioni, e il giorno in cui il bus mentirà
+il registro mostrerà la bugia invece di coprirla.
+
+**Un tasto solo fa due mestieri**, e va detto perché è il genere di scorciatoia che si paga:
+INVIO agisce sulla riga sotto il cursore finché c'è qualcosa da fare, e chiude la fase quando
+rispondono tutti. Un tasto in più solo per uscire sarebbe un tasto che si usa una volta a
+notte e si dimentica in tutte le altre. Che le due cose non si mangino a vicenda è una delle
+sette verifiche della sonda.
+
+**Il pannello finisce dentro il monitor, e non l'ho dedotto.** `tools/prova_vetro.tscn` è
+nato da una domanda di Federico — «ste cose le stai mettendo dentro il monitor, vero?» — e
+gioca la notte vera dal PC fino alla fase che gli si chiede, poi fotografa la finestra: si
+vede il CRT sulla scrivania, e dentro il vetro il pannello. Tre errori miei che quella sonda
+ha trovato, tutti nella sonda e nessuno nel gioco: si collegava al bus **dopo** aver
+istanziato il gioco (la prima fase era già partita), mandava un `InputEventAction` chiamato
+`dome_confirm` a una fase che aspettava `polar_finish` (gli eventi d'azione si riconoscono
+dal nome, non dal tasto), e premeva il comando una volta sola — ma quando la finestra perde
+il fuoco Godot rilascia da sé tutte le azioni, e il referto diceva «battente fermo, tasto non
+premuto, fase che gira»: il meccanismo era sano, era la mano della sonda ad aprirsi.

@@ -68,6 +68,8 @@ func _ready() -> void:
 	print("")
 	_check_honest_shutter()
 	print("")
+	_check_honest_bus()
+	print("")
 	_check_honest_vcurve()
 	print("")
 	_check_honest_drift()
@@ -387,6 +389,7 @@ func _check_wandering_drift() -> void:
 const SOURCE_PATHS := [
 	"res://phases/dome/sources/honest_shutter.tres",
 	"res://phases/focus/sources/honest_vcurve.tres",
+	"res://phases/startup/sources/honest_bus.tres",
 	"res://phases/polar/sources/honest_drift.tres",
 	"res://phases/polar/sources/wandering_drift.tres",
 	"res://phases/targeting/sources/honest_catalog.tres",
@@ -1947,3 +1950,63 @@ func _check_save_manager() -> void:
 			name = d.get_next()
 		d.list_dir_end()
 	DirAccess.remove_absolute(bench_dir)
+
+
+const BUS_PATH := "res://phases/startup/sources/honest_bus.tres"
+
+
+## Un ingresso della fase dell'accensione, scritto a mano.
+##
+## `quando` è la maschera degli interruttori NELL'ISTANTE in cui si è tentata la
+## porta di ciascun apparecchio: è il campo su cui gira tutta questa fase, e
+## costruirlo a mano è il solo modo di collaudarla senza montare niente.
+func _bus_input(powered: int, attempted: int, quando: Array) -> StartupInput:
+	var i := StartupInput.new()
+	i.powered = powered
+	i.attempted = attempted
+	i.powered_when = PackedInt32Array(quando)
+	return i
+
+
+func _check_honest_bus() -> void:
+	print("-- HonestBus: risponde chi aveva corrente quando gli hai aperto la porta")
+	var src := _load_source(BUS_PATH) as HonestBus
+	if src == null:
+		return
+	print("   dal .tres: fed_by = %s (la ruota prende corrente dalla camera)"
+		% str(src.fed_by))
+
+	var mount := 1
+	var camera := 2
+	var filter := 4
+
+	# Determinismo: `delta` non deve entrare da nessuna parte.
+	var i_det := _bus_input(mount, mount, [mount, 0, 0])
+	var a := src.sample(i_det, 0.016)
+	var b := src.sample(i_det, 0.99)
+	print("   sample(i, 0.016) = %d, sample(i, 0.99) = %d -> %s"
+		% [a, b, "DETERMINISTICA" if a == b
+			else "NON deterministica  <-- ATTESO: deterministica"])
+
+	var casi := [
+		["nessuna porta aperta: non risponde nessuno",
+			_bus_input(mount | camera, 0, [0, 0, 0]), 0],
+		["montatura accesa e collegata",
+			_bus_input(mount, mount, [mount, 0, 0]), mount],
+		["collegata da spenta, accesa DOPO: la porta resta muta",
+			_bus_input(mount, mount, [0, 0, 0]), 0],
+		["ruota collegata con la camera accesa",
+			_bus_input(camera, filter, [0, 0, camera]), filter],
+		["ruota collegata con la camera spenta, camera accesa dopo",
+			_bus_input(camera, filter, [0, 0, 0]), 0],
+		["ruota collegata bene, poi la camera si spegne",
+			_bus_input(0, filter, [0, 0, camera]), 0],
+		["tutto acceso e tutto collegato",
+			_bus_input(mount | camera, mount | camera | filter,
+				[mount, camera, mount | camera]), mount | camera | filter],
+	]
+	for caso in casi:
+		var atteso: int = caso[2]
+		var avuto: int = src.sample(caso[1], 0.016)
+		print("   %-52s -> %d%s" % [caso[0], avuto,
+			"" if avuto == atteso else "   <-- ATTESO: %d" % atteso])

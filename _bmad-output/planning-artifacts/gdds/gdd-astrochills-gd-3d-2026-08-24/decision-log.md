@@ -5041,3 +5041,113 @@ Non e' solo estetica, ed e' la ragione per cui la riga si scrive senza rimpianti
 vera non si slega mentre e' chiusa. Non c'e' niente da allineare, e il motore lo si accende
 quando serve. Adesso l'inseguimento ascolta `Events.dome_aperture_changed` e sta fermo sotto il
 cinque per cento di apertura; la calotta nasce dove il modello l'ha messa.
+
+## D-191 — La fase 5 non e' una schermata: e' un numero che sopravvive alla schermata
+
+Federico: «fai il plate solving e go to prima nella maniera di merda e poi dopo con gli
+upgrade andiamo con la versione piu' figa».
+
+La maniera di merda e' quella vera del 1999, e sta in una riga: **una montatura che si
+accende non sa dove sta guardando.** Gli encoder partono da un valore qualunque, e chiederle
+M13 la porta un paio di gradi in la'. Non e' un guasto simulato per dare da fare al
+giocatore — e' come funzionano le montature, e chi ci lavorava lo dava per scontato come
+mettere in moto l'auto. Sincronizzare vuol dire dirle «quello che stai inquadrando adesso e'
+la tale stella».
+
+**LA PARTE FACILE E' LA SCHERMATA; LA PARTE CHE CONTA E' CHE L'ERRORE SOPRAVVIVA.** Il GDD
+promette che l'errore residuo «si vede DOPO: e' l'oggetto scentrato nel campo». Una fase 5
+che desse un voto e morisse li' sarebbe un giocattolo: si gioca, prende cento, e non cambia
+niente. Percio' il residuo non finisce in un `payload` — finisce su `NightRun`, dove
+sopravvive fino allo spegnimento e dove il GOTO va a leggerlo.
+
+**DUE CAMPI E NON UNO, e il secondo e' quello interessante.** Non basta «di quanto ho
+sbagliato»: serve anche «DOVE ho sincronizzato». Sincronizzare su una stella raddrizza il
+puntamento LI', non dappertutto — con l'asse polare fuori squadra l'errore ricresce
+allontanandosi. Ed e' proprio il caso di questa montatura: l'asse misura 43,1 gradi contro
+una latitudine di 43,9. Otto decimi di grado, che su quaranta gradi di cielo diventano venti
+primi d'arco di errore di puntamento. E' il motivo per cui negli osservatori si sincronizza
+di nuovo prima di ogni soggetto, ed e' il motivo per cui il plate solving varra' i suoi soldi.
+
+**L'INQUADRATURA DELLA CAMERA E' PICCOLA, e vederlo disegnato e' meta' di quello che questa
+fase insegna.** Il cercatore mostra cinque gradi; il chip della ST-8 dietro i 1500 mm del
+Newton da 30 cm ne inquadra 0,53 x 0,35. Un GOTO sbagliato di mezzo grado — che sembra poco —
+lascia il soggetto ben dentro il campo e ben fuori dalla foto. Il rettangolino al centro
+della schermata del GOTO e' quel mezzo grado, ed e' l'unica spiegazione che serve.
+
+**MISURATO, SU VENTI NOTTI PER PARTE** (`tools/prova_sync.gd`):
+
+    sincronizzazione CENTRATA     errore  3,6'  ->  soggetto a  28' dal centro
+    sincronizzazione TIRATA VIA   errore 81,3'  ->  soggetto a  76' dal centro
+
+**E il numero che sorprende e' il primo**: anche centrando bene, il soggetto arriva a mezzo
+grado dal centro e va portato dentro l'inquadratura a mano. Non e' un difetto della fase: e'
+quegli otto decimi di grado di asse storto. Finche' non si raddrizza, **ogni GOTO chiede una
+centratura**, e la differenza fra sincronizzare bene e male e' quanto tempo ci vuole.
+
+**QUELLO CHE NON E' STATO FATTO, e va detto.** Il plate solving comprabile non c'e' ancora:
+c'e' la fase manuale e c'e' il posto dove il plate solving si innestera' — sostituire la
+centratura con una misura automatica e' cambiare la sorgente di verita', non la fase. E il
+prezzo in minuti di notte non e' tarato: il GDD lo dichiara gia' come intento di progetto.
+
+## D-192 — Questo edificio non vede sotto i 48 gradi, e non e' una regola di gioco
+
+Costruendo il GOTO serviva sapere dove il telescopio PUO' guardare. La risposta e' stata
+molto peggiore del previsto, ed e' una misura: si spara il raggio vero contro la geometria
+vera (`tools/prova_orizzonte.gd`, undici angoli orari, un grado di declinazione alla volta).
+
+    AR  -75   scende fino a dec +72   =  45,8 gradi di altezza
+    AR    0   scende fino a dec  -3   =  43,1
+    AR  +75   scende fino a dec +61   =  44,2
+    limite: 43,1 gradi nel punto migliore, 47,7 nel peggiore
+
+**LA CAUSA NON E' LA CUPOLA, E' IL RAPPORTO.** L'apertura del tubo sta a 1,86 m da terra e il
+foro del tetto a 3,20: il telescopio guarda fuori da due metri SOTTO il proprio oblo'.
+Puntando basso il raggio esce dalla fenditura, scende, e trova la falda. In un osservatorio
+vero l'incrocio degli assi sta accanto al centro della sfera — ed e' esattamente per questo
+che le cupole hanno il piano di calpestio rialzato e il pilastro alto. Qui il pilastro e'
+alto 75 cm e la passerella 59.
+
+**COSA COSTA, MISURATO** (`ALZA=` nella stessa sonda):
+
+    strumento com'e'     limite  43-48 gradi     M42 e M8 irraggiungibili sempre
+    alzato di 0,8 m      limite  30-33 gradi
+    alzato di 1,4 m      limite  17-19 gradi     un osservatorio normale
+    alzato di 2,0 m      limite   1-11 gradi
+
+**DUE SOGGETTI SU SEI SPARISCONO.** M42 (dec -5) culmina a 40,7 gradi, M8 (-24) a 21,7: da
+questa cupola non si vedono mai. Il planetario adesso lo dice — «too low for the dome, alt
+41» — invece di scrivere la finestra di visibilita' e mandare il giocatore ad aspettare una
+cosa che non arrivera'.
+
+**NON L'HO RISOLTO IO, ed e' deliberato.** Alzare lo strumento vuol dire alzare la passerella,
+la scala e il parapetto: e' una modifica all'edificio, e l'edificio e' documentato. La misura
+sta qui, il costo di ciascuna alternativa sta qui, la decisione e' di Federico. Nel frattempo
+il gioco non mente: quattro soggetti su sei, e il perche' scritto sullo schermo.
+
+## D-193 — Due modi diversi in cui un controllo dice il falso, tutti e due incontrati oggi
+
+**IL PRIMO: CONFONDERE IL COMANDO CON LO STATO.** La sonda del puntamento ha un controllo
+nuovo — «il bus muove davvero il tubo?» — perche' quel collegamento e' il piu' silenzioso di
+tutto lo strato: se si stacca non succede niente di visibile, solo un telescopio fermo mentre
+lo schermo dice che sta puntando. Al primo giro il controllo ha gridato «IL BUS NON MUOVE IL
+TUBO» su un collegamento perfettamente sano: guardava `dove()`, cioe' dove il tubo SI TROVA,
+un fotogramma dopo aver dato un comando che il motore esegue in dieci secondi. La domanda
+giusta era `in_moto()`. Un comando non e' uno stato, e un controllo che li scambia trova
+guasti dove non ce ne sono — che e' l'altra meta' del problema di un controllo cieco.
+
+**IL SECONDO: GIUDICARE SU UNA NOTTE SOLA.** La sonda della sincronizzazione confrontava un
+sync fatto bene con uno tirato via, una volta per parte, e ogni tanto dichiarava il guasto: la
+sincronizzazione tirata via atterrava PIU' VICINO di quella fatta bene. Non era un bug — i due
+errori possono elidersi, lo sfasamento degli encoder in un verso e la deriva dell'asse polare
+nell'altro. Su una notte capita; su venti no. Adesso la sonda ne simula venti per parte e
+giudica le medie, che e' anche cio' che il giocatore vive.
+
+**E UNO EVITATO PER UN PELO: UN CONTROLLO CHE SMETTE DI COLLAUDARE CIO' PER CUI ESISTEVA.**
+Il banco pinna quali soggetti sono disponibili a certe ore, e quei set esistono per collaudare
+il wrap di mezzanotte e il confine inclusivo delle finestre. Da quando il planetario tiene
+conto anche dell'orizzonte della cupola, `available` mescola due fatti diversi — «e' nella sua
+finestra» e «questa cupola lo raggiunge» — e adeguare i set attesi avrebbe fatto passare il
+banco togliendogli i denti proprio dove servivano. La sorgente adesso pubblica i due fatti
+separati: il banco pinna la finestra, e per l'orizzonte controlla la COERENZA
+(`available == in_window AND alt >= orizzonte`) invece delle sigle — cosi' resta vero anche il
+giorno in cui lo strumento verra' alzato.

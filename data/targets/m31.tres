@@ -10,6 +10,7 @@ full = "Galassia di Andromeda"
 type = &"GAL"
 diff = 2
 min_exp = 75
+dec_gradi = 41.27
 vis_from = "21:00"
 vis_to = "05:00"
 desc = "La galassia spirale più vicina alla Via Lattea, a 2,5 milioni di anni-luce. Si avvicina a noi a 110 km/s -- collisione fra circa 4,5 miliardi di anni. È l'oggetto più lontano visibile a occhio nudo."

@@ -97,6 +97,9 @@ var _dec := 90.0
 var _ha_v := 0.0
 var _dec_v := 90.0
 
+## L'ultimo «si muove» detto sul bus, per non ripetersi.
+var _annunciato := false
+
 
 func _ready() -> void:
 	add_to_group(GROUP)
@@ -117,6 +120,10 @@ func _ready() -> void:
 	_dec_v = _dec
 	_ha_v = _ha
 	_scrivi()
+	# CHI LA MUOVE NON LA CONOSCE. Le fasi del puntamento stanno in `phases/`, che
+	# non puo' nominare `world/`: dicono sul bus dove hanno mandato il tubo, e la
+	# montatura si porta li'. Stesso giro della cupola, al contrario.
+	Events.telescope_aim_changed.connect(punta)
 
 
 ## Dove si vuole guardare: angolo orario e declinazione, in gradi. Non ci si arriva
@@ -124,6 +131,20 @@ func _ready() -> void:
 func punta(ha_gradi: float, dec_gradi: float) -> void:
 	_ha_v = wrapf(ha_gradi, -180.0, 180.0)
 	_dec_v = clampf(dec_gradi, -90.0, 90.0)
+
+
+## PORTALA LI' ADESSO, senza il motore.
+##
+## E' un gesto DIVERSO dal puntare, non una scorciatoia: puntare e' un comando che
+## il motore esegue in qualche secondo e che si sente; piazzare e' dichiarare dove
+## la montatura si trova. E' quello che succede quando la si sblocca dalla posa di
+## parcheggio, ed e' anche il modo in cui una sonda esplora mille puntamenti senza
+## pagare dodici gradi al secondo per ciascuno.
+func piazza(ha_gradi: float, dec_gradi: float) -> void:
+	punta(ha_gradi, dec_gradi)
+	_ha = _ha_v
+	_dec = _dec_v
+	_scrivi()
 
 
 ## Vero mentre gli assi si stanno ancora muovendo.
@@ -151,7 +172,14 @@ static func find_in(tree: SceneTree) -> TelescopeMount:
 
 
 func _process(delta: float) -> void:
-	if not in_moto():
+	# IL FATTO SI ANNUNCIA ANCHE QUANDO IL TUBO NON SI MUOVE, e per questo il
+	# confronto sta PRIMA dell'uscita anticipata: e' l'istante in cui si ferma
+	# quello che interessa a chi aspetta, e uscendo prima non lo direbbe mai.
+	var muove := in_moto()
+	if muove != _annunciato:
+		_annunciato = muove
+		Events.telescope_slewing_changed.emit(muove)
+	if not muove:
 		return
 	var passo := VELOCITA * delta
 	_ha = move_toward(_ha, _ha_v, passo)

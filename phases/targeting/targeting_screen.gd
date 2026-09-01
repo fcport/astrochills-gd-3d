@@ -128,11 +128,19 @@ func _draw_detail(t: Dictionary) -> void:
 	# finestra mostra la finestra in cui lo sarà, e resta consultabile e
 	# selezionabile.
 	var available: bool = t.get(&"available", false)
+	var in_window: bool = t.get(&"in_window", false)
+	var alt: float = t.get(&"alt", 0.0)
 	var window: String = t.get(&"window", "")
 	if available:
-		_text(Vector2(MARGIN, 62), "visible now", FG, 12)
-	else:
+		_text(Vector2(MARGIN, 62), "visible now - alt %.0f" % alt, FG, 12)
+	elif not in_window:
 		_text(Vector2(MARGIN, 62), "not visible now - %s" % window, DIM, 12)
+	else:
+		# NON È «NON ANCORA SORTO», ED È IMPORTANTE NON DIRLO. Il soggetto è nella
+		# sua finestra: sta in cielo, ma sotto la linea che questa cupola riesce a
+		# guardare. Scrivere la finestra qui manderebbe il giocatore ad aspettare
+		# un'ora che non cambia niente.
+		_text(Vector2(MARGIN, 62), "too low for the dome - alt %.0f" % alt, DIM, 12)
 
 	# Descrizione narrativa, in italiano, wrappata alla larghezza del vetro.
 	#

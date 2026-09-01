@@ -10,6 +10,7 @@ full = "Anello della Lira"
 type = &"PLN"
 diff = 2
 min_exp = 60
+dec_gradi = 33.03
 vis_from = "23:30"
 vis_to = "06:00"
 desc = "Nebulosa planetaria a forma di anello di fumo, residuo dell'inviluppo gassoso di una stella morente. L'anello cosmico è grande circa un anno-luce. Al centro pulsa la nana bianca che lo ha espulso."

@@ -10,6 +10,7 @@ full = "Pleiadi"
 type = &"OPEN"
 diff = 1
 min_exp = 15
+dec_gradi = 24.12
 vis_from = "21:00"
 vis_to = "02:00"
 desc = "Le \"Sette Sorelle\", giovane ammasso aperto a soli 444 anni-luce. Le stelle più brillanti sono avvolte in nebulose di riflessione blu. Visibili a occhio nudo, sono citate da Omero, Esiodo, nella Bibbia e nel Corano."

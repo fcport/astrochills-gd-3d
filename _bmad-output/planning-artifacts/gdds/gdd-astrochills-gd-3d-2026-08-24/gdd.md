@@ -372,7 +372,7 @@ Ogni fase ne consuma. I valori sotto sono il riferimento di progetto, da tarare 
 | 5 | Sincronizzazione del puntamento | 30 | 5 | plate solving |
 | | **Setup — una volta a notte** | **110** | **35** | |
 | 6 | Targeting | 15 | 15 | **mai** |
-| 7 | Rotazione della cupola | 10 | 2 | cupola motorizzata a inseguimento |
+| 7 | GOTO e centratura | 10 | 2 | plate solving (la cupola non costa piu' niente: insegue da sola) |
 | 8 | Focus | 20 | 0 | focuser motorizzato con autofocus |
 | 9 | Autoguida | 20 | 5 | autoguider OAG |
 | 10 | **Posa** | **40** | 40 | **mai** — la durata la sceglie il giocatore |
@@ -419,18 +419,46 @@ imparato abbastanza da sapere che ciò che vede è impossibile.
 | 4 | **Dark e flat** | checklist: tappo, cinque dark; pannello illuminato, cinque flat; nell'ordine, senza saltare passi | dalla completezza e dall'ordine | i dark non sono neri: c'è qualcosa nelle immagini scattate col tappo |
 | 5 | **Sincronizzazione del puntamento** | all'accensione la montatura non sa dove sta guardando. Il software la manda su una stella nota, tu la centri nel reticolo e premi SYNC; da lì il GOTO va dove dici | dall'errore residuo di puntamento, che però si vede **dopo**: è l'oggetto scentrato nel campo della fase 6 | la stella che ti chiede di centrare non è dove il catalogo dice che sia. Poi è il catalogo a cambiare idea |
 | 6 | **Targeting** | apri il planetario, filtri per tipo, altezza sull'orizzonte, difficoltà, scegli il soggetto | nessun punteggio proprio: determina il moltiplicatore di valore e se la commessa è soddisfatta | nel planetario compare un oggetto che non è in nessun catalogo. Ha coordinate precise. È visibile stanotte |
-| 7 | **Rotazione della cupola** | porti la fessura sull'azimut del telescopio. E ce la riporti durante la posa, perché il cielo gira e la cupola no: è l'unica fase che ti fa alzare dalla sedia mentre la macchina lavora | dalla frazione di posa in cui il telescopio ha guardato attraverso la fessura invece che contro il guscio | la cupola si muove da sola. Poi si muove nel verso sbagliato |
+| 7 | **GOTO e centratura** | dici al software dove vuoi andare, la montatura ci va e la cupola la segue. Il soggetto non arriva al centro: lo porti dentro l'inquadratura guardando il cercatore, e confermi. Quanto devi correggere dipende da come hai fatto la fase 5 | nessun punteggio: si passa o si ripete. Il prezzo di una sincronizzazione tirata via è il tempo, a ogni foto | la montatura dichiara di essere arrivata e non si è mossa. Poi arriva su un soggetto che non è quello |
 | 8 | **Focus** | muovi il focheggiatore finché le stelle sono punti minimi e non dischetti; ogni posizione visitata lascia un punto sul grafico, e dopo due passate la curva a V dice da che parte andare | dal diametro delle stelle a fine fase (HFD): pieno sotto `focus_best_hfd`, zero sopra `focus_max_hfd` | le stelle non vanno mai a fuoco del tutto. Oppure ci vanno, ma la forma che assumono non è quella di una stella |
 | 9 | **Autoguida** | calibri la guida, avvii il loop, osservi il grafico degli errori: due linee che devono stare basse e stabili | dall'errore RMS medio durante la posa | la guida insegue qualcosa. Ma non è la stella che hai selezionato |
 | 10 | **Posa** | imposti esposizione e numero di frame, avvii, la macchina lavora da sola | vedi sotto | i frame acquisiti sono più di quelli impostati. O meno. O la sequenza è finita ma sono passati tre minuti |
+
+**LA CUPOLA NON SI GIRA PIU' A MANO, e la fase 7 e' un'altra cosa** (D-188). La rotazione
+della cupola era una fase: portare la fessura sull'azimut del telescopio e ricondurcela
+durante la posa. Non lo e' piu', ed e' Federico ad averlo detto per primo — «ho paura che
+farlo a mano sia una rottura di coglioni». Ha ragione, e la regola che decide questo
+progetto ce l'aveva gia': *se una cosa nessuno la farebbe davvero, si cambia il documento*.
+Nessun osservatorio con un computer che pilota la montatura gira la cupola a mano. La
+pulsantiera in cupola resta, e resta dov'e': serve ad **aprire i portelli**, che e' un
+comando a uomo presente e si fa due volte a notte.
+
+Al posto suo la fase 7 e' il **GOTO**, che e' il gesto che davvero manca fra lo scegliere e
+il mettere a fuoco.
+
+**QUESTO EDIFICIO NON VEDE SOTTO I 48 GRADI, ed e' una misura e non una regola di gioco**
+(D-192). Il raggio del telescopio esce dall'apertura a 1,86 m da terra mentre il foro del
+tetto sta a 3,20: puntando basso il raggio esce dalla fenditura, scende e trova la falda.
+Nessun azimut della cupola aiuta. Misurato sparando il raggio vero contro la geometria vera
+(`tools/prova_orizzonte.gd`): 43,1 gradi nel punto migliore, 47,7 nel peggiore.
+
+**Costa due dei sei soggetti**: M42 (declinazione -5) culmina a 40,7 gradi e M8 (-24) a
+21,7 — da questa cupola non si vedono mai, in nessuna notte e a nessun'ora. Il planetario lo
+dice a schermo («too low for the dome») invece di far aspettare una finestra che non arriva.
+La causa non e' la cupola ma il RAPPORTO fra lo strumento e il foro: l'incrocio degli assi
+sta due metri sotto il centro della sfera, mentre in un osservatorio vero ci sta accanto —
+per questo le cupole hanno il piano di calpestio rialzato. Alzando lo strumento (e con lui la
+passerella) il limite scende: **+0,8 m -> 33 gradi, +1,4 m -> 19 gradi, +2,0 m -> 11 gradi**.
+E' una decisione di progetto aperta: finche' non e' presa, il catalogo giocabile e' di
+quattro soggetti su sei.
 
 **Livellamento, bilanciamento e allineamento polare non sono spariti: sono diventati
 manutenzione** (D-168). Si fanno quando si installa la montatura, quando le si cambia il
 carico sopra, e quando qualcuno ci ha messo le mani — non ogni sera. `phases/polar/` resta
 nel repository, non cambia di una riga, ed è ancora la prova dell'AC2 della storia 1.1.
 
-> **[ASSUMPTION]** I criteri di punteggio delle fasi 4, 5, 7 e 9 sono proposti qui e non
-> ancora implementati: esistono le fasi 1, 2, 3, 6, 8 e 10. La fase 1 costa dieci minuti di
+> **[ASSUMPTION]** I criteri di punteggio delle fasi 4 e 9 sono proposti qui e non
+> ancora implementati: esistono le fasi 1, 2, 3, 5, 6, 7, 8 e 10. La fase 1 costa dieci minuti di
 > notte sulla carta e sei secondi reali in gioco, la 2 quindici e una ventina di secondi, la
 > 3 venticinque e una quarantina: il budget qui è intento di progetto, e nessuna fase lo
 > consuma ancora davvero. *Cosa* si misura è deciso; le soglie numeriche si tarano quando la

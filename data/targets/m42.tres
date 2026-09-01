@@ -10,6 +10,7 @@ full = "Nebulosa di Orione"
 type = &"NEB"
 diff = 1
 min_exp = 30
+dec_gradi = -5.39
 vis_from = "21:00"
 vis_to = "04:00"
 desc = "La regione di formazione stellare più vicina e luminosa del cielo, a 1.350 anni-luce. Si vede a occhio nudo come una \"stella\" sfocata nella spada di Orione. Al telescopio rivela strutture filamentose di idrogeno illuminate dalle giovani stelle del Trapezio."

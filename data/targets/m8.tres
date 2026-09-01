@@ -10,6 +10,7 @@ full = "Nebulosa Laguna"
 type = &"NEB"
 diff = 1
 min_exp = 40
+dec_gradi = -24.38
 vis_from = "21:00"
 vis_to = "00:00"
 desc = "Vasta nube di formazione stellare nel Sagittario, a 4.100 anni-luce. Visibile a occhio nudo dai cieli bui come una macchia luminosa. Al telescopio rivela la \"laguna\" scura di polvere che la attraversa."

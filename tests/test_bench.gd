@@ -459,6 +459,13 @@ func _check_honest_catalog() -> void:
 	_assert_available_contains(src, 180.0, "00:00", &"M8", true)
 	_assert_available_contains(src, 181.0, "00:01", &"M8", false)
 
+	# LA MASCHERA DELL'ORIZZONTE, che e' l'altra meta' di `available` (D-191).
+	# Non si pinnano le sigle: si pretende la COERENZA fra i tre campi, cosi'
+	# questo controllo resta vero anche il giorno in cui lo strumento verra'
+	# alzato dentro la cupola e l'orizzonte scendera'.
+	_assert_horizon_mask(src, 30.0, "21:30")
+	_assert_horizon_mask(src, 300.0, "02:00")
+
 	# Determinismo: stesso `now_min`, due chiamate, stessa lista/disponibilità.
 	var i := TargetingInput.new()
 	i.now_min = 30.0
@@ -481,7 +488,13 @@ func _assert_availability(
 	var actual := PackedStringArray()
 	for entry in src.sample(i):
 		var short: String = entry.get(&"short", "?")
-		var avail: bool = entry.get(&"available", false)
+		# SI PINNA LA FINESTRA, NON LA DISPONIBILITA', e la differenza e' nata da
+		# una regressione vera: da quando il planetario tiene conto anche
+		# dell'orizzonte della cupola, `available` mescola due fatti — «e' nella
+		# sua finestra» e «questa cupola lo raggiunge». Confrontando il misto,
+		# questi controlli avrebbero smesso di collaudare il wrap di mezzanotte e
+		# il confine inclusivo, che sono la ragione per cui esistono.
+		var avail: bool = entry.get(&"in_window", false)
 		rows.append("%s=%s" % [short, "sì" if avail else "no"])
 		if avail:
 			actual.append(short)
@@ -502,13 +515,42 @@ func _assert_available_contains(
 	var found := false
 	for entry in src.sample(i):
 		if StringName(entry.get(&"short", "")) == short:
-			found = entry.get(&"available", false)
+			# `in_window` e non `available`, per la ragione scritta poco sopra:
+			# questo controllo esiste per il confine del wrap di mezzanotte, e
+			# l'orizzonte della cupola non c'entra niente con quel confine.
+			found = entry.get(&"in_window", false)
 			break
 	var note := ""
 	if found != expected:
 		note = "   <-- ATTESO: %s = %s" % [short, "disponibile" if expected else "non disponibile"]
 	print("   confine %s (now_min %.0f): %s = %s%s" % [
 		label, now_min, short, "disponibile" if found else "non disponibile", note])
+
+
+## `available` deve essere ESATTAMENTE «nella finestra E sopra l'orizzonte della
+## cupola», per ogni target. E l'altezza dichiarata dev'essere quella che
+## `SkyGeometry` calcola: la sorgente ha una copia del conto dell'angolo orario
+## (la gemella sta in `HonestPointing`), e due copie che divergono farebbero
+## offrire dal planetario un soggetto che il GOTO non raggiunge.
+func _assert_horizon_mask(src: HonestCatalog, now_min: float, label: String) -> void:
+	var i := TargetingInput.new()
+	i.now_min = now_min
+	var storti := PackedStringArray()
+	var sotto := PackedStringArray()
+	for entry in src.sample(i):
+		var short: String = entry.get(&"short", "?")
+		var alt: float = entry.get(&"alt", 0.0)
+		var dentro: bool = entry.get(&"in_window", false)
+		var disp: bool = entry.get(&"available", false)
+		if disp != (dentro and alt >= SkyGeometry.ORIZZONTE_CUPOLA):
+			storti.append(short)
+		if dentro and alt < SkyGeometry.ORIZZONTE_CUPOLA:
+			sotto.append(short)
+	var note := ""
+	if storti.size() > 0:
+		note = "   <-- ATTESO: available == in_window AND alt >= orizzonte; storti: {%s}" % ", ".join(storti)
+	print("   orizzonte %.1f alle %s: in finestra ma troppo bassi {%s}%s" % [
+		SkyGeometry.ORIZZONTE_CUPOLA, label, ", ".join(sotto), note])
 
 
 ## Uguaglianza fra set di sigle, ordine irrilevante.

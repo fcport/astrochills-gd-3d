@@ -45,6 +45,30 @@ const CURRENT_VERSION := 1
 ## che gestirà la persistenza cross-notte. Le chiavi vivono in `Commission.*`.
 @export var commission: Dictionary = {}
 
+## IL MODELLO DI PUNTAMENTO DI STANOTTE, e sono due numeri che vanno insieme.
+##
+## COS'E'. All'accensione la montatura non sa dove sta guardando: i suoi encoder
+## partono da un valore qualunque, e mandarla su una coordinata la porta da
+## un'altra parte. La fase 5 ripara questo dicendole «quello che stai inquadrando
+## adesso e' la tale stella» — ed e' un fatto che dura fino allo spegnimento.
+## Percio' sta qui e non su `PlayerProfile`: e' della NOTTE, e la notte dopo si
+## rifa' da capo. Domani gli encoder ripartiranno sbagliati come stasera.
+##
+## PERCHE' DUE CAMPI E NON UNO. Sincronizzare su una stella raddrizza il
+## puntamento LI', non dappertutto: l'asse polare di questa montatura e' fuori di
+## otto decimi di grado (misurato — vedi `world/telescope_mount.gd`), e con l'asse
+## storto l'errore ricresce man mano che ci si allontana dal punto sincronizzato.
+## Per sapere quanto sbagliera' il prossimo GOTO servono tutti e due: quanto era
+## sbagliato li', e quanto li' e' lontano da dove si va adesso.
+##
+## `sync_point_deg` e' (angolo orario, declinazione) della stella su cui si e'
+## sincronizzato; `pointing_error_deg` e' di quanto si e' rimasti scentrati.
+## `sync_done` distingue «sincronizzato con zero errore» da «mai sincronizzato»,
+## che sono opposti e che due Vector2 a zero renderebbero identici.
+@export var sync_done: bool = false
+@export var sync_point_deg: Vector2 = Vector2.ZERO
+@export var pointing_error_deg: Vector2 = Vector2.ZERO
+
 
 func migrate() -> void:
 	if version == CURRENT_VERSION:

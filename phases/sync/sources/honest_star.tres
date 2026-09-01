@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="HonestStar" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://phases/sync/sources/honest_star.gd" id="1_honest"]
+
+[resource]
+resource_local_to_scene = true
+script = ExtResource("1_honest")
+scarto_minimo = 0.5
+scarto_massimo = 1.8

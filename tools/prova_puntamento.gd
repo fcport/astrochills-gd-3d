@@ -95,6 +95,7 @@ func _process(d: float) -> void:
 		# La cupola va aperta, o la fessura non c'è: si annuncia il fatto sul bus,
 		# come farebbe la fase.
 		Events.dome_aperture_changed.emit(1.0)
+		_il_bus_muove_il_tubo(m)
 		_dai_un_corpo_al_guscio()
 		_prossima(m)
 		return
@@ -115,6 +116,31 @@ func _prossima(m: TelescopeMount) -> void:
 		return
 	m.punta(POSE[_i].x, POSE[_i].y)
 	_attesa = 0.0
+
+
+## IL FILO FRA LE FASI E IL FERRO ESISTE? Si tira, e si guarda.
+##
+## Le fasi del puntamento vivono in `phases/`, che non puo' nominare `world/`:
+## dicono sul bus dove hanno mandato il tubo e sperano che qualcuno le ascolti.
+## Se quel collegamento si stacca — un rename, un `connect` tolto — non succede
+## NIENTE di visibile: nessun errore, nessun avviso, solo un telescopio che non si
+## muove piu' mentre lo schermo dice che sta puntando. E' il difetto piu'
+## silenzioso di tutto questo strato, e costa tre righe controllarlo.
+## SI GUARDA `in_moto()` E NON `dove()`, ed e' la seconda volta che questa
+## distinzione morde: il bus porta un COMANDO, e `dove()` dice dove il tubo si
+## trova ADESSO. Nel fotogramma dell'emissione i due sono ancora diversi — il
+## motore non ha fatto un grado — e la prima stesura di questo controllo gridava
+## «il bus non muove il tubo» su un collegamento perfettamente sano.
+func _il_bus_muove_il_tubo(m: TelescopeMount) -> void:
+	var prima := m.dove()
+	Events.telescope_aim_changed.emit(prima.x + 30.0, prima.y - 10.0)
+	if not m.in_moto():
+		print("[puntamento] il bus non muove il tubo: `telescope_aim_changed` "
+			+ "non arriva alla montatura")
+		_guasti += 1
+	else:
+		print("[puntamento] ok: il bus muove il tubo")
+	m.piazza(prima.x, prima.y)
 
 
 ## IL GUSCIO NON HA COLLISIONE, e senza questa funzione questa sonda non misura

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="NightPlan" load_steps=8 format=3]
+[gd_resource type="Resource" script_class="NightPlan" load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://core/night_plan.gd" id="1_plan"]
 [ext_resource type="PackedScene" path="res://phases/targeting/phase_targeting.tscn" id="3_targeting"]
@@ -7,8 +7,10 @@
 [ext_resource type="PackedScene" path="res://phases/focus/phase_focus.tscn" id="6_focus"]
 [ext_resource type="PackedScene" path="res://phases/startup/phase_startup.tscn" id="7_startup"]
 [ext_resource type="PackedScene" path="res://phases/cooling/phase_cooling.tscn" id="8_cooling"]
+[ext_resource type="PackedScene" path="res://phases/sync/phase_sync.tscn" id="9_sync"]
+[ext_resource type="PackedScene" path="res://phases/goto/phase_goto.tscn" id="10_goto"]
 
 [resource]
 script = ExtResource("1_plan")
-setup_phases = Array[PackedScene]([ExtResource("5_dome"), ExtResource("7_startup"), ExtResource("8_cooling")])
-photo_phases = Array[PackedScene]([ExtResource("3_targeting"), ExtResource("6_focus"), ExtResource("4_imaging")])
+setup_phases = Array[PackedScene]([ExtResource("5_dome"), ExtResource("7_startup"), ExtResource("8_cooling"), ExtResource("9_sync")])
+photo_phases = Array[PackedScene]([ExtResource("3_targeting"), ExtResource("10_goto"), ExtResource("6_focus"), ExtResource("4_imaging")])

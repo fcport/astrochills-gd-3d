@@ -1,0 +1,13 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://phases/sync/phase_sync.gd" id="1_phase"]
+[ext_resource type="Script" path="res://phases/sync/sync_screen.gd" id="2_screen"]
+[ext_resource type="Resource" path="res://phases/sync/sources/honest_star.tres" id="3_truth"]
+
+[node name="PhaseSync" type="Node"]
+script = ExtResource("1_phase")
+truth = ExtResource("3_truth")
+
+[node name="SyncScreen" type="Control" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_screen")

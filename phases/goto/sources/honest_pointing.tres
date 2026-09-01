@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="HonestPointing" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://phases/goto/sources/honest_pointing.gd" id="1_pointing"]
+[ext_resource type="Resource" path="res://data/targets/m42.tres" id="2_m42"]
+[ext_resource type="Resource" path="res://data/targets/m13.tres" id="3_m13"]
+[ext_resource type="Resource" path="res://data/targets/m45.tres" id="4_m45"]
+[ext_resource type="Resource" path="res://data/targets/m31.tres" id="5_m31"]
+[ext_resource type="Resource" path="res://data/targets/m57.tres" id="6_m57"]
+[ext_resource type="Resource" path="res://data/targets/m8.tres" id="7_m8"]
+
+[resource]
+resource_local_to_scene = true
+script = ExtResource("1_pointing")
+deriva = 0.009
+errore_senza_sync = 1.5
+targets = Array[TargetData]([ExtResource("2_m42"), ExtResource("3_m13"), ExtResource("4_m45"), ExtResource("5_m31"), ExtResource("6_m57"), ExtResource("7_m8")])

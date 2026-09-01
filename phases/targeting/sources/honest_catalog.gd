@@ -21,6 +21,10 @@ const NIGHT_START_HOUR := 21
 ## Minuti in un giorno, per il modulo che chiude il wrap di mezzanotte.
 const DAY_MIN := 1440
 
+## Gradi di angolo orario per ogni minuto di tempo: il cielo gira di quindici
+## gradi all'ora. Gemello della costante omonima in `HonestPointing`.
+const GRADI_AL_MINUTO := 0.25
+
 ## I sei DSO di base, iniettati dal `.tres`. La sorgente li legge, la fase no.
 @export var targets: Array[TargetData] = []
 
@@ -53,10 +57,27 @@ func sample(input: TargetingInput) -> Array[Dictionary]:
 			&"diff": t.diff,
 			&"min_exp": t.min_exp,
 			&"desc": t.desc,
+			&"in_window": _in_finestra(i, input.now_min),
 			&"available": _visible_at(i, input.now_min),
+			&"alt": _altezza_di(i, input.now_min),
 			&"window": "%s-%s" % [t.vis_from, t.vis_to],
 		})
 	return out
+
+
+## Quanto è alto sull'orizzonte il target `i` adesso, in gradi.
+##
+## L'ANGOLO ORARIO SI RICAVA DALLA FINESTRA, e il modello è dichiarato in
+## `data/targets/target_data.gd`: il centro della finestra è il passaggio in
+## meridiano. Il conto vive anche in `phases/goto/sources/honest_pointing.gd`, e
+## le due copie devono dire la stessa cosa — se divergessero, il planetario
+## offrirebbe un soggetto che il GOTO non riesce a raggiungere. Il banco le
+## confronta.
+func _altezza_di(i: int, now_min: float) -> float:
+	var w := _window[i]
+	var meridiano := (float(w.x) + float(w.y)) * 0.5
+	return SkyGeometry.altezza((now_min - meridiano) * GRADI_AL_MINUTO,
+		_valid[i].dec_gradi)
 
 
 ## Disponibile ⟺ `from_min <= now_min <= to_min`, tutti in minuti notte-relativi.
@@ -64,9 +85,20 @@ func sample(input: TargetingInput) -> Array[Dictionary]:
 ## Nessuna riconversione qui: gli estremi sono già stati calcolati e validati una
 ## volta sola da `_validate()`. Se un target è arrivato fin qui, la sua finestra
 ## è esprimibile.
-func _visible_at(i: int, now_min: float) -> bool:
+func _in_finestra(i: int, now_min: float) -> bool:
 	var w := _window[i]
 	return now_min >= w.x and now_min <= w.y
+
+
+## DUE RAGIONI DIVERSE PER NON POTERLO FOTOGRAFARE, e tenerle separate serve al
+## giocatore prima ancora che al collaudo. «Non è ancora sorto» è un'attesa: fra
+## due ore ci si torna. «È troppo basso per questa cupola» è un rifiuto: non
+## succederà stanotte e non succederà mai, perché il raggio esce sotto la gronda e
+## trova la falda del tetto (misurato, `tools/prova_orizzonte.gd`). Un planetario
+## che le confondesse manderebbe il giocatore ad aspettare una cosa che non arriva.
+func _visible_at(i: int, now_min: float) -> bool:
+	return (_in_finestra(i, now_min)
+		and _altezza_di(i, now_min) >= SkyGeometry.ORIZZONTE_CUPOLA)
 
 
 ## IL FILTRO ALL'INGRESSO. Un target che non lo supera viene ESCLUSO, non

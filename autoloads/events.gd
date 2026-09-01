@@ -105,3 +105,33 @@ signal dome_aperture_changed(fraction: float)
 ## SOLO QUANDO CAMBIA: un pulsante tenuto premuto sei secondi non deve riempire il
 ## bus di trecentosessanta copie dello stesso numero.
 signal dome_button_changed(direction: int)
+
+
+## DOVE STA PUNTANDO IL TUBO, in angolo orario e declinazione (gradi).
+##
+## È UN FATTO E NON UN COMANDO, esattamente come `dome_aperture_changed`, e per la
+## stessa ragione: le fasi del puntamento vivono in `phases/`, la montatura in
+## `world/`, e le due cartelle non si nominano a vicenda. Il software dice ad alta
+## voce dove ha mandato il tubo; chi in giro per il mondo ha un telescopio lo porta
+## lì. La cupola non ascolta questo segnale — insegue il tubo VERO, misurandogli
+## l'apertura, perché su una equatoriale tedesca l'azimut della fessura non è
+## quello del telescopio (vedi `world/dome_azimuth.gd`).
+##
+## PORTA LA POSIZIONE FISICA, non quella che il software CREDE. È la distinzione
+## su cui gira tutta la fase 5: finché la montatura non è sincronizzata le due
+## cose differiscono di qualche grado, e chi muove il tubo deve ricevere la prima.
+## La seconda non esce mai da `phases/`, che è dove sta il software.
+signal telescope_aim_changed(ha_gradi: float, dec_gradi: float)
+
+
+## LA MONTATURA SI STA MUOVENDO, o si è appena fermata.
+##
+## SERVE PERCHÉ IL FERRO È LENTO E IL SOFTWARE NO. Chi comanda un puntamento sa
+## subito dove ha mandato il tubo, ma il tubo ci mette una decina di secondi ad
+## arrivarci: senza questo fatto lo schermo direbbe di essere sul bersaglio mentre
+## il telescopio è ancora a mezza strada, e la fase accetterebbe un SYNC su una
+## stella che nessuno ha ancora inquadrato.
+##
+## SOLO QUANDO CAMBIA, come `dome_button_changed`: un tubo fermo per dieci minuti
+## non deve dirlo trentaseimila volte.
+signal telescope_slewing_changed(moving: bool)

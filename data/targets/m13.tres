@@ -10,6 +10,7 @@ full = "Ammasso di Ercole"
 type = &"GLOB"
 diff = 1
 min_exp = 20
+dec_gradi = 36.46
 vis_from = "23:00"
 vis_to = "06:00"
 desc = "Uno degli ammassi globulari più belli del cielo, a 22.000 anni-luce. Contiene oltre 300.000 stelle compresse in una sfera di 145 anni-luce. Nel 1974 il radiotelescopio di Arecibo ci puntò il primo messaggio radio diretto a civiltà aliene."

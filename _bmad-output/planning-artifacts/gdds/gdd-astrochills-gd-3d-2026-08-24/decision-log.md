@@ -4317,3 +4317,67 @@ integrato in tre sottopassi perché a trenta fotogrammi Eulero esplicito *guadag
 invece di fermarsi sbandiera. Oscilla parallela al muro e non perpendicolare, o a metà corsa
 entrerebbe nell'intonaco. Non cambia nessun esito ed è esattamente per questo che si nota:
 è l'unica cosa nella stanza che risponde a chi la tocca.
+
+
+## D-176 — Il dettaglio che ruba l'attenzione è un difetto
+
+**1 settembre 2026, poche ore dopo D-175.** Provata in gioco: «il dondolare è una roba
+atroce, uno crede di dover continuare a guardare e premere ogni volta».
+
+**Il pendolo era realistico e sbagliato, e la differenza sta in dove va a finire il
+bersaglio.** Oscillando, il tasto si sposta sotto il mirino: il raggio lo perde e lo
+ritrova, e a ogni oscillazione il prompt sparisce e ricompare. Quel lampeggio il giocatore
+lo legge come «non ha funzionato, ripremi» — così molla, ripreme, e intanto la cupola si
+stava già aprendo. Un dettaglio che porta via l'attenzione dalla cosa per cui la stanza
+esiste non è un dettaglio riuscito, è un difetto con una bella motivazione.
+
+**Al suo posto un tremito, ed è stato Federico a proporlo.** La differenza non è di
+ampiezza, è di natura: il dondolio sposta il centro, e dopo un secondo bisogna rimirare; il
+tremito oscilla **attorno** al centro di un millimetro e mezzo, e il bersaglio resta dov'è.
+E trema **solo mentre il motore gira**, che è anche l'unica cosa vera — la vibrazione non ce
+l'ha la pulsantiera, ce l'ha il motore, e le arriva su per il cavo. Quindi il momento in cui
+un tremito darebbe fastidio alla mira, cioè quando si mira, è esattamente quello in cui non
+c'è. Due frequenze non commensurabili (17 e 23,5 Hz) perché una sola si riconosce come
+animazione dopo mezzo secondo.
+
+**IL PROMPT SPARISCE MENTRE TIENI.** «[E] Apri la cupola» scritto mentre la cupola si sta
+già aprendo è una riga che chiede di fare quello che stai facendo: l'interfaccia contraddice
+il mondo. Sparendo dice l'unica cosa vera — adesso tocca a te tenere e guardare. Si ottiene
+stringendo `can_interact()`, che è quello che `Interactable` chiede alle sottoclassi, e la
+riga torna da sé al rilascio perché è funzione del raggio, non uno stato.
+
+**Il quadrato giallo, e cosa lo fa smettere di esserlo.** Non è la geometria grossa: sono le
+giunzioni e le viti. Quattro viti agli angoli della targhetta (una placca senza viti è un
+adesivo), la targhetta del costruttore rientrata — senza scritte, perché da mezzo metro
+nessuna scritta si legge e quello che si legge è che una targhetta *c'è* —, la linea di
+giunzione dei due semigusci dello stampo, il collare del soffietto. Ottocento facce invece
+di trecento.
+
+**LA TRAMA VA MOLTIPLICATA, MA NON QUESTA.** La mappa `plastica` è beige carico: in lineare
+(0,61 0,52 0,29). Una plastica **colorata in massa** non ha disegno, ha superficie, e
+moltiplicare quella mappa vira tutto verso il caldo — la scatola di derivazione, che è PVC
+grigio, è uscita olivastra. Per riportarla neutra il canale blu avrebbe dovuto valere 1,02,
+cioè saturare: **quando la correzione supera l'uno, la mappa è quella sbagliata**. Adesso
+esiste `SOLO_RILIEVO`, che collega normale e ruvidezza e lascia stare il colore — il granulo
+dello stampo sta lì, ed è neutro per costruzione.
+
+**Il cubo grigio in cima è diventato l'impianto.** Scatola di derivazione con coperchio
+riportato, quattro viti, pressacavo di gomma sotto, corrugato flessibile che sale e poi
+prosegue in tubo rigido fino alla gronda, con due collari di fissaggio. La prima versione
+del tubo piegava dentro il muro dopo venti centimetri: giusto sulla carta, e invisibile in
+gioco, perché **il muro sta dietro la pulsantiera** e la piega è rivolta via dalla camera. In
+gioco restava un tubo tagliato a metà in aria. Un dettaglio che regge solo da
+un'angolazione è un difetto.
+
+**E la sonda adesso scatta due foto.** La scatola sta un metro sopra i tasti: inquadrando il
+pulsante non ci si vede mai, ed è per questo che è rimasta un cubo grigio per un giro intero
+— nessuna foto la conteneva.
+
+**UN CONTROLLO SI È INDEBOLITO DA SOLO, ed è la cosa più istruttiva del giro.** Il controllo
+sulla sporgenza del cappuccio misurava contro il materiale `Gomma`, che *era* la targhetta.
+Separando i neri — soffietto di mescola, targhetta di ABS — la targhetta è diventata
+`PlasticaNera` e il confronto è scivolato sul soffietto, trenta centimetri più in su: la
+«sporgenza» è passata da 9 mm a 23, e il controllo continuava a dire ok senza più guardare
+niente. Un controllo che si indebolisce da solo è peggio di uno che manca: quello che manca
+almeno si vede. Se ne è accorto solo il numero stampato nel referto, che è il motivo per cui
+i referti stampano i numeri e non solo «ok».

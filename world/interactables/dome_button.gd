@@ -85,6 +85,25 @@ func is_held() -> bool:
 	return _held
 
 
+## MENTRE LO TIENI, IL PULSANTE NON È PIÙ UN INTERAGIBILE — e quindi il prompt
+## sparisce, insieme al mirino.
+##
+## Non è un dettaglio di stile: «[E] Apri la cupola» che resta scritto mentre stai
+## già aprendo è una riga che chiede di fare quello che stai facendo. Il giocatore
+## la legge come «non ha funzionato, ripremi», e la cupola nel frattempo si apre
+## davvero — cioè l'interfaccia contraddice il mondo. Sparendo, la riga dice
+## l'unica cosa vera: adesso tocca a te tenere e guardare.
+##
+## Mollato il tasto, `_lascia()` rimette tutto e la riga ricompare da sé, perché il
+## giocatore rifà il raggio ogni tick e la riga è funzione di quello che trova.
+##
+## Stringe la condizione e non la allenta, che è quello che `Interactable` chiede
+## alle sottoclassi. `interact()` la consulta, ma quando questo diventa vero
+## l'interazione è già avvenuta.
+func can_interact() -> bool:
+	return super() and not _held
+
+
 func _process(_delta: float) -> void:
 	if not _held:
 		return

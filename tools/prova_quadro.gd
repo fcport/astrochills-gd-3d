@@ -16,6 +16,7 @@
 extends Node
 
 const FUORI := "user://quadro.png"
+const ATTACCO := "user://quadro_attacco.png"
 
 ## Quanto si aspetta al massimo che la cupola arrivi a fine corsa.
 const LIMITE := 20.0
@@ -35,6 +36,10 @@ var _passo := 0
 var _da_quando := 0.0
 var _scattato := false
 var _gia_controllato := false
+var _fermo_da := Vector3.INF
+var _fermo_deriva := 0.0
+var _tremito_da := Vector3.INF
+var _tremito := 0.0
 
 
 func _ready() -> void:
@@ -61,8 +66,24 @@ func _process(d: float) -> void:
 
 	match _passo:
 		0:
+			# A RIPOSO NON SI MUOVE, ed è il difetto che ha fatto buttare la versione
+			# precedente: dondolava come un pendolo, il bersaglio scappava sotto il
+			# mirino e il prompt lampeggiava a ogni oscillazione. Si guarda per mezzo
+			# secondo senza toccare niente e si pretende che non cambi un millesimo.
 			_mira(_apre)
-			_avanti()
+			var qui := _apre.global_position
+			if _fermo_da == Vector3.INF:
+				_fermo_da = qui
+			elif qui.distance_to(_fermo_da) > 0.0002:
+				_guasti += 1
+				_fermo_deriva = maxf(_fermo_deriva, qui.distance_to(_fermo_da))
+			if _tempo - _da_quando > 0.5:
+				if _fermo_deriva > 0.0:
+					print("[quadro] A RIPOSO SI MUOVE DI %.1f mm   <-- ATTESO: ferma"
+						% (_fermo_deriva * 1000.0))
+				else:
+					print("[quadro] ok: a riposo il comando sta fermo")
+				_avanti()
 		1:
 			# SI RIMIRA A OGNI FOTOGRAMMA. Dopo il teletrasporto la capsula del
 			# giocatore si assesta sul pavimento di un centimetro, e la mira fatta un
@@ -78,6 +99,10 @@ func _process(d: float) -> void:
 		2:
 			_mira(_apre)
 			_tieni_premuto(_apre)
+			var ora := _apre.global_position
+			if _tremito_da != Vector3.INF:
+				_tremito = maxf(_tremito, ora.distance_to(_tremito_da))
+			_tremito_da = ora
 			var s := DomeShutter.find_in(get_tree())
 			if not _scattato and s != null and s.aperture() > 0.2:
 				_scattato = true
@@ -87,6 +112,17 @@ func _process(d: float) -> void:
 					% (_tempo - _da_quando))
 				_verifica("il pulsante risulta schiacciato mentre lo tieni",
 					_apre.is_held())
+				# IL PROMPT SPARISCE MENTRE TIENI. «[E] Apri la cupola» che resta
+				# scritto mentre la cupola si sta gia' aprendo si legge come «non
+				# ha funzionato, ripremi»: il giocatore molla e ripreme a vuoto.
+				# Il prompt e' funzione di `can_interact()`, quindi si verifica li'.
+				_verifica("mentre tieni, il tasto non chiede piu' niente",
+					not _apre.can_interact())
+				# E MENTRE IL MOTORE GIRA, TREMA. È l'altra metà: se il controllo
+				# «a riposo sta fermo» fosse solo, lo passerebbe anche un oggetto
+				# morto. Si pretende un movimento che a riposo sarebbe un guasto.
+				_verifica("mentre il motore gira il comando trema",
+					_tremito > 0.0005)
 				_molla()
 				_avanti()
 			elif int(_tempo - _da_quando) % 4 == 3 and _conto % 60 == 0:
@@ -101,6 +137,7 @@ func _process(d: float) -> void:
 		3:
 			# LASCIANDO IL TASTO IL MOTORE SI FERMA: è il comando a uomo presente.
 			_verifica("mollato E, il pulsante si rialza", not _apre.is_held())
+			_verifica("mollato E, il tasto torna a chiedere", _apre.can_interact())
 			_mira(_chiude)
 			_avanti()
 		4:
@@ -120,9 +157,14 @@ func _process(d: float) -> void:
 					% s2.aperture())
 				_verifica("a fase finita il pulsante CHIUDE chiude davvero",
 					s2.aperture() < 0.98)
-				print("[quadro] %s" % ("tutto a posto" if _guasti == 0
-					else "%d COSE NON TORNANO" % _guasti))
-				_fine()
+				_scatta_attacco()
+				_avanti()
+		6:
+			# un fotogramma di respiro perche' la camera si assesti, poi la foto
+			_scatta(ATTACCO)
+			print("[quadro] %s" % ("tutto a posto" if _guasti == 0
+				else "%d COSE NON TORNANO" % _guasti))
+			_fine()
 
 
 func _trova() -> bool:
@@ -172,7 +214,14 @@ func _sporge_piu_di_quanto_rientra(b: DomeButton, come: String) -> void:
 		return
 	var avanti := b.global_transform.basis.z
 	var cappuccio := _quanto_avanza(modello.get_node_or_null(NodePath(b.name)), avanti)
-	var nero := _quanto_avanza(modello.get_node_or_null(NodePath("Gomma")), avanti)
+	# IL RIFERIMENTO E' LA TARGHETTA, e il nome del materiale conta. Misurava contro
+	# `Gomma`, che era la targhetta finche' non l'ho separata: diventata `PlasticaNera`,
+	# il confronto e' scivolato sul soffietto - che sta trenta centimetri piu' in su -
+	# e la sporgenza «misurata» e' passata da 9 mm a 23. Il controllo continuava a
+	# dire ok e non guardava piu' niente. Un controllo che si indebolisce da solo e'
+	# peggio di uno che manca: quello che manca almeno si vede.
+	var nero := _quanto_avanza(
+		modello.get_node_or_null(NodePath("PlasticaNera")), avanti)
 	var sporgenza := cappuccio - nero
 	if sporgenza > DomeButton.TRAVEL:
 		print("[quadro] ok: %s sporge %.0f mm e rientra di %.0f: resta visibile premuto"
@@ -362,13 +411,31 @@ func _avanti() -> void:
 	_da_quando = _tempo
 
 
-func _scatta() -> void:
+func _scatta(dove: String = FUORI) -> void:
 	if DisplayServer.get_name() == "headless":
 		return
 	var img: Image = get_viewport().get_texture().get_image()
 	if img != null:
-		img.save_png(FUORI)
-		print("[quadro] scatto in %s" % ProjectSettings.globalize_path(FUORI))
+		img.save_png(dove)
+		print("[quadro] scatto in %s" % ProjectSettings.globalize_path(dove))
+
+
+## LA SECONDA FOTO GUARDA L'ATTACCO, e serve quanto la prima.
+##
+## Il cavo esce da una scatola di derivazione un metro sopra i tasti: inquadrando
+## il pulsante non ci si vede mai, e per un giro intero e' rimasta un cubo grigio
+## che nessuno guardava perche' nessuna foto la conteneva. Si scatta da tre passi
+## indietro, con la camera alzata sull'attacco.
+func _scatta_attacco() -> void:
+	if _cam == null:
+		return
+	var p := _apre.global_position
+	var avanti := _apre.global_transform.basis.z
+	avanti = Vector3(avanti.x, 0.0, avanti.z).normalized()
+	var dove := p + avanti * 1.9
+	_player.global_position = Vector3(dove.x, 0.0, dove.z)
+	_player.look_at(Vector3(p.x, 0.0, p.z), Vector3.UP)
+	_cam.look_at(Vector3(p.x, p.y + 0.45, p.z), Vector3.UP)
 
 
 func _verifica(cosa: String, vero: bool) -> void:

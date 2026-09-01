@@ -90,6 +90,16 @@ Y_MEZZO = Y_CORPO_GIU + PULSANTE_DA_FONDO   # centro della COPPIA, non del corpo
 
 Z_FACCIA = CORPO_FONDO / 2.0
 
+# DOVE STA L'INTONACO, in coordinate del modello. La staffa e' a 0,15 dal muro
+# ovest, la cui faccia sta a 0,105: il muro e' quindi a -0,045 dal nostro asse.
+# Serve alla scatola di derivazione, che ci si appoggia sopra, e al corrugato, che
+# ci deve entrare dentro invece di finire per aria.
+Z_MURO = -0.045
+
+SCATOLA_ALTA = 0.100
+SCATOLA_LARGA = 0.082
+PRESSACAVO_ALTO = 0.024   # sotto la scatola, dove il cavo esce
+
 
 def freccia(mat, cx, cy, z, mezza_base, altezza, verso, spessore=0.0012):
     """Un triangolo pieno appoggiato alla faccia frontale, punta su (+1) o giu' (-1).
@@ -155,44 +165,143 @@ def pulsanti():
     """Ghiera nera, cappuccio colorato, freccia bianca. Due volte."""
     # LA TARGHETTA NERA fa da sfondo ai due comandi: sul giallo pieno un cappuccio
     # verde scuro sparisce, perche' due colori saturi accostati si annullano.
-    scatola("Gomma", -0.024, 0.024, Y_MEZZO - 0.045, Y_MEZZO + 0.045,
+    scatola("PlasticaNera", -0.024, 0.024, Y_MEZZO - 0.045, Y_MEZZO + 0.045,
             Z_FACCIA - 0.001, Z_FACCIA + 0.0015)
     for nome, verso in (("PulsanteApre", 1), ("PulsanteChiude", -1)):
         cy = Y_MEZZO + verso * PULSANTE_PASSO / 2.0
         serigrafia = nome.replace("Pulsante", "Serigrafia")
         # la ghiera: un cilindro schiacciato coricato sulla faccia
-        _disco("Gomma", cy, GHIERA_R, Z_FACCIA + 0.0015, Z_FACCIA + 0.005)
+        _disco("PlasticaNera", cy, GHIERA_R, Z_FACCIA + 0.0015,
+               Z_FACCIA + 0.005)
         _disco(nome, cy, PULSANTE_R, Z_FACCIA + 0.004,
                Z_FACCIA + 0.004 + PULSANTE_FUORI)
         freccia(serigrafia, 0.0, cy, Z_FACCIA + 0.004 + PULSANTE_FUORI,
                 0.0055, 0.011, verso)
 
 
-def _disco(mat, cy, r, z0, z1):
+def derivazione():
+    """La scatola di derivazione, il pressacavo e il corrugato che entra nel muro.
+
+    IL CAVO NON PUO' USCIRE DAL NULLA, e la prima versione lo faceva: sopra c'era un
+    cubo grigio piazzato a mano nel generatore della scena, che Federico ha bocciato
+    per quello che era. Adesso e' un pezzo del modello come gli altri, con le cose
+    che una scatola da impianto ha davvero - coperchio riportato, quattro viti agli
+    angoli, un pressacavo di gomma sotto - perche' sono quelle a dire «impianto»
+    invece di «cubo».
+
+    IL CORRUGATO SALE E POI ENTRA NEL MURO. Un tubo che si interrompe per aria e'
+    peggio del cubo: sale un palmo lungo l'intonaco e piega dentro, che e' come
+    corrono i tubi a vista quando vanno a prendere una scatola piu' in alto.
+    """
+    z0, z1 = Z_MURO, Z_MURO + 0.060
+    mx = SCATOLA_LARGA / 2.0
+    y0 = PRESSACAVO_ALTO
+    y1 = y0 + SCATOLA_ALTA
+    scatola("ScatolaImpianto", -mx, mx, y0, y1, z0, z1)
+    # IL COPERCHIO E' UN PEZZO RIPORTATO: rientrato di quattro millimetri sui bordi
+    # e sporgente di sei. E' l'unico modo in cui si legge come un coperchio invece
+    # che come una faccia dipinta.
+    scatola("ScatolaImpianto", -mx + 0.004, mx - 0.004, y0 + 0.004, y1 - 0.004,
+            z1, z1 + 0.006)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            _disco("Metallo", (y0 + y1) / 2.0 + sy * (SCATOLA_ALTA / 2.0 - 0.012),
+                   0.0035, z1 + 0.006, z1 + 0.0085,
+                   cx=sx * (mx - 0.012), seg=8)
+    # IL PRESSACAVO, svasato verso l'alto: e' il pezzo che tiene il cavo e gli
+    # impedisce di piegarsi sullo spigolo della scatola. Nero perche' e' gomma.
+    cilindro("Gomma", 0.0, 0.0, 0.0, PRESSACAVO_ALTO, 0.009, seg=14, r2=0.013)
+    # IL TUBO SALE FINO ALLA GRONDA, e la prima versione no: saliva venti centimetri
+    # e piegava dentro il muro. Sulla carta era giusto - i tubi a vista entrano
+    # davvero nell'intonaco - ma il muro sta DIETRO la pulsantiera, quindi la piega
+    # e' rivolta via dalla camera e in gioco non si vede: restava un tubo tagliato
+    # a meta' in aria. Un dettaglio che regge solo da un'angolazione e' un difetto.
+    #
+    # Adesso arriva sotto la gronda (3,00 m di quota interna, cioe' 1,02 sopra la
+    # staffa che sta a 1,95), dove il muro finisce e c'e' qualcosa contro cui
+    # morire. Non serve capire dove vada: serve che non finisca nel vuoto.
+    z_tubo = Z_MURO + 0.018
+    y = y1
+    largo = True
+    while y < y1 + 0.11:
+        cilindro("Corrugato", 0.0, z_tubo, y, y + 0.011,
+                 0.0125 if largo else 0.0105, seg=12)
+        y += 0.011
+        largo = not largo
+    # POI DIVENTA LISCIO, e non e' una scorciatoia: sopra il tratto flessibile che
+    # scarica le vibrazioni della scatola, un impianto vero prosegue in tubo rigido.
+    # Modellare un metro di nervature costerebbe cinquecento facce per un rilievo
+    # che a due metri e mezzo di quota nessuno distingue.
+    cilindro("Corrugato", 0.0, z_tubo, y, 1.02, 0.0105, seg=12)
+    # due collari di fissaggio: e' cio' che tiene un tubo su un muro, e senza il
+    # tubo sembra appoggiato
+    for y_collare in (y + 0.16, y + 0.55):
+        scatola("ScatolaImpianto", -0.016, 0.016, y_collare, y_collare + 0.012,
+                z_tubo - 0.014, Z_MURO + 0.002)
+
+
+def dettagli():
+    """Le cose piccole che distinguono un oggetto da un solido colorato.
+
+    Sono quattro, e insieme non costano cento facce: le VITI agli angoli della
+    targhetta (una placca senza viti e' un adesivo), la TARGHETTA DEL COSTRUTTORE
+    nella fascia gialla sopra i tasti, la LINEA DI GIUNZIONE fra i due semigusci
+    dello stampo, e il COLLARE dove il soffietto si innesta nel corpo.
+
+    E' quello che manca al «quadrato giallo»: non serve altra geometria grossa,
+    serve che ci sia qualcosa a meta' strada fra il volume e la superficie. Un
+    oggetto stampato non e' fatto di facce lisce, e' fatto di giunzioni e di viti.
+    """
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            _disco("Metallo", Y_MEZZO + sy * 0.040, 0.0028,
+                   Z_FACCIA + 0.0015, Z_FACCIA + 0.0035,
+                   cx=sx * 0.019, seg=6)
+    # LA TARGHETTA DEL COSTRUTTORE e' rientrata, non sporgente, e non c'e' scritto
+    # niente: da mezzo metro nessuna scritta si leggerebbe, e quello che si legge e'
+    # che una targhetta c'e'.
+    scatola("PlasticaNera", -0.020, 0.020, Y_MEZZO + 0.058, Y_MEZZO + 0.076,
+            Z_FACCIA - 0.0012, Z_FACCIA + 0.0004)
+    # LA LINEA DI GIUNZIONE dello stampo, a due terzi dell'altezza: mezzo millimetro
+    # di sporgenza tutt'intorno. E' il dettaglio che si vede senza guardarlo, e che
+    # manca a ogni scatola fatta con un cubo.
+    mx, mz = CORPO_LARGO / 2.0, CORPO_FONDO / 2.0
+    y_giunto = Y_CORPO_GIU + CORPO_ALTO * 0.62
+    scatola("PlasticaNera", -mx - 0.0004, mx + 0.0004,
+            y_giunto, y_giunto + 0.0015, -mz - 0.0004, mz + 0.0004)
+    # il collare del soffietto, dove entra nel corpo
+    cilindro("PlasticaNera", 0.0, 0.0, Y_CORPO_SU - 0.004, Y_CORPO_SU + 0.006,
+             0.024, seg=16)
+
+
+def _disco(mat, cy, r, z0, z1, cx=0.0, seg=20):
     """Un cilindro coricato sulla faccia frontale, dal suo asse Z."""
     import bmesh
     import math
     from mathutils import Matrix, Vector
     bmesh.ops.create_cone(
-        bm_di(mat), cap_ends=True, cap_tris=False, segments=20,
+        bm_di(mat), cap_ends=True, cap_tris=False, segments=seg,
         radius1=r, radius2=r, depth=z1 - z0,
-        matrix=Matrix.Translation(Vector((0.0, -(z0 + z1) / 2.0, cy)))
+        matrix=Matrix.Translation(Vector((cx, -(z0 + z1) / 2.0, cy)))
         @ Matrix.Rotation(math.radians(90.0), 4, "X"))
 
 
 pulisci()
+derivazione()
 cilindro("Gomma", 0.0, 0.0, Y_CUFFIA_SU, 0.0, CAVO_R, seg=10)
 cuffia()
 corpo()
 pulsanti()
+dettagli()
 
 # I tondi si sfumano, la scatola no: e' la riga che distingue un cilindro tondo da
 # una scatola molle. Il giallo resta spigoloso perche' i suoi angoli SONO angoli.
-pezzi = finisci(morbidi=("Gomma", "PulsanteApre", "PulsanteChiude"))
+pezzi = finisci(morbidi=("Gomma", "Corrugato", "Metallo",
+                         "PulsanteApre", "PulsanteChiude"))
 
 facce = sum(len(o.data.polygons) for o in pezzi)
 print("  la pulsantiera e' fatta di %d facce in %d pezzi" % (facce, len(pezzi)))
-if facce > 4000:
+if facce > 6000:
     print("\nATTENZIONE: %d facce per una pulsantiera sono troppe." % facce)
     sys.exit(1)
 
@@ -210,4 +319,11 @@ scatta = prepara_render(900, 1000, cielo=(0.055, 0.058, 0.065))
 lampada("Chiave", (0.35, Y_MEZZO + 0.45, 0.55), 7.0, tipo="AREA", dimensione=0.8)
 lampada("Riempimento", (-0.45, Y_MEZZO + 0.10, 0.40), 2.0)
 lampada("Contro", (0.0, Y_MEZZO + 0.30, -0.60), 3.0)
-scatta(PROVINO, (0.16, Y_MEZZO + 0.13, 0.46), (0.0, Y_MEZZO - 0.02, 0.0), lente=50.0)
+# DUE SCATTI E NON UNO: l'oggetto e' lungo mezzo metro e la scatola di derivazione
+# sta a un'altra quota. Con una sola inquadratura o si vede il corpo e non
+# l'attacco, o si vede tutto grande come un francobollo - che e' il modo in cui un
+# provino risponde sempre di si'.
+scatta(PROVINO, (0.24, Y_MEZZO + 0.20, 0.52), (0.0, Y_MEZZO + 0.02, 0.0),
+       lente=52.0)
+scatta(PROVINO.replace("12_", "12b_"), (0.45, 0.45, 1.05), (0.0, 0.42, 0.0),
+       lente=34.0)

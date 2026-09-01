@@ -23,7 +23,7 @@
 [ext_resource type="Script" path="res://world/desk_station.gd" id="24_postazione"]
 [ext_resource type="Script" path="res://world/interactables/crt_monitor.gd" id="25_crt"]
 [ext_resource type="Script" path="res://world/interactables/dome_button.gd" id="34_quadro"]
-[ext_resource type="Script" path="res://world/interactables/pendant_sway.gd" id="35_dondolo"]
+[ext_resource type="Script" path="res://world/interactables/pendant_tremor.gd" id="35_tremito"]
 [ext_resource type="PackedScene" path="res://assets/models/pulsantiera.glb" id="36_pensile"]
 [ext_resource type="PackedScene" path="res://crt/crt_screen.tscn" id="26_vetro"]
 [ext_resource type="Script" path="res://world/dome_shutter.gd" id="27_cupola"]
@@ -1153,15 +1153,6 @@ size = Vector3(0.386, 0.420, 0.430)
 
 [sub_resource type="BoxShape3D" id="s_pulsante"]
 size = Vector3(0.040, 0.040, 0.030)
-
-[sub_resource type="BoxMesh" id="m_staffa"]
-size = Vector3(0.075, 0.095, 0.060)
-
-[sub_resource type="StandardMaterial3D" id="mat_staffa"]
-albedo_color = Color(0.52, 0.53, 0.50, 1)
-metallic = 0.0
-metallic_specular = 0.30
-roughness = 0.65
 
 [sub_resource type="StandardMaterial3D" id="mat_apre"]
 albedo_color = Color(0.10, 0.50, 0.16, 1)
@@ -2621,14 +2612,9 @@ leaves = Array[NodePath]([NodePath("../Osservatorio/Cupola/PortelloBasso"), Node
 open_offset = Array[Vector3]([Vector3(0, 0, 0), Vector3(0, 0, 0)])
 open_rotation_deg = Array[Vector3]([Vector3(90, 0, 0), Vector3(90, 0, 0)])
 
-[node name="StaffaCupola" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.095, 1.980, 4.800)
-mesh = SubResource("m_staffa")
-material_override = SubResource("mat_staffa")
-
 [node name="Pulsantiera" type="Node3D" parent="."]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.150, 1.950, 4.800)
-script = ExtResource("35_dondolo")
+script = ExtResource("35_tremito")
 
 [node name="Modello" parent="Pulsantiera" instance=ExtResource("36_pensile")]
 

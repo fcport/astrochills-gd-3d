@@ -149,7 +149,7 @@ def tscn():
              '[ext_resource type="Script" path="res://world/desk_station.gd" id="24_postazione"]',
              '[ext_resource type="Script" path="res://world/interactables/crt_monitor.gd" id="25_crt"]',
              '[ext_resource type="Script" path="res://world/interactables/dome_button.gd" id="34_quadro"]',
-             '[ext_resource type="Script" path="res://world/interactables/pendant_sway.gd" id="35_dondolo"]',
+             '[ext_resource type="Script" path="res://world/interactables/pendant_tremor.gd" id="35_tremito"]',
              '[ext_resource type="PackedScene" path="res://assets/models/pulsantiera.glb" id="36_pensile"]',
              '[ext_resource type="PackedScene" path="res://crt/crt_screen.tscn" id="26_vetro"]',
              '[ext_resource type="Script" path="res://world/dome_shutter.gd" id="27_cupola"]',
@@ -354,13 +354,6 @@ def tscn():
               # restano sei millimetri, quindi nessuno dei due ruba l'altro.
               '[sub_resource type="BoxShape3D" id="s_pulsante"]',
               'size = Vector3(0.040, 0.040, 0.030)', '',
-              # La scatola di derivazione: un cavo che esce dal nulla e' peggio di
-              # nessun cavo. Grigia come i corrugati dell'impianto.
-              '[sub_resource type="BoxMesh" id="m_staffa"]',
-              'size = Vector3(0.075, 0.095, 0.060)', '',
-              '[sub_resource type="StandardMaterial3D" id="mat_staffa"]',
-              'albedo_color = Color(0.52, 0.53, 0.50, 1)',
-              'metallic = 0.0', 'metallic_specular = 0.30', 'roughness = 0.65', '',
               # VERDE E ROSSO, E ACCESI. Dentro una cupola al buio un verde spento
               # e un rosso spento sono due dischi neri: l'emissione bassa li fa
               # leggere come pulsanti senza trasformarli in lampadine.
@@ -477,16 +470,12 @@ def tscn():
               'open_offset = Array[Vector3]([Vector3(0, 0, 0), Vector3(0, 0, 0)])',
               'open_rotation_deg = Array[Vector3]([Vector3(90, 0, 0), Vector3(90, 0, 0)])', '',
               # --- il quadro della cupola, con i suoi due pulsanti -------------
-              # LA SCATOLA DI DERIVAZIONE sta ferma sul muro e NON e' figlia della
-              # pulsantiera: quella dondola, e una scatola avvitata all'intonaco che
-              # dondola insieme al cavo sarebbe la cosa che rompe l'illusione invece
-              # di reggerla. E' il punto fisso da cui il cavo esce.
-              '[node name="StaffaCupola" type="MeshInstance3D" parent="."]',
-              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
-              % (PULSANTIERA_STAFFA[0] - 0.055, PULSANTIERA_STAFFA[1] + 0.030,
-                 PULSANTIERA_STAFFA[2]),
-              'mesh = SubResource("m_staffa")',
-              'material_override = SubResource("mat_staffa")', '',
+              # LA SCATOLA DI DERIVAZIONE NON STA PIU' QUI. Era un cubo grigio messo
+              # a mano sopra il cavo, e Federico l'ha bocciato per quello che era:
+              # «quel quadrato grigio in alto e' una roba che non si puo' vedere».
+              # Adesso e' modellata dentro `pulsantiera.glb` insieme al resto -
+              # coperchio, quattro viti, pressacavo, un tratto di corrugato che
+              # sale - perche' e' lo stesso oggetto: il cavo esce da li'.
               # LA PULSANTIERA, girata di +90 gradi attorno alla verticale perche' i
               # suoi tasti devono guardare dentro la stanza, cioe' verso +X.
               #
@@ -502,7 +491,11 @@ def tscn():
               '[node name="Pulsantiera" type="Node3D" parent="."]',
               'transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, %.3f, %.3f, %.3f)'
               % PULSANTIERA_STAFFA,
-              'script = ExtResource("35_dondolo")', '',
+              # TREMA MENTRE IL MOTORE GIRA, e sta ferma il resto del tempo. Prima
+              # dondolava come un pendolo vero: il bersaglio si spostava sotto il
+              # mirino e il prompt lampeggiava a ogni oscillazione, che il
+              # giocatore legge come «non ha funzionato».
+              'script = ExtResource("35_tremito")', '',
               '[node name="Modello" parent="Pulsantiera" instance=ExtResource("36_pensile")]', '']
 
     # I DUE TASTI, ciascuno un corpo per conto suo: e' la differenza fra un comando

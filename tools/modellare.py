@@ -158,6 +158,15 @@ COLORI = {
     "PlasticaGialla": (0.66, 0.42, 0.02),
     "PulsanteApre":   (0.09, 0.46, 0.14),
     "PulsanteChiude": (0.50, 0.07, 0.05),
+    # IL NERO DELLA PULSANTIERA NON E' LA GOMMA. Sono due neri diversi perche' sono
+    # due materiali diversi: il soffietto e il cavo sono mescola, la targhetta e le
+    # ghiere sono ABS stampato. Separarli costa un nome e in cambio la scatola
+    # smette di essere una macchia nera sola.
+    "PlasticaNera":   (0.10, 0.10, 0.11),
+    # La scatola di derivazione e il corrugato: PVC grigio da impianto, quello che
+    # in un edificio dell'85 corre a vista sui muri di servizio.
+    "ScatolaImpianto": (0.47, 0.48, 0.47),
+    "Corrugato":      (0.38, 0.39, 0.38),
     # La serigrafia bianca delle frecce: bianco sporco, non bianco carta.
     # SONO DUE MATERIALI IDENTICI, e il doppione e' voluto. L'esportatore fa una
     # mesh per materiale: con una serigrafia sola le due frecce finirebbero nello
@@ -188,6 +197,8 @@ RUVIDEZZA = {"Metallo": 0.45, "Inox": 0.28, "Rame": 0.35, "Schermo": 0.12,
              # perche' sono quelli che una mano tocca mille volte.
              "PlasticaGialla": 0.55, "PulsanteApre": 0.38,
              "PulsanteChiude": 0.38,
+             "PlasticaNera": 0.52, "ScatolaImpianto": 0.62,
+             "Corrugato": 0.70,
              "SerigrafiaApre": 0.60, "SerigrafiaChiude": 0.60}
 METALLICI = ("Metallo", "Inox", "Rame", "Ferro")
 # I materiali la cui texture va MOLTIPLICATA per il colore invece che sostituirlo.
@@ -199,6 +210,21 @@ METALLICI = ("Metallo", "Inox", "Rame", "Ferro")
 # la libreria diventa una fila di volumi tutti dello stesso beige.
 TINTI = ("NeonRosso", "LibroRosso", "LibroBlu", "LibroVerde", "LibroCrema",
          "Tessuto", "Carta")
+
+# I materiali che prendono dalla mappa il RILIEVO e non il colore: normale e
+# ruvidezza si collegano, la mappa del colore no.
+#
+# PERCHE' NON BASTAVA MOLTIPLICARE. La trama `plastica` e' beige carico - in
+# lineare fa (0,61 0,52 0,29), cioe' molto piu' rossa che blu - e una plastica
+# COLORATA IN MASSA non ha disegno, ha superficie: moltiplicarla vira tutto verso
+# il caldo. La scatola di derivazione, che deve essere PVC grigio, e' uscita
+# olivastra; per riportarla neutra il canale blu avrebbe dovuto valere 1,02, cioe'
+# saturare. Quando la correzione supera l'uno la mappa e' quella sbagliata.
+#
+# Il granulo dello stampo e le microimperfezioni stanno nella normale e nella
+# ruvidezza, che sono neutre per costruzione: e' esattamente quello che serviva, ed
+# e' quello che distingue una faccia stampata da un poligono piatto.
+SOLO_RILIEVO = ("PlasticaGialla", "PlasticaNera", "ScatolaImpianto", "Corrugato")
 
 
 # Set di texture: nome del materiale -> (cartella in assets/textures, METRI PER
@@ -240,6 +266,14 @@ TEXTURE = {
     # e' liscia e uniforme: la trama non ce l'ha, e la forma gliela danno le sue
     # dodici colonne.
     "Plastica":     ("plastica", 0.35),
+    # OTTO CENTIMETRI DI RIPETIZIONE, non trentacinque. La pulsantiera e' larga sei:
+    # alla scala della `Plastica` se ne vedrebbe un sesto di mappa, cioe' una macchia
+    # unica - che e' esattamente il «quadrato giallo» da cui si parte. A 0,08 il
+    # corpo prende quasi una ripetizione intera e la superficie si legge da vicino.
+    "PlasticaGialla": ("plastica", 0.08),
+    "PlasticaNera":   ("plastica", 0.06),
+    "ScatolaImpianto": ("plastica", 0.10),
+    "Corrugato":      ("plastica", 0.05),
     # IL BAGNO. 0,75 a muro: la texture porta cinque piastrelle per lato, quindi
     # ognuna viene 15 cm - il formato del rivestimento di allora. A terra 1,20 su
     # quattro piastrelle fa 30 cm, che e' la piastrella da pavimento di quegli anni.
@@ -376,7 +410,8 @@ def applica_texture(m, nome, tinta=None, set_texture=None, metallico=None):
         else:
             nt.links.new(bsdf.inputs[ingresso], t.outputs["Color"])
 
-    collega("color.jpg", "Base Color", "sRGB", 400)
+    if nome not in SOLO_RILIEVO:
+        collega("color.jpg", "Base Color", "sRGB", 400)
     collega("roughness.jpg", "Roughness", "Non-Color", 100)
     if metallico:
         collega("metallic.jpg", "Metallic", "Non-Color", -200)

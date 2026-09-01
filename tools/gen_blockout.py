@@ -23,7 +23,7 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        CASSA_MONITOR, VETRO_MONITOR, SEDILE_MONITOR,
                        BOMBATURA_MONITOR, FRANCO_VETRO,
                        PULSANTIERA_STAFFA, PULSANTIERA_TASTI,
-                       PULSANTIERA_FACCIA
+                       PULSANTIERA_FACCIA, ARREDI_CUCINA
 )
 
 MURI, APERTURE, PAVIMENTI, SOFFITTI, SALA, (_CX, _CZ) = scalati()
@@ -45,6 +45,11 @@ CX, CZ = 5.2 * K, 5.0 * K          # centro della cupola, per luci e istanza
 # serve al volume dell'adattamento al buio. Letta da `SALA_TELESCOPIO`, non
 # ribattuta: il giorno che la sala cambia forma, il volume la segue.
 _SX0, _SZ0, _SX1, _SZ1 = (v * K for v in SALA_TELESCOPIO)
+
+# I DUE PIANI DELLA CUCINA su cui sta la roba che si prende in mano, da
+# `geometria.py` e non ribattuti: spostare il bancone sposta la bottiglia.
+CUCINA = [_a for _a in ARREDI_CUCINA if _a[0] == "CucinaBase"][0][1:]
+TAVOLO_CUCINA = [_a for _a in ARREDI_CUCINA if _a[0] == "Tavolo"][0][1:]
 
 blocchi = []   # (cx, cy, cz, sx, sy, sz, nome, rot_x)
 
@@ -178,6 +183,9 @@ def tscn():
              '[ext_resource type="PackedScene" path="res://assets/models/termos.glb" id="49_termos"]',
              '[ext_resource type="PackedScene" path="res://assets/models/tazza.glb" id="50_tazza"]',
              '[ext_resource type="PackedScene" path="res://assets/models/bottiglia.glb" id="51_bottiglia"]',
+             '[ext_resource type="PackedScene" path="res://assets/models/bottiglione.glb" id="52_bottiglione"]',
+             '[ext_resource type="PackedScene" path="res://assets/models/piattino.glb" id="53_piattino"]',
+             '[ext_resource type="PackedScene" path="res://assets/models/radiolina.glb" id="54_radio"]',
              '']
     dims = sorted(set((round(b[3], 3), round(b[4], 3), round(b[5], 3)) for b in blocchi)
                   | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
@@ -507,6 +515,19 @@ def tscn():
               'size = Vector3(0.096, 0.068, 0.096)', '',
               '[sub_resource type="CylinderShape3D" id="s_bottiglia"]',
               'height = 0.299', 'radius = 0.037', '',
+              '[sub_resource type="CylinderShape3D" id="s_bottiglione"]',
+              'height = 0.307', 'radius = 0.040', '',
+              # Il piattino e' un disco alto sedici millimetri: SCATOLA e non
+              # cilindro, per la stessa ragione della tazza - un cilindro cosi'
+              # schiacciato non sta fermo (D-201).
+              '[sub_resource type="BoxShape3D" id="s_piattino"]',
+              'size = Vector3(0.140, 0.016, 0.140)', '',
+              # La radiolina: la cassa, senza l'antenna. Un filo da cinque
+              # millimetri e mezzo metro dentro la collisione vorrebbe dire una
+              # radio che non si appoggia da nessuna parte perche' l'antenna tocca
+              # prima; un'antenna che compenetra uno stipite e' meno falsa.
+              '[sub_resource type="BoxShape3D" id="s_radio"]',
+              'size = Vector3(0.220, 0.115, 0.090)', '',
               # IL COPIONE DELLA POSTAZIONE STA SULLA RADICE, ed e' l'unico script
               # di questa scena che non sia un interagibile: sedersi non e' una
               # proprieta' del monitor, e' una sequenza fra il monitor, il corpo del
@@ -1396,6 +1417,58 @@ def tscn():
               '[node name="Col" type="CollisionShape3D" parent="Bottiglia"]',
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.150, 0)',
               'shape = SubResource("s_bottiglia")', '',
+              # --- E LA ROBA DELLA CUCINA -------------------------------------
+              # ERANO DISEGNATE DENTRO IL MURO, cioe' fuse nella mesh della stanza:
+              # si vedevano e non si potevano toccare. La bottiglia contro il
+              # paraschizzi, la radiolina di fianco, la tazza sul tavolo. Adesso
+              # sono corpi, e stanno negli stessi punti in cui stavano disegnate -
+              # le quote vengono da `CucinaBase` e `Tavolo` in `geometria.py`, le
+              # stesse che usava `cucina_blender.py`.
+              '[node name="Bottiglione" type="RigidBody3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
+              % (CUCINA[0] + 0.30, CUCINA[4] + 0.001, CUCINA[1] + 0.16),
+              'mass = 0.6',
+              'script = ExtResource("48_preso")',
+              'nome = "la bottiglia"', '',
+              '[node name="Modello" parent="Bottiglione" instance=ExtResource("52_bottiglione")]', '',
+              '[node name="Col" type="CollisionShape3D" parent="Bottiglione"]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.154, 0)',
+              'shape = SubResource("s_bottiglione")', '',
+              '[node name="Radiolina" type="RigidBody3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
+              % (CUCINA[0] + 0.73, CUCINA[4] + 0.001, CUCINA[1] + 0.10),
+              'mass = 0.6',
+              'script = ExtResource("48_preso")',
+              'nome = "la radiolina"', '',
+              '[node name="Modello" parent="Radiolina" instance=ExtResource("54_radio")]', '',
+              '[node name="Col" type="CollisionShape3D" parent="Radiolina"]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.058, 0)',
+              'shape = SubResource("s_radio")', '',
+              # LA TAZZA COL SUO PIATTINO, e sono due corpi separati: si prendono
+              # uno alla volta, come nella vita. Il piattino nasce sotto, la tazza
+              # sopra di lui.
+              '[node name="Piattino" type="RigidBody3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
+              % (TAVOLO_CUCINA[0] + 0.30, TAVOLO_CUCINA[4] + 0.001,
+                 TAVOLO_CUCINA[1] + 0.30),
+              'mass = 0.15',
+              'script = ExtResource("48_preso")',
+              'nome = "il piattino"', '',
+              '[node name="Modello" parent="Piattino" instance=ExtResource("53_piattino")]', '',
+              '[node name="Col" type="CollisionShape3D" parent="Piattino"]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.008, 0)',
+              'shape = SubResource("s_piattino")', '',
+              '[node name="TazzaCucina" type="RigidBody3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
+              % (TAVOLO_CUCINA[0] + 0.30, TAVOLO_CUCINA[4] + 0.020,
+                 TAVOLO_CUCINA[1] + 0.30),
+              'mass = 0.2',
+              'script = ExtResource("48_preso")',
+              'nome = "la tazza"', '',
+              '[node name="Modello" parent="TazzaCucina" instance=ExtResource("50_tazza")]', '',
+              '[node name="Col" type="CollisionShape3D" parent="TazzaCucina"]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.034, 0)',
+              'shape = SubResource("s_tazza")', '',
               '[node name="Letto" parent="." instance=ExtResource("28_letto")]',
               # DRITTO, cioe' con la testiera a -Z, che nel magazzino vuol dire
               # verso la porta: e' l'unico verso in cui il letto si puo' usare.

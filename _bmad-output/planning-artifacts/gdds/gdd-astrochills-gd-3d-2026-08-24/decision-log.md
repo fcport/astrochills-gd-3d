@@ -5619,3 +5619,85 @@ pianta, se si e' fermato, e se sta sul layer che il raggio del giocatore cerca.
 far girare la fisica: tutti e tre scendono di quasi un metro e la sonda li vede.
 Senza quel confronto un referto che dice «sono tutti fermi» non direbbe se la sonda
 saprebbe accorgersi di uno che se n'e' andato in cantina.
+
+## D-202 La roba disegnata dentro il muro diventa roba
+
+Federico, provando: «sarebbe bello poter prendere ogni oggetto, ogni prop. Ad
+esempio le tazze in cucina, la bottiglia in cucina, la radiolina in cucina».
+
+**ERANO DISEGNATE DENTRO LA STANZA.** La bottiglia contro il paraschizzi, la
+radiolina di fianco, la tazza sul tavolo: tre gruppi di primitive fusi nella mesh
+della cucina. Fusi vuol dire che non erano oggetti - erano rilievi del piano di
+lavoro. Si vedevano, e non si potevano toccare nemmeno volendo.
+
+Adesso sono corpi, e stanno negli stessi punti in cui stavano disegnate: le quote
+vengono da `CucinaBase` e `Tavolo` in `geometria.py`, le stesse che usava
+`cucina_blender.py`. **Spostare il bancone sposta la bottiglia**, che e' il punto
+di prenderle da li' invece di ribatterle.
+
+**LA RADIOLINA SI E' TRASFERITA, NON RIFATTA**: `tools/radiolina_blender.py`
+riporta le stesse quattro primitive con le stesse quote - ventidue centimetri di
+cassa, l'altoparlante forato, la manopola, l'antenna telescopica - attorno a
+un'origine propria. Trentasei facce.
+
+**LA TAZZA HA IL SUO PIATTINO, E SONO DUE CORPI**: si prendono uno alla volta,
+come nella vita. Una tazza senza piattino su un tavolo di servizio non e'
+apparecchiata - e' stata usata.
+
+**DUE BOTTIGLIE DIVERSE E NON DUE VOLTE LA STESSA**: dallo stesso set esce anche
+la borgognona, spalla dolce e pancia larga, che va in cucina; la bordolese resta
+in sala di controllo. Due sagome identiche in due stanze diverse sono la cosa che
+fa sembrare un edificio un catalogo, e costano una riga.
+
+    in sala controllo   termos, tazza, bottiglia (bordolese)
+    in cucina           bottiglia (borgognona), radiolina, tazza, piattino
+    in cupola           la camera CCD, avvitata al fuoco
+
+**MISURATO**: tutti e sette si assestano dove sono stati posati - il piu' mosso
+scende di nove millimetri - e sei su sette si addormentano.
+
+## D-203 Le hitbox sono blocchi pieni, e gli oggetti che cadono lo hanno rivelato
+
+Federico ha fotografato un termos **sospeso a mezz'aria** in mezzo alla sala
+proiezioni, e ha scritto: «tocchera' mettere a posto le hitbox». Ha ragione, e la
+cosa interessante e' PERCHE' NON SI ERA MAI VISTO.
+
+**PER UN ANNO IN QUESTA SCENA SI E' POTUTO SOLO CAMMINARE.** La collisione degli
+arredi la genera `gen_blockout.py` da `geometria.py`, e ogni mobile e' UN BLOCCO
+PIENO alto quanto il suo pezzo piu' alto. Per camminare e' perfetto: non si
+attraversa una fila di sedie, non si passa dentro un carrello. Il difetto - che il
+blocco e' pieno dove il mobile e' vuoto - non si sente, perche' non c'e' niente
+che possa appoggiarcisi.
+
+Poi sono arrivati gli oggetti che cadono, e tutte le superfici finte sono diventate
+visibili in una volta sola. Misurate nella sala proiezioni:
+
+    FilaSedie1, FilaSedie2   blocco pieno 2,20 x 0,54, TOP A 0,90
+                             cioe' un muretto all'altezza degli schienali; un
+                             oggetto posato sta a novanta centimetri, sopra il
+                             vuoto fra uno schienale e l'altro
+    Proiettore               blocco pieno 0,80 x 0,60, TOP A 1,05
+                             il carrello ha il piano a 0,75 e il proiettore
+                             sopra: la superficie a 1,05 e' aria
+    TavoloSala               top 0,78 - giusto, e' un tavolo
+    TecaEst1, TecaEst2       top 1,85 - giusto, sono armadi chiusi
+
+**NON E' UN NUMERO DA CORREGGERE, E' UNA FORMA DA DICHIARARE.** Un tavolo e un
+armadio sono blocchi pieni davvero; una sedia e' un sedile a 0,45 piu' uno
+schienale sottile; un carrello e' due ripiani. Finche' la collisione la fa
+l'ingombro, le cose si appoggeranno all'ingombro.
+
+Il lavoro non e' stato fatto qui - tocca la collisione di tutto l'edificio, ed e'
+una decisione su come si dichiarano gli arredi, non un rattoppo. **Quello che e'
+stato fatto e' isolare la causa con un numero**, cosi' chi ci mette mano sa che
+cosa sta guardando.
+
+**E UNA SONDA E' STATA BUTTATA VIA**, che vale la pena raccontare. La prima
+versione cercava i blocchi «senza niente da vedere dentro» confrontandoli con i
+VERTICI delle mesh visibili: ne ha trovati 1758 su 78 superfici, quasi tutti
+falsi. Il motivo e' banale e istruttivo - una superficie piana grande ha vertici
+solo AGLI ANGOLI, quindi in mezzo a un pavimento non c'e' nessun vertice entro
+quindici centimetri e ogni pavimento risultava invisibile. Uno strumento che grida
+millesettecento volte non e' uno strumento: e' rumore con un referto. La diagnosi
+vera e' venuta da dieci righe usa-e-getta che, stanza per stanza, dicono a che
+quota si appoggia un oggetto e su quale corpo.

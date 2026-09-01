@@ -230,18 +230,15 @@ def sul_piano():
     for k in range(4):
         scatola("Ceramica", sx - 0.13 + k * 0.075, sx - 0.115 + k * 0.075,
                 H_TOP + 0.020, H_TOP + 0.185, sz - 0.115, sz + 0.115)
-    # bottiglia d'acqua, contro il paraschizzi
-    bx, bz = X_A + 0.30, Z_MURO + 0.16
-    cilindro("Smalto", bx, bz, H_TOP, H_TOP + 0.175, 0.040, 14)
-    cilindro("Smalto", bx, bz, H_TOP + 0.175, H_TOP + 0.225, 0.040, 14, r2=0.016)
-    cilindro("Plastica", bx, bz, H_TOP + 0.225, H_TOP + 0.255, 0.017, 12)
-    # radiolina: nel 1999 in una cucina di servizio ce n'era una, e stava accesa
-    rx = X_A + 0.62
-    scatola("Plastica", rx, rx + 0.22, H_TOP, H_TOP + 0.115, Z_MURO + 0.05, Z_MURO + 0.14)
-    scatola("Schermo", rx + 0.015, rx + 0.115, H_TOP + 0.025, H_TOP + 0.095,
-            Z_MURO + 0.14, Z_MURO + 0.145)
-    cilindro_orizz("Metallo", rx + 0.165, H_TOP + 0.060, Z_MURO + 0.14, "z", 0.012, 0.020, 12)
-    cilindro("Metallo", rx + 0.20, Z_MURO + 0.10, H_TOP + 0.115, H_TOP + 0.40, 0.005, 8)
+    # LA BOTTIGLIA E LA RADIOLINA NON SI DISEGNANO PIU' QUI, e non sono sparite:
+    # sono diventate OGGETTI. Erano due gruppi di primitive fusi in questa mesh,
+    # cioe' due rilievi del piano di lavoro - si vedevano e non si potevano
+    # toccare. Adesso la bottiglia e' `bottiglione.glb` e la radiolina
+    # `radiolina.glb`, li posa `gen_blockout.py` come corpi che si prendono in
+    # mano, e stanno negli stessi punti in cui stavano disegnate.
+    #
+    # La radiolina conserva le quote che aveva qui: ventidue centimetri di cassa,
+    # l'altoparlante, la manopola e l'antenna. Vedi `tools/radiolina_blender.py`.
 
 
 def bacheca():
@@ -326,10 +323,10 @@ def tavolo_e_sedie():
     for gx in (x0 + 0.06, x1 - 0.10):
         for gz in (z0 + 0.06, z1 - 0.10):
             scatola("Metallo", gx, gx + 0.04, 0.0, alt - 0.10, gz, gz + 0.04)
-    # sopra: una tazza e un blocco di fogli
-    cilindro("Ceramica", x0 + 0.30, z0 + 0.30, alt, alt + 0.085, 0.040, 14)
-    cilindro_orizz("Ceramica", x0 + 0.345, alt + 0.048, z0 + 0.30, "z", 0.034, 0.007, 8)
-    cilindro("Ceramica", x0 + 0.30, z0 + 0.30, alt - 0.005, alt + 0.004, 0.062, 14)
+    # sopra: un blocco di fogli. LA TAZZA NON E' PIU' DISEGNATA QUI - era tre
+    # cilindri di ceramica fusi nel tavolo, e adesso e' `tazza.glb` col suo
+    # piattino, posata da `gen_blockout.py` nello stesso punto. I fogli restano:
+    # un foglio non si prende in mano, si legge, ed e' un'altra meccanica.
     scatola("Carta", x1 - 0.52, x1 - 0.16, alt, alt + 0.014, z0 + 0.18, z1 - 0.14)
 
     # le sedie ai capi del tavolo si guardano: quella a ovest verso est, e viceversa

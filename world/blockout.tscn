@@ -46,6 +46,9 @@
 [ext_resource type="PackedScene" path="res://assets/models/termos.glb" id="49_termos"]
 [ext_resource type="PackedScene" path="res://assets/models/tazza.glb" id="50_tazza"]
 [ext_resource type="PackedScene" path="res://assets/models/bottiglia.glb" id="51_bottiglia"]
+[ext_resource type="PackedScene" path="res://assets/models/bottiglione.glb" id="52_bottiglione"]
+[ext_resource type="PackedScene" path="res://assets/models/piattino.glb" id="53_piattino"]
+[ext_resource type="PackedScene" path="res://assets/models/radiolina.glb" id="54_radio"]
 
 [sub_resource type="BoxMesh" id="m_0"]
 size = Vector3(0.018, 0.018, 0.032)
@@ -1241,6 +1244,16 @@ size = Vector3(0.096, 0.068, 0.096)
 [sub_resource type="CylinderShape3D" id="s_bottiglia"]
 height = 0.299
 radius = 0.037
+
+[sub_resource type="CylinderShape3D" id="s_bottiglione"]
+height = 0.307
+radius = 0.040
+
+[sub_resource type="BoxShape3D" id="s_piattino"]
+size = Vector3(0.140, 0.016, 0.140)
+
+[sub_resource type="BoxShape3D" id="s_radio"]
+size = Vector3(0.220, 0.115, 0.090)
 
 [node name="Blockout" type="Node3D"]
 script = ExtResource("24_postazione")
@@ -3711,6 +3724,54 @@ nome = "la bottiglia"
 [node name="Col" type="CollisionShape3D" parent="Bottiglia"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.150, 0)
 shape = SubResource("s_bottiglia")
+
+[node name="Bottiglione" type="RigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.650, 0.901, 1.760)
+mass = 0.6
+script = ExtResource("48_preso")
+nome = "la bottiglia"
+
+[node name="Modello" parent="Bottiglione" instance=ExtResource("52_bottiglione")]
+
+[node name="Col" type="CollisionShape3D" parent="Bottiglione"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.154, 0)
+shape = SubResource("s_bottiglione")
+
+[node name="Radiolina" type="RigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.080, 0.901, 1.700)
+mass = 0.6
+script = ExtResource("48_preso")
+nome = "la radiolina"
+
+[node name="Modello" parent="Radiolina" instance=ExtResource("54_radio")]
+
+[node name="Col" type="CollisionShape3D" parent="Radiolina"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.058, 0)
+shape = SubResource("s_radio")
+
+[node name="Piattino" type="RigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.900, 0.781, 3.650)
+mass = 0.15
+script = ExtResource("48_preso")
+nome = "il piattino"
+
+[node name="Modello" parent="Piattino" instance=ExtResource("53_piattino")]
+
+[node name="Col" type="CollisionShape3D" parent="Piattino"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.008, 0)
+shape = SubResource("s_piattino")
+
+[node name="TazzaCucina" type="RigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.900, 0.800, 3.650)
+mass = 0.2
+script = ExtResource("48_preso")
+nome = "la tazza"
+
+[node name="Modello" parent="TazzaCucina" instance=ExtResource("50_tazza")]
+
+[node name="Col" type="CollisionShape3D" parent="TazzaCucina"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.034, 0)
+shape = SubResource("s_tazza")
 
 [node name="Letto" parent="." instance=ExtResource("28_letto")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.340, 0.000, 8.400)

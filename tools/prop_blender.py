@@ -52,18 +52,26 @@ PROVINO = os.path.join(RADICE, "_confronto", "14_prop.png")
 # bottiglia e' un solido di rotazione liscio e regge la meta'. La tazza e' piccola
 # in mano e ancora piu' piccola su un piano, e cinquecento facce sono gia' un
 # lusso.
-PROP = {
-    "modified_thermos": ("modified_thermos", "termos", 900,
-                         "il termos: si porta su, si posa dove capita, e a meta'\n"
-                         "notte lo si va a cercare"),
-    "wine_bottles_01": ("wine_bottles_01_bordeaux", "bottiglia", 700,
-                        "una bottiglia vuota. La bordolese fra le quattro del set:\n"
-                        "spalla netta e collo lungo, la sagoma piu' riconoscibile\n"
-                        "anche in ombra"),
-    "tea_set_01": ("tea_set_01_cup_small_01", "tazza", 500,
-                   "una tazza. La cosa piu' ovvia da prendere in mano e la piu'\n"
-                   "facile da dimenticare su un piano"),
-}
+# UNA VOCE PER OGGETTO E NON PER MODELLO: dallo stesso set di bottiglie ne escono
+# due sagome diverse, e due bottiglie identiche in due stanze diverse sono la cosa
+# che fa sembrare un edificio un catalogo.
+PROP = [
+    ("modified_thermos", "modified_thermos", "termos", 900,
+     "il termos: si porta su, si posa dove capita, e a meta' notte lo si va a "
+     "cercare"),
+    ("wine_bottles_01", "wine_bottles_01_bordeaux", "bottiglia", 700,
+     "una bottiglia vuota. La bordolese: spalla netta e collo lungo, la sagoma "
+     "piu' riconoscibile anche in ombra"),
+    ("wine_bottles_01", "wine_bottles_01_burgundy", "bottiglione", 700,
+     "la seconda bottiglia, borgognona: spalla dolce e pancia larga. Sta in "
+     "cucina, e serve a non avere due volte la stessa sagoma in due stanze"),
+    ("tea_set_01", "tea_set_01_cup_small_01", "tazza", 500,
+     "una tazza. La cosa piu' ovvia da prendere in mano e la piu' facile da "
+     "dimenticare su un piano"),
+    ("tea_set_01", "tea_set_01_saucer_circular_03", "piattino", 400,
+     "il piattino. Da solo non serve a niente, ed e' il punto: una tazza senza "
+     "piattino non e' apparecchiata, e' stata usata"),
+]
 
 
 def prendi_uno(slug, pezzo):
@@ -138,7 +146,7 @@ def misura(o):
 
 print("")
 fatti = []
-for slug, (pezzo, nome, budget, _perche) in sorted(PROP.items()):
+for slug, pezzo, nome, budget, _perche in PROP:
     o = prendi_uno(slug, pezzo)
     decima(o, budget)
     origine_alla_base(o)

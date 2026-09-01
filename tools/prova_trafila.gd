@@ -62,6 +62,7 @@ var _rif: Image
 var _controllo: Image
 var _senza: Array[Image] = []
 var _i := -1
+var _montato := false
 var _aperto := false
 var _attesa := 0
 var _t := 0.0
@@ -89,7 +90,8 @@ func _process(d: float) -> void:
 	var p := Player.find_in(get_tree())
 	if p == null:
 		return
-	if _luci.is_empty():
+	if not _montato:
+		_montato = true
 		var quale := OS.get_environment("VISTA")
 		if not VISTE.has(quale):
 			quale = "libreria"
@@ -105,6 +107,16 @@ func _process(d: float) -> void:
 			var l := get_tree().root.find_child("Luce_%s" % n, true, false)
 			if l != null:
 				l.get_node("Accesa").visible = false
+		# ACCENDI=cupola1 fa il contrario, e serve a un controllo che altrimenti non
+		# si potrebbe fare: le lampade della cupola nascono spente, quindi «con la
+		# luce accesa l'occhio non si fa il buio» non si può verificare senza
+		# accenderne una. È l'iniezione del difetto che il controllo esiste per
+		# vedere: se l'adattamento resta a 1 con la rossa accesa, il patto è rotto.
+		if OS.get_environment("ACCENDI") != "":
+			for n in OS.get_environment("ACCENDI").split(","):
+				var l := get_tree().root.find_child("Luce_%s" % n, true, false)
+				if l != null:
+					l.get_node("Accesa").visible = true
 		# APERTURA=1 apre la cupola prima di guardare. Si annuncia il FATTO sul bus,
 		# come farebbe la fase: così i battenti si muovono e la luce del cielo si
 		# accende per la stessa strada che percorrono in gioco, non per una
@@ -119,23 +131,41 @@ func _process(d: float) -> void:
 			Events.dome_aperture_changed.emit(float(OS.get_environment("APERTURA")))
 			print("[trafila] cupola annunciata aperta a %s, aspetto che i battenti arrivino"
 				% OS.get_environment("APERTURA"))
-		if _aperto and _t < 6.5:
-			return
-		_raccogli(get_tree().root)
-		get_tree().paused = true
-		_attesa = RESPIRO
-		print("[trafila] vista '%s' da %v verso %v, %d sorgenti accese, spente %s"
-			% [quale, _dove, _mira, _luci.size(), ", ".join(spente)])
+		print("[trafila] vista '%s' da %v verso %v, spente %s"
+			% [quale, _dove, _mira, ", ".join(spente)])
 		return
 
 	# La posa si riscrive a ogni fotogramma: fermi davvero, o la differenza fra due
 	# scatti sarebbe il giocatore che si assesta invece della lampada che ho spento.
+	#
+	# E SI RISCRIVE GIÀ DURANTE L'ATTESA, non solo al momento dello scatto: quello
+	# che matura mentre si aspetta — i battenti che arrivano, l'occhio che si fa il
+	# buio — dipende da DOVE STA il giocatore. Con il corpo fermo allo spawn,
+	# l'adattamento non partirebbe mai e la sonda misurerebbe la sua stessa pigrizia.
 	p.global_position = _dove
 	_cam = p.camera()
 	if _cam == null:
 		return
 	_cam.global_position = _dove + Vector3(0.0, 1.70, 0.0)
 	_cam.look_at(_mira, Vector3.UP)
+
+	# L'ATTESA A GIOCO ACCESO, prima di fermare tutto. Serve a due cose che hanno
+	# tempi diversi: i battenti, che inseguono a 0,30 di corsa al secondo (tre secondi
+	# e un terzo da chiusa a spalancata), e l'occhio che si fa il buio, che di secondi
+	# ne vuole nove. Con ATTESA si allunga; il valore di partenza copre entrambe.
+	if _luci.is_empty():
+		var quanto := 16.0 if _aperto else 3.0
+		if OS.get_environment("ATTESA") != "":
+			quanto = float(OS.get_environment("ATTESA"))
+		if _t < quanto:
+			return
+		_raccogli(get_tree().root)
+		get_tree().paused = true
+		_attesa = RESPIRO
+		var occhio := get_tree().root.find_child("OcchioAlBuio", true, false)
+		print("[trafila] %d sorgenti accese, occhio al buio %.2f dopo %.1f s"
+			% [_luci.size(), occhio.adaptation() if occhio != null else -1.0, _t])
+		return
 
 	if _attesa > 0:
 		_attesa -= 1

@@ -4780,3 +4780,66 @@ l'abituazione dell'occhio al buio» non e' un gusto: e' la stessa ragione per cu
 luce e' rossa e per cui le due lampade esterne valgono un decimo di una plafoniera. A cupola
 spalancata il pavimento della cupola resta ampiamente sotto quello che una plafoniera accesa
 da' a una stanza vuota. Il cielo fa **comparire le sagome**, non illumina.
+
+## D-185 — L'adattamento al buio e' una proprieta' dell'occhio, non della stanza
+
+Federico: «con la cupola aperta e le luci spente, per lo stesso principio per cui si attiva
+l'abituamento degli occhi, alziamo leggermente il punto di nero — sembra che vedi un po'
+meglio, una leggera diffusione, solo nella sala telescopio. Che ne pensi? A me sembra una
+buona idea».
+
+E' una buona idea, e la parte migliore e' quella che non ha detto: e' l'unico effetto di
+questo gioco che ha un INSEGNAMENTO dentro. Tutto il resto dell'illuminazione notturna qui
+dice al giocatore come stanno le cose; questo gli dice **cosa gli conviene fare**.
+
+**PERCHE' E' UN AGGIUSTAMENTO DI CAMERA E NON UNA LAMPADA.** La strada per abitudine sarebbe
+stata una sorgente fioca dentro la cupola. Sbagliata due volte: illuminerebbe le superfici
+secondo la loro normale e la loro distanza — cioe' farebbe una LUCE, con un centro e un fuori
+— e per non entrare nelle stanze accanto avrebbe bisogno di ombre, cioe' sarebbe la seconda
+copia dell'attrezzo che D-184 ha appena messo li' per il cielo. L'adattamento non e' una cosa
+della stanza: e' una cosa dell'occhio. Non arriva piu' luce — cambia la risposta a quella che
+c'e'. L'attrezzo giusto e' quello che agisce sull'IMMAGINE:
+`Environment.adjustment_color_correction`, una rampa che parte da un grigio-blu invece che dal
+nero. Il LUT a una dimensione mappa ogni canale, quindi `fuori = alzata + dentro * (1 -
+alzata)`: i neri salgono, i bianchi restano dove sono, e in mezzo la curva resta dritta. Non e'
+contrasto abbassato — e' esattamente e solo il fondo che si stacca dal nero.
+
+**L'ALZATA E' AZZURRA E NON GRIGIA**, e non e' un gusto: al buio la visione passa ai
+bastoncelli, che sono ciechi al rosso e spostano tutto verso il blu. E' l'effetto Purkinje, ed
+e' la stessa fisiologia che sta dietro a D-011 — la ragione per cui le sale di controllo hanno
+la luce rossa. Un'alzata neutra fa cenere; questa fa notte.
+
+**CINQUANTA SECONDI, E LI HA CHIESTI LUI CONTRO I MIEI NOVE.** «Non e' che appena apre la
+cupola, proprio nel primo secondo — dai almeno cinquanta secondi, miglioriamo la luminosita' in
+maniera graduale; niente di estremizzante, altrimenti diventa tutto uno scattone.» Aveva
+ragione, e la ragione e' piu' generale del caso: **un effetto che arriva in nove secondi lo si
+vede arrivare**, e a quel punto non e' piu' l'occhio che si abitua, e' il gioco che accende
+qualcosa. A cinquanta non c'e' nessun istante in cui succede: ci si accorge solo, dopo un po',
+di stare vedendo cose che prima non c'erano. Misurato: 0,17 dopo dieci secondi, 0,37 dopo
+venti, 0,67 dopo trentacinque, pieno a cinquantaquattro.
+
+E la discesa e' un secondo e mezzo — un trentatreesimo della salita. **L'asimmetria e' il
+messaggio**: farsi l'occhio costa, perderlo no. Accendere la luce in cupola non e' gratis, e lo
+si impara accendendola una volta. Non un fotogramma pero': anche il crollo istantaneo sarebbe
+«uno scattone», e per giunta sarebbe indistinguibile da un difetto di rendering.
+
+**TRE CANCELLI, E TUTTI E TRE PROVATI FACENDOLI FALLIRE** (`tools/prova_trafila.gd`, con la
+sonda che stampa l'adattamento invece di dedurlo dallo schermo):
+
+    in cupola, aperta, al buio, 58 s        1,00
+    in cupola, CHIUSA, al buio, 16 s        0,00
+    in cupola, aperta, ROSSA ACCESA         0,00
+    in cucina, cupola aperta, al buio       0,00
+
+Il terzo ha richiesto di aggiungere alla sonda un modo di ACCENDERE una lampada: le tre rosse
+della cupola nascono spente, quindi «con la luce accesa l'occhio non si fa» non si poteva
+verificare senza accenderne una. Un cancello che non si puo' far fallire non e' un cancello.
+
+**E UN CONTROLLO E' NATO CIECO, scoperto solo perche' gli ho iniettato il difetto.** Il
+generatore verifica che il nodo dell'occhio abbia scritto l'elenco delle sue lampade, e la
+stringa attesa era `luci = [NodePath("../Luce_cupola1/Accesa")`. Svuotato l'elenco, il controllo
+**passava lo stesso**: quella riga, identica carattere per carattere, ce l'ha anche
+l'interruttore che comanda le tre rosse. E' D-176 rifatto — un controllo che misura la cosa
+sbagliata e tace — e la cura e' la stessa: ancorare la stringa a qualcosa che appartenga a un
+nodo solo, cioe' la riga dello script che la precede. Non l'avrei mai saputo senza iniettare:
+il controllo era verde in tutti e due i mondi.

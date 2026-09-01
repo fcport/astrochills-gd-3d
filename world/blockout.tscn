@@ -33,6 +33,7 @@
 [ext_resource type="Script" path="res://world/dome_activity.gd" id="33_attivita"]
 [ext_resource type="Shader" path="res://world/shaders/cielo.gdshader" id="37_cielo"]
 [ext_resource type="Script" path="res://world/sky_light.gd" id="38_lucecielo"]
+[ext_resource type="Script" path="res://world/dark_adaptation.gd" id="39_occhio"]
 
 [sub_resource type="BoxMesh" id="m_0"]
 size = Vector3(0.018, 0.018, 0.032)
@@ -1203,6 +1204,9 @@ size = Vector3(10.750, 3.000, 8.000)
 [sub_resource type="CylinderShape3D" id="s_attivita"]
 radius = 2.20
 height = 2.00
+
+[sub_resource type="BoxShape3D" id="s_occhio"]
+size = Vector3(5.000, 3.200, 6.300)
 
 [node name="Blockout" type="Node3D"]
 script = ExtResource("24_postazione")
@@ -3638,6 +3642,14 @@ shape = SubResource("s_attivita")
 [node name="Dwell" type="Timer" parent="AttivitaCupola"]
 
 [node name="Creak" type="AudioStreamPlayer3D" parent="AttivitaCupola"]
+
+[node name="OcchioAlBuio" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.600, 1.600, 3.250)
+script = ExtResource("39_occhio")
+luci = [NodePath("../Luce_cupola1/Accesa"), NodePath("../Luce_cupola2/Accesa"), NodePath("../Luce_cupola3/Accesa")]
+
+[node name="Collision" type="CollisionShape3D" parent="OcchioAlBuio"]
+shape = SubResource("s_occhio")
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.850, 0.000, 8.500)

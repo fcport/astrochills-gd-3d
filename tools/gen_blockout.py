@@ -18,7 +18,7 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        LUCI_ROSSE, PARTE_SPENTA, punti_applique,
                        H_APPLIQUE, NOME_LOCALE, LUCE_MONITOR, SEMPRE_ACCESE,
                        H_INTERRUTTORE, L_PLACCA, A_PLACCA, SP_PLACCA,
-                       LETTO, ATTIVITA_CUPOLA, CUPOLA,
+                       LETTO, ATTIVITA_CUPOLA, CUPOLA, SALA_TELESCOPIO,
                        CASSA_MONITOR, VETRO_MONITOR, SEDILE_MONITOR,
                        BOMBATURA_MONITOR, FRANCO_VETRO,
                        PULSANTIERA_STAFFA, PULSANTIERA_TASTI,
@@ -39,6 +39,11 @@ _DX0, _DX1 = _PX[1] * K, _PX[2] * K
 _DZ0, _DZ1 = _PZ[1] * K, _PZ[2] * K
 
 CX, CZ = 5.2 * K, 5.0 * K          # centro della cupola, per luci e istanza
+
+# La sala del telescopio in metri reali: e' il vano che sta sotto la calotta, e
+# serve al volume dell'adattamento al buio. Letta da `SALA_TELESCOPIO`, non
+# ribattuta: il giorno che la sala cambia forma, il volume la segue.
+_SX0, _SZ0, _SX1, _SZ1 = (v * K for v in SALA_TELESCOPIO)
 
 blocchi = []   # (cx, cy, cz, sx, sy, sz, nome, rot_x)
 
@@ -159,6 +164,7 @@ def tscn():
              '[ext_resource type="Script" path="res://world/dome_activity.gd" id="33_attivita"]',
              '[ext_resource type="Shader" path="res://world/shaders/cielo.gdshader" id="37_cielo"]',
              '[ext_resource type="Script" path="res://world/sky_light.gd" id="38_lucecielo"]',
+             '[ext_resource type="Script" path="res://world/dark_adaptation.gd" id="39_occhio"]',
              '']
     dims = sorted(set((round(b[3], 3), round(b[4], 3), round(b[5], 3)) for b in blocchi)
                   | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
@@ -437,6 +443,15 @@ def tscn():
               '[sub_resource type="CylinderShape3D" id="s_attivita"]',
               'radius = %.2f' % ATTIVITA_CUPOLA[0],
               'height = %.2f' % ATTIVITA_CUPOLA[1], '',
+              # L'OCCHIO CHE SI FA IL BUIO copre TUTTA la sala del telescopio, non
+              # solo il cerchio sotto la calotta: l'adattamento e' una proprieta' di
+              # chi guarda, e chi sta sulla passerella o ai piedi della rampa sta
+              # comunque in quella stanza, al buio, sotto quella fenditura. Le misure
+              # sono quelle di SALA_TELESCOPIO, ritirate dentro di dieci centimetri
+              # per non pescare oltre i muri.
+              '[sub_resource type="BoxShape3D" id="s_occhio"]',
+              'size = Vector3(%.3f, %.3f, %.3f)'
+              % (_SX1 - _SX0 - 0.20, H_TETTO, _SZ1 - _SZ0 - 0.20), '',
               # IL COPIONE DELLA POSTAZIONE STA SULLA RADICE, ed e' l'unico script
               # di questa scena che non sia un interagibile: sedersi non e' una
               # proprieta' del monitor, e' una sequenza fra il monitor, il corpo del
@@ -1268,7 +1283,24 @@ def tscn():
               '[node name="Collision" type="CollisionShape3D" parent="AttivitaCupola"]',
               'shape = SubResource("s_attivita")', '',
               '[node name="Dwell" type="Timer" parent="AttivitaCupola"]', '',
-              '[node name="Creak" type="AudioStreamPlayer3D" parent="AttivitaCupola"]', '']
+              '[node name="Creak" type="AudioStreamPlayer3D" parent="AttivitaCupola"]', '',
+              # L'OCCHIO CHE SI FA IL BUIO (idea di Federico). Il perche' e il come
+              # stanno in `world/dark_adaptation.gd`; qui c'e' la stanza in cui vale e
+              # l'elenco delle lampade che lo annullano.
+              #
+              # LE LAMPADE ARRIVANO SCRITTE DA QUI e non cercate la' dentro, per la
+              # stessa ragione di `light_switch.gd`: quali lampade stiano in cupola lo
+              # sa la pianta, e la pianta sta in `geometria.py`. Un nodo che si cerca
+              # le lampade per nome e' un nodo che il giorno che una lampada si chiama
+              # diversamente smette di funzionare senza dirlo.
+              '[node name="OcchioAlBuio" type="Area3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
+              % ((_SX0 + _SX1) / 2, H_TETTO / 2, (_SZ0 + _SZ1) / 2),
+              'script = ExtResource("39_occhio")',
+              'luci = [%s]' % ", ".join('NodePath("../Luce_%s/Accesa")' % n
+                                        for n in LUCI_ROSSE), '',
+              '[node name="Collision" type="CollisionShape3D" parent="OcchioAlBuio"]',
+              'shape = SubResource("s_occhio")', '']
 
     righe += ['[node name="Player" parent="." instance=ExtResource("1_player")]',
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, 0.000, %.3f)' % (21.7 * K, 17.0 * K), '', '',
@@ -1814,7 +1846,20 @@ _attesi = [("ambient_light_energy = 0.035", "la luce ambientale della notte"),
            # SENZA IL CIELO SI VEDE IL VUOTO dalla vetrata e dalla fenditura, e non e'
            # una mancanza che salta all'occhio come un errore: sembra solo notte fonda.
            ('sky = SubResource("cielo")', "il cielo con le stelle"),
-           ('script = ExtResource("38_lucecielo")', "la luce del cielo in cupola")]
+           ('script = ExtResource("38_lucecielo")', "la luce del cielo in cupola"),
+           # Senza l'elenco delle lampade l'adattamento al buio non si spegne quando
+           # si accende la luce rossa, e il patto - «lo hai perche' stai al buio» -
+           # salta senza che niente dia errore.
+           #
+           # LE DUE RIGHE INSIEME, E NON LA SECONDA DA SOLA. Cercare `luci = [NodePath(
+           # "../Luce_cupola1/Accesa")` non prova niente: quella riga IDENTICA ce l'ha
+           # anche l'interruttore che comanda le tre rosse, e il controllo passava
+           # anche dopo aver svuotato l'elenco dell'occhio. E' il difetto di D-176 -
+           # un controllo che misura la cosa sbagliata e tace - ed e' venuto fuori
+           # solo perche' il difetto gliel'ho iniettato apposta. Legata al suo script,
+           # la riga e' di un nodo solo.
+           ('script = ExtResource("39_occhio")\nluci = [NodePath("../Luce_cupola1/Accesa")',
+            "l'occhio che si fa il buio, con le sue lampade")]
 _mancanti = ["  MANCA NEL .tscn   %s (%s)" % (t, perche)
              for (t, perche) in _attesi if t not in _scritto]
 if _mancanti:

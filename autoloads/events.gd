@@ -91,3 +91,17 @@ signal photo_menu_opened()
 ## PORTA LA POSIZIONE E NON «APERTA/CHIUSA»: il battente si vede muovere, e un
 ## booleano lo farebbe scattare. Chi ascolta insegue il valore.
 signal dome_aperture_changed(fraction: float)
+
+
+## Qualcuno tiene premuto un pulsante del quadro della cupola: +1 apre, -1 chiude,
+## 0 ha lasciato.
+##
+## VA NEL VERSO OPPOSTO A `dome_aperture_changed`, ed e' l'unica coppia di segnali
+## del bus che fa il giro completo: il mondo dice che cosa sta premendo una mano,
+## la notte risponde dove sta il battente. Sono due FATTI, nessuno dei due e' un
+## comando dato a qualcuno in particolare — e infatti il quadro non sa che esista
+## una fase, e la fase non sa che esista un quadro.
+##
+## SOLO QUANDO CAMBIA: un pulsante tenuto premuto sei secondi non deve riempire il
+## bus di trecentosessanta copie dello stesso numero.
+signal dome_button_changed(direction: int)

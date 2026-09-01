@@ -1614,6 +1614,27 @@ LETTO = ((_LETTO[1] + _LETTO[3]) / 2, (_LETTO[2] + _LETTO[4]) / 2 + SCARTO_LETTO
 
 # La cupola come volume: dove sta il giocatore quando "sta a guardare".
 # Raggio piu' corto di quello della calotta, per non toccare i muri.
+# IL QUADRO DELLA CUPOLA: due pulsanti a muro, APRE e CHIUDE.
+#
+# DOVE, E I NUMERI SONO MISURATI NELLA SCENA, non dedotti da queste tuple: la
+# prima posa aveva il quadro a x = 1,20 e finiva DENTRO IL VANO DELLA PORTA, che
+# arriva fino al montante a 1,47. Le tuple di MURI dicono dove un vano comincia,
+# non dove finisce, e dedurre l'uno dall'altro e' il modo in cui si sbaglia di
+# mezzo metro senza accorgersene (tools/prova_quadro.tscn stampa chi c'e' intorno).
+#
+# Muro sud della sala del telescopio: asse a z = 6,50, faccia interna a 6,40.
+# Montante destro della porta del disimpegno a 1,47; interruttore della luce a
+# 1,63. Il quadro sta a 2,10, cioe' quasi mezzo metro piu' in la' - la mano che
+# cerca l'interruttore non deve trovare il comando della cupola.
+#
+# A CHE ALTEZZA. 1,35 m al centro: e' la quota dei quadri elettrici, e nessuno
+# mette un comando dove ci si deve chinare.
+#
+# PERCHE' NON DA' FASTIDIO A CHI SALE: dista 4 m dal centro della cupola, e la
+# passerella anulare arriva a 1,93.
+QUADRO_CUPOLA = (2.10, 1.35, 6.35)      # centro della scatola, coordinate di gioco
+QUADRO_MISURA = (0.22, 0.30, 0.10)      # larghezza, altezza, sporgenza dal muro
+
 ATTIVITA_CUPOLA = (2.20, 2.00)     # raggio, altezza del cilindro
 # (nome, x, z, nx, nz, quota). Le esterne stanno piu' in alto, sopra l'architrave.
 APPLIQUE = [

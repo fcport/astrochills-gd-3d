@@ -20,7 +20,8 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        H_INTERRUTTORE, L_PLACCA, A_PLACCA, SP_PLACCA,
                        LETTO, MOKA, LAMPADA_CUCINA, ATTIVITA_CUPOLA,
                        CASSA_MONITOR, VETRO_MONITOR, SEDILE_MONITOR,
-                       BOMBATURA_MONITOR, FRANCO_VETRO)
+                       BOMBATURA_MONITOR, FRANCO_VETRO, QUADRO_CUPOLA, QUADRO_MISURA
+)
 
 MURI, APERTURE, PAVIMENTI, SOFFITTI, SALA, (_CX, _CZ) = scalati()
 _R = DOME_R
@@ -145,6 +146,7 @@ def tscn():
              # siede. Il modello non sa niente di tutto questo, e non deve.
              '[ext_resource type="Script" path="res://world/desk_station.gd" id="24_postazione"]',
              '[ext_resource type="Script" path="res://world/interactables/crt_monitor.gd" id="25_crt"]',
+             '[ext_resource type="Script" path="res://world/interactables/dome_panel.gd" id="34_quadro"]',
              '[ext_resource type="PackedScene" path="res://crt/crt_screen.tscn" id="26_vetro"]',
              '[ext_resource type="Script" path="res://world/dome_shutter.gd" id="27_cupola"]',
              '[ext_resource type="PackedScene" path="res://world/interactables/bed.tscn" id="28_letto"]',
@@ -335,6 +337,28 @@ def tscn():
               # dell'interazione sbatte, e senza non c'e' nessun prompt.
               '[sub_resource type="BoxShape3D" id="s_monitor"]',
               'size = Vector3(%.3f, %.3f, %.3f)' % CASSA_MONITOR[3:], '',
+              # IL QUADRO DELLA CUPOLA. La scatola e' cio' contro cui sbatte il
+              # raggio dell'interazione; i due pulsanti sono due cilindri che
+              # sporgono, e servono solo a farlo leggere come un quadro e non come
+              # una scatola di derivazione. Modello vero quando arrivera' il pack:
+              # il riferimento e' su Sketchfab, vedi CREDITI.md.
+              # LA CASSA E' CHIARA E I PULSANTI SCURI, non il contrario: un quadro
+              # con lo stesso valore del muro e' una macchia che non si trova, e i
+              # pulsanti si devono staccare da lui e non dall'intonaco. Il grigio
+              # verdolino e' quello dei quadri elettrici degli anni Ottanta.
+              '[sub_resource type="StandardMaterial3D" id="mat_quadro"]',
+              'albedo_color = Color(0.62, 0.65, 0.58, 1)',
+              'metallic = 0.0', 'metallic_specular = 0.30', 'roughness = 0.60', '',
+              '[sub_resource type="StandardMaterial3D" id="mat_pulsante"]',
+              'albedo_color = Color(0.09, 0.09, 0.10, 1)',
+              'metallic = 0.0', 'metallic_specular = 0.45', 'roughness = 0.35', '',
+              '[sub_resource type="BoxShape3D" id="s_quadro"]',
+              'size = Vector3(%.3f, %.3f, %.3f)' % QUADRO_MISURA, '',
+              '[sub_resource type="BoxMesh" id="m_quadro"]',
+              'size = Vector3(%.3f, %.3f, %.3f)' % QUADRO_MISURA, '',
+              '[sub_resource type="CylinderMesh" id="m_pulsante"]',
+              'top_radius = 0.022', 'bottom_radius = 0.022', 'height = 0.030',
+              'radial_segments = 12', 'rings = 1', '',
               # Il vetro: un quad della misura ESATTA del tubo, un millimetro davanti
               # alla sua faccia piu' avanzata e un millimetro dietro il bordo della
               # cassa, che quindi lo inquadra da se'. La cornice nera attorno
@@ -437,6 +461,30 @@ def tscn():
               'NodePath("../Osservatorio/Cupola/PortelloAlto")])',
               'open_offset = Array[Vector3]([Vector3(0, 0, 0), Vector3(0, 0, 0)])',
               'open_rotation_deg = Array[Vector3]([Vector3(90, 0, 0), Vector3(90, 0, 0)])', '',
+              # --- il quadro della cupola, con i suoi due pulsanti -------------
+              # I PULSANTI GUARDANO DENTRO LA STANZA, cioe' verso -Z: il quadro sta
+              # sul muro sud e chi lo usa gli sta davanti, dando le spalle al muro.
+              # Ruotati di 90 gradi attorno a X perche' un cilindro nasce in piedi e
+              # un pulsante sporge in orizzontale.
+              '[node name="QuadroCupola" type="StaticBody3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
+              % QUADRO_CUPOLA,
+              'script = ExtResource("34_quadro")', '',
+              '[node name="Col" type="CollisionShape3D" parent="QuadroCupola"]',
+              'shape = SubResource("s_quadro")', '',
+              '[node name="Cassa" type="MeshInstance3D" parent="QuadroCupola"]',
+              'mesh = SubResource("m_quadro")',
+              'material_override = SubResource("mat_quadro")', '',
+              '[node name="Apre" type="MeshInstance3D" parent="QuadroCupola"]',
+              'transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 0.065, %.3f)'
+              % (-QUADRO_MISURA[2] / 2 - 0.010),
+              'mesh = SubResource("m_pulsante")',
+              'material_override = SubResource("mat_pulsante")', '',
+              '[node name="Chiude" type="MeshInstance3D" parent="QuadroCupola"]',
+              'transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, -0.065, %.3f)'
+              % (-QUADRO_MISURA[2] / 2 - 0.010),
+              'mesh = SubResource("m_pulsante")',
+              'material_override = SubResource("mat_pulsante")', '',
               '[node name="ControlloPC" parent="." instance=ExtResource("4_arredi")]', '',
               '[node name="Cucina" parent="." instance=ExtResource("5_cucina")]', '',
               '[node name="Divulgazione" parent="." instance=ExtResource("6_divulg")]', '',
@@ -1567,6 +1615,7 @@ print("scritto %s  -  %d blocchi, %d dimensioni distinte" % (out, len(blocchi), 
 # controlla che i valori che contano ci siano davvero.
 _scritto = io.open(out, encoding="utf-8").read()
 _attesi = [("ambient_light_energy = 0.035", "la luce ambientale della notte"),
+           ('34_quadro', "il quadro della cupola: senza, la notte non comincia"),
            ("tonemap_mode = 3", "il tonemapping ACES"),
            ("shadow_normal_bias = 0.45", "i bias delle ombre delle plafoniere"),
            ('locale = "la cucina"', "il nome del locale nel prompt"),

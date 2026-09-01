@@ -22,8 +22,8 @@ needs_narrative: true
 
 Hai perso il lavoro in albergo e ne hai trovato uno strano: gestore notturno di un
 osservatorio astronomico appena aperto sull'Appennino marchigiano, nel 1999. Non sai niente
-di astronomia. Impari sul campo, una notte alla volta: livelli la montatura, allinei al
-polo, scegli cosa fotografare, avvii la sequenza. Le foto le vendi; coi soldi compri
+di astronomia. Impari sul campo, una notte alla volta: apri la cupola, accendi e colleghi,
+sincronizzi il puntamento, scegli cosa fotografare, avvii la sequenza. Le foto le vendi; coi soldi compri
 attrezzatura che automatizza pezzi della routine, e il tempo che ne ricavi lo passi lì
 dentro, da solo, con qualcosa che ha cominciato a comparire nelle immagini.
 
@@ -704,6 +704,17 @@ Tutto è in lire. **I prezzi di `economia.md §3` sono confermati come rapporto 
 per dieci in valore assoluto**: il bilanciamento resta identico, ma le cifre diventano
 credibili per il 1999 su entrambi i lati del banco.
 
+> **I prezzi della spesa quotidiana sono quelli veri; quelli dell'attrezzatura no, ed e' una
+> scelta dichiarata** (D-170). Una moka a 25.000 lire, una stufetta a 40.000, un catalogo su
+> CD-ROM a 180.000, un abbonamento a *Coelum* a 60.000: sono i prezzi del 1999, e restano.
+> L'attrezzatura grossa invece nella realta' costava dieci volte tanto — una SBIG ST-7
+> stava sui cinque milioni di lire — e le foto astronomiche amatoriali, in Italia, non le
+> pagava quasi nessuno: le riviste pubblicavano quelle dei lettori gratis. Ai prezzi veri
+> servirebbero diciassette notti su venti per un solo upgrade, e l'albero morirebbe. Il
+> gioco tiene quindi **due scale diverse**: quella della vita in osservatorio, esatta,
+> e quella del banco, di gioco. E' finzione, non ricostruzione, e sta scritto qui perche'
+> chi conosce il periodo se ne accorgerebbe comunque.
+
 **Payout per foto, a scaglioni sul punteggio aggregato:**
 
 | Punteggio | Lire |
@@ -714,25 +725,50 @@ credibili per il 1999 su entrambi i lati del banco.
 | 75-89 | 70.000 — buona notte |
 | 90-100 | 150.000 — scatto da rivista |
 
+#### La dotazione: che cosa c'e' in cupola dalla prima notte
+
+Non era scritto da nessuna parte, ed e' il numero da cui discendono tutti gli altri: la
+scala in arcosecondi per pixel, il campo inquadrato, quanto e' critico il fuoco, quanto
+dura una posa sensata.
+
+| Cosa | Che cos'e' | Perche' proprio questo |
+|---|---|---|
+| **Telescopio** | Newton **30 cm f/5**, focale 1500 mm | il classico degli osservatori comunali italiani degli anni '80. E il tubo del modello 3D e' **lungo 1,50 m**: un 40 cm f/4,5 ne vorrebbe due, e non passerebbe nel pozzo della passerella (raggio 0,87 m) |
+| **Montatura** | equatoriale **alla tedesca**, su pilastro di cemento | e' quella del modello, ed e' quella che a meta' notte obbliga al **meridian flip** |
+| **Camera** | **SBIG ST-8**, chip KAF-1600 da 1530x1020 pixel di 9 micron, raffreddata a Peltier | la camera dell'astrofotografo europeo del '99. Ha il **chip di guida integrato**: per questo la fase 9 non ha bisogno di una seconda camera |
+| **Ruota filtri** | **SBIG CFW-8**, cinque posizioni | si attacca alla camera e prende corrente da lei. E' il fatto su cui gira la fase 2 |
+| **PC** | un 486 dedicato al telescopio, monitor monocromatico | vedi *Le licenze dichiarate*, piu' avanti |
+
+**Che cosa producono questi numeri.** 1500 mm di focale con pixel da 9 micron danno
+**1,24 arcosecondi per pixel** — campionamento giusto per il seeing di 2-3" dell'Appennino,
+ne' sprecato ne' sfocato — e un campo di **32' x 21'**. Ci stanno M51, M27, M97, la
+Girandola: galassie e nebulose planetarie, che e' esattamente il repertorio che il
+targeting propone. M31 no, ma M31 non ci sta in nessun telescopio di questa classe.
+
 **Albero degli upgrade** (uno per fase, dieci in tutto):
 
 | Upgrade | Fase | Effetto | Prezzo |
 |---|---|---|---|
-| Livella motorizzata | 1 | automatica, sparisce dalla routine | 250.000 |
-| Contrappesi calibrati | 2 | tolleranza più ampia | 120.000 |
-| Software di polar align | 3 | da 60 a 10 minuti, qualità fissa | 300.000 |
-| Sequencer scripts | 4 | boot in un click | 80.000 |
-| Plate-solver locale | 5 | più veloce, niente floppy | 200.000 |
-| Catalogo esteso | 6 | più target e più commesse disponibili | 180.000 |
-| Maschera di Bahtinov | 7 | picco di fuoco più netto | 50.000 |
-| Libreria dark + flat panel | 8 | niente riacquisizione ogni notte | 150.000 |
-| Autoguider OAG | 9 | errore RMS più basso | 350.000 |
-| Camera CCD raffreddata | 10 | alza il tetto di qualità | 600.000 |
-| | | **Totale albero** | **2.280.000** |
+| Comando del portello dalla sala | 1 | il quadro in cupola resta, ma la si apre anche dal PC: la fase non fa piu' salire | 300.000 |
+| Ciabatta comandata | 2 | un interruttore solo, e gli apparecchi si accendono nell'ordine giusto da soli | 120.000 |
+| Raffreddamento migliorato | 3 | ventola supplementare e dissipatore: scende piu' giu' e ci resta anche nelle notti tiepide | 250.000 |
+| Libreria dark + pannello flat | 4 | niente riacquisizione ogni notte | 150.000 |
+| Plate solving (PinPoint e GSC su CD) | 5 | la sincronizzazione la fa il software: qualita' fissa, tempo dimezzato | 300.000 |
+| Catalogo NGC/IC su CD-ROM | 6 | piu' target e piu' commesse disponibili | 180.000 |
+| Encoder di azimut sulla cupola | 7 | la fessura insegue il telescopio da sola, e non si sbaglia mai | 350.000 |
+| Maschera di Hartmann | 8 | il picco di fuoco si vede: la zona di punteggio pieno si allarga | 50.000 |
+| Guida fuori asse (OAG) | 9 | errore RMS piu' basso, niente flessioni fra i due tubi | 280.000 |
+| Fascia anticondensa | 10 | la brina non si posa piu' sul secondario a meta' posa | 100.000 |
+| | | **Totale albero** | **2.080.000** |
+
+**Due upgrade toccano la cupola, e non e' una svista**: sono due pezzi che si comprano in
+ordine e fanno cose diverse. Il primo porta il comando del portello in sala controllo; il
+secondo aggiunge l'encoder che fa inseguire la fessura. Chi compra solo il secondo continua
+a salire per aprire.
 
 **La curva regge, ed è questo che rende la scelta reale.** Venti notti a due foto: giocando
 in modo ordinario si incassano circa **1.400.000 lire**, giocando bene circa **2.800.000**.
-Cioè si compra fra il 60% e il 100% dell'albero — **e nel frattempo servono soldi anche per
+Cioè si compra fra il 67% e tutto l'albero — **e nel frattempo servono soldi anche per
 il resto**. Nessuno compra tutto senza rinunciare a qualcosa.
 
 #### Le altre voci di spesa

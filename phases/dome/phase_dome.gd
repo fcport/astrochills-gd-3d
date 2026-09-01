@@ -1,41 +1,40 @@
 ## Fase 1 — apertura della cupola, dal pannello di controllo.
 ##
-## LA PRIMA COSA CHE SI FA IN UNA NOTTE, e la prima che si è potuta fare davvero:
-## il livellamento e il bilanciamento sono gesti sulla montatura, e la montatura
-## in gioco non si tocca ancora. La cupola invece ha un motore e un pannello, e il
-## pannello sta sul PC — cioè esattamente dove il giocatore è già seduto.
+## LA PRIMA COSA CHE SI FA IN UNA NOTTE, e non si fa al computer (D-171). Nel '99
+## una cupola comandata dal PC della sala controllo esisteva — Digital Dome Works —
+## ma era roba da osservatorio ricco: a Monte San Lorenzo il portello si apre da un
+## quadro a muro, in cupola. Il PC non sa nemmeno che la cupola esista, e quando
+## saprà comandarla sarà perché qualcuno ha speso trecentomila lire (l'upgrade
+## della fase 1 nel GDD).
 ##
-## DUE PULSANTI A UOMO PRESENTE, come sul quadro vero: SU apre, GIÙ chiude, e il
-## motore va solo finché tieni il dito. Non è una scelta di comodo: le cupole si
-## comandano così perché un battente da qualche quintale che si muove da solo
-## mentre nessuno guarda è un modo di rompere un telescopio. Tenere premuto è anche
-## l'idioma già stabilito dalla fase polare — «le viti si girano, non si scattano»
-## — e per la stessa ragione: è il gesto di una fase che vuole calma.
+## QUESTA FASE NON HA UNO SCHERMO, ed è la prima. `screen()` restituisce `null`, e
+## il CRT resta spento finché la cupola non è aperta: la sera comincia alzandosi e
+## salendo in cupola, non sedendosi. È il rituale vero, e costa al giocatore
+## esattamente quello che costava a chi ci lavorava.
 ##
-## SI PUÒ ANCHE RICHIUDERE, e non è una simmetria gratuita: una cupola che si apre
-## e basta è una cerniera. Il secondo pulsante è quello che si preme quando
-## arrivano le nuvole — e per adesso serve almeno a disfare un gesto sbagliato,
-## che è il minimo che un comando debba concedere.
+## DUE PULSANTI A UOMO PRESENTE, sul quadro: il motore va solo finché tieni il
+## dito. Le cupole si comandano così perché un battente da qualche quintale che si
+## muove da solo mentre nessuno guarda è un modo di rompere un telescopio.
 ##
-## COSA VEDE IL GIOCATORE, E DOVE. Sul CRT vede il pannello: la corsa, la
-## percentuale, lo spicchio di cielo che si allarga fra i due battenti. In cupola,
-## se ci va dopo, vede la fessura aperta sul cielo — che prima non c'era. Le due
-## cose non si guardano insieme, ed è giusto così: si comanda da una stanza e si
-## verifica in un'altra, come in un osservatorio vero.
+## COSA VEDE IL GIOCATORE: la cupola che si apre sopra la sua testa, mentre tiene
+## premuto. Non c'è nessun numero da guardare, e non ne serve nessuno — la fessura
+## che si allarga sul cielo è il migliore indicatore di corsa che esista.
+##
+## `runs_in_background()` è `true`, e QUI è obbligatorio: il giocatore non è alla
+## postazione, è in cupola. Una fase sospesa quando la sedia è vuota non
+## riceverebbe mai il comando che sta aspettando.
 ##
 ## NON DÀ PUNTEGGIO, e lo dichiara: `score()` è 100 sempre. È il caso della fase 4
 ## del GDD, «nessun punteggio: si passa o si ripete» — non c'è niente da fare bene
 ## o male, c'è solo da farlo. Fingere una metrica qui vorrebbe dire inventarsi una
 ## bravura che il gesto non contiene.
 ##
-## COME PARLA AL MONDO. La cupola vive in `world/`, che a questa cartella è
-## vietato: la fase non la cerca e non la conosce. Annuncia sul bus DOVE STA IL
-## BATTENTE (`Events.dome_aperture_changed`), e chi in giro per il mondo ha un
-## battente lo mette lì. È lo stesso verso di `sequence_started`: un fatto detto a
-## voce alta, non un comando dato a qualcuno.
-##
-## `runs_in_background()` resta `false`: il motore va finché c'è un dito sul
-## comando, e un dito sul comando vuole qualcuno alla postazione.
+## COME PARLA AL MONDO, E COME IL MONDO LE PARLA. La cupola e il quadro vivono in
+## `world/`, che a questa cartella è vietato: la fase non li cerca e non li
+## conosce. Il giro si chiude sul bus, in due fatti e nessun comando — il quadro
+## dice che una mano tiene premuto (`dome_button_changed`), la fase dice dove sta
+## il battente (`dome_aperture_changed`). Chi in giro per il mondo ha un battente
+## lo mette lì.
 class_name PhaseDome
 extends Phase
 
@@ -55,8 +54,6 @@ const FULLY_OPEN := 0.999
 const REPORT_STEP := 0.0005
 
 @export var truth: DomeTruthSource
-
-@onready var _screen: Control = %DomeScreen
 
 var _truth_input := DomeInput.new()
 
@@ -89,6 +86,8 @@ func _ready() -> void:
 		assert(false, "phase senza truth source")
 		return
 
+	Events.dome_button_changed.connect(_on_button)
+
 	# SI ANNUNCIA LA POSIZIONE DI PARTENZA, e non è una formalità: la fase e il
 	# mondo devono partire d'accordo. Rifacendo il setup (storia 2.6) questa fase
 	# ricomincia da capo, con il battente a zero, mentre in cupola è rimasto
@@ -99,10 +98,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	# `_screen` è protetto quanto `truth`, per la ragione scritta nella fase
-	# polare: un nodo unico che si perde si dereferenzierebbe sessanta volte al
-	# secondo.
-	if _done or truth == null or not is_instance_valid(_screen):
+	if _done or truth == null:
 		return
 
 	_read_command(delta)
@@ -118,25 +114,29 @@ func _process(delta: float) -> void:
 	_truth_input.aperture = _aperture
 
 	_report()
-	_screen.set_readout(_aperture, _speed, _truth_input.command, is_open())
 
-
-func _unhandled_input(event: InputEvent) -> void:
-	# `truth == null` va guardato anche qui: in release gli `assert` spariscono, e
-	# senza questa riga INVIO emetterebbe comunque `finished` — un errore di
-	# configurazione diventerebbe un esito plausibile, scritto nel save.
-	if _done or truth == null:
-		return
-	# SI ESCE SOLO A CUPOLA APERTA, e il pannello lo dice invece di limitarsi a non
-	# rispondere. Non è un capriccio della procedura: da qui in poi la notte punta,
-	# mette a fuoco ed espone, e con il tubo sotto un guscio chiuso sono tre fasi
-	# che si giocano contro un coperchio.
-	if is_open() and event.is_action_pressed(&"dome_confirm"):
+	# LA FASE SI CHIUDE DA SÉ A FINE CORSA, e non c'è nessun tasto di conferma:
+	# quello che si vede sopra la testa È la conferma. Da qui in poi la notte punta,
+	# mette a fuoco ed espone, e con il tubo sotto un guscio chiuso sarebbero tre
+	# fasi giocate contro un coperchio.
+	if is_open():
 		_finish()
 
 
+## NESSUNO SCHERMO, e vedi la testa del file: il PC dell'osservatorio non sa che
+## la cupola esista. Il pannello disegnato per questa fase non è stato buttato —
+## `dome_screen.gd` resta nel repository — perché è esattamente quello che
+## comparirà sul CRT il giorno in cui si comprerà il comando del portello dalla
+## sala controllo. È il contenuto di un upgrade già scritto nel GDD, non codice
+## morto.
 func screen() -> Control:
-	return _screen
+	return null
+
+
+## Il giocatore è in cupola, non alla postazione: sospendere questa fase quando la
+## sedia è vuota vorrebbe dire non farla girare mai.
+func runs_in_background() -> bool:
+	return true
 
 
 ## Nessun punteggio: si passa o si ripete. Vedi la testa del file.
@@ -155,17 +155,20 @@ func aperture() -> float:
 	return _aperture
 
 
+## LA FASE NON LEGGE PIÙ LA TASTIERA, e non deve: i pulsanti stanno su un quadro
+## a muro, e chi li tiene premuti è un oggetto del mondo. Qui arriva solo il fatto.
+## L'interblocco dei due pulsanti (premuti insieme, il motore sta fermo) vive nel
+## quadro, dov'è il quadro elettrico vero.
+func _on_button(direction: int) -> void:
+	_truth_input.command = signi(direction)
+
+
 func _read_command(delta: float) -> void:
-	# `get_axis` E NON DUE `if`: tenendo premuti tutti e due i pulsanti restituisce
-	# esattamente 0, che è l'interblocco che i quadri veri hanno — il motore non
-	# decide da solo chi dei due ha ragione, sta fermo. Scritto con due `if` in fila
-	# vincerebbe l'ultimo che ho battuto a tastiera, cioè il caso.
-	var verso := signi(roundi(Input.get_axis(&"dome_close", &"dome_open")))
 	# Il cronometro del motore si azzera quando il comando si stacca, e cresce solo
 	# mentre gira: è la stessa contabilità di `seconds_since_correction`, al
 	# contrario. Nessuna sorgente dell'MVP lo legge (vedi `DomeInput`).
+	var verso := _truth_input.command
 	_truth_input.seconds_running = (_truth_input.seconds_running + delta) if verso != 0 else 0.0
-	_truth_input.command = verso
 
 
 ## Dice al mondo dove sta il battente, se si è mosso abbastanza da valere la pena.

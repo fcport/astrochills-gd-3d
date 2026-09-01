@@ -156,3 +156,16 @@ script scrivono accanto a ogni cartella scaricata.
   listelli, perché un listello è un pezzo di gusto — ed è proprio il pezzo che data
   il bagno.
 - Modelli: [Poly Haven](https://polyhaven.com) (CC0), [OpenGameArt](https://opengameart.org) (solo voci CC0)
+
+## Riferimenti visivi (non sono asset)
+
+Modelli guardati per decidere come deve essere fatta una cosa, e mai scaricati né
+usati. Stanno qui perché il giorno in cui il segnaposto diventerà un modello vero
+si riparta da dove si era guardato, invece che da capo.
+
+- **Quadro della cupola** (i due pulsanti a muro, D-171): *Old Soviet Electrical
+  Junction Box (220V)* di uliana, Sketchfab, CC-BY —
+  https://sketchfab.com/models/fe37bff7b3fa45a7960b7defa30b3f3e
+  Scatola verniciata grigio-verde con targa e triangolo di pericolo: è
+  esattamente quello che starebbe sul muro di una cupola italiana del 1985. La
+  targa in cirillico è la ragione per cui è un riferimento e non un asset.

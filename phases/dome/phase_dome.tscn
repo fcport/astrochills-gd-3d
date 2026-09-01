@@ -1,13 +1,8 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://phases/dome/phase_dome.gd" id="1_phase"]
-[ext_resource type="Script" path="res://phases/dome/dome_screen.gd" id="2_screen"]
 [ext_resource type="Resource" path="res://phases/dome/sources/honest_shutter.tres" id="3_truth"]
 
 [node name="PhaseDome" type="Node"]
 script = ExtResource("1_phase")
 truth = ExtResource("3_truth")
-
-[node name="DomeScreen" type="Control" parent="."]
-unique_name_in_owner = true
-script = ExtResource("2_screen")

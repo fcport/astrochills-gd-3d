@@ -48,3 +48,4 @@ assets/textures/
 # le cartelle __pycache__ dei moduli di tools/, che finiscono accanto a chi li importa
 __pycache__/
 *.pyc
+.gstack/

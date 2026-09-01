@@ -3976,3 +3976,110 @@ istanziato il gioco (la prima fase era già partita), mandava un `InputEventActi
 dal nome, non dal tasto), e premeva il comando una volta sola — ma quando la finestra perde
 il fuoco Godot rilascia da sé tutte le azioni, e il referto diceva «battente fermo, tasto non
 premuto, fase che gira»: il meccanismo era sano, era la mano della sonda ad aprirsi.
+
+
+## D-170 — La dotazione ha un nome, e l'economia dichiara di essere finzione
+
+**1 settembre 2026.** Tre incoerenze trovate rileggendo il GDD dopo D-168, tutte
+nella stessa zona: che cosa c'è in cupola, e quanto costa.
+
+**Il telescopio non era mai stato deciso.** Il GDD non diceva né tipo né diametro, e da
+quei due numeri discende tutto il resto: la scala in arcosecondi per pixel, il campo
+inquadrato, quanto è critico il fuoco, quanto dura una posa sensata. Avevo proposto un
+Newton da 40 cm f/4,5, e **il modello mi ha corretto**: `telescopio_blender.py` dichiara il
+tubo lungo **1,50 m**, e il vincolo non è la cupola ma il pozzo della passerella, che lascia
+0,87 m di raggio. Un 40 cm f/4,5 ha 1800 mm di focale e due metri di tubo: non ci passa.
+Quello che ci passa, ed è altrettanto tipico di un osservatorio comunale italiano degli anni
+'80, è un **Newton da 30 cm f/5** — 1500 mm di focale, tubo 1,55. Con la **SBIG ST-8** (pixel
+da 9 micron) fa **1,24"/pixel** e **32'x21'** di campo: campionamento giusto per un seeing di
+2-3", e un campo più generoso di quello che avrebbe dato il 40 cm.
+
+**La camera raffreddata era in vendita, e la fase 3 la dava per presente.** Federico ha
+scelto: la ST-8 è raffreddata dalla prima notte, e l'upgrade diventa un **raffreddamento
+migliorato** — ventola supplementare e dissipatore, che scende più giù e ci resta anche nelle
+notti tiepide. Una fase che esiste solo dopo un acquisto sarebbe stata la prima del gioco a
+non esistere all'inizio.
+
+**L'albero degli upgrade comprava fasi che non ci sono più.** Livella motorizzata,
+contrappesi calibrati, software di polar align: tre acquisti su dieci per le tre fasi tolte
+da D-168. Rifatto sulle dieci fasi nuove, con due chicche: il **comando del portello dalla
+sala** (l'automazione che D-171 ha appena tolto di mano al giocatore, e che qui si può
+ricomprare) e l'**encoder di azimut** che fa inseguire la fessura. E una correzione di
+periodo: la maschera per il fuoco era una **Bahtinov**, inventata nel 2005 — nel '99 si usava
+la **maschera di Hartmann**, che è vecchia di un secolo.
+
+**I prezzi: due scale diverse, e adesso è scritto.** Federico ha scelto la via di mezzo, e
+ha ragione. Moka, stufetta, cataloghi su CD, abbonamenti: prezzi veri del 1999, e lo erano
+già. L'attrezzatura grossa no — una ST-7 stava sui cinque milioni di lire, e le foto
+astronomiche amatoriali in Italia non le pagava quasi nessuno: le riviste pubblicavano
+quelle dei lettori gratis. Ai prezzi veri servirebbero diciassette notti su venti per un solo
+upgrade, e l'albero morirebbe. La cura vera non sarebbe alzare i ricavi ma **cambiare la
+fonte** — stipendio del Comune, commesse a qualità, usato sulla BBS — ed è una riscrittura
+dell'economia che non si fa di passaggio. Nel frattempo il GDD **dichiara** di tenere due
+scale, invece di lasciar credere che sia ricostruzione: chi conosce il periodo se ne
+accorgerebbe comunque, e una finzione dichiarata non è un errore.
+
+
+## D-171 — Il portello si apre dal quadro in cupola, non dal computer
+
+**1 settembre 2026.** «Sistema entrambe le cose: metti una pulsantiera a muro con due
+bottoni.» La fase 1 lascia il CRT dopo tre giorni di vita.
+
+**Perché era sbagliata.** Comandare una cupola dal PC della sala controllo, nel 1999, si
+poteva fare: si chiamava Digital Dome Works, ed era roba da osservatorio ricco. A Monte San
+Lorenzo il portello si apre da un quadro a muro, sotto il portello che si muove. Era il
+punto meno vero di tutto l'impianto, e l'avevo dichiarato tale prima che me lo chiedesse.
+
+**Che cosa si guadagna, oltre alla verità.** La sera comincia **alzandosi**, non sedendosi. Il
+CRT resta spento finché la cupola non è aperta — questa è la prima fase del gioco che
+restituisce `null` da `screen()` — e il giocatore vede la cupola aprirsi sopra la propria
+testa mentre tiene premuto, che è un indicatore di corsa migliore di qualunque barra. La fase
+si chiude **da sola** a fine corsa: non c'è più niente da confermare, perché quello che si
+vede è già la conferma.
+
+**Il pannello disegnato non è stato buttato.** `dome_screen.gd` resta nel repository: è
+esattamente ciò che comparirà sul CRT il giorno in cui si comprerà il comando del portello
+dalla sala controllo — l'upgrade della fase 1 nel nuovo albero (D-170). Il lavoro fatto
+diventa il contenuto di un acquisto, non codice morto.
+
+**Come si chiude il giro senza rompere i confini.** `world/` non può nominare `phases/`, e la
+fase non può cercare un oggetto del mondo. Sul bus viaggiano due FATTI e nessun comando: il
+quadro dice che una mano tiene premuto (`dome_button_changed`), la fase dice dove sta il
+battente (`dome_aperture_changed`). Il quadro non sa che esista una fase; la fase non sa che
+esista un quadro. `runs_in_background()` diventa `true`, e qui è obbligatorio: il giocatore è
+in cupola, non alla postazione, e una fase sospesa a sedia vuota non riceverebbe mai niente.
+
+**Il vincolo che fa esistere il quadro** è che non lo si possa usare da lontano: si prende
+con `E`, e chi si allontana oltre due metri se lo ritrova lasciato. Senza, si prende il
+quadro, si scende in sala controllo e si comanda la cupola da seduti — cioè si riottiene
+gratis l'automazione che questa decisione ha appena tolto.
+
+**Due difetti trovati misurando, e nessuno dei due si vedeva dal codice.**
+
+*Il quadro era finito dentro il vano della porta.* L'avevo messo a x = 1,20 deducendo la
+posizione della porta dalle tuple di `geometria.py` — che dicono dove un vano **comincia**,
+non dove finisce. Il montante sta a 1,47. La sonda adesso stampa che cosa c'è **intorno** al
+quadro e a che distanza, e da lì il numero giusto (2,10) è uscito in un colpo: interruttore
+della luce a 1,63, quadro a mezzo metro più in là, così la mano che cerca la luce non trova
+il comando della cupola.
+
+*Il vincolo di distanza misurava in linea d'aria.* Il quadro sta a 1,35 di altezza e il
+giocatore ha l'origine ai piedi: chi gli stava davanti **a un metro e mezzo** risultava a
+2,02 metri, e il quadro gli si staccava di mano mentre lo stava guardando. Il dislivello fra
+i piedi di uno e un oggetto appeso al muro non è distanza, è altezza: si misura sul
+pavimento. Trovato solo perché la sonda ha provato a scattare da un metro e mezzo invece che
+da novanta centimetri.
+
+**La sonda ha sbagliato due volte a fotografare, e vale la pena scriverlo** perché è lo
+stesso errore in due forme: la prima foto guardava in orizzontale e ha inquadrato la porta
+accanto; la seconda, corretta con un `look_at` sul quadro, ha inclinato tutto il corpo del
+giocatore e ha fotografato il **soffitto** — la camera sta un metro e settanta sopra i piedi,
+e un beccheggio di quindici gradi lassù diventa un tetto. Un bersaglio alla quota del corpo,
+e il quadro entra in campo da sé.
+
+**Il modello vero arriverà col pack di texture.** Per adesso il quadro è tre primitive nel
+blockout, con la cassa chiara e i pulsanti scuri — un quadro che ha lo stesso valore del muro
+è una macchia che non si trova. Il riferimento visivo è su Sketchfab: *Old Soviet Electrical
+Junction Box (220V)* di uliana (CC-BY, 1712 facce), che è esattamente la scatola verniciata
+grigio-verde con la targa e il triangolo che starebbe su quel muro. Sta in CREDITI.md come
+riferimento, non come asset: non è stato scaricato né usato.

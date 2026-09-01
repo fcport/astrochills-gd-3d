@@ -22,6 +22,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/porta_magazzino.glb" id="23_pmag"]
 [ext_resource type="Script" path="res://world/desk_station.gd" id="24_postazione"]
 [ext_resource type="Script" path="res://world/interactables/crt_monitor.gd" id="25_crt"]
+[ext_resource type="Script" path="res://world/interactables/dome_panel.gd" id="34_quadro"]
 [ext_resource type="PackedScene" path="res://crt/crt_screen.tscn" id="26_vetro"]
 [ext_resource type="Script" path="res://world/dome_shutter.gd" id="27_cupola"]
 [ext_resource type="PackedScene" path="res://world/interactables/bed.tscn" id="28_letto"]
@@ -1147,6 +1148,31 @@ tonemap_white = 3.0
 
 [sub_resource type="BoxShape3D" id="s_monitor"]
 size = Vector3(0.386, 0.420, 0.430)
+
+[sub_resource type="StandardMaterial3D" id="mat_quadro"]
+albedo_color = Color(0.62, 0.65, 0.58, 1)
+metallic = 0.0
+metallic_specular = 0.30
+roughness = 0.60
+
+[sub_resource type="StandardMaterial3D" id="mat_pulsante"]
+albedo_color = Color(0.09, 0.09, 0.10, 1)
+metallic = 0.0
+metallic_specular = 0.45
+roughness = 0.35
+
+[sub_resource type="BoxShape3D" id="s_quadro"]
+size = Vector3(0.220, 0.300, 0.100)
+
+[sub_resource type="BoxMesh" id="m_quadro"]
+size = Vector3(0.220, 0.300, 0.100)
+
+[sub_resource type="CylinderMesh" id="m_pulsante"]
+top_radius = 0.022
+bottom_radius = 0.022
+height = 0.030
+radial_segments = 12
+rings = 1
 
 [sub_resource type="QuadMesh" id="q_monitor"]
 size = Vector2(0.309, 0.274)
@@ -2589,6 +2615,27 @@ script = ExtResource("27_cupola")
 leaves = Array[NodePath]([NodePath("../Osservatorio/Cupola/PortelloBasso"), NodePath("../Osservatorio/Cupola/PortelloAlto")])
 open_offset = Array[Vector3]([Vector3(0, 0, 0), Vector3(0, 0, 0)])
 open_rotation_deg = Array[Vector3]([Vector3(90, 0, 0), Vector3(90, 0, 0)])
+
+[node name="QuadroCupola" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.100, 1.350, 6.350)
+script = ExtResource("34_quadro")
+
+[node name="Col" type="CollisionShape3D" parent="QuadroCupola"]
+shape = SubResource("s_quadro")
+
+[node name="Cassa" type="MeshInstance3D" parent="QuadroCupola"]
+mesh = SubResource("m_quadro")
+material_override = SubResource("mat_quadro")
+
+[node name="Apre" type="MeshInstance3D" parent="QuadroCupola"]
+transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 0.065, -0.060)
+mesh = SubResource("m_pulsante")
+material_override = SubResource("mat_pulsante")
+
+[node name="Chiude" type="MeshInstance3D" parent="QuadroCupola"]
+transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, -0.065, -0.060)
+mesh = SubResource("m_pulsante")
+material_override = SubResource("mat_pulsante")
 
 [node name="ControlloPC" parent="." instance=ExtResource("4_arredi")]
 

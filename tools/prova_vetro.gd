@@ -128,26 +128,35 @@ func _siediti() -> void:
 ## comando spariva e il referto diceva «battente 0.000, tasto false, fase gira»:
 ## il meccanismo era sano, era la mano della sonda ad aprirsi.
 func _apri_la_cupola() -> void:
+	# LA CUPOLA NON SI APRE PIU' DAL PC (D-171): il comando sta su un quadro a muro,
+	# in cupola. La sonda fa quello che farebbe il giocatore - ci va, lo prende, e
+	# tiene premuto - saltando solo la camminata, che qui non prova niente.
+	var quadro := DomePanel.find_in(get_tree())
+	if quadro == null:
+		print("[vetro] NON C'E' IL QUADRO della cupola")
+		_fine()
+		return
+	if not quadro.is_active():
+		var p := Player.find_in(get_tree())
+		if p == null:
+			print("[vetro] NON C'E' IL GIOCATORE")
+			_fine()
+			return
+		var q := quadro.global_position
+		p.global_position = Vector3(q.x, 0.0, q.z - 1.0)
+		quadro.interact(p)
+	# Si ripreme a ogni fotogramma: la finestra che perde il fuoco rilascia le azioni.
 	Input.action_press(&"dome_open")
 	var s := DomeShutter.find_in(get_tree())
 	if s == null:
 		print("[vetro] NESSUN BATTENTE nel gioco")
 		_fine()
 		return
-	# UN RIGO AL SECONDO MENTRE SI APRE, per la ragione gia' pagata dalla sonda
-	# della cupola: «non si e' aperta» e' lo stesso referto per tre guasti diversi —
-	# tasto non premuto, fase sospesa, battente scollegato — e senza queste tre
-	# colonne si cerca il guasto dalla parte sbagliata.
 	if int(_tempo) > _ultimo_secondo:
 		_ultimo_secondo = int(_tempo)
-		print("[vetro]   %2d s: battente %.3f  tasto %s  fase %s"
-			% [_ultimo_secondo, s.aperture(), Input.is_action_pressed(&"dome_open"),
-				_stato_fase()])
-	if s.aperture() < 0.999:
-		return
-	Input.action_release(&"dome_open")
-	_avanza()
-
+		print("[vetro]   %2d s: battente %.3f  quadro in mano %s  comando %d"
+			% [_ultimo_secondo, s.aperture(), quadro.is_active(), quadro.direction()])
+	# La fase si chiude da sola a fine corsa: non c'e' piu' niente da confermare.
 
 ## INVIO, e non una volta sola: una fase che non l'ha ancora ricevuto — perché
 ## stava nascendo, perché il gating dell'input non era ancora acceso — resterebbe

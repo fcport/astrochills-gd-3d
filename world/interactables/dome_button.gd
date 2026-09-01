@@ -70,11 +70,22 @@ func _process(_delta: float) -> void:
 	# o il giocatore è sparito. Il primo è il gesto; gli altri due sono le
 	# scorciatoie che senza questo controllo permetterebbero di comandare la cupola
 	# dalla sala di controllo.
-	if not Input.is_action_pressed(&"interact"):
+	if not _tenuto():
 		_lascia()
 		return
 	if _user == null or not is_instance_valid(_user) or _distanza() > REACH:
 		_lascia()
+
+
+## SI TIENE CON `E` OPPURE COL CLICK SINISTRO, e il secondo non è un doppione.
+##
+## `E` è il tasto con cui si preme; il click sinistro è quello che si tiene mentre
+## si guarda altrove — e guardare altrove, qui, vuol dire guardare la cupola che si
+## apre sopra la propria testa. Con il solo `E` bisognerebbe tenere il mignolo su
+## un tasto mentre si gira il mouse, che è la posizione della mano che nessuno
+## tiene per sei secondi.
+func _tenuto() -> bool:
+	return Input.is_action_pressed(&"interact") or Input.is_action_pressed(&"dome_hold")
 
 
 func _on_interacted(by: Node3D) -> void:
@@ -82,6 +93,11 @@ func _on_interacted(by: Node3D) -> void:
 		return
 	_held = true
 	_user = by
+	# IL CORPO SI FERMA, LA TESTA NO: si tiene premuto e ci si guarda intorno. È il
+	# motivo per cui questo comando sta in cupola e non sul PC — mentre la fessura
+	# si apre, la si guarda.
+	if by.has_method("set_movement_locked"):
+		by.set_movement_locked(true)
 	if _cap != null:
 		# Rientra lungo la propria normale: il cappello guarda in avanti come tutto
 		# il pulsante, e «dentro» è meno Z locale.
@@ -91,6 +107,8 @@ func _on_interacted(by: Node3D) -> void:
 
 func _lascia() -> void:
 	_held = false
+	if _user != null and is_instance_valid(_user) and _user.has_method("set_movement_locked"):
+		_user.set_movement_locked(false)
 	_user = null
 	if _cap != null:
 		_cap.position = _rest
@@ -109,5 +127,4 @@ func _distanza() -> float:
 func _exit_tree() -> void:
 	# Un pulsante che sparisce schiacciato lascerebbe il motore acceso per sempre.
 	if _held:
-		_held = false
-		Events.dome_button_changed.emit(0)
+		_lascia()

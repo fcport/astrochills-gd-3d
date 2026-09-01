@@ -148,6 +148,9 @@ const GROUP := &"player"
 
 var _enabled := true
 
+## Se il corpo e' fermo mentre la testa resta libera. Vedi `set_movement_locked`.
+var _movement_locked := false
+
 ## Il giocatore ha chiesto lui il cursore, e non glielo si riprende alle spalle.
 ## Senza questa memoria, uscire da una fase ricatturerebbe il mouse anche a chi
 ## l'aveva appena liberato per usare un'altra finestra.
@@ -213,6 +216,19 @@ func camera() -> Camera3D:
 ## È il primo passo della sequenza di ADR-003 («il controller del giocatore si
 ## disabilita»), e nella storia 1.2 serve già: mentre la fase polare è attiva il
 ## giocatore non deve camminare, perché WASD comanda le viti.
+## BLOCCA IL CORPO E LASCIA LIBERA LA TESTA.
+##
+## Serve a chi tiene premuto un comando nel mondo — il pulsante della cupola — e
+## nel frattempo vuole guardarsi intorno: il motore va, e tu alzi gli occhi a
+## vedere la fessura che si apre sopra di te. Spegnere tutto il controller
+## (`set_enabled(false)`) bloccherebbe anche il mouse, che è esattamente la cosa
+## che si vuole tenere.
+##
+## Non tocca la gravità: chi resta bloccato a mezz'aria continua a cadere.
+func set_movement_locked(value: bool) -> void:
+	_movement_locked = value
+
+
 func set_enabled(value: bool) -> void:
 	if _enabled == value:
 		return
@@ -326,11 +342,12 @@ func _physics_process(delta: float) -> void:
 		# SALTO. Solo da fermi in piedi e con i piedi per terra: saltare
 		# accovacciati vorrebbe dire alzarsi a mezz'aria dentro quello sotto cui
 		# ci si era infilati.
-		if _is_controlling() and not _accovacciato and Input.is_action_just_pressed(&"jump"):
+		var puo_saltare := _is_controlling() and not _movement_locked and not _accovacciato
+		if puo_saltare and Input.is_action_just_pressed(&"jump"):
 			velocity.y = JUMP_SPEED
 
 	var wish := Vector3.ZERO
-	if _is_controlling():
+	if _is_controlling() and not _movement_locked:
 		# Azioni DICHIARATE nell'InputMap, mai keycode grezzi: il polling di
 		# keycode era la scorciatoia dello spike, dichiarata tale, e non va
 		# ereditata.

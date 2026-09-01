@@ -1616,26 +1616,33 @@ LETTO = ((_LETTO[1] + _LETTO[3]) / 2, (_LETTO[2] + _LETTO[4]) / 2 + SCARTO_LETTO
 # Raggio piu' corto di quello della calotta, per non toccare i muri.
 # IL QUADRO DELLA CUPOLA: due pulsanti a muro, APRE e CHIUDE.
 #
-# DOVE, E I NUMERI SONO MISURATI NELLA SCENA, non dedotti da queste tuple: la
-# prima posa aveva il quadro a x = 1,20 e finiva DENTRO IL VANO DELLA PORTA, che
-# arriva fino al montante a 1,47. Le tuple di MURI dicono dove un vano comincia,
-# non dove finisce, e dedurre l'uno dall'altro e' il modo in cui si sbaglia di
-# mezzo metro senza accorgersene (tools/prova_quadro.tscn stampa chi c'e' intorno).
+# SUL MURO OVEST, che e' l'unico cieco della sala del telescopio: il muro sud ha la
+# porta del disimpegno e l'interruttore della luce, quello est la vetrata verso la
+# sala di controllo, quello nord e' dietro al telescopio. Il quadro stava sul muro
+# sud, stretto fra lo stipite e l'interruttore, e non era il posto: un comando che
+# si tiene premuto per sei secondi vuole un pezzo di muro suo.
 #
-# Muro sud della sala del telescopio: asse a z = 6,50, faccia interna a 6,40.
-# Montante destro della porta del disimpegno a 1,47; interruttore della luce a
-# 1,63. Il quadro sta a 2,10, cioe' quasi mezzo metro piu' in la' - la mano che
-# cerca l'interruttore non deve trovare il comando della cupola.
+# DOVE C'E' DA STARE IN PIEDI DAVANTI, che e' il vincolo vero e non l'ha nessuna
+# tupla. Due pose sbagliate prima di questa: a z = 5,20 il quadro finiva dietro
+# l'angolo dello stipite della porta; a z = 3,20 era libero da ogni parte ma chi
+# doveva usarlo si sarebbe trovato SULLA PASSERELLA, col parapetto davanti alla
+# faccia. La passerella e' un anello di raggio 1,93 attorno alla cupola (2,60; 2,50):
+# chi sta a ottanta centimetri da questo muro ne resta fuori solo per z < 1,4 o
+# z > 3,6. A 4,80 c'e' un metro e sette di muro libero fino alla porta, e davanti si
+# sta in piedi.
+#
+# GUARDA VERSO +X, cioe' dentro la stanza: il nodo e' ruotato di -90 gradi attorno
+# alla verticale, e i pulsanti che nel nodo guardano avanti si trovano rivolti a chi
+# entra dalla porta.
 #
 # A CHE ALTEZZA. 1,50 m al centro, e il numero viene dal GIOCATORE e non dalla
-# norma: la camera sta a 1,70 e il raggio dell'interazione arriva a 1,20 m. A
-# 1,35 i pulsanti cadevano sotto la linea di mira e per trovarli bisognava
-# guardare in basso di venti gradi - il quadro sembrava non funzionare, e
-# funzionava. A 1,50 si mirano guardando appena in giu', come si fa davvero.
+# norma: la camera sta a 1,70 e il raggio dell'interazione arriva a 1,20 m. A 1,35
+# i pulsanti cadevano sotto la linea di mira, e per trovarli bisognava guardare in
+# basso di venti gradi: il quadro sembrava non funzionare, e invece funzionava.
 #
-# PERCHE' NON DA' FASTIDIO A CHI SALE: dista 4 m dal centro della cupola, e la
-# passerella anulare arriva a 1,93.
-QUADRO_CUPOLA = (2.10, 1.50, 6.35)      # centro della scatola, coordinate di gioco
+# PERCHE' NON DA' FASTIDIO A CHI SALE: la passerella anulare, centrata sulla cupola,
+# arriva a 1,93 di raggio e non tocca ne' questo muro ne' questa quota.
+QUADRO_CUPOLA = (0.16, 1.50, 4.80)      # centro della scatola, coordinate di gioco
 QUADRO_MISURA = (0.30, 0.22, 0.11)      # larghezza, altezza, sporgenza dal muro
 
 ATTIVITA_CUPOLA = (2.20, 2.00)     # raggio, altezza del cilindro

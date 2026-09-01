@@ -161,13 +161,21 @@ func _apri_la_cupola() -> void:
 	# SI RIMIRA A OGNI FOTOGRAMMA: dopo il teletrasporto la capsula si assesta, e
 	# una mira vecchia di un frame passa sopra il pulsante.
 	var q := quadro.global_position
-	p.global_position = Vector3(q.x, 0.0, q.z - 0.85)
+	# DAVANTI AL PULSANTE, LUNGO LA SUA NORMALE: il quadro sta sul muro ovest e
+	# guarda verso +X, e chi si mettesse «un po' piu' a sud» lo vedrebbe di taglio.
+	var davanti := -quadro.global_transform.basis.z
+	davanti = Vector3(davanti.x, 0.0, davanti.z).normalized()
+	var dove := q + davanti * 0.85
+	p.global_position = Vector3(dove.x, 0.0, dove.z)
 	p.look_at(Vector3(q.x, 0.0, q.z), Vector3.UP)
 	var cam := p.camera()
 	if cam != null:
 		cam.look_at(q, Vector3.UP)
-	if not Input.is_action_pressed(&"interact"):
-		Input.action_press(&"interact")
+	# Lo stato si tiene, l'evento si ripete finche' non fa presa: il raggio del
+	# giocatore si aggiorna nel tick di fisica, e il primo `E` dopo un teletrasporto
+	# arriva a un raggio che punta ancora dove stava prima.
+	Input.action_press(&"interact")
+	if not quadro.is_held():
 		var e := InputEventAction.new()
 		e.action = &"interact"
 		e.pressed = true

@@ -105,6 +105,41 @@ DA_OGA = {
 #     ed e' un cannocchiale da appassionato su treppiede fotografico.
 #   * Poly Haven non ha telescopi (interrogata l'API), Poly Pizza risponde 401 senza chiave.
 A_MANO = {
+    "pulsante_industriale": (
+        "industrial_button.zip",
+        "https://sketchfab.com/3d-models/industrial-button-a7e7c1772d764c3b913cccac66932236",
+        "Mark", "CC-BY-4.0",
+        'This work is based on "Industrial Button" '
+        "(https://sketchfab.com/3d-models/industrial-button-a7e7c1772d764c3b913cccac66932236) "
+        "by Mark (https://sketchfab.com/markjgx) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "UN pulsante industriale con la sua piastra: cappello bombato su ghiera"
+        " metallica, quattro viti agli angoli, texture usate. 1.658 facce, cioe'"
+        " niente. Serve DUE VOLTE - APRE e CHIUDE - e il colore del cappello e'"
+        " l'unica cosa che cambia fra i due, il che e' anche come sono fatti quelli"
+        " veri.
+
+Il segnaposto che sostituisce e' due cilindri su una scatola, e"
+        " Federico ha ragione a chiamarlo un quadrato con due pallini: non ha ghiera,"
+        " non ha viti, non ha spessore, e da mezzo metro non legge come un comando."),
+    "quadro_comandi_vintage": (
+        "vintage_industrial_control_panels.zip",
+        "https://sketchfab.com/3d-models/vintage-industrial-control-panels-fa873b30cd174dbb9f77ada367ae1780",
+        "Mad_Lobster_Workshop", "CC-BY-4.0",
+        'This work is based on "Vintage Industrial Control Panels" '
+        "(https://sketchfab.com/3d-models/vintage-industrial-control-panels-fa873b30cd174dbb9f77ada367ae1780) "
+        "by Mad_Lobster_Workshop (https://sketchfab.com/Mad_Lobster_Workshop) "
+        "licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "OTTO quadri di comando a muro in una sola consegna: scatole di metallo"
+        " verniciato con pulsanti colorati, spie, serratura a chiave e targhette"
+        " numerate. 62.274 facce in tutto, quindi una decina di migliaia per quadro."
+        " E' l'alternativa all'altro: invece di montare due pulsanti su una piastra"
+        " nostra, si appende un quadro intero gia' fatto e si dichiara quali dei suoi"
+        " pulsanti sono APRE e CHIUDE.
+
+L'epoca e' quella giusta - roba da"
+        " stabilimento anni Cinquanta-Ottanta, che in un osservatorio comunale"
+        " costruito nell'85 ci sta esattamente."),
     "telescopio_riflettore": (
         "reflector_telescope.zip",
         "https://sketchfab.com/3d-models/reflector-telescope-62549e8c60d24ee5adb2a01a2c226a03",

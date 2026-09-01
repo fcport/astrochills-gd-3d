@@ -2636,7 +2636,7 @@ open_offset = Array[Vector3]([Vector3(0, 0, 0), Vector3(0, 0, 0)])
 open_rotation_deg = Array[Vector3]([Vector3(90, 0, 0), Vector3(90, 0, 0)])
 
 [node name="QuadroCupola" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.100, 1.500, 6.350)
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0.160, 1.500, 4.800)
 [node name="Col" type="CollisionShape3D" parent="QuadroCupola"]
 shape = SubResource("s_quadro")
 

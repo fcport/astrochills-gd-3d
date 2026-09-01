@@ -486,7 +486,16 @@ def tscn():
               # Ruotati di 90 gradi attorno a X perche' un cilindro nasce in piedi e
               # un pulsante sporge in orizzontale.
               '[node name="QuadroCupola" type="StaticBody3D" parent="."]',
-              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
+              # RUOTATO DI -90 GRADI attorno alla verticale: sta sul muro ovest e
+              # deve guardare dentro la stanza, cioe' verso +X. Tutto quello che gli
+              # sta appeso - pulsanti e targhette - si gira con lui, che e' la
+              # ragione per cui sono figli e non fratelli.
+              # IL SEGNO E' STATO MISURATO, non dedotto: con l'altra rotazione i
+              # pulsanti finivano DIETRO la loro stessa cassa, dentro il muro. Il
+              # raggio del giocatore trovava la scatola e non il pulsante, e il
+              # referto diceva «lo vedo ma non si preme» - che e' il sintomo esatto
+              # di un comando montato al contrario.
+              'transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, %.3f, %.3f, %.3f)'
               % QUADRO_CUPOLA,
               '[node name="Col" type="CollisionShape3D" parent="QuadroCupola"]',
               'shape = SubResource("s_quadro")', '',

@@ -34,6 +34,7 @@ var _guasti := 0
 var _passo := 0
 var _da_quando := 0.0
 var _scattato := false
+var _gia_controllato := false
 
 
 func _ready() -> void:
@@ -76,7 +77,7 @@ func _process(d: float) -> void:
 			_avanti()
 		2:
 			_mira(_apre)
-			_tieni_premuto()
+			_tieni_premuto(_apre)
 			var s := DomeShutter.find_in(get_tree())
 			if not _scattato and s != null and s.aperture() > 0.2:
 				_scattato = true
@@ -88,6 +89,11 @@ func _process(d: float) -> void:
 					_apre.is_held())
 				_molla()
 				_avanti()
+			elif int(_tempo - _da_quando) % 4 == 3 and _conto % 60 == 0:
+				print("[quadro]   premuto %s  E premuto %s  giocatore acceso %s  a %.2f m"
+					% [_apre.is_held(), Input.is_action_pressed(&"interact"),
+						_player.get("_enabled"),
+						_player.global_position.distance_to(_apre.global_position)])
 			elif _tempo - _da_quando > LIMITE:
 				print("[quadro] NON SI APRE: dopo %.0f s l'apertura e' %.3f, premuto %s"
 					% [LIMITE, s.aperture() if s != null else -1.0, _apre.is_held()])
@@ -106,7 +112,7 @@ func _process(d: float) -> void:
 			_mira(_chiude)
 			# E QUI SI PROVA LA COSA CHE PRIMA NON FUNZIONAVA: la fase 1 è finita da
 			# un pezzo, e il quadro deve comandare lo stesso.
-			_tieni_premuto()
+			_tieni_premuto(_chiude)
 			var s2 := DomeShutter.find_in(get_tree())
 			if _tempo - _da_quando > 2.0:
 				_molla()
@@ -138,10 +144,39 @@ func _trova() -> bool:
 		return false
 	print("[quadro] APRE a %s, CHIUDE a %s"
 		% [_v(_apre.global_position), _v(_chiude.global_position)])
+	_chi_c_e_intorno()
 	print("[quadro] camera: %s   strato del pulsante: %d   puo' interagire: %s"
 		% ["c'e'" if _cam != null else "MANCA", _apre.collision_layer,
 			_apre.can_interact()])
 	return true
+
+
+## CHI C'E' INTORNO AL QUADRO, e a che distanza.
+##
+## Gia' servita due volte: la prima posa era dentro il vano di una porta, la seconda
+## dietro l'angolo di uno stipite. Le tuple di `geometria.py` dicono dove comincia un
+## muro, non che cosa gli sta appeso, e dedurre l'una dall'altra e' il modo in cui si
+## sbaglia di mezzo metro.
+func _chi_c_e_intorno() -> void:
+	var qui := _apre.global_position
+	var vicini: Array[String] = []
+	_raccogli(get_tree().root, qui, vicini)
+	vicini.sort()
+	print("[quadro] intorno al pulsante, entro 1,5 m:")
+	for r in vicini.slice(0, 14):
+		print("[quadro]   %s" % r)
+
+
+func _raccogli(n: Node, qui: Vector3, dentro: Array[String]) -> void:
+	var t := n as Node3D
+	if t != null and not (t is DomeButton) and t.global_position != Vector3.ZERO:
+		var d := t.global_position.distance_to(qui)
+		if d < 1.5:
+			dentro.append("%.2f m  %-22s %-24s %s"
+				% [d, t.name, t.get_parent().name if t.get_parent() != null else "-",
+					_v(t.global_position)])
+	for f in n.get_children():
+		_raccogli(f, qui, dentro)
 
 
 ## Mette il giocatore davanti al pulsante e glielo fa guardare.
@@ -152,10 +187,51 @@ func _trova() -> bool:
 ## fotografare il tetto — già pagato una volta.
 func _mira(b: DomeButton) -> void:
 	var p := b.global_position
-	_player.global_position = Vector3(p.x, 0.0, p.z - VICINO)
+	# DAVANTI AL PULSANTE, LUNGO LA SUA NORMALE, e non «un po' piu' a sud»: il
+	# quadro adesso sta su un muro diverso e guarda verso +X. La prima stesura
+	# metteva il giocatore sempre a -Z e lo faceva guardare di taglio: nella foto si
+	# vedeva il quadro di profilo e mezzo schermo dentro il muro.
+	var davanti := -b.global_transform.basis.z
+	davanti = Vector3(davanti.x, 0.0, davanti.z).normalized()
+	var dove := p + davanti * VICINO
+	_player.global_position = Vector3(dove.x, 0.0, dove.z)
 	_player.look_at(Vector3(p.x, 0.0, p.z), Vector3.UP)
 	if _cam != null:
 		_cam.look_at(p, Vector3.UP)
+	if not _gia_controllato:
+		_gia_controllato = true
+		_c_e_da_stare_in_piedi(dove)
+
+
+## DAVANTI AL COMANDO CI SI STA IN PIEDI?
+##
+## E' il vincolo che due pose sbagliate di fila non hanno rispettato, e che nessuna
+## tupla di `geometria.py` contiene: un quadro puo' essere su un muro libero e avere
+## davanti la passerella, il parapetto o un mobile. Si chiede al motore, con la
+## stessa capsula del giocatore.
+func _c_e_da_stare_in_piedi(dove: Vector3) -> void:
+	var forma := CapsuleShape3D.new()
+	forma.radius = 0.30
+	forma.height = 1.80
+	var q := PhysicsShapeQueryParameters3D.new()
+	q.shape = forma
+	# ALZATA DI CINQUE CENTIMETRI: una capsula che tocca il pavimento conta il
+	# pavimento come intersezione, e direbbe «occupato» dappertutto.
+	q.transform = Transform3D(Basis.IDENTITY, Vector3(dove.x, 0.95, dove.z))
+	q.collision_mask = Interactable.LAYER_WORLD
+	q.exclude = [_player.get_rid()]
+	var urti := _cam.get_world_3d().direct_space_state.intersect_shape(q, 8)
+	var nomi: Array[String] = []
+	for u in urti:
+		var n := u["collider"] as Node
+		if n != null and not (n is DomeButton) and n.name != "QuadroCupola":
+			nomi.append(n.name)
+	if nomi.is_empty():
+		print("[quadro] ok: davanti al comando si sta in piedi")
+	else:
+		_guasti += 1
+		print("[quadro] DAVANTI AL COMANDO NON CI SI STA: %s   <-- ATTESO: libero"
+			% ", ".join(nomi))
 
 
 ## Che cosa sta guardando adesso il giocatore, chiesto al mondo con un raggio come
@@ -184,13 +260,18 @@ func _mirato() -> DomeButton:
 ## Tiene premuto `E`. Serve sia lo STATO (che il pulsante legge ogni fotogramma)
 ## sia l'EVENTO (che il giocatore trasforma in `interact`): `action_press` da sola
 ## non genera eventi, e `parse_input_event` da sola non lascia lo stato premuto.
-func _tieni_premuto() -> void:
-	if not Input.is_action_pressed(&"interact"):
-		Input.action_press(&"interact")
-		var e := InputEventAction.new()
-		e.action = &"interact"
-		e.pressed = true
-		Input.parse_input_event(e)
+func _tieni_premuto(b: DomeButton) -> void:
+	# LO STATO SI TIENE, L'EVENTO SI RIPETE FINCHE' NON FA PRESA. Il raggio del
+	# giocatore si aggiorna nel tick di FISICA: l'evento mandato nel fotogramma in
+	# cui la sonda lo ha appena spostato arriva a un raggio che punta ancora dove
+	# stava prima, e va perso. Un giocatore vero ripreme; questa sonda anche.
+	Input.action_press(&"interact")
+	if b.is_held():
+		return
+	var e := InputEventAction.new()
+	e.action = &"interact"
+	e.pressed = true
+	Input.parse_input_event(e)
 
 
 func _molla() -> void:

@@ -186,6 +186,7 @@ def tscn():
              '[ext_resource type="PackedScene" path="res://assets/models/bottiglione.glb" id="52_bottiglione"]',
              '[ext_resource type="PackedScene" path="res://assets/models/piattino.glb" id="53_piattino"]',
              '[ext_resource type="PackedScene" path="res://assets/models/radiolina.glb" id="54_radio"]',
+             '[ext_resource type="Script" path="res://world/corazza.gd" id="55_corazza"]',
              '']
     dims = sorted(set((round(b[3], 3), round(b[4], 3), round(b[5], 3)) for b in blocchi)
                   | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
@@ -1493,6 +1494,13 @@ def tscn():
               # Dentro o fuori. Serve al campanello, che senza non sa distinguere
               # «in cupola» da «sul prato»: in Compatibility i muri non occludono,
               # e la sola distanza metteva il prato piu' vicino della cupola.
+              # LA COLLISIONE VERA, per le cose che si posano. I blocchi qui
+              # sopra sono giusti per il corpo del giocatore e sbagliati per un
+              # termos: la cima di una fila di sedie e' aria. Questo nodo prende
+              # la geometria che si VEDE e la da' al motore com'e'. Vedi
+              # `world/corazza.gd`.
+              '[node name="Corazza" type="Node3D" parent="."]',
+              'script = ExtResource("55_corazza")', '',
               '[node name="Dentro" type="Area3D" parent="."]',
               'script = ExtResource("32_dentro")', '',
               '[node name="Ovest" type="CollisionShape3D" parent="Dentro"]',

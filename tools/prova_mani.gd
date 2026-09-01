@@ -64,7 +64,13 @@ func _tick() -> void:
 func _muro(nome: String, centro: Vector3, misura: Vector3) -> StaticBody3D:
 	var corpo := StaticBody3D.new()
 	corpo.name = nome
-	corpo.collision_layer = Interactable.LAYER_WORLD
+	# SU TUTTI E DUE I LAYER, e nel gioco non e' cosi': li' il mondo ha una
+	# collisione grezza per il corpo del giocatore (`LAYER_WORLD`) e una a
+	# triangoli per le cose che ci si posano (`Corazza.LAYER_APPOGGI`). Qui il
+	# banco e' fatto di scatole, che sono la stessa cosa vista in due modi: darle
+	# a tutti e due i layer prova il giocatore E gli oggetti con una geometria
+	# sola.
+	corpo.collision_layer = Interactable.LAYER_WORLD | Corazza.LAYER_APPOGGI
 	var forma := CollisionShape3D.new()
 	var box := BoxShape3D.new()
 	box.size = misura

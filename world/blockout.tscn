@@ -49,6 +49,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/bottiglione.glb" id="52_bottiglione"]
 [ext_resource type="PackedScene" path="res://assets/models/piattino.glb" id="53_piattino"]
 [ext_resource type="PackedScene" path="res://assets/models/radiolina.glb" id="54_radio"]
+[ext_resource type="Script" path="res://world/corazza.gd" id="55_corazza"]
 
 [sub_resource type="BoxMesh" id="m_0"]
 size = Vector3(0.018, 0.018, 0.032)
@@ -3778,6 +3779,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.340, 0.000, 8.400)
 
 [node name="SequenceChime" parent="." instance=ExtResource("31_chime")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.550, 1.100, 2.000)
+
+[node name="Corazza" type="Node3D" parent="."]
+script = ExtResource("55_corazza")
 
 [node name="Dentro" type="Area3D" parent="."]
 script = ExtResource("32_dentro")

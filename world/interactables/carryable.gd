@@ -133,7 +133,13 @@ func _ready() -> void:
 		collision_layer |= Interactable.LAYER_WORLD
 	else:
 		collision_layer &= ~Interactable.LAYER_WORLD
-	collision_mask |= Interactable.LAYER_WORLD | Interactable.LAYER_INTERACTABLE
+	# SI CADE SULLA GEOMETRIA VERA, NON SUGLI INGOMBRI. Il mondo ha due
+	# collisioni: i blocchi grezzi, giusti per il corpo del giocatore, e i
+	# triangoli delle mesh, giusti per le cose che ci si posano sopra. Un oggetto
+	# che urtasse gli ingombri si fermerebbe sulla cima di una fila di sedie -
+	# novanta centimetri, e sotto solo aria fra gli schienali. Vedi `corazza.gd`.
+	collision_mask |= Corazza.LAYER_APPOGGI | Interactable.LAYER_INTERACTABLE
+	collision_mask &= ~Interactable.LAYER_WORLD
 	# IL SONNO SI TOGLIE SOLO IN MANO, e la prima stesura lo toglieva sempre.
 	# `_integrate_forces` su un corpo addormentato non viene chiamato, quindi
 	# mentre lo si tiene il sonno va escluso o la mano smette di funzionare da
@@ -142,7 +148,21 @@ func _ready() -> void:
 	# a essere risolto ogni tick e conserva un tremito. Misurato — una tazza sulla
 	# consolle, dopo tre secondi, andava ancora a 8 cm al secondo. Vedi `prendi()`
 	# e `lascia()`, che lo tolgono e lo rimettono.
-	# LA COLLISIONE LUNGO IL PERCORSO SI ACCENDE SOLO IN MANO: vedi `prendi()`.
+	# LA COLLISIONE SI GUARDA LUNGO IL PERCORSO, SEMPRE.
+	#
+	# Serve in mano, dove la mano spinge a sei metri al secondo contro un tramezzo
+	# da dieci centimetri. E serve CADENDO, che e' la scoperta successiva: la
+	# geometria vera su cui gli oggetti si posano (`corazza.gd`) e' fatta di
+	# triangoli, cioe' di superfici a SPESSORE ZERO, e un corpo lasciato cadere da
+	# un metro e mezzo arriva a nove centimetri per fotogramma. Misurato: senza
+	# questa riga una sonda lasciata cadere sul carrello del proiettore ha
+	# attraversato il carrello, il pavimento e le fondamenta, e si e' fermata a
+	# ventitre metri sottoterra.
+	#
+	# ERA STATA TOLTA per curare una tazza che non si fermava mai, e non era lei:
+	# la causa era la forma del suo collisore - un cilindro schiacciato (D-201).
+	# Tolta l'ipotesi sbagliata, la riga puo' tornare dove serve.
+	continuous_cd = true
 	# I CONTATTI SI DEVONO POTER LEGGERE dentro `_integrate_forces`, o
 	# `get_contact_count()` restituisce zero per sempre — senza dirlo. Quattro
 	# bastano: sono le facce che un oggetto può toccare in un angolo.
@@ -212,22 +232,7 @@ func prendi(chi: PhysicsBody3D) -> void:
 	# Sveglio e senza diritto di riaddormentarsi: vedi `_ready()`.
 	can_sleep = false
 	sleeping = false
-	# LA COLLISIONE SI GUARDA LUNGO IL PERCORSO, e SOLO ADESSO. Un corpo spinto
-	# dalla mano a sei metri al secondo copre dieci centimetri per fotogramma, e il
-	# modo normale di risolvere le collisioni guarda solo dov'è arrivato: contro un
-	# tramezzo da dieci si finisce dentro, o oltre. Misurato — spingendo la mano
-	# dentro un muro, senza questa riga la scatola ci entrava per nove centimetri su
-	# dieci, con si ferma alla superficie.
-	#
-	# MA TENERLA ACCESA SEMPRE COSTA UN OGGETTO CHE NON SI FERMA. Un corpo appoggiato
-	# affonda nella superficie fino al margine che il solutore consente, e con la
-	# collisione continua quel margine viene ricontrollato lungo un percorso che a
-	# corpo fermo è lungo zero: le correzioni si sommano invece di spegnersi.
-	# Misurato — una tazza sulla consolle girava su se stessa a un giro e mezzo al
-	# secondo e non si addormentava mai; spenta la collisione continua si ferma.
-	# Cadendo non serve: nessun oggetto lasciato cadere raggiunge la velocità a cui
-	# un tramezzo si attraversa.
-	continuous_cd = true
+
 	# E SI SMETTE DI URTARE CHI LO TIENE. Senza, l'oggetto tenuto a mezzo metro
 	# dalla faccia è un corpo che spinge il giocatore all'indietro mentre il
 	# giocatore insegue l'oggetto: si cammina da soli, per la stanza, e non si
@@ -249,7 +254,6 @@ func lascia() -> void:
 	# oggetto deve poter smettere di essere calcolato invece di tremare per tutta
 	# la notte.
 	can_sleep = true
-	continuous_cd = false
 	if _chi != null:
 		remove_collision_exception_with(_chi)
 		_chi = null

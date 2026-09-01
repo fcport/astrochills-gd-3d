@@ -5737,3 +5737,74 @@ insieme, che e' il caso che li mostra tutti e due.
 
     con la vecchia presa   in mano pende di 90,0 gradi
     adesso                 in mano pende di  0,0 gradi
+
+## D-205 Due collisioni: gli ingombri per il corpo, i triangoli per le cose
+
+Federico, seconda foto e tre parole: «hitbox non sistemate». Una radiolina a
+mezz'aria sopra il carrello del proiettore, dopo il termos di ieri.
+
+**IL DIFETTO E' STRUTTURALE E HA UN'ETA'.** La collisione di questa scena la
+genera `gen_blockout.py` da `geometria.py`, e ogni mobile e' UN BLOCCO PIENO alto
+quanto il suo pezzo piu' alto. Per camminare e' perfetto: non si attraversa una
+fila di sedie, non si passa dentro un carrello, e il giocatore non ha mai avuto
+modo di accorgersi che quel blocco e' pieno dove il mobile e' vuoto. **Per un anno
+in questa scena si e' potuto solo camminare.** Poi sono arrivati gli oggetti che
+cadono, e ogni cima finta e' diventata un posto dove la roba resta sospesa.
+
+    misurato su 84 blocchi di arredo: 31 fanno appoggiare dove non c'e' niente
+    FilaSedie1, FilaSedie2   cima a 0,90 - ZERO per cento di materiale
+    Proiettore               cima a 1,05 - ZERO per cento (il ripiano e' a 0,78)
+    SediaC1, SediaC2         cima a 0,92 - ZERO per cento (il sedile e' a 0,45)
+    Lavabo                   cima a 1,90 - e' l'altezza dello specchio
+
+**PERCHE' NON SI CORREGGONO I BLOCCHI.** Si potrebbe dichiarare, mobile per
+mobile, la forma vera: sedile piu' schienale, carrello a due ripiani. Sono trenta
+mobili, ognuno con la sua forma, e ogni numero sarebbe indovinato guardando un
+modello che ha fatto qualcun altro - trenta occasioni di sbagliare in silenzio, e
+un lavoro da rifare a ogni modello nuovo.
+
+**SI FA IL CONTRARIO: SI DA' AL MOTORE LA GEOMETRIA CHE SI VEDE.** `world/corazza.gd`
+costruisce all'avvio una collisione a triangoli di ogni mesh visibile, su un layer
+suo, e gli oggetti che si posano cadono su quella invece che sugli ingombri. Da
+quel momento la regola e' una sola e non ha eccezioni: **ci si appoggia dove si
+vede**. Nessun numero da tarare, nessun mobile da dichiarare, e un modello nuovo
+porta con se' la propria collisione.
+
+    233 mesh, 240.287 triangoli, costruiti in 331 ms all'avvio
+
+**IL GIOCATORE RESTA SUGLI INGOMBRI, ED E' VOLUTO.** Camminare su una geometria a
+triangoli vuol dire incastrarsi fra le gambe di una sedia, salire su una pila di
+libri, restare appesi a uno spigolo: problemi che i blocchi grezzi non hanno, e
+che risolverli costerebbe piu' di quanto valgano. I blocchi sono giusti per il
+corpo e sbagliati per gli oggetti; adesso ognuno ha i suoi.
+
+**E LA COLLISIONE CONTINUA TORNA ACCESA SEMPRE.** Era stata tolta a corpo libero
+per curare una tazza che non si fermava mai, e la causa era un'altra - la forma
+del suo collisore (D-201). Riaccenderla non era facoltativo: i triangoli hanno
+SPESSORE ZERO, e un corpo lasciato cadere da un metro e mezzo copre nove
+centimetri per fotogramma. Misurato: senza, una sonda lasciata cadere sul carrello
+ha attraversato il carrello, il pavimento e le fondamenta, fermandosi a
+ventitre metri sottoterra.
+
+**MISURATO** (`tools/prova_appoggi.gd`), e nel modo in cui il difetto e' comparso:
+lasciando cadere qualcosa. I bersagli non si scelgono a mano - si cercano i
+blocchi la cui cima e' quasi tutta aria e si lascia cadere una sonda proprio li',
+nel punto piu' lontano dalla cima finta.
+
+                         cima del blocco   geometria vera   dove si ferma
+    Proiettore                1,05             0,98            0,78
+    FilaSedie1                0,90             0,77            0,45
+    FilaSedie2                0,90             0,75            0,40
+    SediaC1                   0,92             0,83            0,47
+    Lavabo                    1,90             0,95            0,80
+
+**IL DIFETTO SI RIMETTE** con `SUGLI_INGOMBRI=1`, che riporta la sonda a cadere
+sui blocchi grezzi: si ferma esattamente a 1,05, a 0,90, a 1,90 - cioe' sulla cima
+finta, che e' il termos e la radiolina delle due fotografie.
+
+**E DUE SONDE SONO STATE BUTTATE VIA PRIMA DI QUESTA**, per lo stesso errore
+commesso due volte: cercavano la geometria visibile guardando i VERTICI. Una
+superficie piana ha vertici solo AGLI ANGOLI - in mezzo alla cima di un frigo non
+ce n'e' nessuno - e cosi' la prima versione ha bocciato 82 blocchi su 84, frigo e
+teche compresi. La geometria vera si chiede al motore, costruendo la collisione e
+tirandoci un raggio: e' lui a sapere dove ci si posa.

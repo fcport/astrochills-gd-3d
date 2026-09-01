@@ -524,7 +524,6 @@ func _aggiorna_mira() -> void:
 ## perché il MIRINO è uno solo, e aprirlo da due punti diversi è il modo sicuro
 ## di vederlo aperto quando non c'è niente da fare.
 func _mostra_mira(usabile: Interactable, oggetto: Carryable) -> void:
-	var stesso := usabile == _focus and oggetto == _mirato
 	_focus = usabile
 	_mirato = oggetto
 	var riga := ""
@@ -532,8 +531,14 @@ func _mostra_mira(usabile: Interactable, oggetto: Carryable) -> void:
 		riga = _focus.prompt()
 	elif _mirato != null:
 		riga = _mirato.prompt()
-	if stesso and riga.is_empty():
-		return
+	# NON SI ESCE PRIMA DI AVER SCRITTO, e la prima stesura lo faceva: se il
+	# bersaglio non era cambiato e non c'era niente da dire, usciva subito per
+	# risparmiare due chiamate. Ma il prompt lo può aver scritto QUALCUN ALTRO —
+	# il ramo delle mani piene qui sopra — e allora quella scorciatoia lo lascia a
+	# schermo per sempre. Federico l'ha vista posando il termos: restava scritto
+	# «Posa il termos» su un termos già per terra, e tornava a posto solo guardando
+	# un'altra cosa e poi di nuovo lui. Le due chiamate sono idempotenti; il
+	# risparmio non valeva un prompt che mente.
 	# Il mirino si apre e il prompt compare insieme, dallo STESSO punto: sono due
 	# facce della stessa notizia - «questo si puo' usare» - e tenerle in due posti
 	# e' il modo sicuro di vederle divergere.
@@ -551,11 +556,23 @@ func _mostra_mira(usabile: Interactable, oggetto: Carryable) -> void:
 ## Raccoglie un oggetto e si ricorda come lo si è preso.
 func _prendi(oggetto: Carryable) -> void:
 	_in_mano = oggetto
-	# LA PRESA È RELATIVA ALLA TESTA, non assoluta: girandosi, l'oggetto gira con
-	# noi mantenendo l'angolo che aveva quando l'abbiamo afferrato. In coordinate
-	# del mondo resterebbe invece rivolto a nord mentre gli si cammina intorno.
-	_presa = _cam.global_basis.orthonormalized().inverse() \
-		* oggetto.global_basis.orthonormalized()
+	# LA PRESA È RELATIVA ALL'IMBARDATA, NON A TUTTA LA TESTA — ed è la stessa
+	# divisione che regge il controller (imbardata sul corpo, beccheggio sulla
+	# camera), applicata a quello che si ha in mano.
+	#
+	# Presa rispetto alla testa INTERA, un oggetto raccolto guardando in basso
+	# resta inclinato di quell'angolo per sempre: si rialza lo sguardo e il termos
+	# si presenta coricato in avanti. Federico: «se lo prendo guardandolo dall'alto
+	# verso il basso, quando lo sollevo lo sollevo guardandolo sempre dall'alto
+	# verso il basso, questo non ha il minimo senso». Ha ragione: una cosa in mano
+	# STA DRITTA, perché c'è la gravità e perché il polso la raddrizza senza
+	# pensarci.
+	#
+	# Quindi l'oggetto gira con noi quando ci si volta — quello sì, o resterebbe
+	# rivolto a nord mentre gli si cammina intorno — ma non si inclina con lo
+	# sguardo. La POSIZIONE invece segue anche il beccheggio: sta in basso a destra
+	# sullo schermo, e lì deve restare anche guardando in alto.
+	_presa = _imbardata().inverse() * oggetto.global_basis.orthonormalized()
 	oggetto.posato.connect(_su_oggetto_posato, CONNECT_ONE_SHOT)
 	oggetto.prendi(self)
 	oggetto.punta(_trasformata_mano())
@@ -569,10 +586,16 @@ func _su_oggetto_posato() -> void:
 
 
 ## Dove la mano vuole l'oggetto, adesso.
+## La sola imbardata della testa: la rotazione attorno alla verticale, senza il
+## beccheggio. È ciò rispetto a cui quello che si ha in mano resta fermo.
+func _imbardata() -> Basis:
+	return Basis(Vector3.UP, global_rotation.y)
+
+
 func _trasformata_mano() -> Transform3D:
 	var testa := _cam.global_transform
 	var xf := Transform3D()
-	xf.basis = testa.basis.orthonormalized() * _presa
+	xf.basis = _imbardata() * _presa
 	xf.origin = testa.origin \
 		- testa.basis.z * DISTANZA_MANO \
 		+ testa.basis.y * ALTEZZA_MANO \
@@ -586,6 +609,12 @@ func _trasformata_mano() -> Transform3D:
 ## scivola contro il rigido e prosegue, il rigido non se ne accorge. Senza queste
 ## righe si attraverserebbe una pila di scatole senza scomporla — che è il difetto
 ## che denuncia la finzione più di qualunque texture.
+##
+## SUI `Carryable` NON HA PIÙ EFFETTO, ed è voluto: quelli stanno su un layer che
+## questo corpo non urta (vedi `carryable.gd`), perché camminarci sopra sparava il
+## giocatore in aria. Resta per qualunque altro corpo rigido che un domani ci sia
+## da spingere davvero — una sedia, una cassa — e per cui salirci sopra abbia
+## senso.
 func _spingi_cio_che_urto() -> void:
 	for i in get_slide_collision_count():
 		var urto := get_slide_collision(i)

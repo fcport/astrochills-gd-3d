@@ -21,6 +21,7 @@
 ##
 ##     Godot_v4.7.2-stable_win64.exe --headless --path . tools/prova_mani.tscn
 ##     MANO_RIGIDA=1 Godot_v4.7.2-stable_win64.exe --headless --path . tools/prova_mani.tscn
+##     PROP_OSTACOLO=1 Godot_v4.7.2-stable_win64.exe --headless --path . tools/prova_mani.tscn
 extends Node
 
 ## Il banco, in metri. Il muro sta davanti al giocatore e la sua faccia interna e'
@@ -92,6 +93,7 @@ func _monta() -> void:
 	_oggetto.nome = "la scatola"
 	_oggetto.mass = 1.0
 	_oggetto.mano_rigida = OS.get_environment("MANO_RIGIDA") == "1"
+	_oggetto.ostacolo_per_il_giocatore = OS.get_environment("PROP_OSTACOLO") == "1"
 	var forma := CollisionShape3D.new()
 	var box := BoxShape3D.new()
 	box.size = Vector3(LATO, LATO, LATO)
@@ -136,17 +138,68 @@ func _prova() -> void:
 	else:
 		print("[mani] mirando la scatola il prompt dice: %s" % _oggetto.prompt())
 
-	# --- SI PRENDE, E CI ARRIVA. Mezzo secondo: la mano fa 6 m/s e deve coprirne
-	# meno di uno.
+	# --- SI PRENDE GUARDANDO IN BASSO, E RESTA DRITTA.
+	#
+	# E' il secondo difetto che Federico ha trovato: presa la mano conservava
+	# l'orientamento rispetto a TUTTA la testa, beccheggio compreso, quindi un
+	# oggetto raccolto guardando in giu' restava inclinato di quell'angolo per
+	# sempre - si rialzava lo sguardo e il termos si presentava coricato in avanti.
+	# Una cosa in mano sta dritta: c'e' la gravita', e il polso la raddrizza senza
+	# pensarci.
+	#
+	# La presa avviene DA SOPRA di proposito (il tavolino sta a 80 cm e l'occhio a
+	# 165): e' il caso in cui il difetto c'e', e prendere una cosa all'altezza degli
+	# occhi non lo mostrerebbe mai.
+	print("[mani] la si prende guardando in giu' di %.0f gradi"
+		% rad_to_deg(-_p.camera().rotation.x))
 	_p._prendi(_oggetto)
 	for _i in 30:
 		await _tick()
+	# Si rimette lo sguardo all'orizzonte: e' li' che l'inclinazione si vede.
+	_guarda(Vector3(0.0, _p.camera().global_position.y, -10.0))
+	for _i in 30:
+		await _tick()
 	var scarto := _scarto_dalla_mano()
-	print("[mani] presa: la scatola sta a %.3f m da dove la mano la vuole" % scarto)
+	# QUANTO E' STORTA: l'angolo fra il suo «su» e il su del mondo. Zero vuol dire
+	# in piedi; novanta, coricata.
+	var storta := rad_to_deg(_oggetto.global_basis.y.angle_to(Vector3.UP))
+	print("[mani] presa: la scatola sta a %.3f m da dove la mano la vuole, "
+		% scarto + "e pende di %.1f gradi rispetto alla verticale" % storta)
+	if storta > 5.0:
+		_guasto("guardando avanti la scatola pende di %.1f gradi: e' rimasta "
+			% storta + "inclinata come lo sguardo con cui e' stata presa")
 	if not _oggetto.in_mano():
 		_guasto("la scatola non risulta in mano")
 	if scarto > 0.05:
 		_guasto("la scatola non arriva in mano: %.3f m di scarto" % scarto)
+
+	# --- LA RIGA A SCHERMO DICE QUELLO CHE SI PUO' FARE, SEMPRE.
+	#
+	# E' il difetto che Federico ha trovato per primo: posato il termos, restava
+	# scritto «Posa il termos» su un termos gia' per terra, e tornava a posto solo
+	# guardando un'altra cosa e poi di nuovo lui. Un prompt che mente non da'
+	# nessun errore - si preme un tasto che non fa niente, e sembra rotto il gioco.
+	#
+	# SI GUARDA CIO' CHE C'E' A SCHERMO, non chi ha chiamato `show_prompt`:
+	# controllare le chiamate vorrebbe dire fidarsi che l'ultima abbia vinto, che
+	# e' esattamente cio' che non era vero.
+	var schermo: InteractionPrompt = _p.get_node("%InteractionPrompt")
+	_p._aggiorna_mira()
+	print("[mani] con la scatola in mano lo schermo dice: %s" % schermo.riga())
+	if not schermo.riga().contains("Posa"):
+		_guasto("tenendo la scatola in mano non compare la riga per posarla")
+	_oggetto.posa()
+	await _tick()
+	_p._aggiorna_mira()
+	print("[mani] appena posata lo schermo dice: %s"
+		% (schermo.riga() if not schermo.riga().is_empty() else "(niente)"))
+	if schermo.riga().contains("Posa"):
+		_guasto("posata la scatola resta scritto «%s»: il prompt mente"
+			% schermo.riga())
+	# E si riprende, che il resto della prova la vuole in mano.
+	_p._prendi(_oggetto)
+	for _i in 20:
+		await _tick()
 
 	# --- IL CUORE: SI CAMMINA DENTRO IL MURO. Il corpo si ferma, la mano no.
 	_guarda(Vector3(0.0, _p.camera().global_position.y, MURO_Z))
@@ -224,24 +277,51 @@ func _prova() -> void:
 	if _p._in_mano != null:
 		_guasto("strappata la scatola, il giocatore crede di averla ancora in mano")
 
-	# --- E CI SI CAMMINA CONTRO. Una scatola per terra che non si sposta quando
-	# ci vai dentro e' un sasso dipinto.
+	# --- E CI SI CAMMINA SOPRA SENZA DECOLLARE.
+	#
+	# UN TERMOS NON E' UN GRADINO. Se un oggetto da mano sta sul layer del mondo, la
+	# capsula del giocatore ci sale sopra, il solutore trova una compenetrazione
+	# verticale e la risolve sparando in aria chi cammina. Federico l'ha visto in
+	# partita - «se ci cammino sopra faccio dei salti pazzeschi» - e non e' un
+	# numero da tarare: e' una scelta di layer.
 	for _i in 90:
 		await _tick()
+	_p.global_position = Vector3(3.0, 0.0, 5.4)
 	_oggetto.global_position = Vector3(3.0, LATO, 4.0)
 	_oggetto.linear_velocity = Vector3.ZERO
 	for _i in 30:
 		await _tick()
-	var prima := _oggetto.global_position
 	_guarda(Vector3(3.0, _p.camera().global_position.y, 2.0))
+	var quota_a_terra := _p.global_position.y
+	var salito := 0.0
+	# QUANTO SI E' AVVICINATO, non dove e' finito: col difetto acceso il giocatore
+	# viene sparato DALL'ALTRA PARTE della stanza, e guardando la posizione finale
+	# la guardia gridava «non ci sei mai salito sopra» proprio mentre volava per
+	# esserci salito. E' lo stesso errore della guardia di `prova_ccd.gd`, e la
+	# stessa cura: si guarda il percorso, non il punto d'arrivo.
+	var piu_vicino := _p.global_position.z
 	Input.action_press(&"move_forward")
-	for _i in 60:
+	for _i in 90:
 		await _tick()
+		salito = maxf(salito, _p.global_position.y - quota_a_terra)
+		piu_vicino = minf(piu_vicino, _p.global_position.z)
 	Input.action_release(&"move_forward")
-	var corsa := prima.distance_to(_oggetto.global_position)
-	print("[mani] calciata: la scatola si sposta di %.3f m" % corsa)
-	if corsa < 0.15:
-		_guasto("camminando contro la scatola non si sposta: e' un sasso dipinto")
+	print("[mani] camminando sopra la scatola il giocatore si alza di %.3f m "
+		% salito + "(e' arrivato fino a z=%.2f, la scatola sta a 4.00)" % piu_vicino)
+	# SONDA CIECA: se il giocatore non e' arrivato fin sopra la scatola non ha
+	# scavalcato niente, e questo controllo passerebbe comunque.
+	# E LA GUARDIA VALE SOLO SE NON SI E' VISTO NIENTE: col difetto acceso il
+	# giocatore viene respinto prima ancora di arrivarci, quindi non «arriva sulla
+	# scatola» - ma il salto lo ha gia' fatto, e gridare «non ho visto niente»
+	# mentre lo si sta misurando e' peggio che tacere.
+	if piu_vicino > 4.0 and salito <= 0.05:
+		_guasto("SONDA CIECA: il giocatore non e' andato oltre z=%.2f e non e' "
+			% piu_vicino + "successo niente: non ci e' mai arrivato sopra")
+	if salito > 0.05:
+		_guasto("camminando sulla scatola il giocatore si alza di %.3f m: e' un "
+			% salito + "gradino, non un oggetto da mano")
+	else:
+		print("[mani] ok: la scatola non fa da gradino")
 
 	if _guasti == 0:
 		print("[mani] ok: quello che si ha in mano resta dentro il mondo")

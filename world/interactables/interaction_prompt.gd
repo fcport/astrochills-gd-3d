@@ -55,3 +55,14 @@ func show_prompt(text: String) -> void:
 
 func hide_prompt() -> void:
 	visible = false
+
+
+## Che cosa si sta leggendo adesso, o stringa vuota se non c'e' niente a schermo.
+##
+## SERVE ALLE SONDE, e serve perche' il difetto peggiore che questa riga possa
+## avere e' restare scritta quando non vale piu': un prompt che mente non da'
+## nessun errore, e chi legge «Posa il termos» con il termos gia' per terra prova
+## a premere un tasto che non fa niente. Non si puo' controllare guardando chi
+## chiama `show_prompt`: bisogna guardare che cosa c'e' a schermo.
+func riga() -> String:
+	return _label.text if visible else ""

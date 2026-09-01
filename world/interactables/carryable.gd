@@ -83,6 +83,12 @@ signal posato
 ## `MANO_RIGIDA=1`.
 @export var mano_rigida := false
 
+## L'ALTRO MODO SBAGLIATO, tenuto per poterlo misurare: a `true` questo oggetto
+## torna sul layer del MONDO, cioè torna a essere un ostacolo per il giocatore.
+## Camminandoci sopra si decolla. Vedi `_ready()` per il perché, e
+## `tools/prova_mani.gd`, che lo accende con `PROP_OSTACOLO=1`.
+@export var ostacolo_per_il_giocatore := false
+
 ## La trasformata dove la mano vuole che stia. La scrive chi lo tiene, a ogni
 ## passo di fisica, con `punta()`.
 var _mano := Transform3D.IDENTITY
@@ -103,12 +109,31 @@ static func find_in(tree: SceneTree) -> Carryable:
 
 func _ready() -> void:
 	add_to_group(GROUP)
-	# Layer 1 perché il giocatore ci sbatta contro e possa spingerlo col piede,
-	# layer 3 perché il raggio dell'interazione lo trovi. Gli stessi due di
-	# `Interactable`, e in OR per la stessa ragione: un'assegnazione cieca
-	# cancellerebbe una maschera scelta nell'ispettore.
-	collision_layer |= Interactable.LAYER_WORLD | Interactable.LAYER_INTERACTABLE
-	collision_mask |= Interactable.LAYER_WORLD
+	# SOLO IL LAYER DEGLI INTERAGIBILI, E NON QUELLO DEL MONDO — e questa riga vale
+	# un paragrafo, perché la prima stesura ce li metteva tutti e due.
+	#
+	# Sul layer del MONDO il giocatore ci sbatte contro, e va bene finché si tratta
+	# di spingere una scatola col piede. Il problema è quando ci si cammina SOPRA:
+	# la capsula sale su un corpo alto dieci centimetri, il solutore trova una
+	# compenetrazione verticale e la risolve nell'unico modo che ha — sparando in
+	# aria il giocatore. Federico: «se ci cammino sopra faccio dei salti
+	# pazzeschi». Non è un numero da tarare: è che un termos non deve essere un
+	# gradino.
+	#
+	# Fuori dal layer del mondo il giocatore ci passa attraverso, il raggio
+	# dell'interazione continua a trovarli (cerca mondo E interagibili), e loro
+	# continuano a cadere sui piani e a sbattere sui muri, perché quello dipende
+	# dalla MASCHERA e non dal layer. Si urtano anche fra loro: una tazza posata
+	# sopra un'altra sta sopra.
+	#
+	# Il prezzo è il calcio: non si spostano più camminandoci dentro. Si spostano
+	# prendendoli in mano, che è come si spostano le cose.
+	collision_layer |= Interactable.LAYER_INTERACTABLE
+	if ostacolo_per_il_giocatore:
+		collision_layer |= Interactable.LAYER_WORLD
+	else:
+		collision_layer &= ~Interactable.LAYER_WORLD
+	collision_mask |= Interactable.LAYER_WORLD | Interactable.LAYER_INTERACTABLE
 	# IL SONNO SI TOGLIE SOLO IN MANO, e la prima stesura lo toglieva sempre.
 	# `_integrate_forces` su un corpo addormentato non viene chiamato, quindi
 	# mentre lo si tiene il sonno va escluso o la mano smette di funzionare da

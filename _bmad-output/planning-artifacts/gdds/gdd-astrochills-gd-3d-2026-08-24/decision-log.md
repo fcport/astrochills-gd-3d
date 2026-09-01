@@ -4514,3 +4514,49 @@ mouse, e i parametri delle ombre morbide. Ogni plafoniera ha `light_size = 0.35`
 `shadow_blur = 1.2`: la penombra viene stimata cercando gli occlusori, e una stima che cambia
 col punto di vista da' ombre che nuotano mentre ci si muove e si fermano quando ci si ferma —
 che e' il sintomo, parola per parola. E' il primo esperimento da fare, ed e' un numero solo.
+
+
+## D-180 — «Solo al primo ingresso» e' un'informazione, non un contorno
+
+**1 settembre 2026, seguito di D-179.** Alla domanda «succede ogni volta o solo la prima?»
+la risposta e' stata: **solo al primo ingresso**. Quella riga vale piu' di tutte le misure
+del giro precedente, perche' dice che il costo si paga UNA VOLTA per sessione — e le cause
+che si pagano una volta sola sono poche e conosciute.
+
+**E ha smontato la mia conclusione precedente.** In D-179 avevo scritto «non e' la
+compilazione delle pipeline» perche', attraversando l'edificio tre volte, il primo passaggio
+era il piu' liscio. Sbagliato, e per un motivo imbarazzante: la sonda aspettava **un secondo**
+prima di cominciare a misurare, e in quel secondo la compilazione era gia' avvenuta.
+Misuravo il secondo passaggio chiamandolo primo. Tolto il riscaldamento:
+
+    giro 1: 10,0 ms di media, quattro fotogrammi sopra i 20: 120, 97, 34, 21
+    giro 2:  7,0 ms, nessuno
+    giro 3:  7,0 ms, nessuno
+
+Un fotogramma da 120 ms mentre la telecamera si muove e' un decimo di secondo di immagine
+ferma: tutto salta, e la cosa che salta in modo piu' vistoso sono le ombre, che sono macchie
+larghe e sfumate. Poi non succede mai piu'. E' il sintomo, parola per parola.
+
+**IL RIMEDIO OVVIO NON FUNZIONA, e l'ho misurato invece di darlo per buono.** Un
+riscaldamento all'avvio — telecamera nascosta che guarda i centri di otto vani in quattro
+direzioni, `force_draw(false)` cosi' non si presenta niente a schermo — costa **2.255 ms** e
+compila davvero. Poi:
+
+    entrando nel bagno (che dalla postazione non si vede), a motore caldo:
+      col riscaldamento:     39 ms di picco
+      senza riscaldamento:   38 ms di picco
+
+Due secondi e mezzo di avvio in piu' per un millisecondo. **Buttato.** Un rimedio che non si
+misura e' un rimedio che si spera, e la tentazione di tenerlo — «male non fa» — e' esattamente
+il modo in cui un progetto accumula peso senza accumulare qualita'.
+
+Il perche' e' istruttivo: dopo un secondo e mezzo dall'avvio **tutto e' gia' compilato**, che
+si sia guardato o no. La cache degli shader su disco fa il resto fra una sessione e l'altra.
+Quello che resta caro sono i **primi fotogrammi in assoluto** — 96, 137, 57 ms ai passi 0, 1,
+12 — cioe' l'accensione del motore, non l'ingresso in una stanza.
+
+**E quindi lo strumento si sposta dove sta il sintomo.** `tools/guardia_fotogrammi.gd`
+scrive nel log ogni fotogramma sopra i venti millisecondi con la posizione del giocatore e i
+secondi dall'avvio, nelle sole build di debug, al massimo venti volte. Una sonda sintetica
+arriva fin dove arriva; quando il difetto lo vede una persona e non una misura, si mette la
+misura addosso alla persona.

@@ -59,8 +59,21 @@
 ##     Godot_v4.7.2-stable_win64.exe --path . tools/prova_ombre.tscn
 extends Node
 
-## Quanto si aspetta prima di cominciare: la notte parte e le luci si accendono.
-const RESPIRO := 1.0
+## Quanto si aspetta prima di cominciare.
+##
+## ERA UN SECONDO, ED E' STATO L'ERRORE DELLA PRIMA INDAGINE. «Succede solo al primo
+## ingresso e poi si stabilizza» vuol dire che il costo si paga UNA VOLTA per
+## sessione: un secondo di riscaldamento a guardare l'interno lo paga tutto prima
+## che la misura cominci, e quello che si misura dopo e' sempre il secondo
+## passaggio. La sonda concludeva «non e' la compilazione» avendo compilato prima
+## di guardare.
+##
+## Adesso si parte al primo fotogramma utile: tre frame, il minimo perche' la scena
+## esista e il giocatore ci sia.
+const RESPIRO := 0.05
+
+## Quanto si aspetta se RISCALDA=0: il tempo che il motore si accenda del tutto.
+const RESPIRO_LUNGO := 1.5
 
 ## Dove ci si mette a girare: in cupola, davanti al comando.
 const DOVE := Vector3(1.04, 0.0, 4.80)
@@ -74,7 +87,7 @@ const DOVE := Vector3(1.04, 0.0, 4.80)
 ## confrontando il primo passaggio con il secondo, perche' la compilazione non si
 ## ripete mai.
 const DA := Vector3(10.85, 0.0, 8.50)
-const A := Vector3(1.04, 0.0, 4.80)
+var A := Vector3(1.04, 0.0, 4.80)
 
 ## Quante pose fa un giro completo. Novanta: quattro gradi per fotogramma, che è
 ## una girata di testa svelta ma non isterica.
@@ -102,6 +115,7 @@ var _pose_viste: Dictionary = {}
 var _mossi: Dictionary = {}
 var _pose_vere: Array[Array] = [[], [], []]
 var _cammina := false
+var _senza_foto := false
 
 
 func _ready() -> void:
@@ -120,13 +134,22 @@ func _process(d: float) -> void:
 		return
 	_t += d
 	var p := Player.find_in(get_tree())
-	if p == null or _t < RESPIRO:
+	var attesa := RESPIRO_LUNGO if OS.get_environment("DOPO_AVVIO") == "1" else RESPIRO
+	if p == null or _t < attesa:
 		return
 	if _luci.is_empty():
 		# CON PAUSA=1 il gioco si ferma: la notte non scorre, niente si aggiorna, e
 		# quello che resta a cambiare puo' essere solo il renderer. E' il taglio piu'
 		# netto fra «e' il gioco» e «e' il motore».
 		_cammina = OS.get_environment("CAMMINA") == "1"
+		_senza_foto = OS.get_environment("SENZA_FOTO") == "1"
+		# DOVE si va: il bagno non si vede dalla postazione, la cupola si', e la
+		# differenza e' tutta qui. Una stanza gia' in campo e' gia' compilata.
+		if OS.get_environment("META") == "bagno":
+			A = Vector3(6.58, 0.0, 8.00)
+			print("[ombre] meta': il bagno, che dalla postazione non si vede")
+		if _senza_foto:
+			print("[ombre] SENZA_FOTO: si misurano solo i tempi")
 		if _cammina:
 			print("[ombre] CAMMINA: dalla postazione alla cupola, %d passi" % POSE)
 		if OS.get_environment("PAUSA") == "1":
@@ -159,7 +182,12 @@ func _process(d: float) -> void:
 	# quello prima, ed è esattamente il numero che serve — lo scatto lo fa il
 	# fotogramma in cui il motore ha compilato, e lo si misura dopo.
 	_tempi[_giro].append(d * 1000.0)
-	_immagini[_giro].append(_scatto())
+	# SENZA_FOTO=1 non cattura niente. Serve a una domanda su questa sonda e non sul
+	# gioco: `get_image()` su una texture di viewport e' una lettura dalla GPU alla
+	# CPU, e la prima costa. Se gli scatti del primo passaggio fossero i miei, tutta
+	# la diagnosi sarebbe di uno strumento che misura se stesso.
+	if not _senza_foto:
+		_immagini[_giro].append(_scatto())
 	# LA POSA VERA, non quella chiesta. Il giocatore ha un `_process` suo e la
 	# telecamera e' sua: se la riscrive dopo di me, quello che finisce nel
 	# fotogramma non e' l'angolo che ho ordinato — e allora questa sonda starebbe
@@ -264,11 +292,34 @@ func _referto() -> void:
 			peggio = maxf(peggio, v)
 			if v > SCATTO_MS:
 				scatti += 1
-		print("[ombre] giro %d: %.1f ms in media, picco %.1f ms, %d fotogrammi sopra %.0f ms"
-			% [g + 1, somma / float(t.size()), peggio, scatti, SCATTO_MS])
+		# LA MEDIA NASCONDE GLI SCATTI: novanta fotogrammi da 7 ms e uno da 200
+		# fanno una media di 9, che sembra sana. Quello che si vede sono i picchi,
+		# quindi si stampano i peggiori uno per uno.
+		var ordinati: Array[float] = []
+		for v in t:
+			ordinati.append(v)
+		ordinati.sort()
+		ordinati.reverse()
+		var peggiori := ""
+		for i in mini(8, ordinati.size()):
+			peggiori += "%.0f " % ordinati[i]
+		# DOVE cadono gli scatti, e non solo quanto valgono: se si concentrano in un
+		# punto del tragitto, li' c'e' qualcosa che entra in campo per la prima
+		# volta - e si puo' andare a guardare cos'e'.
+		for i in t.size():
+			if t[i] > SCATTO_MS:
+				var q := float(i) / float(POSE - 1)
+				var dove := DA.lerp(A, q) if _cammina else DOVE
+				print("[ombre]   giro %d, scatto di %.0f ms al passo %d su %d, a (%.1f, %.1f)"
+					% [g + 1, t[i], i, POSE, dove.x, dove.z])
+		print("[ombre] giro %d: %.1f ms in media, %d sopra %.0f ms, i peggiori: %s"
+			% [g + 1, somma / float(t.size()), scatti, SCATTO_MS, peggiori])
 	print("[ombre] se il primo giro scatta e il secondo no, e' la compilazione:")
 	print("[ombre]   succede una volta sola per materiale, ed e' il «poi si stabilizza».")
 
+	if _senza_foto:
+		get_tree().quit()
+		return
 	print("")
 	print("[ombre] --- SOSPETTO 2: l'atlante delle ombre ---")
 	# SI SALTA LA POSA 0, e non e' comodo: l'immagine che si legge in `_process` e'

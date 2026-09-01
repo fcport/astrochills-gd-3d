@@ -31,6 +31,8 @@
 [ext_resource type="PackedScene" path="res://world/sequence_chime.tscn" id="31_chime"]
 [ext_resource type="Script" path="res://world/indoors_volume.gd" id="32_dentro"]
 [ext_resource type="Script" path="res://world/dome_activity.gd" id="33_attivita"]
+[ext_resource type="Shader" path="res://world/shaders/cielo.gdshader" id="37_cielo"]
+[ext_resource type="Script" path="res://world/sky_light.gd" id="38_lucecielo"]
 
 [sub_resource type="BoxMesh" id="m_0"]
 size = Vector3(0.018, 0.018, 0.032)
@@ -1136,9 +1138,28 @@ emission_enabled = true
 emission = Color(1, 0.97, 0.90, 1)
 emission_energy_multiplier = 1.1
 
+[sub_resource type="ShaderMaterial" id="mat_cielo"]
+shader = ExtResource("37_cielo")
+shader_parameter/zenit = Color(0.0020, 0.0030, 0.0075, 1)
+shader_parameter/orizzonte = Color(0.0130, 0.0125, 0.0150, 1)
+shader_parameter/caduta_orizzonte = 5.0
+shader_parameter/scala_a = 150.0
+shader_parameter/scala_b = 233.0
+shader_parameter/densita_a = 0.16
+shader_parameter/densita_b = 0.09
+shader_parameter/raggio_stella = 0.26
+shader_parameter/luminosita = 1.0
+shader_parameter/via_lattea = 0.35
+shader_parameter/polo_galattico = Vector3(0.42, 0.78, -0.46)
+
+[sub_resource type="Sky" id="cielo"]
+radiance_size = 1
+process_mode = 2
+sky_material = SubResource("mat_cielo")
+
 [sub_resource type="Environment" id="env"]
-background_mode = 1
-background_color = Color(0.004, 0.005, 0.010, 1)
+background_mode = 2
+sky = SubResource("cielo")
 ambient_light_source = 2
 ambient_light_color = Color(0.26, 0.32, 0.48, 1)
 ambient_light_energy = 0.035
@@ -2651,6 +2672,21 @@ light_color = Color(0.60, 0.68, 0.96, 1)
 light_specular = 0.02
 shadow_enabled = true
 directional_shadow_normal_bias = 0.2
+
+[node name="LuceCielo" type="SpotLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 2.600, 9.000, 2.500)
+light_energy = 0.0
+light_color = Color(0.62, 0.72, 1, 1)
+light_specular = 0.02
+spot_range = 26.0
+spot_attenuation = 0.35
+spot_angle = 22.0
+spot_angle_attenuation = 0.8
+shadow_enabled = true
+shadow_normal_bias = 0.03
+shadow_bias = 0.01
+shadow_blur = 1.0
+script = ExtResource("38_lucecielo")
 
 [node name="Impianti" parent="." instance=ExtResource("10_impianti")]
 

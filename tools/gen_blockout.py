@@ -18,7 +18,7 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        LUCI_ROSSE, PARTE_SPENTA, punti_applique,
                        H_APPLIQUE, NOME_LOCALE, LUCE_MONITOR, SEMPRE_ACCESE,
                        H_INTERRUTTORE, L_PLACCA, A_PLACCA, SP_PLACCA,
-                       LETTO, ATTIVITA_CUPOLA,
+                       LETTO, ATTIVITA_CUPOLA, CUPOLA,
                        CASSA_MONITOR, VETRO_MONITOR, SEDILE_MONITOR,
                        BOMBATURA_MONITOR, FRANCO_VETRO,
                        PULSANTIERA_STAFFA, PULSANTIERA_TASTI,
@@ -157,6 +157,8 @@ def tscn():
              '[ext_resource type="PackedScene" path="res://world/sequence_chime.tscn" id="31_chime"]',
              '[ext_resource type="Script" path="res://world/indoors_volume.gd" id="32_dentro"]',
              '[ext_resource type="Script" path="res://world/dome_activity.gd" id="33_attivita"]',
+             '[ext_resource type="Shader" path="res://world/shaders/cielo.gdshader" id="37_cielo"]',
+             '[ext_resource type="Script" path="res://world/sky_light.gd" id="38_lucecielo"]',
              '']
     dims = sorted(set((round(b[3], 3), round(b[4], 3), round(b[5], 3)) for b in blocchi)
                   | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
@@ -330,8 +332,50 @@ def tscn():
     # chiaro, la zona sotto ogni plafoniera si accecava, e il rosso della cupola
     # virava al rosa nel punto piu' forte - tre canali saturi fanno bianco,
     # qualunque colore avesse la luce.
-    righe += ['[sub_resource type="Environment" id="env"]',
-              'background_mode = 1', 'background_color = Color(0.004, 0.005, 0.010, 1)',
+    righe += [
+              # IL CIELO, CHE PRIMA ERA UN COLORE PIATTO. `background_mode = 1` -
+              # tinta unita quasi nera - vuol dire che dalla vetrata della sala di
+              # controllo e dalla fenditura della cupola non si vedeva il cielo: si
+              # vedeva il vuoto. In un gioco che si fa in un osservatorio il cielo e'
+              # il soggetto, e le stelle non sono rifinitura.
+              #
+              # LE SUB-RESOURCE VANNO PRIMA DI CHI LE CITA. In un .tscn i riferimenti
+              # `SubResource(...)` si risolvono in avanti solo se la risorsa e' gia'
+              # stata dichiarata: il materiale prima del cielo, il cielo prima
+              # dell'ambiente. Scritte dopo, Godot apre la scena senza sfondo e non
+              # dice niente.
+              '[sub_resource type="ShaderMaterial" id="mat_cielo"]',
+              'shader = ExtResource("37_cielo")',
+              # I VALORI SONO QUELLI DI DEFAULT DELLO SHADER, scritti qui lo stesso:
+              # un parametro non scritto nel .tscn e' un parametro che vive solo nel
+              # sorgente del programma, e la prima volta che qualcuno lo tocca
+              # nell'editor si perde il perche'. Il perche' di ciascuno sta nello
+              # shader, accanto al suo `uniform`.
+              'shader_parameter/zenit = Color(0.0020, 0.0030, 0.0075, 1)',
+              'shader_parameter/orizzonte = Color(0.0130, 0.0125, 0.0150, 1)',
+              'shader_parameter/caduta_orizzonte = 5.0',
+              'shader_parameter/scala_a = 150.0', 'shader_parameter/scala_b = 233.0',
+              'shader_parameter/densita_a = 0.16', 'shader_parameter/densita_b = 0.09',
+              'shader_parameter/raggio_stella = 0.26',
+              'shader_parameter/luminosita = 1.0',
+              'shader_parameter/via_lattea = 0.35',
+              'shader_parameter/polo_galattico = Vector3(0.42, 0.78, -0.46)', '',
+              '[sub_resource type="Sky" id="cielo"]',
+              # NIENTE MEZZA RISOLUZIONE: `Sky` la userebbe volentieri, e su un cielo
+              # fatto di puntini larghi due pixel il dimezzamento non ammorbidisce, fa
+              # sparire meta' delle stelle e sfarfallare le altre quando si gira la
+              # testa. E' l'unico caso in cui il fondo va disegnato a piena risoluzione.
+              'radiance_size = 1', 'process_mode = 2', 'sky_material = SubResource("mat_cielo")', '',
+              '[sub_resource type="Environment" id="env"]',
+              'background_mode = 2', 'sky = SubResource("cielo")',
+              # L'AMBIENTE RESTA UNIFORME E RESTA BASSO, e non diventa il cielo.
+              # `ambient_light_source = 3` (SKY) sembrerebbe la cosa giusta ora che un
+              # cielo c'e', e non lo e': l'illuminazione ambientale non sa niente dei
+              # muri. E' gia' stato misurato qui - alzandola da 0,035 a 0,11, l'ombra
+              # sotto il lavabo saliva di 3,5 livelli su 255 e la sala divulgazione
+              # SPENTA saliva esattamente di 3,5. La luce del cielo che entra dalla
+              # cupola e' un'altra cosa e ha un altro attrezzo: `LuceCielo`, piu'
+              # sotto, che e' un proiettore e proietta ombra.
               'ambient_light_source = 2', 'ambient_light_color = Color(0.26, 0.32, 0.48, 1)',
               'ambient_light_energy = 0.035',
               'tonemap_mode = 3', 'tonemap_exposure = 1.0', 'tonemap_white = 3.0', '',
@@ -538,7 +582,51 @@ def tscn():
               # solo se dall'altra parte c'e' qualcosa da vedere.
               'light_energy = 0.22', 'light_color = Color(0.60, 0.68, 0.96, 1)',
               'light_specular = 0.02', 'shadow_enabled = true',
-              'directional_shadow_normal_bias = 0.2', '']
+              'directional_shadow_normal_bias = 0.2', '',
+              # LA LUCE DEL CIELO CHE SCENDE DALLA FENDITURA. Il perche' sta tutto in
+              # `world/sky_light.gd`; qui c'e' solo dove sta e quanto e' larga.
+              #
+              # SOPRA LA CALOTTA, NON DENTRO LA SALA. La cupola ha il centro in pianta
+              # a (2,60 2,50), nasce alla quota di gronda (3,00) e ha raggio 2,50,
+              # quindi lo zenit sta a 5,50: nove metri e' abbondantemente fuori, e da
+              # li' il guscio sta in mezzo fra la lampada e il pavimento. E' il guscio
+              # a decidere cosa
+              # passa - e' per questo che l'ombra e' accesa e che i bias sono minuscoli
+              # (il guscio e' spesso OTTO CENTIMETRI: il default di
+              # `shadow_normal_bias`, che vale 1,0, lo attraverserebbe dodici volte).
+              #
+              # IL CONO COPRE LA SALA E NON PIU': ventidue gradi a nove metri fanno un
+              # disco da 3,6 di raggio al pavimento, cioe' la cupola piu' un margine.
+              # Piu' largo laverebbe anche il muro del corridoio dall'altra parte del
+              # tetto, che e' una cosa che il cielo non fa.
+              #
+              # LA PORTATA E' VENTISEI E LA LAMPADA STA A NOVE, ed e' voluto: un cielo
+              # non ha una distanza, quindi non deve avere un decadimento. Con la
+              # portata a dieci - cioe' appena oltre il pavimento - il decadimento
+              # mordeva dentro la stanza: la calotta prendeva tre volte il pavimento e
+              # la luce moriva a mezz'aria. Tenuto il limite lontano, fra il punto piu'
+              # vicino e il piu' lontano restano meno di dieci punti percentuali.
+              # L'energia si alza di conseguenza, e non vuol dire piu' forte.
+              '[node name="LuceCielo" type="SpotLight3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, %.3f, 9.000, %.3f)'
+              % (CUPOLA[0] * K, CUPOLA[1] * K),
+              # NASCE SPENTA e la accende `sky_light.gd` seguendo l'apertura: la notte
+              # comincia a cupola chiusa, e una luce che nasce accesa per poi spegnersi
+              # al primo segnale e' un lampo all'avvio.
+              'light_energy = 0.0',
+              # Il colore del cielo, non della luna: piu' freddo e piu' azzurro. La
+              # luna ce l'ha gia' il suo direzionale, e sono due cose diverse.
+              'light_color = Color(0.62, 0.72, 1, 1)',
+              # SPECULARE QUASI ZERO: sul pavimento della cupola e sui tubi del
+              # telescopio un riflesso azzurro netto sarebbe la sola cosa che si vede,
+              # e questa luce non deve essere la cosa che si vede - deve essere quella
+              # che fa comparire il resto.
+              'light_specular = 0.02',
+              'spot_range = 26.0', 'spot_attenuation = 0.35',
+              'spot_angle = 22.0', 'spot_angle_attenuation = 0.8',
+              'shadow_enabled = true',
+              'shadow_normal_bias = 0.03', 'shadow_bias = 0.01', 'shadow_blur = 1.0',
+              'script = ExtResource("38_lucecielo")', '']
     # --- l'impianto luce: apparecchio, luce e comando ------------------------
     # OGNI LAMPADA E' DUE COSE: l'APPARECCHIO, che c'e' sempre, e quello che si
     # ACCENDE - la luce piu' il bagliore del diffusore. L'interruttore spegne solo
@@ -1722,7 +1810,11 @@ _attesi = [("ambient_light_energy = 0.035", "la luce ambientale della notte"),
            # grida una volta all'avvio e poi il giocatore gira all'infinito in un
            # osservatorio in cui l'alba non finisce mai.
            ('instance=ExtResource("28_letto")', "il letto"),
-           ('script = ExtResource("32_dentro")', "il volume dentro/fuori")]
+           ('script = ExtResource("32_dentro")', "il volume dentro/fuori"),
+           # SENZA IL CIELO SI VEDE IL VUOTO dalla vetrata e dalla fenditura, e non e'
+           # una mancanza che salta all'occhio come un errore: sembra solo notte fonda.
+           ('sky = SubResource("cielo")', "il cielo con le stelle"),
+           ('script = ExtResource("38_lucecielo")', "la luce del cielo in cupola")]
 _mancanti = ["  MANCA NEL .tscn   %s (%s)" % (t, perche)
              for (t, perche) in _attesi if t not in _scritto]
 if _mancanti:

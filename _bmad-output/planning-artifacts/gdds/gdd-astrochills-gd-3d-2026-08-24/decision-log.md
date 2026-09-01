@@ -4698,3 +4698,85 @@ Il controllo del banco e' stato aggiornato al vero — due categorie che tornano
 filtro acceso non avrebbe trovato l'articolo e avrebbe taciuto, e un controllo che si spegne da
 solo quando cambia il contorno e' il modo peggiore di sbagliare. Il prezzo e' un dato del
 `.tres` e resta giusto anche mentre l'articolo non si vende.
+
+## D-184 — Il cielo non e' uno sfondo, e la sua luce non e' l'ambiente
+
+Federico: «mi piacerebbe che mettessi al cielo le stelle e che il cielo in generale offrisse
+un minimo di luminosita'. Se sono dentro e' tutto super buio, ma quando apro la cupola un po'
+di luce da li' riesce a penetrare — ma sempre nella stessa modalita', non e' una vera luce di
+quelle che mi toglie l'abituazione dell'occhio al buio».
+
+Due cose, e la seconda e' quella che aveva una trappola dentro.
+
+**IL CIELO C'ERA E NON ERA UN CIELO.** `background_mode = 1`, tinta unita (0,004 0,005 0,010).
+Dalla vetrata della sala di controllo e dalla fenditura della cupola non si vedeva il cielo: si
+vedeva il **vuoto**, e la differenza fra le due cose non salta all'occhio come un errore —
+sembra soltanto notte fonda. In un gioco che si fa in un osservatorio, quello e' il soggetto.
+
+Adesso c'e' `world/shaders/cielo.gdshader`. **Procedurale e non una fotografia**, e la ragione
+e' pratica prima che estetica: una panoramica stellata equirettangolare alla risoluzione che
+serve per non avere stelle sfocate pesa decine di megabyte, mentre qui le stelle sono punti
+esatti a qualunque ingrandimento e costano un pugno di istruzioni sul solo fondo.
+
+Il come, in due righe, perche' il trucco ha una parte che si sbaglia sempre: la direzione di
+vista si moltiplica per una scala e si divide in celle cubiche; ogni cella tira i dadi e, se li
+passa, mette una stella in un punto casuale del suo **quarto centrale**. Il quarto centrale non
+e' un dettaglio decorativo — e' cio' che permette di guardare UNA cella invece di ventisette,
+perche' una stella confinata nel mezzo non sborda mai il bordo e quindi non viene mai tagliata
+a meta'. Le stelle tagliate si allineano in file, e una volta viste non si smette piu'.
+
+Due strati a scale non commensurate (150 e 233 celle per radiante), perche' con un passo solo
+tutte le stelle stanno alla stessa distanza minima e il cielo si legge come una texture. La
+magnitudine e' sorteggiata alla quarta potenza: poche forti, molte deboli, che e' quello che si
+vede alzando la testa. E si spengono verso l'orizzonte, perche' l'aria che si attraversa
+guardando basso e' molte volte quella che si attraversa guardando su — senza, la vetrata della
+sala di controllo mostrava le stelle piu' brillanti esattamente dove nella realta' non se ne
+vede quasi nessuna.
+
+**LA TRAPPOLA ERA LA SECONDA META'.** La strada ovvia per «il cielo dia un minimo di
+luminosita'» e' `ambient_light_source = SKY`, adesso che un cielo c'e'. E' sbagliata, ed e'
+gia' stato misurato in questo progetto: **la luce ambientale non sa niente dei muri**. Alzandola
+da 0,035 a 0,11, l'ombra sotto il lavabo del bagno saliva di 3,5 livelli su 255 e la sala
+divulgazione **spenta** saliva esattamente di 3,5. Un ambiente piu' alto non fa entrare la luce
+dalla cupola: schiarisce tutto insieme, e la stanza che deve restare nera diventa latte. La
+richiesta di Federico dice *dentro super buio, dalla cupola un po' di luce*: e' una richiesta
+di **occlusione**, e l'ambiente e' proprio l'attrezzo che non occlude.
+
+Quindi: `world/sky_light.gd`, un proiettore sopra la calotta. Sta a nove metri dal pavimento,
+guarda in giu', e **proietta ombra**: fra lui e la sala c'e' il guscio, e passa da dove il
+guscio non c'e'. E' la stessa cosa che fa il cielo vero, fatta con l'unico attrezzo che un
+rasterizzatore ha per farla. L'energia segue `Events.dome_aperture_changed` — il fatto sul bus,
+la stessa strada dei battenti, nessuna scorciatoia.
+
+**I NUMERI, misurati con `tools/prova_trafila.gd` a lampade tutte spente** (livelli su 255,
+dalla passerella verso il pavimento):
+
+    energia   cupola chiusa   cupola aperta
+      0,42        niente          0,38     invisibile: non e' poca luce, e' zero
+      1,20        niente          6,27     il telescopio si staglia, il parapetto si
+                                           legge, il resto resta silhouette
+
+**E LA PROVA CHE CONTA E' L'ALTRA**, quella che dice che il rimedio non ha rifatto il difetto
+che stava rimediando: a cupola **spalancata**, dalla sala divulgazione questa luce misura meno
+di 0,05. Non esce dalla cupola. D-181 era una luce senza ombra che stava in tutte le stanze
+insieme; questa sta in una sola.
+
+**LA PORTATA E' VENTISEI CON LA LAMPADA A NOVE**, e sembra un errore di battitura. Non lo e':
+un cielo non ha una distanza, quindi non deve avere un decadimento. Con la portata a dieci —
+appena oltre il pavimento — il decadimento mordeva dentro la stanza, la calotta prendeva tre
+volte il pavimento e la luce moriva a mezz'aria. Tenendo il limite lontano, fra il punto piu'
+vicino e il piu' lontano restano meno di dieci punti percentuali. L'energia si alza di
+conseguenza e **non vuol dire piu' forte**: un'energia si legge solo insieme a portata e
+attenuazione, e da sola non e' un numero.
+
+**UNA COSA CHE NON HO CORRETTO, E PERCHE'.** Ad apertura 0,5 la luce del cielo sul pavimento
+vale ancora meno di 0,05: i due portelli a meta' corsa stanno proprio **sopra**, attorno allo
+zenit, dove sta il proiettore. Comincia a passare qualcosa solo quando si scostano davvero.
+Sembra un difetto e non lo e' — e' quello che fa una cupola vera, e dice una cosa vera sul
+gioco: aprire a meta' non serve a vedere, serve a puntare.
+
+**E IL VINCOLO DICHIARATO RESTA VINCOLO.** «Non una vera luce di quelle che mi toglie
+l'abituazione dell'occhio al buio» non e' un gusto: e' la stessa ragione per cui in cupola la
+luce e' rossa e per cui le due lampade esterne valgono un decimo di una plafoniera. A cupola
+spalancata il pavimento della cupola resta ampiamente sotto quello che una plafoniera accesa
+da' a una stanza vuota. Il cielo fa **comparire le sagome**, non illumina.

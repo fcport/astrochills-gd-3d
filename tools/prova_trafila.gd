@@ -38,6 +38,14 @@ const VISTE := {
 	# Davanti al CRT, in piedi: la luce che il monitor butta sulla cassa beige e
 	# sulla consolle è l'unica cosa che dice «lo schermo è acceso».
 	"monitor": [Vector3(6.55, 0.0, 2.00), Vector3(5.75, 1.16, 2.00)],
+	# Sul prato a nord-est, il naso in su: si vede il cielo e mezzo edificio.
+	"prato": [Vector3(13.00, 0.0, -3.50), Vector3(8.00, 6.00, 2.00)],
+	# In cupola, sotto la fenditura, lo sguardo allo zenit: è la vista in cui si
+	# giudica quanta luce entra quando i portelli si aprono.
+	"cupola": [Vector3(2.60, 0.0, 4.60), Vector3(2.60, 5.20, 2.50)],
+	# In cupola ma guardando il pavimento e la passerella: qui non c'è il cielo a
+	# fare da attore, e si vede solo quello che la sua luce illumina.
+	"cupola_giu": [Vector3(4.40, 0.0, 4.60), Vector3(2.20, 0.55, 2.20)],
 }
 
 ## Le lampade che nella fotografia erano spente: la sala e il corridoio. La cucina
@@ -54,6 +62,7 @@ var _rif: Image
 var _controllo: Image
 var _senza: Array[Image] = []
 var _i := -1
+var _aperto := false
 var _attesa := 0
 var _t := 0.0
 var _finito := false
@@ -96,6 +105,22 @@ func _process(d: float) -> void:
 			var l := get_tree().root.find_child("Luce_%s" % n, true, false)
 			if l != null:
 				l.get_node("Accesa").visible = false
+		# APERTURA=1 apre la cupola prima di guardare. Si annuncia il FATTO sul bus,
+		# come farebbe la fase: così i battenti si muovono e la luce del cielo si
+		# accende per la stessa strada che percorrono in gioco, non per una
+		# scorciatoia che proverebbe soltanto che la scorciatoia funziona.
+		#
+		# E POI SI ASPETTA, perché i battenti INSEGUONO: `DomeShutter.FOLLOW_SPEED`
+		# vale 0,30 di corsa al secondo, quindi da chiusa a spalancata ci mettono tre
+		# secondi e un terzo. Fotografare subito vorrebbe dire fotografare una cupola
+		# ancora chiusa e chiamarla aperta.
+		if OS.get_environment("APERTURA") != "" and not _aperto:
+			_aperto = true
+			Events.dome_aperture_changed.emit(float(OS.get_environment("APERTURA")))
+			print("[trafila] cupola annunciata aperta a %s, aspetto che i battenti arrivino"
+				% OS.get_environment("APERTURA"))
+		if _aperto and _t < 6.5:
+			return
 		_raccogli(get_tree().root)
 		get_tree().paused = true
 		_attesa = RESPIRO
@@ -117,6 +142,11 @@ func _process(d: float) -> void:
 		return
 
 	if _rif == null:
+		# A PIENA RISOLUZIONE, una volta sola. Il confronto fra scatti si fa a un
+		# quarto per non costare più del gioco, ma un quarto NASCONDE le stelle —
+		# sono punti larghi due pixel, e il ridimensionamento bilineare li spegne.
+		# Per giudicare col mio occhio serve l'immagine vera; per misurare no.
+		get_viewport().get_texture().get_image().save_png("user://trafila_00_pieno.png")
 		_rif = _scatto()
 		_rif.save_png("user://trafila_00_riferimento.png")
 		_attesa = RESPIRO

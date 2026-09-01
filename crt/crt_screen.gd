@@ -127,6 +127,18 @@ func viewport_size() -> Vector2i:
 	return _viewport.size
 
 
+## Che cosa c'è sul vetro adesso, come immagine. SOLO PER LE SONDE.
+##
+## Serve a fare una domanda che a occhio si può sbagliare e a parole non si può
+## porre: «il monitor è acceso o è nero?». Un CRT nero è il sintomo di mezza dozzina
+## di guasti diversi ed è quello che un giocatore chiama «non va più il computer» —
+## ma è anche indistinguibile, in un referto di testo, da un monitor che sta
+## disegnando quello che deve. Contando i pixel accesi la domanda si chiude.
+func image() -> Image:
+	var t := _viewport.get_texture()
+	return t.get_image() if t != null else null
+
+
 ## Apre o chiude il cancello dell'input dello schermo.
 ##
 ## CHI ORCHESTRA LO APRE SOLO A TRANSIZIONE FINITA (ADR-003): prima che il

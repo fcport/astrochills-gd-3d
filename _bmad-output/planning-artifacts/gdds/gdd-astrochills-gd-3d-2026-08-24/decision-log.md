@@ -4409,3 +4409,48 @@ Allungando lo spegnimento da 0,085 a 8,5 secondi il secondo controllo grida.
 E' la stessa forma del controllo «a riposo sta fermo» accoppiato a «alla partenza da' uno
 scatto»: un solo controllo su un movimento e' quasi sempre meta' della specifica, perche'
 un movimento si descrive con quando c'e' **e** con quando non c'e'.
+
+
+## D-178 — Nero e guasto si somigliano troppo
+
+**1 settembre 2026.** «Non va piu' il computer: posso solo sedermi li' e c'e' il monitor
+blank che non fa niente.»
+
+**Il gioco non era rotto, ed e' questa la parte interessante.** La fase della cupola non ha
+schermo per una decisione presa apposta (D-171): il PC del '99 non sa che la cupola esista,
+quindi finche' non e' aperta il CRT non ha niente da mostrare. Chi si siede prima di essere
+salito in cupola vede quindi un monitor **nero** — e nero, per chi guarda, e' esattamente
+quello che fa un computer guasto. La decisione era giusta e la sua conseguenza visiva era
+indistinguibile da un difetto.
+
+**Al posto del nero c'e' il prompt.** La macchina e' accesa, nessuno ha ancora avviato il
+programma della notte, e un PC del '99 acceso e fermo mostra `C:\OSSERV>` col cursore che
+batte. Non e' una toppa: e' quello che c'era davvero. Il monitor adesso dice «io funziono,
+non sto facendo niente» invece di non dire niente.
+
+**E non nomina la cupola, deliberatamente.** Lo schermo di riposo vive in `crt/`, non in
+`phases/`, e non sa quale fase stia girando: e' una proprieta' del monitor. Se scrivesse
+«apri la cupola» il PC saprebbe della cupola, e la decisione D-171 salterebbe da qui di
+sbieco senza che nessuno l'abbia riaperta. Resta aperta la domanda se il gioco debba
+insegnare al giocatore che la sera comincia in cupola: quella e' una scelta di
+accompagnamento, e va presa guardandola in faccia.
+
+**E LA SONDA DEL VETRO ERA CIECA DA DUE GIRI.** `prova_vetro` si piazzava davanti al
+pulsante usando `-basis.z`, il verso del quadro di primitive; la pulsantiera modellata ha la
+faccia sul `+Z` (D-175). Con il segno vecchio la sonda finiva **dentro il muro**, il raggio
+del giocatore sbatteva nell'intonaco, il pulsante non veniva premuto mai, la fase 1 non
+finiva e il referto diceva «battente 0.000, pulsante premuto false» per novanta secondi. Due
+sonde con lo stesso difetto: l'avevo corretto in una sola.
+
+**IL CONTROLLO NUOVO E' PASSATO COL DIFETTO DENTRO, ed e' la lezione del giro.** Scritto
+come soglia — «almeno l'uno per cento di pixel accesi» — rimettendo il vetro nero ha
+risposto «acceso, 100%». Un `SubViewport` senza nessun Control dentro **non e' nero**: e' il
+colore di sfondo del progetto, cioe' un campo uniforme e chiaro. Quello che distingue uno
+schermo che disegna da uno che non disegna non e' la luce, e' il **contrasto**: del testo su
+fosforo accende qualche punto per cento e lascia scuro il resto. Adesso il controllo pretende
+una BANDA, fra l'uno e il sessanta per cento, e un campo uniforme lo fallisce da tutte e due
+le parti.
+
+Sono due iniezioni nello stesso giro — questa e quella del tremito che non si spegneva — e
+tutte e due hanno trovato un controllo che diceva ok. Un controllo va provato contro il
+difetto per cui esiste, sempre: quello scritto e non provato e' una riga che rassicura.

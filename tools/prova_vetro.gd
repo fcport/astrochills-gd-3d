@@ -60,12 +60,18 @@ var _ultimo_secondo := 0
 var _battuta := 0
 var _posto := Vector3.INF
 
+## Con RIPOSO=1 la cupola non si apre: si guarda il vetro a fase 1 in corso.
+var _riposo := false
+
 
 func _ready() -> void:
 	_monta.call_deferred()
 
 
 func _monta() -> void:
+	_riposo = OS.get_environment("RIPOSO") == "1"
+	if _riposo:
+		print("[vetro] RIPOSO: ci si siede senza aprire la cupola")
 	var quale := OS.get_environment("FINO")
 	if not quale.is_empty():
 		_fino = StringName(quale)
@@ -122,9 +128,74 @@ func _process(d: float) -> void:
 		return
 
 	if _corrente == &"dome":
+		# RIPOSO=1 NON APRE LA CUPOLA: si siede al monitor con la fase 1 ancora in
+		# corso e fotografa il vetro. È il caso che ha fatto dire «non va più il
+		# computer»: la fase della cupola non ha pannello, e per un giro intero il
+		# CRT è rimasto NERO — cioè indistinguibile da un guasto. Adesso deve
+		# esserci il prompt, e questa è l'unica sonda che lo può vedere, perché è
+		# l'unica che si siede prima di aver aperto.
+		if _riposo:
+			if not _seduto:
+				_siediti()
+			if _tempo - _da_quando > ASSAGGIO:
+				_vetro_e_acceso()
+				_arrivato = true
+				_conto = 0
+			return
 		_apri_la_cupola()
 		return
 	_avanza()
+
+
+## IL VETRO È ACCESO, O È NERO?
+##
+## La foto lo direbbe, ma solo a chi la guarda, e una foto la si guarda una volta.
+## Qui si contano i pixel accesi dentro il `SubViewport`, e si pretende che siano
+## FRA L'UNO E IL SESSANTA PER CENTO — cioè una BANDA, non una soglia.
+##
+## LA SOGLIA DA SOLA NON REGGE, e l'ho scoperto reiniettando il difetto: rimesso il
+## vetro nero, questo controllo ha risposto «acceso, 100%». Un `SubViewport` senza
+## nessun Control dentro non è nero — è il colore di sfondo del progetto, cioè un
+## campo uniforme e chiaro. Contare i pixel accesi lo promuove a pieni voti.
+##
+## Quello che distingue uno schermo che disegna da uno che non disegna non è la
+## luce, è il CONTRASTO: del testo su fosforo accende qualche punto per cento della
+## superficie e lascia scuro il resto. Un campo uniforme — tutto acceso o tutto
+## spento — vuol dire che non c'è niente sopra, in tutti e due i casi.
+func _vetro_e_acceso() -> void:
+	var crt := _cerca_vetro(get_tree().root)
+	if crt == null:
+		print("[vetro] NON TROVO IL VETRO per contare i pixel accesi")
+		return
+	var img: Image = crt.image()
+	if img == null:
+		print("[vetro] IL VETRO NON DÀ IMMAGINE")
+		return
+	var accesi := 0
+	for y in range(0, img.get_height(), 2):
+		for x in range(0, img.get_width(), 2):
+			if img.get_pixel(x, y).get_luminance() > 0.10:
+				accesi += 1
+	var quota := float(accesi) / float((img.get_width() / 2) * (img.get_height() / 2))
+	if quota > 0.01 and quota < 0.60:
+		print("[vetro] ok: a cupola chiusa il monitor disegna (%.1f%% di pixel accesi)"
+			% (quota * 100.0))
+	else:
+		print("[vetro] IL MONITOR NON DISEGNA NIENTE a cupola chiusa: %.1f%% di pixel"
+			% (quota * 100.0)
+			+ " accesi, cioè un campo uniforme   <-- ATTESO: fra 1% e 60%")
+
+
+## Il vetro, cercato per TIPO e non per percorso: la sonda non deve sapere dove il
+## generatore della scena abbia deciso di appenderlo.
+func _cerca_vetro(n: Node) -> CrtScreen:
+	if n is CrtScreen:
+		return n
+	for f in n.get_children():
+		var t := _cerca_vetro(f)
+		if t != null:
+			return t
+	return null
 
 
 ## Si siede come il giocatore: `E` sul monitor. Chi monta le fasi è il piano della
@@ -161,9 +232,17 @@ func _apri_la_cupola() -> void:
 	# SI RIMIRA A OGNI FOTOGRAMMA: dopo il teletrasporto la capsula si assesta, e
 	# una mira vecchia di un frame passa sopra il pulsante.
 	var q := quadro.global_position
-	# DAVANTI AL PULSANTE, LUNGO LA SUA NORMALE: il quadro sta sul muro ovest e
+	# DAVANTI AL PULSANTE, LUNGO LA SUA NORMALE: il comando sta sul muro ovest e
 	# guarda verso +X, e chi si mettesse «un po' piu' a sud» lo vedrebbe di taglio.
-	var davanti := -quadro.global_transform.basis.z
+	#
+	# IL VERSO E' +Z E NON -Z, e il segno vecchio ha fermato la notte intera. Il
+	# quadro di primitive aveva la faccia sul proprio -Z; la pulsantiera modellata
+	# ce l'ha sul +Z (D-175). Con il segno di prima questa sonda si piazzava DENTRO
+	# IL MURO, dall'altra parte, e da li' il raggio del giocatore sbatteva
+	# nell'intonaco: il pulsante non veniva mai premuto, la cupola non si apriva, la
+	# fase 1 non finiva e il monitor restava vuoto per sempre. Il referto diceva
+	# «battente 0.000, pulsante premuto false» per novanta secondi di fila.
+	var davanti := quadro.global_transform.basis.z
 	davanti = Vector3(davanti.x, 0.0, davanti.z).normalized()
 	var dove := q + davanti * 0.85
 	p.global_position = Vector3(dove.x, 0.0, dove.z)

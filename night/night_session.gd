@@ -84,6 +84,11 @@ signal plan_exhausted()
 @onready var _clock: NightClock = %NightClock
 
 var _crt: CrtScreen
+
+## Lo schermo di riposo, creato la prima volta che serve e poi tenuto: il
+## giocatore ci torna sopra a ogni fase senza pannello, e ricrearlo ogni volta
+## vorrebbe dire un cursore che riparte sempre dallo stesso battito.
+var _idle: IdleScreen
 var _phase: Phase
 var _summary: Control
 
@@ -314,11 +319,9 @@ func reshow_current() -> void:
 	# niente sopra una fase. Adesso che la BBS si apre durante la posa, chiuderla senza
 	# questo ramo lascerebbe il CRT NERO al posto dell'avanzamento della sequenza.
 	if _phase != null and is_instance_valid(_phase):
-		var scr := _phase.screen()
-		if scr != null and is_instance_valid(scr):
-			_crt.show_control(scr)
-			set_player_present(_player_present)
-			return
+		_crt.show_control(_schermo_di(_phase))
+		set_player_present(_player_present)
+		return
 	_crt.show_control(null)
 
 
@@ -767,8 +770,8 @@ func _enter_phase(scene: PackedScene) -> void:
 	_phase = p
 	# I modi si registrano appena la fase esiste, prima che qualcuno la sospenda.
 	_phase_mode = p.process_mode
-	var scr := p.screen()
-	_screen_mode = scr.process_mode if scr != null else Node.PROCESS_MODE_INHERIT
+	var scr := _schermo_di(p)
+	_screen_mode = scr.process_mode if p.screen() != null else Node.PROCESS_MODE_INHERIT
 
 	# screen() DOPO add_child: si risolve nel `_ready()` della fase, e
 	# `show_control()` fa un `reparent()`, che vuole il nodo già nell'albero.
@@ -776,6 +779,32 @@ func _enter_phase(scene: PackedScene) -> void:
 	# La fase nasce ferma se il giocatore non è alla postazione.
 	set_player_present(_player_present)
 	Events.phase_started.emit(p.key())
+
+
+## Che cosa va sul vetro per questa fase.
+##
+## UNA FASE PUÒ NON AVERE SCHERMO — quella della cupola non ce l'ha, perché il PC
+## del '99 non sa che la cupola esista (D-171) — e per un giro intero questo ha
+## voluto dire CRT NERO. Nero e guasto si somigliano troppo: chi si siede alla
+## postazione prima di essere salito in cupola vede un monitor morto e conclude che
+## il gioco è rotto. È successo, ed è stato segnalato con quelle parole.
+##
+## Al posto del nero c'è la macchina accesa e ferma al prompt, che è quello che
+## c'era davvero: il programma della notte non l'ha ancora avviato nessuno. Il
+## monitor dice «io funziono, non sto facendo niente» invece di non dire niente.
+##
+## LO SCHERMO DI RIPOSO NON NOMINA LA CUPOLA. Vive in `crt/`, non in `phases/`, e
+## non sa cosa stia girando: è una proprietà del monitor, non della fase. Se
+## sapesse quale fase è in corso, la decisione per cui il PC ignora la cupola
+## salterebbe da qui di sbieco.
+func _schermo_di(p: Phase) -> Control:
+	var s := p.screen()
+	if s != null and is_instance_valid(s):
+		return s
+	if _idle == null or not is_instance_valid(_idle):
+		_idle = IdleScreen.new()
+		add_child(_idle)
+	return _idle
 
 
 ## Se una fase è in condizione di girare davvero.

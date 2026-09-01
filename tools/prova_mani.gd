@@ -150,8 +150,18 @@ func _prova() -> void:
 	# La presa avviene DA SOPRA di proposito (il tavolino sta a 80 cm e l'occhio a
 	# 165): e' il caso in cui il difetto c'e', e prendere una cosa all'altezza degli
 	# occhi non lo mostrerebbe mai.
-	print("[mani] la si prende guardando in giu' di %.0f gradi"
-		% rad_to_deg(-_p.camera().rotation.x))
+	# E CORICATA, che e' l'altra meta' della stessa cosa. Federico l'ha vista dopo
+	# la prima cura: «l'ho raccolto di nuovo nella stessa posizione in cui l'ho
+	# raccolto e non si era drizzato». Un oggetto caduto di traverso resta di
+	# traverso in mano, e per rimetterlo in piedi bisogna sperare che cada bene.
+	# Chi raccoglie una bottiglia coricata la mette dritta: e' il polso, e non
+	# farlo e' la cosa che si nota.
+	_oggetto.global_basis = Basis(Vector3.RIGHT, deg_to_rad(90.0))
+	await _tick()
+	print("[mani] la si prende guardando in giu' di %.0f gradi, e da coricata "
+		% rad_to_deg(-_p.camera().rotation.x)
+		+ "(%.0f gradi fuori squadra)"
+		% rad_to_deg(_oggetto.global_basis.y.angle_to(Vector3.UP)))
 	_p._prendi(_oggetto)
 	for _i in 30:
 		await _tick()
@@ -166,8 +176,8 @@ func _prova() -> void:
 	print("[mani] presa: la scatola sta a %.3f m da dove la mano la vuole, "
 		% scarto + "e pende di %.1f gradi rispetto alla verticale" % storta)
 	if storta > 5.0:
-		_guasto("guardando avanti la scatola pende di %.1f gradi: e' rimasta "
-			% storta + "inclinata come lo sguardo con cui e' stata presa")
+		_guasto("in mano la scatola pende di %.1f gradi: non si e' raddrizzata "
+			% storta + "- e' rimasta come stava, o come stava lo sguardo")
 	if not _oggetto.in_mano():
 		_guasto("la scatola non risulta in mano")
 	if scarto > 0.05:

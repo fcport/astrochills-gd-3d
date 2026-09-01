@@ -206,13 +206,25 @@ var _mirato: Carryable = null
 ## e non c'è un gesto per dire in quale delle due.
 var _in_mano: Carryable = null
 
-## Come l'oggetto era girato rispetto alla testa quando l'ho preso.
+## QUELLO CHE SI HA IN MANO SI RADDRIZZA, e non conserva come stava.
 ##
-## SI CONSERVA COM'ERA invece di raddrizzarlo. Raccogliendo, l'oggetto scatterebbe
-## all'orientamento canonico — la moka che si gira da sola col beccuccio in
-## avanti — e quello scatto dice «sono un gioco» a voce alta. Preso storto resta
-## storto, e lo si raddrizza girandosi.
-var _presa := Basis.IDENTITY
+## Qui c'era una variabile che ricordava l'orientamento al momento della presa, e
+## un commento che spiegava perché fosse giusto: raddrizzare «direbbe sono un
+## gioco a voce alta». Era sbagliato, e Federico l'ha visto due volte di fila.
+##
+## La prima: preso guardando in basso, l'oggetto restava inclinato come lo
+## sguardo. Curato conservando la sola imbardata — e non bastava, perché il
+## problema non era la testa. La seconda: «l'ho raccolto di nuovo nella stessa
+## posizione in cui l'ho raccolto e non si era drizzato». Cioè una bottiglia
+## caduta di traverso resta di traverso in mano, per sempre, e per rimetterla in
+## piedi bisogna sperare che cada bene.
+##
+## CHI RACCOGLIE UNA BOTTIGLIA CORICATA LA METTE DRITTA. Non è una concessione al
+## videogioco: è quello che fa il polso, senza pensarci, e non farlo è la cosa che
+## si nota. Quindi in mano l'orientamento è quello canonico del modello — dritto,
+## e col fronte verso chi guarda — ruotato della sola imbardata della testa: gira
+## con te quando ti volti, e non si inclina mai. Non serve nessuna variabile: è
+## `_imbardata()` e basta.
 
 ## Se il giocatore è accovacciato adesso.
 var _accovacciato := false
@@ -553,26 +565,9 @@ func _mostra_mira(usabile: Interactable, oggetto: Carryable) -> void:
 		_prompt.show_prompt(riga)
 
 
-## Raccoglie un oggetto e si ricorda come lo si è preso.
+## Raccoglie un oggetto.
 func _prendi(oggetto: Carryable) -> void:
 	_in_mano = oggetto
-	# LA PRESA È RELATIVA ALL'IMBARDATA, NON A TUTTA LA TESTA — ed è la stessa
-	# divisione che regge il controller (imbardata sul corpo, beccheggio sulla
-	# camera), applicata a quello che si ha in mano.
-	#
-	# Presa rispetto alla testa INTERA, un oggetto raccolto guardando in basso
-	# resta inclinato di quell'angolo per sempre: si rialza lo sguardo e il termos
-	# si presenta coricato in avanti. Federico: «se lo prendo guardandolo dall'alto
-	# verso il basso, quando lo sollevo lo sollevo guardandolo sempre dall'alto
-	# verso il basso, questo non ha il minimo senso». Ha ragione: una cosa in mano
-	# STA DRITTA, perché c'è la gravità e perché il polso la raddrizza senza
-	# pensarci.
-	#
-	# Quindi l'oggetto gira con noi quando ci si volta — quello sì, o resterebbe
-	# rivolto a nord mentre gli si cammina intorno — ma non si inclina con lo
-	# sguardo. La POSIZIONE invece segue anche il beccheggio: sta in basso a destra
-	# sullo schermo, e lì deve restare anche guardando in alto.
-	_presa = _imbardata().inverse() * oggetto.global_basis.orthonormalized()
 	oggetto.posato.connect(_su_oggetto_posato, CONNECT_ONE_SHOT)
 	oggetto.prendi(self)
 	oggetto.punta(_trasformata_mano())
@@ -595,7 +590,7 @@ func _imbardata() -> Basis:
 func _trasformata_mano() -> Transform3D:
 	var testa := _cam.global_transform
 	var xf := Transform3D()
-	xf.basis = _imbardata() * _presa
+	xf.basis = _imbardata()
 	xf.origin = testa.origin \
 		- testa.basis.z * DISTANZA_MANO \
 		+ testa.basis.y * ALTEZZA_MANO \

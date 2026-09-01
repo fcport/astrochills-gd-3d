@@ -5701,3 +5701,39 @@ quindici centimetri e ogni pavimento risultava invisibile. Uno strumento che gri
 millesettecento volte non e' uno strumento: e' rumore con un referto. La diagnosi
 vera e' venuta da dieci righe usa-e-getta che, stanza per stanza, dicono a che
 quota si appoggia un oggetto e su quale corpo.
+
+## D-204 Quello che si prende in mano si raddrizza, e la ragione contraria era sbagliata
+
+Federico, dopo la prima cura: «l'ho raccolto di nuovo nella stessa posizione in cui
+l'ho raccolto e non si era drizzato».
+
+**LA MOTIVAZIONE SCRITTA IN D-199 ERA SBAGLIATA, e vale la pena lasciarla scritta
+com'era**: «si conserva com'era invece di raddrizzarlo; raccogliendo, l'oggetto
+scatterebbe all'orientamento canonico - la moka che si gira da sola col beccuccio
+in avanti - e quello scatto dice "sono un gioco" a voce alta». Suona bene, ed e'
+falso: quello che dice «sono un gioco» e' una bottiglia che, caduta di traverso,
+resta di traverso in mano per sempre, e per rimetterla in piedi bisogna sperare
+che cada bene.
+
+**CHI RACCOGLIE UNA BOTTIGLIA CORICATA LA METTE DRITTA.** Non e' una concessione:
+e' quello che fa il polso, senza pensarci, e non farlo e' la cosa che si nota.
+
+E' costato due giri perche' il primo ha curato la meta' sbagliata. Il difetto
+originale - «se lo prendo guardandolo dall'alto verso il basso, quando lo sollevo
+lo sollevo guardandolo sempre dall'alto verso il basso» - sembrava un problema
+della TESTA, e la cura (conservare la sola imbardata invece di tutta la testa) ha
+tolto l'inclinazione dello SGUARDO lasciando quella dell'OGGETTO. Con l'oggetto
+gia' dritto per terra non si vedeva piu' niente; con l'oggetto caduto tornava
+tutto.
+
+**ADESSO NON C'E' NESSUNA VARIABILE DA CONSERVARE**: in mano l'orientamento e'
+quello canonico del modello - dritto, col fronte verso chi guarda - ruotato della
+sola imbardata della testa. Gira con te quando ti volti, e non si inclina mai. Il
+codice e' `_imbardata()` e basta, ed e' piu' corto di quello che sostituisce.
+
+**MISURATO** (`tools/prova_mani.gd`): la scatola viene coricata di novanta gradi e
+raccolta con lo sguardo quarantanove gradi sotto l'orizzonte - i due difetti
+insieme, che e' il caso che li mostra tutti e due.
+
+    con la vecchia presa   in mano pende di 90,0 gradi
+    adesso                 in mano pende di  0,0 gradi

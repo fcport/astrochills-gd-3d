@@ -78,6 +78,24 @@ shadow_enabled = true
 shadow_bias = 0.03
 omni_range = 3.0
 omni_attenuation = 1.8
+; E L'OMBRA DEV'ESSERE ILLEGGIBILE. Con una sorgente puntiforme addosso, chi si
+; avvicina all'oculare vede il PROPRIO cono d'ombra disegnato netto sul tubo del
+; telescopio: un disco nero a bordo vivo, proiettato da una lampada che nella
+; finzione non esiste. Federico l'ha visto e l'ha chiamata «una cosa veramente
+; ridicola», ed è la definizione giusta — il difetto non è l'ombra, è che l'ombra
+; DENUNCIA la sorgente, cioè manda a monte le tre scelte qui sopra che servivano a
+; nasconderla.
+;
+; `light_size` le dà la dimensione che dovrebbe avere: non un punto sul petto, ma
+; mezzo metro di chiarore diffuso. La penombra diventa più larga dell'ombra e a
+; mezzo metro non c'è più niente da leggere, mentre a due metri — dove la lampada
+; serve, cioè sui mobili che si sfiorano — la forma resta.
+;
+; NON SI PUÒ SPEGNERE L'OMBRA E BASTA, ed è già stato misurato: senza, questa
+; lampada attraversa i muri e alza il pavimento della stanza accanto di 173 livelli
+; su 255. Il rimedio non è togliere l'ombra: è renderla morbida.
+light_size = 0.55
+shadow_blur = 2.0
 
 [node name="InteractRay" type="RayCast3D" parent="Camera"]
 unique_name_in_owner = true

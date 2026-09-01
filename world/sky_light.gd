@@ -33,6 +33,22 @@
 class_name SkyLight
 extends SpotLight3D
 
+## IL CIELO NON È «LA STANZA È ACCESA», e questo gruppo serve a dirlo a chi altrimenti
+## lo crederebbe. `luce_prossimita.gd` somma le lampade che arrivano dove sta il
+## giocatore e spegne la lampadina di prossimità dove la stanza è già illuminata —
+## regola giusta, che qui dava il risultato sbagliato: questo proiettore vale 1,04
+## alla quota della testa, contro una soglia di 0,30, quindi entrando in cupola con la
+## fenditura aperta la prossimità si spegneva del tutto. Federico l'ha visto e l'ha
+## descritto per quello che era: «se mi avvicino alla luce che viene dal cielo perdo
+## la capacità di vedere al buio, come se fossi esposto a una luce normale».
+##
+## E NON È UNA DEROGA, È LA REGOLA DETTA MEGLIO. Quella soglia esiste per non vedere
+## il proprio alone su una parete già illuminata; il chiarore delle stelle sul
+## pavimento di una cupola non è una parete illuminata — è il buio, misurato bene.
+## Una lampada che spegne l'aiuto al buio dovrebbe essere una lampada che ACCECA, e
+## questa non lo è.
+const GROUP := &"luce_del_cielo"
+
 ## Quanta energia a cupola tutta aperta. Il resto è proporzione diretta.
 ##
 ## IL NUMERO È GRANDE E NON VUOL DIRE «FORTE»: un'energia si legge solo insieme alla
@@ -73,6 +89,7 @@ var _apertura := 0.0
 
 
 func _ready() -> void:
+	add_to_group(GROUP)
 	light_energy = 0.0
 	Events.dome_aperture_changed.connect(_su_apertura)
 

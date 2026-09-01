@@ -1,38 +1,40 @@
-## L'OCCHIO CHE SI FA IL BUIO: in cupola, a luci spente e cupola aperta, il nero
-## smette di essere nero assoluto e si comincia a intravedere.
+## L'OCCHIO CHE SI FA IL BUIO: in cupola, a luci spente e cupola aperta, si comincia
+## a vedere di più — non a vedere più chiaro.
 ##
-## L'IDEA È DI FEDERICO, e vale la pena scriverla com'è arrivata: «con la cupola
-## aperta e le luci spente, per lo stesso principio per cui si attiva l'abituamento
-## degli occhi, alziamo leggermente il punto di nero — sembra che vedi un po'
-## meglio, una leggera diffusione, solo nella sala telescopio».
+## L'IDEA È DI FEDERICO, e anche la correzione che l'ha rimessa in riga. È arrivata
+## così: «con la cupola aperta e le luci spente, per lo stesso principio per cui si
+## attiva l'abituamento degli occhi, alziamo leggermente il punto di nero». E dopo
+## averla provata: «a me sembra di vedere uguale, solo leggermente più chiaro, i neri
+## sono leggermente meno neri. In realtà vorrei vedere leggermente di più. Piuttosto
+## fai tornare i neri come erano prima, però che veda un po' più di forme, di cose».
 ##
-## PERCHÉ È UN AGGIUSTAMENTO DI CAMERA E NON UNA LAMPADA. L'adattamento al buio non
-## è una cosa della stanza: è una cosa dell'OCCHIO. Metterlo come luce vorrebbe dire
-## una sorgente che illumina uniformemente ogni superficie della cupola e nessuna di
-## quelle accanto — cioè una lampada che i muri devono fermare, che è quello che ha
-## già fatto `sky_light.gd` per il cielo e che qui sarebbe la seconda copia dello
-## stesso attrezzo per un fenomeno diverso. Alzare il punto di nero della SCENA
-## INQUADRATA è letteralmente quello che fa la retina: non arriva più luce, cambia
-## la risposta a quella che c'è.
+## E LA SECONDA VERSIONE È GIUSTA, IN UN MODO CHE VALE OLTRE QUESTO CASO. Alzare il
+## punto di nero e alzare la sensibilità sembrano la stessa cosa e sono opposte:
 ##
-## COME: `Environment.adjustment_color_correction` con una rampa che parte da un
-## grigio-blu invece che dal nero. Il LUT a una dimensione mappa ogni canale
-## attraverso la rampa, quindi `fuori = alzata + dentro * (1 - alzata)`: i neri
-## salgono, i bianchi restano dove sono, e in mezzo la curva resta dritta. Non è un
-## contrasto abbassato — è esattamente e solo il fondo che si stacca dal nero.
+##   - IL PUNTO DI NERO alza il fondo e lascia tutto il resto dov'è. Quello che era
+##     nero diventa grigio, e quello che era appena visibile resta appena visibile.
+##     Si vede più CHIARO e non si vede più NIENTE: il contrasto locale, che è quello
+##     che fa emergere una forma, non si muove di un livello. È esattamente quello
+##     che Federico ha visto.
+##   - L'ESPOSIZIONE moltiplica. Il nero (che è zero) resta nero, e tutto quello che
+##     stava fra l'invisibile e il visibile sale sopra la soglia: il corrimano, il
+##     bordo della passerella, la curva del tubo. Si vedono più COSE, e i neri
+##     restano neri — che è la richiesta, parola per parola.
 ##
-## IL COLORE DELL'ALZATA NON È GRIGIO: è freddo, e viene dalla stessa famiglia della
-## luce del cielo. Un'alzata neutra fa cenere; quella azzurrina fa notte, ed è anche
-## quello che l'occhio fa davvero — al buio la visione passa ai bastoncelli, che sono
-## ciechi al rosso e spostano tutto verso il blu (l'effetto Purkinje). Non è un
-## vezzo: è il motivo per cui le sale di controllo hanno la luce rossa, cioè la
-## stessa ragione che sta scritta in D-011.
+## Ed è anche quello che fa la retina: al buio non aggiunge un fondo, cambia il
+## GUADAGNO. Non arriva più luce — cambia la risposta a quella che c'è.
 ##
-## SALE PIANO E SCENDE DI COLPO, come l'originale. Farsi l'occhio costa venti minuti
-## veri e perderlo costa un lampo: qui i venti minuti sono compressi in nove secondi
-## — un gioco non può chiedere venti minuti di attesa a occhi aperti — ma
-## l'ASIMMETRIA resta intera, perché è lei a dare il senso. Accendere la luce in
-## cupola non è gratis, e lo si impara accendendola.
+## PERCHÉ È UN AGGIUSTAMENTO DI CAMERA E NON UNA LAMPADA. L'adattamento non è una
+## cosa della stanza: è una cosa dell'occhio. Metterlo come luce vorrebbe dire una
+## sorgente che illumina secondo la normale e la distanza — cioè con un centro e un
+## fuori — e che per non entrare nelle stanze accanto avrebbe bisogno di ombre, cioè
+## sarebbe la seconda copia dell'attrezzo che `sky_light.gd` ha già messo lì per il
+## cielo. L'esposizione non ha una posizione, e va bene così: nemmeno l'occhio ce
+## l'ha.
+##
+## SALE PIANO E SCENDE DI COLPO. Farsi l'occhio costa, perderlo no, e l'asimmetria è
+## la sola parte di questo effetto che abbia un insegnamento dentro: accendere la
+## luce in cupola non è gratis.
 class_name DarkAdaptation
 extends Area3D
 
@@ -40,14 +42,19 @@ extends Area3D
 ## stessa regola di `IndoorsVolume` e di `DomeActivity`.
 const GROUP := &"dark_adaptation"
 
-## Quanto si alza il punto di nero, ad adattamento pieno. Sono i valori del LUT nel
-## punto zero della rampa, cioè: un pixel nero esce così.
+## Di quanto si moltiplica l'esposizione ad adattamento pieno. 2,4 è poco più di un
+## diaframma e un quarto.
 ##
-## PICCOLO, E LA MISURA DEL «PICCOLO» È CHE IL BIANCO NON SI MUOVE. La rampa alza i
-## neri e lascia i bianchi: se l'alzata fosse grossa, la scena non sembrerebbe più
-## illuminata — sembrerebbe SBIADITA, che è il difetto che si ottiene sempre quando
-## si cerca di far vedere di più togliendo contrasto.
-const ALZATA := Color(0.036, 0.042, 0.058)
+## SEMBRA TANTO E NON LO È, perché la curva ACES comprime gli alti: quello che era
+## già chiaro sale pochissimo (si avvicina al bianco e la curva lo trattiene), mentre
+## quello che stava sul fondo — dove la curva è ancora dritta — sale di tutto il
+## fattore. È il moltiplicatore giusto per un effetto che deve far emergere il debole
+## senza bruciare il forte, e non è un caso: è per quel comportamento che ACES sta
+## sulla scena fin dall'inizio.
+##
+## IL NERO RESTA NERO, e questa è la differenza con la versione di prima: zero per
+## qualunque numero fa zero. Il fondo della cupola non si schiarisce, si popola.
+const GUADAGNO := 2.4
 
 ## Quanti secondi per farsi l'occhio, da zero a pieno.
 ##
@@ -94,8 +101,7 @@ var _dentro := false
 var _apertura := 0.0
 var _giocatore: Node3D
 var _ambiente: Environment
-var _rampa: Gradient
-var _lut: GradientTexture1D
+var _riposo := 1.0
 var _nodi_luce: Array[Node] = []
 
 
@@ -115,21 +121,29 @@ func _ready() -> void:
 	_prepara()
 
 
-## Il LUT e il puntatore all'ambiente. Il `WorldEnvironment` si cerca per TIPO e non
-## per nome: un nodo rinominato non deve spegnere un effetto in silenzio.
+## Il puntatore all'ambiente e l'esposizione di partenza. Il `WorldEnvironment` si
+## cerca per TIPO e non per nome: un nodo rinominato non deve spegnere un effetto in
+## silenzio.
+##
+## L'ESPOSIZIONE DI RIPOSO SI LEGGE, NON SI SCRIVE. Sta in `gen_blockout.py` insieme
+## al tonemapping, ed è lì che va decisa; questo nodo la moltiplica e basta. Un
+## secondo numero scritto qui sarebbe una seconda verità sulla stessa cosa, e il
+## giorno che l'ambiente cambia esposizione la cupola resterebbe all'antica.
 func _prepara() -> void:
-	_rampa = Gradient.new()
-	_rampa.set_offset(0, 0.0)
-	_rampa.set_offset(1, 1.0)
-	_rampa.set_color(0, Color.BLACK)
-	_rampa.set_color(1, Color.WHITE)
-	_lut = GradientTexture1D.new()
-	_lut.gradient = _rampa
-	# 64 campioni: la rampa è una retta, e una retta non ha bisogno di più.
-	_lut.width = 64
 	var we := _cerca_ambiente(get_tree().root)
 	if we != null:
 		_ambiente = we.environment
+		_riposo = _ambiente.tonemap_exposure
+
+
+## SI RIMETTE A POSTO USCENDO, e non è pedanteria da manuale: `Environment` è una
+## RISORSA, e le risorse in Godot possono sopravvivere alla scena che le ha caricate.
+## Sparendo con l'esposizione moltiplicata, la notte dopo questo stesso nodo
+## leggerebbe 2,4 come valore di riposo e ci moltiplicherebbe sopra un altro 2,4 —
+## un difetto che si vede solo alla seconda notte, cioè mai mentre lo si sviluppa.
+func _exit_tree() -> void:
+	if _ambiente != null:
+		_ambiente.tonemap_exposure = _riposo
 
 
 func _cerca_ambiente(n: Node) -> WorldEnvironment:
@@ -173,13 +187,11 @@ func _process(delta: float) -> void:
 	_applica()
 
 
+## Il guadagno cresce con l'adattamento. Interpolazione lineare e non geometrica: a
+## metà strada si vuole metà dell'effetto percepito, e con ACES di mezzo la
+## differenza fra le due è sotto la soglia in cui varrebbe la pena discuterne.
 func _applica() -> void:
-	if _q <= 0.001:
-		_ambiente.adjustment_enabled = false
-		return
-	_rampa.set_color(0, ALZATA * _q)
-	_ambiente.adjustment_color_correction = _lut
-	_ambiente.adjustment_enabled = true
+	_ambiente.tonemap_exposure = _riposo * lerpf(1.0, GUADAGNO, _q)
 
 
 ## Quanto l'occhio è fatto. Per le sonde: leggere il segnale non prova che il nodo

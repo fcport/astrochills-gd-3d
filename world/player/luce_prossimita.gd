@@ -105,6 +105,15 @@ func _altrui() -> float:
 	for L in _lampade:
 		if not is_instance_valid(L) or not L.is_visible_in_tree():
 			continue
+		# IL CIELO NON CONTA COME STANZA ACCESA. Il chiarore che scende dalla
+		# fenditura vale 1,04 alla quota della testa, contro una soglia di 0,30:
+		# bastava entrare in cupola con la cupola aperta perché questa lampada si
+		# spegnesse del tutto, e in cupola è dove serve di più. La soglia esiste per
+		# non vedere il proprio alone su una parete ILLUMINATA — la luce delle stelle
+		# sul pavimento non è una parete illuminata, è il buio misurato bene. Il
+		# perché per esteso sta in `world/sky_light.gd`, accanto al gruppo.
+		if L.is_in_group(SkyLight.GROUP):
+			continue
 		var quanto := 0.0
 		var dove := Vector3.ZERO
 		if L is DirectionalLight3D:

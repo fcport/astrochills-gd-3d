@@ -4843,3 +4843,92 @@ l'interruttore che comanda le tre rosse. E' D-176 rifatto — un controllo che m
 sbagliata e tace — e la cura e' la stessa: ancorare la stringa a qualcosa che appartenga a un
 nodo solo, cioe' la riga dello script che la precede. Non l'avrei mai saputo senza iniettare:
 il controllo era verde in tutti e due i mondi.
+
+## D-186 — Alzare il fondo e alzare il guadagno sembrano la stessa cosa e sono opposte
+
+Federico, dopo aver provato l'adattamento al buio di D-185: «a me sembra di vedere uguale e
+solo leggermente piu' chiaro, cioe' i neri sono leggermente meno neri. In realta' vorrei
+vedere leggermente di piu'. Quindi piuttosto fai tornare i neri come erano prima, pero' che
+veda un po' piu' di forme, di cose».
+
+**AVEVA RAGIONE, E LA RAGIONE E' PIU' GRANDE DEL CASO.** Alzare il punto di nero e alzare la
+sensibilita' si somigliano sullo schermo e fanno cose opposte:
+
+- **Il punto di nero** ADDIZIONA. Alza il fondo e lascia tutto il resto dov'e': il nero
+  diventa grigio e quello che era appena visibile resta appena visibile. Il contrasto locale —
+  che e' l'unica cosa che fa emergere una forma — non si muove di un livello. Si vede piu'
+  CHIARO e non si vede piu' NIENTE. E' esattamente quello che Federico ha visto e descritto.
+- **L'esposizione** MOLTIPLICA. Il nero e' zero e resta zero, mentre tutto quello che stava fra
+  l'invisibile e il visibile sale sopra la soglia: il corrimano, il bordo della passerella, la
+  curva del tubo. Si vedono piu' COSE e i neri restano neri — che e' la richiesta, parola per
+  parola.
+
+Ed e' anche quello che fa la retina: al buio non aggiunge un fondo, cambia il **guadagno**.
+Avevo scelto l'addizione perche' l'idea era arrivata con le parole «alziamo il punto di nero» e
+ho implementato le parole invece della cosa. E' lo stesso errore del magenta (D-182): eseguire
+la descrizione di una conseguenza senza risalire alla causa.
+
+`GUADAGNO = 2.4`, poco piu' di un diaframma e un quarto, e sembra tanto solo finche' non si
+tiene conto di ACES: la curva comprime gli alti, quindi quello che era gia' chiaro sale
+pochissimo mentre quello che stava sul fondo — dove la curva e' ancora dritta — sale di tutto
+il fattore. E' il moltiplicatore giusto per far emergere il debole senza bruciare il forte, ed
+e' per quel comportamento che ACES sta su questa scena fin dall'inizio.
+
+**E SI RIMETTE A POSTO USCENDO.** `Environment` e' una RISORSA, e le risorse sopravvivono alla
+scena che le ha caricate: sparendo con l'esposizione moltiplicata, la notte dopo lo stesso nodo
+leggerebbe 2,4 come valore di riposo e ci moltiplicherebbe sopra un altro 2,4. E' un difetto
+che si manifesta solo alla seconda notte, cioe' mai mentre lo si sviluppa.
+
+## D-187 — Una lampada che spegne l'aiuto al buio dev'essere una lampada che acceca
+
+Sempre Federico, stessa sessione, due difetti che sembravano tre e avevano una radice sola: la
+lampada di prossimita' — quella che il giocatore si porta addosso perche' cio' che sfiora non
+sia una macchia nera.
+
+**PRIMO: la luce del cielo la spegneva.** «Se mi avvicino alla luce che viene proiettata dentro
+la cupola dal cielo, perdo di nuovo la capacita' di adattamento al buio, mi si spegne proprio
+come se fossi esposto a una luce normale — e non e' quello che vogliamo.»
+
+Aveva ragione due volte, perche' non era nemmeno l'adattamento: era `luce_prossimita.gd`, che
+somma le lampade che arrivano dove sta il giocatore e si spegne dove la stanza e' gia'
+illuminata. Regola giusta — esiste per non vedere il proprio alone su una parete accesa — con
+il risultato sbagliato: il proiettore del cielo (D-184) vale **1,04** alla quota della testa
+contro una soglia di **0,30**, quindi bastava entrare in cupola con la fenditura aperta perche'
+la prossimita' si spegnesse del tutto. In cupola, che e' dove serve di piu'.
+
+La cura non e' una deroga, e' la regola detta meglio: **una lampada che spegne l'aiuto al buio
+dev'essere una lampada che ACCECA**, e il chiarore delle stelle sul pavimento non e' una parete
+illuminata — e' il buio, misurato bene. Il cielo entra in un gruppo (`SkyLight.GROUP`) e il
+conto lo salta. Il gruppo, e non un controllo di tipo, perche' il giorno che ci sara' una
+seconda luce «che non conta» — un lumino, una spia, il monitor visto da lontano — la si aggiunge
+al gruppo invece di allungare un `if`.
+
+**SECONDO: il giocatore proiettava la propria ombra.** «Una cosa veramente ridicola: facendo
+luce io, quando mi avvicino all'oculare del telescopio proietto un'ombra della stessa» — con
+screenshot, e lo screenshot fa ridere: un disco nero a bordo vivo disegnato sul tubo, proiettato
+da una lampada che nella finzione non esiste.
+
+«Ridicola» e' la parola esatta, ed e' anche la diagnosi. Il difetto non e' l'ombra: e' che
+l'ombra **denuncia la sorgente**, cioe' manda a monte le tre scelte che `player.tscn` documenta
+da sempre per nasconderla (sta sotto l'occhio, non ha speculare, muore a due metri e mezzo).
+Una lampada invisibile che proietta un'ombra visibile e' una lampada che si e' scoperta.
+
+**E NON SI PUO' SPEGNERE L'OMBRA E BASTA**, che sarebbe la reazione naturale: e' gia' misurato
+in questo repository che senza ombre questa lampada attraversa i muri e alza il pavimento della
+stanza accanto di **173 livelli su 255**. Il rimedio non e' togliere l'ombra, e' renderla
+illeggibile: `light_size = 0.55` le da' la dimensione che dovrebbe avere — non un punto sul
+petto ma mezzo metro di chiarore diffuso — e la penombra diventa piu' larga dell'ombra. A mezzo
+metro non c'e' piu' niente da leggere; a due, dove la lampada serve davvero, la forma resta.
+
+Rimisurato col banco `tools/prova_prossimita.gd`, che e' esattamente il posto dove questa
+taratura si verifica:
+
+    distanza    spenta   accesa   alzata
+      0,7 m        7,0     66,6    +59,7
+      1,5 m        6,9     28,3    +21,3
+      2,5 m        6,9      7,4     +0,5
+      5,0 m        6,9      6,9     +0,0
+    di la' dal muro  6,6      6,6     +0,0
+
+Quattro distanze, zero guasti: la lampada rivela ancora quello che si sfiora, muore ancora a
+due metri e mezzo, e ancora non passa i muri. E' cambiata solo la cosa che si era scoperta.

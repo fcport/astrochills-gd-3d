@@ -46,6 +46,9 @@ const VISTE := {
 	# In cupola ma guardando il pavimento e la passerella: qui non c'è il cielo a
 	# fare da attore, e si vede solo quello che la sua luce illumina.
 	"cupola_giu": [Vector3(4.40, 0.0, 4.60), Vector3(2.20, 0.55, 2.20)],
+	# Sulla passerella, all'altezza dell'oculare (2,29 m): è la posa in cui Federico
+	# ha fotografato la propria ombra proiettata sul tubo del telescopio.
+	"oculare": [Vector3(4.00, 0.59, 2.50), Vector3(2.60, 2.10, 2.50)],
 }
 
 ## Le lampade che nella fotografia erano spente: la sala e il corridoio. La cucina

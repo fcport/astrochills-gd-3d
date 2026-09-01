@@ -932,11 +932,19 @@ func _check_item_catalog() -> void:
 		return
 	print("   dal .tres: %d articoli totali" % catalog.items.size())
 
-	# PERSONAL: implementati = solo moka. stufetta è personal ma non implementata.
-	_report_category(catalog, &"personal", PackedStringArray(["moka"]),
+	# NESSUNO, AL MOMENTO, ED È UNA CONSEGUENZA VOLUTA. Moka e lampadina erano gli
+	# unici due implementati, e i loro oggetti sono usciti dal mondo: erano scatole
+	# segnaposto, e la lampada faceva per giunta una luce che attraversava il muro
+	# della cucina (D-181). `implemented` significa «esiste davvero là fuori», non
+	# «il codice c'è»: con l'oggetto fuori scena l'articolo non si vende, o si
+	# venderebbe una cosa che non compare da nessuna parte.
+	#
+	# QUINDI IL TERMINALE ADESSO NON VENDE NIENTE, e sta scritto qui perché sia una
+	# decisione visibile invece di una scoperta. Torna a vendere quando la moka e la
+	# lampada avranno un modello da posare.
+	_report_category(catalog, &"personal", PackedStringArray([]),
 		"personal implementati")
-	# FACILITIES: implementati = solo lampadina. lubrificare_cupola è facilities, no.
-	_report_category(catalog, &"facilities", PackedStringArray(["lampadina"]),
+	_report_category(catalog, &"facilities", PackedStringArray([]),
 		"facilities implementati")
 
 	# Il filtro spento (only_implemented = false) DEVE dare di più: è la prova che il
@@ -949,7 +957,11 @@ func _check_item_catalog() -> void:
 		"il filtro esclude davvero", all_personal.size(), impl_personal.size(), fnote])
 
 	# Il prezzo della lampadina è 2000 lire (economia §6): dato nel .tres, non nel codice.
-	var bulb := _first_with_id(catalog.for_category(&"facilities", true), &"lampadina")
+	# SENZA FILTRO, e il `false` è il punto: il prezzo è un dato del `.tres` e non
+	# smette di essere giusto perché l'articolo per ora non si vende. Col filtro
+	# acceso questo controllo troverebbe `null` e tacerebbe — un controllo che si
+	# spegne da solo quando cambia il contorno è il modo peggiore di sbagliare.
+	var bulb := _first_with_id(catalog.for_category(&"facilities", false), &"lampadina")
 	if bulb != null:
 		var pnote := "" if bulb.price == 2000 else "   <-- ATTESO: 2000 (economia §6)"
 		print("   %-40s lampadina price = %d%s" % ["prezzo lampadina dal .tres", bulb.price, pnote])

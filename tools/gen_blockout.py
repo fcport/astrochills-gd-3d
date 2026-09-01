@@ -18,7 +18,7 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        LUCI_ROSSE, PARTE_SPENTA, punti_applique,
                        H_APPLIQUE, NOME_LOCALE, LUCE_MONITOR, SEMPRE_ACCESE,
                        H_INTERRUTTORE, L_PLACCA, A_PLACCA, SP_PLACCA,
-                       LETTO, MOKA, LAMPADA_CUCINA, ATTIVITA_CUPOLA,
+                       LETTO, ATTIVITA_CUPOLA,
                        CASSA_MONITOR, VETRO_MONITOR, SEDILE_MONITOR,
                        BOMBATURA_MONITOR, FRANCO_VETRO,
                        PULSANTIERA_STAFFA, PULSANTIERA_TASTI,
@@ -154,8 +154,6 @@ def tscn():
              '[ext_resource type="PackedScene" path="res://crt/crt_screen.tscn" id="26_vetro"]',
              '[ext_resource type="Script" path="res://world/dome_shutter.gd" id="27_cupola"]',
              '[ext_resource type="PackedScene" path="res://world/interactables/bed.tscn" id="28_letto"]',
-             '[ext_resource type="PackedScene" path="res://world/interactables/moka.tscn" id="29_moka"]',
-             '[ext_resource type="PackedScene" path="res://world/interactables/lamp.tscn" id="30_lampada"]',
              '[ext_resource type="PackedScene" path="res://world/sequence_chime.tscn" id="31_chime"]',
              '[ext_resource type="Script" path="res://world/indoors_volume.gd" id="32_dentro"]',
              '[ext_resource type="Script" path="res://world/dome_activity.gd" id="33_attivita"]',
@@ -861,27 +859,35 @@ def tscn():
               # QUANDO LE FASI AVRANNO UN CONTENUTO questo numero andra' rifatto, e va
               # detto adesso: un campo grigio pieno e del testo verde su nero non
               # emettono la stessa luce. Si rimisura con tools/prova_postazione.gd.
-              # MAGENTA, E LO DECIDE FEDERICO CONTRO LA MISURA. Il colore qui sopra
-              # e' quello che il tubo emette davvero, misurato; magenta non lo e'.
-              # Ma un grigio-verde pallidissimo, addosso a una cassa beige, non si
-              # legge come "lo schermo fa luce" - si legge come una lampada in piu'
-              # accesa da qualche parte, ed e' cosi' che e' stato letto: «quelle
-              # luci dal nulla». Una luce che DESCRIVE la sua sorgente vale piu' di
-              # una che la misura. Il magenta e' il fosforo che un CRT non ha e che
-              # tutti gli danno, e attorno a un monitor si legge subito.
+              # AMBRA, PERCHE' AMBRA E' LO SCHERMO. Il colore qui sopra e' quello
+              # che il tubo emette davvero, misurato - e nonostante questo sbagliato,
+              # perche' un grigio-verde pallidissimo addosso a una cassa beige non
+              # si legge come "lo schermo fa luce": si legge come un'altra lampada
+              # accesa da qualche parte, ed e' esattamente cosi' che e' stato letto
+              # («quelle luci dal nulla»). Una luce deve DESCRIVERE la sua sorgente,
+              # e la sorgente qui e' un fosforo P3 ambra: `core/phosphor.gd`, D-173.
+              # Un monitor ambra proietta ambra, e non c'e' un'altra risposta.
               #
-              # L'ENERGIA SALE UN PO', NON DI TUTTO IL DOVUTO, E LA DIFFERENZA E'
-              # IL PUNTO. Luminanza del bianco-verde: 0,97; del magenta: 0,60. Per
-              # fare la stessa LUCE servirebbe 0,23 - e a 0,23, guardato invece che
-              # calcolato, la cassa beige e la tastiera diventano rosa anche con la
-              # plafoniera accesa: lo stesso difetto del verde saturo di prima,
+              # PRE-COMPENSATO COME IL FOSFORO, e per la stessa ragione. La scena usa
+              # ACES, che comprime gli alti e nel farlo sposta gli arancioni verso il
+              # giallo: un ambra scritto come lo si vuole vedere esce crema. Sta
+              # scritto in testa a `core/phosphor.gd` per i colori dello schermo, e
+              # vale identico per la luce che lo schermo butta fuori - piu' rosso e
+              # meno verde di quello che si vuole ottenere. Il vicino di casa e' la
+              # spia al neon degli interruttori, (1 0,44 0,12), che e' arancione e si
+              # vede arancione.
+              #
+              # L'ENERGIA NON COMPENSA TUTTO IL DOVUTO, E LA DIFFERENZA E' IL PUNTO.
+              # Luminanza del bianco-verde: 0,97; dell'ambra: 0,55. Per fare la
+              # stessa LUCE servirebbe 0,25 - e a quel livello, guardato invece che
+              # calcolato, la cassa beige e la tastiera si tingono anche con la
+              # plafoniera accesa: e' lo stesso difetto del verde saturo di prima,
               # cambiato di tinta. Con un colore saturo l'energia giusta e' MENO di
-              # quella equivalente, perche' quello che si nota non e' quanto
-              # illumina ma quanto TINGE. 0,17 lascia il monitor padrone del buio -
-              # a luci spente la consolle e' magenta e non c'e' dubbio da dove
-              # venga - e a luci accese resta un velo sul beige invece di una mano
-              # di vernice.
-              'light_energy = 0.17', 'light_color = Color(1.0, 0.45, 0.88, 1)',
+              # quella equivalente, perche' quello che si nota non e' quanto illumina
+              # ma quanto TINGE. 0,18 lascia il monitor padrone del buio - a luci
+              # spente la consolle e' ambra e non c'e' dubbio da dove venga - e a
+              # luci accese resta un velo sul beige invece di una mano di vernice.
+              'light_energy = 0.18', 'light_color = Color(1.0, 0.46, 0.10, 1)',
               'light_specular = 0.10',
               'omni_range = 2.4', 'omni_attenuation = 1.6',
               'shadow_normal_bias = 0.05', 'shadow_bias = 0.02',
@@ -1127,12 +1133,15 @@ def tscn():
               # Vedi `LETTO` in geometria.py.
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, 0.000, %.3f)'
               % LETTO, '',
-              '[node name="Moka" parent="." instance=ExtResource("29_moka")]',
-              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
-              % MOKA, '',
-              '[node name="Lampada" parent="." instance=ExtResource("30_lampada")]',
-              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
-              % LAMPADA_CUCINA, '',
+              # LA MOKA E LA LAMPADA NON SI POSANO PIU', e non e' una bocciatura
+              # del loro codice: e' che tre scatole grigie su un bancone non sono
+              # un segnaposto, sono un oggetto brutto in mezzo alla stanza. Fra un
+              # posto vuoto e un posto occupato male, vuoto legge meglio - e questo
+              # e' un edificio che deve leggere come abbandonato a meta'.
+              # `moka.tscn` e `lamp.tscn` restano dove sono, con dentro la loro
+              # logica intera, e i due articoli del catalogo tornano
+              # `implemented = false`: si vende solo quello che esiste. Il giorno
+              # che c'e' un modello vero, qui tornano due righe.
               # Il campanello di fine sequenza sta al monitor, come nel vecchio
               # mondo: la sua taratura - unit_size, max_distance - e' fatta su
               # QUELLA distanza, e spostarlo vorrebbe dire rifarla a orecchio.
@@ -1704,8 +1713,6 @@ _attesi = [("ambient_light_energy = 0.035", "la luce ambientale della notte"),
            # grida una volta all'avvio e poi il giocatore gira all'infinito in un
            # osservatorio in cui l'alba non finisce mai.
            ('instance=ExtResource("28_letto")', "il letto"),
-           ('instance=ExtResource("29_moka")', "la moka"),
-           ('instance=ExtResource("30_lampada")', "la lampada da riparare"),
            ('script = ExtResource("32_dentro")', "il volume dentro/fuori")]
 _mancanti = ["  MANCA NEL .tscn   %s (%s)" % (t, perche)
              for (t, perche) in _attesi if t not in _scritto]

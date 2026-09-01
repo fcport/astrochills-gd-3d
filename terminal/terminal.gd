@@ -9,11 +9,17 @@
 ## cosa mostra; il ponte fra questo Control e la notte è il punto d'ingresso, l'unico che
 ## conosce entrambe le sponde.
 ##
-## COSA VENDE. Solo gli articoli con `implemented == true` (moka, lampadina), da due
-## categorie: PERSONAL e FACILITIES. Le altre categorie di `economia.md` non compaiono
-## affatto, nemmeno disabilitate — un menu che promette cose che non ci sono è peggio
-## di un menu corto. Gli articoli non implementati restano nei `.tres` ma il filtro
+## COSA VENDE. Solo gli articoli con `implemented == true`, da due categorie: PERSONAL
+## e FACILITIES. Le altre categorie di `economia.md` non compaiono affatto, nemmeno
+## disabilitate — un menu che promette cose che non ci sono è peggio di un menu corto.
+## Gli articoli non implementati restano nei `.tres` ma il filtro
 ## `ItemCatalog.for_category()` li tiene fuori.
+##
+## E AL MOMENTO NON VENDE NIENTE, che è la stessa regola portata fino in fondo. Gli
+## unici due implementati erano la moka e la lampadina; i loro oggetti sono usciti dal
+## mondo perché erano scatole segnaposto (D-183), quindi non esistono più «là fuori» e
+## non si vendono. Un negozio vuoto è un buco visibile e va riempito; un negozio che
+## vende cose che non compaiono è un buco invisibile, che è peggio.
 ##
 ## LA SPESA PASSA DA `Game`, COME LA SOMMA. `wallet_now()` è la sola somma; comprare è
 ## `Game.can_afford()` + `Game.spend_lire()`. Questo Control NON scala lire da sé, NON

@@ -9,4 +9,4 @@ category = &"facilities"
 label = "LIGHT BULB"
 price = 2000
 blurb = "Una lampadina nuova per la cucina, di quelle a incandescenza da 60 watt. Quella vecchia lampeggia da settimane e ti fa gli occhi stanchi. Cambiarla è una di quelle cose piccole che si sistemano da sole, se solo ci si mette."
-implemented = true
+implemented = false

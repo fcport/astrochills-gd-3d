@@ -4627,27 +4627,74 @@ senza toccare niente e stampa lo scarto fra i due — deve essere zero, e lo e'.
 
 ## D-182 — La luce che descrive la sua sorgente batte quella che la misura
 
-Federico, mentre guardava le stesse fotografie: «il monitor dovrebbe fare luce magenta non
-bianca».
+Federico, guardando le stesse fotografie: «il monitor dovrebbe fare luce ambra, non bianca».
+E in mezzo c'e' stato un giro a vuoto che vale la pena tenere scritto, perche' e' istruttivo
+piu' della conclusione.
 
-Il colore del `LuceMonitor` non era stato scelto: era stato **misurato**. Con il CRT vero nel
+Il colore del `LuceMonitor` non era stato scelto: era stato **misurato**. Col CRT vero nel
 `SubViewport`, la sonda leggeva 156 178 166 su 255 — un grigio-verde pallidissimo — e
 normalizzato veniva (0,88 1,00 0,93), che a due centesimi e' il `tint` del vetro del tubo
-dichiarato nello shader. Due numeri indipendenti che si erano incontrati da soli: il segno
-che la luce descriveva la stessa cosa che si vedeva.
+dichiarato nello shader. Due numeri indipendenti che si erano incontrati da soli: sembrava la
+prova che la luce descrivesse esattamente quello che si vedeva.
 
-E dopo tutto questo il colore giusto e' un altro, perche' **misurare l'emissione non e' la
-stessa cosa che rendere leggibile la sorgente**. Un bianco-verde pallidissimo, addosso a una
-cassa beige, non dice «lo schermo e' acceso»: dice «c'e' un'altra lampada accesa da qualche
-parte» — ed e' esattamente cosi' che e' stato letto, nella stessa frase delle luci dal nulla.
-Il magenta e' il fosforo che un CRT non ha e che tutti gli attribuiscono; attorno a un monitor
-si legge al primo colpo d'occhio.
+E invece era sbagliato, perche' **misurare l'emissione non e' rendere leggibile la sorgente**.
+Un bianco-verde pallidissimo, addosso a una cassa beige, non dice «lo schermo e' acceso»: dice
+«c'e' un'altra lampada accesa da qualche parte» — ed e' letteralmente cosi' che e' stato
+letto, nella stessa frase delle luci dal nulla di D-181.
 
-L'energia sale da 0,14 a 0,23, e non per fare piu' luce: la luminanza del bianco-verde e' 0,97
-e quella del magenta 0,60. A parita' di energia illuminerebbe un terzo di meno, e 0,14 era
-stato scelto misurando il rapporto due a uno fra lo schermo e la maschera nera che gli fa da
-cornice — sotto quel rapporto la cornice smette di leggersi come cornice. 0,23 per 0,60 fa
-0,138: la stessa luce di prima, di un altro colore.
+**IL GIRO A VUOTO.** La prima correzione e' stata *magenta*, perche' magenta e' quello che mi
+e' stato chiesto — e l'ho fatto senza fermarmi a chiedermi di che colore sia lo schermo. Poi:
+«non so se ho detto io il colore sbagliato, ma lo schermo fa luce viola, non dovrebbe. Avevamo
+detto ambra». Aveva ragione, e la risposta stava gia' scritta nel repository: `core/phosphor.gd`,
+fosforo P3, **ambra e non verde** (D-173), con dentro il motivo — chi lavora di notte non
+guarda uno schermo che gli azzera l'adattamento al buio. Un monitor ambra proietta ambra, e
+non c'e' una seconda risposta possibile.
 
-Vale come precedente: quando la misura e la leggibilita' vanno in direzioni diverse, si scrive
-da che parte si e' andati e perche', invece di lasciare il numero misurato a fare da alibi.
+La lezione non e' «l'utente aveva ragione». E' che una richiesta di colore va **verificata
+contro la sorgente** prima di eseguirla: se avessi guardato `phosphor.gd` invece della parola,
+il magenta non sarebbe mai stato scritto. Un'istruzione su una conseguenza (la luce) si
+controlla sempre risalendo alla causa (lo schermo).
+
+**PRE-COMPENSATO COME IL FOSFORO**, e per la stessa ragione gia' scritta in testa a
+`phosphor.gd`: la scena usa ACES, che comprime gli alti e sposta gli arancioni verso il
+giallo, quindi un ambra scritto come lo si vuole vedere esce crema. La luce si scrive piu'
+rossa e meno verde del bersaglio — (1,0 0,46 0,10) — che e' la stessa famiglia della spia al
+neon degli interruttori, (1 0,44 0,12), che e' arancione e si vede arancione.
+
+**E L'ENERGIA NON COMPENSA TUTTO IL DOVUTO.** Luminanza del bianco-verde: 0,97; dell'ambra:
+0,55. Per fare la stessa *luce* servirebbe 0,25, e a quel livello — guardato, non calcolato —
+la cassa beige e la tastiera si tingono anche con la plafoniera accesa: e' lo stesso difetto
+del verde saturo di prima, cambiato di tinta. **Con un colore saturo l'energia giusta e' meno
+di quella equivalente, perche' quello che si nota non e' quanto illumina ma quanto tinge.**
+0,18: al buio la consolle e' ambra e non c'e' dubbio da dove venga; a luci accese resta un
+velo sul beige invece di una mano di vernice.
+
+## D-183 — Fra un posto vuoto e un posto occupato male, vince vuoto
+
+Federico: «tutte le cose vecchie come la moka, la lampada, falle sparire. Fanno cagare, e
+danno un gran fastidio».
+
+Erano due segnaposti a scatole sul bancone della cucina — `moka.tscn` e `lamp.tscn`, arrivati
+dal vecchio mondo col trasloco — e la lampada per giunta faceva la luce che attraversava il
+muro di D-181. Fuori tutti e due.
+
+**COSA ESCE E COSA RESTA, che e' la parte che conta.** Escono i due **nodi dalla scena** e le
+loro coordinate da `geometria.py`. Restano intatti i due `.tscn` con dentro tutta la loro
+logica — la macchina a stati della lampada, il timer del cambio, il ronzio, la persistenza di
+`lamp_fixed`, il borbottio della moka — e restano i due `.tres` del catalogo. Non e' stato
+cancellato niente di quello che qualcuno ha pensato: e' stato tolto di scena quello che
+qualcuno ha *disegnato male*. Rimetterli e' due righe.
+
+**E LA CONSEGUENZA SI PAGA SUBITO INVECE DI NASCONDERLA.** Moka e lampadina erano gli unici
+due articoli con `implemented = true`, e `implemented` — lo dice `item_data.gd` da sempre —
+significa «esiste davvero la' fuori», non «il codice c'e'». Con gli oggetti fuori scena
+tornano a `false`, e **il terminale adesso non vende niente**. E' un buco, ed e' dichiarato in
+tre posti (qui, in `terminal.gd`, nel banco): un negozio vuoto e' un buco che si vede e si
+riempie, un negozio che vende cose che non compaiono da nessuna parte e' un buco che non si
+vede. Fra i due si sceglie sempre il primo.
+
+Il controllo del banco e' stato aggiornato al vero — due categorie che tornano l'insieme vuoto
+— ma quello sul **prezzo** della lampadina e' passato a leggere il catalogo *senza* filtro: col
+filtro acceso non avrebbe trovato l'articolo e avrebbe taciuto, e un controllo che si spegne da
+solo quando cambia il contorno e' il modo peggiore di sbagliare. Il prezzo e' un dato del
+`.tres` e resta giusto anche mentre l'articolo non si vende.

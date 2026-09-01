@@ -28,8 +28,6 @@
 [ext_resource type="PackedScene" path="res://crt/crt_screen.tscn" id="26_vetro"]
 [ext_resource type="Script" path="res://world/dome_shutter.gd" id="27_cupola"]
 [ext_resource type="PackedScene" path="res://world/interactables/bed.tscn" id="28_letto"]
-[ext_resource type="PackedScene" path="res://world/interactables/moka.tscn" id="29_moka"]
-[ext_resource type="PackedScene" path="res://world/interactables/lamp.tscn" id="30_lampada"]
 [ext_resource type="PackedScene" path="res://world/sequence_chime.tscn" id="31_chime"]
 [ext_resource type="Script" path="res://world/indoors_volume.gd" id="32_dentro"]
 [ext_resource type="Script" path="res://world/dome_activity.gd" id="33_attivita"]
@@ -3092,8 +3090,8 @@ material_override = SubResource("mat_vetro_est")
 
 [node name="LuceMonitor" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.950, 1.020, 2.000)
-light_energy = 0.17
-light_color = Color(1.0, 0.45, 0.88, 1)
+light_energy = 0.18
+light_color = Color(1.0, 0.46, 0.10, 1)
 light_specular = 0.10
 omni_range = 2.4
 omni_attenuation = 1.6
@@ -3579,12 +3577,6 @@ transform = Transform3D(1, 0, 0, 0, 0.92541, 0.37898, 0, -0.37898, 0.92541, 0, 0
 
 [node name="Letto" parent="." instance=ExtResource("28_letto")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.340, 0.000, 8.400)
-
-[node name="Moka" parent="." instance=ExtResource("29_moka")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.850, 0.900, 1.900)
-
-[node name="Lampada" parent="." instance=ExtResource("30_lampada")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.900, 0.900, 2.020)
 
 [node name="SequenceChime" parent="." instance=ExtResource("31_chime")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.550, 1.100, 2.000)

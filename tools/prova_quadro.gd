@@ -40,6 +40,7 @@ var _fermo_da := Vector3.INF
 var _fermo_deriva := 0.0
 var _tremito_da := Vector3.INF
 var _tremito := 0.0
+var _tremito_dopo := 0.0
 
 
 func _ready() -> void:
@@ -99,9 +100,17 @@ func _process(d: float) -> void:
 		2:
 			_mira(_apre)
 			_tieni_premuto(_apre)
+			# DUE FINESTRE, E SERVONO TUTTE E DUE. La vibrazione deve esserci
+			# SUBITO e non deve esserci DOPO: e' la differenza fra uno scatto di
+			# partenza e una convulsione, e la prima versione che tremava sempre
+			# passava un controllo scritto con la sola prima finestra.
 			var ora := _apre.global_position
 			if _tremito_da != Vector3.INF:
-				_tremito = maxf(_tremito, ora.distance_to(_tremito_da))
+				var passo := ora.distance_to(_tremito_da)
+				if _tempo - _da_quando < 0.40:
+					_tremito = maxf(_tremito, passo)
+				elif _tempo - _da_quando > 1.00:
+					_tremito_dopo = maxf(_tremito_dopo, passo)
 			_tremito_da = ora
 			var s := DomeShutter.find_in(get_tree())
 			if not _scattato and s != null and s.aperture() > 0.2:
@@ -118,11 +127,19 @@ func _process(d: float) -> void:
 				# Il prompt e' funzione di `can_interact()`, quindi si verifica li'.
 				_verifica("mentre tieni, il tasto non chiede piu' niente",
 					not _apre.can_interact())
-				# E MENTRE IL MOTORE GIRA, TREMA. È l'altra metà: se il controllo
-				# «a riposo sta fermo» fosse solo, lo passerebbe anche un oggetto
-				# morto. Si pretende un movimento che a riposo sarebbe un guasto.
-				_verifica("mentre il motore gira il comando trema",
-					_tremito > 0.0005)
+				# ALLA PARTENZA DA' UNO SCATTO. È l'altra metà del controllo «a
+				# riposo sta fermo», che da solo lo passerebbe anche un oggetto
+				# morto: si pretende un movimento che a riposo sarebbe un guasto.
+				_verifica("alla partenza del motore il comando da' uno scatto",
+					_tremito > 0.0002)
+				# E POI LA PIANTA LI'. Questo è il controllo che manca alla versione
+				# buttata: tremava per tutti i sei secondi dell'apertura, e a
+				# schermo sembrava una convulsione. Un secondo dopo lo scatto, col
+				# tasto ancora premuto, deve essere ferma come a riposo.
+				_verifica("un secondo dopo, lo scatto è finito",
+					_tremito_dopo <= 0.0002)
+				print("[quadro] scatto %.2f mm nei primi 0,4 s, %.2f mm dopo un secondo"
+					% [_tremito * 1000.0, _tremito_dopo * 1000.0])
 				_molla()
 				_avanti()
 			elif int(_tempo - _da_quando) % 4 == 3 and _conto % 60 == 0:

@@ -1,44 +1,43 @@
-## La pulsantiera TREMA mentre il motore gira, e sta ferma tutto il resto del tempo.
+## Alla partenza del motore la pulsantiera dà UNO SCATTO, e poi si spegne da sola.
 ##
-## PRIMA DONDOLAVA, ED ERA UNA PESSIMA IDEA. Un pendolo smorzato è realistico e in
-## gioco era ingestibile: il bersaglio si spostava sotto il mirino, il raggio lo
-## perdeva e lo ritrovava, e il prompt lampeggiava a ogni oscillazione. Il giocatore
-## leggeva quel lampeggio come «non ha funzionato» e si metteva a inseguire
-## l'oggetto invece di guardare la cupola — cioè il dettaglio che doveva dare vita
-## alla stanza rubava l'attenzione al motivo per cui la stanza esiste.
+## TRE VERSIONI, E LE PRIME DUE ERANO SBAGLIATE PER LO STESSO MOTIVO: il movimento
+## durava. La prima dondolava come un pendolo — il bersaglio si spostava sotto il
+## mirino, il prompt lampeggiava a ogni oscillazione e il giocatore lo leggeva come
+## «non ha funzionato». La seconda tremava per tutto il tempo in cui il motore
+## girava: ampiezza dieci volte questa, e a schermo sembrava una convulsione.
 ##
-## LA DIFFERENZA FRA TREMARE E DONDOLARE È DOVE STA IL BERSAGLIO. Un dondolio
-## sposta il centro: dopo un secondo il tasto è altrove e bisogna rimirare. Un
-## tremito oscilla ATTORNO al centro con ampiezza sotto il paio di millimetri: il
-## bersaglio resta dov'è, e quello che si vede è che l'oggetto è vivo.
+## Quello che serve è un TRANSITORIO. Un motore che parte dà uno strappo e poi si
+## regolarizza: mezzo millimetro, tre decimi di secondo, e sparisce. Non è un moto,
+## è un evento — e un evento non ha tempo di dare fastidio a niente.
 ##
-## E TREMA SOLO SOTTO CARICO, che è anche l'unica cosa vera: la vibrazione non ce
-## l'ha la pulsantiera, ce l'ha il motore della cupola, e le arriva su per il cavo.
-## Ferma la cupola, ferma la mano — quindi il momento in cui il tremito potrebbe
-## dare fastidio alla mira, cioè quando si sta mirando, è esattamente quello in cui
-## non c'è.
+## SI SPEGNE DA SÉ ANCHE SE TIENI PREMUTO. È la differenza che conta rispetto alla
+## versione di prima: la vibrazione non racconta «il motore sta girando», racconta
+## «il motore è partito». Del fatto che stia girando se ne accorge già chi guarda la
+## cupola aprirsi, che è dove deve stare l'occhio.
 class_name PendantTremor
 extends Node3D
 
-## Quanto si sposta, in metri. Un millimetro e mezzo su un corpo largo sei
-## centimetri: si vede come ronzio, non come movimento.
-const AMPIEZZA := 0.0015
+## Quanto si sposta al colpo più forte, in metri. Mezzo millimetro su un corpo largo
+## sei centimetri: alla prima occhiata non si sa nemmeno di averlo visto.
+const AMPIEZZA := 0.0006
 
-## Quanto si inclina, in radianti: un quinto di grado.
-const TORSIONE := 0.0035
+## Quanto si inclina, in radianti: nove centesimi di grado.
+const TORSIONE := 0.0016
 
 ## Le due frequenze, in hertz. SONO DUE E NON COMMENSURABILI apposta: una sola
-## darebbe un'oscillazione pulita, cioè un'animazione, e si riconosce dopo mezzo
-## secondo. Due che non si chiudono mai danno un battito che non si ripete.
-const HZ_A := 17.0
-const HZ_B := 23.5
+## darebbe un'oscillazione pulita, cioè un'animazione, e si riconosce subito.
+const HZ_A := 26.0
+const HZ_B := 37.5
 
-## In quanto entra e in quanto esce, in secondi. L'uscita è più lenta dell'entrata
-## perché un motore che parte strappa e uno che si ferma si spegne.
-const ENTRATA := 0.10
-const USCITA := 0.22
+## In quanto si spegne: a ogni `SPEGNIMENTO` secondi l'ampiezza si divide per e.
+## A 0,085 lo scatto è finito in tre decimi di secondo — il tempo di accorgersene.
+const SPEGNIMENTO := 0.085
 
-var _acceso := false
+## Sotto questa frazione si smette di calcolare e si torna esattamente a riposo.
+## ESATTAMENTE: lasciare l'ultimo residuo vorrebbe dire un bersaglio spostato di
+## frazioni di millimetro per sempre, che nessuno vede e che non torna più indietro.
+const QUIETE := 0.03
+
 var _forza := 0.0
 var _t := 0.0
 var _riposo := Transform3D.IDENTITY
@@ -50,19 +49,21 @@ func _ready() -> void:
 	set_process(false)
 
 
+## SOLO ALLA PARTENZA, non al rilascio: il bus dice zero quando il dito si alza, e
+## un motore che si ferma si spegne invece di strappare.
 func _on_button(direction: int) -> void:
-	_acceso = direction != 0
+	if direction == 0:
+		return
+	_forza = 1.0
+	_t = 0.0
 	set_process(true)
 
 
 func _process(delta: float) -> void:
 	_t += delta
-	var voluta := 1.0 if _acceso else 0.0
-	_forza = move_toward(_forza, voluta, delta / (ENTRATA if _acceso else USCITA))
-	if _forza <= 0.0:
-		# FERMA VUOL DIRE ESATTAMENTE FERMA: si rimette la posa di riposo invece di
-		# lasciare l'ultimo residuo, o resterebbe uno scarto di frazioni di
-		# millimetro che nessuno vede e che sposta il bersaglio per sempre.
+	_forza *= exp(-delta / SPEGNIMENTO)
+	if _forza < QUIETE:
+		_forza = 0.0
 		transform = _riposo
 		set_process(false)
 		return

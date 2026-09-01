@@ -4381,3 +4381,31 @@ Separando i neri — soffietto di mescola, targhetta di ABS — la targhetta è 
 niente. Un controllo che si indebolisce da solo è peggio di uno che manca: quello che manca
 almeno si vede. Se ne è accorto solo il numero stampato nel referto, che è il motivo per cui
 i referti stampano i numeri e non solo «ok».
+
+
+## D-177 — Un transitorio non e' un moto
+
+**1 settembre 2026, subito dopo D-176.** «Una leggerissima vibrazione e solo all'inizio,
+non sti spasmi come se stesse per avere un ictus.» Terza versione dello stesso dettaglio, e
+le prime due sbagliavano per la stessa ragione: **il movimento durava**.
+
+Il pendolo di D-175 durava per sempre e spostava il bersaglio. Il tremito di D-176 durava
+tutti i sei secondi dell'apertura con ampiezza dieci volte questa, e a schermo era una
+convulsione. Quello che serviva non era un moto piu' piccolo: era un **evento**. Un motore
+che parte da' uno strappo e poi si regolarizza - mezzo millimetro, tre decimi di secondo,
+sparito. Un evento non ha il tempo di dare fastidio a niente.
+
+**E si spegne anche se tieni premuto**, che e' la differenza che conta: la vibrazione non
+racconta «il motore sta girando», racconta «il motore e' partito». Del fatto che stia
+girando se ne accorge gia' chi guarda la cupola aprirsi, che e' dove deve stare l'occhio -
+ed e' l'intera ragione per cui questo comando esiste in cupola e non sul PC.
+
+**IL CONTROLLO CHE MANCAVA ERA LA SECONDA META'.** La sonda pretendeva che il comando
+tremasse mentre il motore girava, e la versione buttata quel controllo lo passava: tremava
+eccome. Adesso ci sono due finestre - deve muoversi nei primi quattro decimi e deve stare
+fermo dopo un secondo, col tasto ancora premuto - e sono i due lati della stessa domanda.
+Allungando lo spegnimento da 0,085 a 8,5 secondi il secondo controllo grida.
+
+E' la stessa forma del controllo «a riposo sta fermo» accoppiato a «alla partenza da' uno
+scatto»: un solo controllo su un movimento e' quasi sempre meta' della specifica, perche'
+un movimento si descrive con quando c'e' **e** con quando non c'e'.

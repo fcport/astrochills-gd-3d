@@ -174,6 +174,10 @@ def tscn():
              '[ext_resource type="Script" path="res://world/interactables/mains_button.gd" id="45_fungo"]',
              '[ext_resource type="Script" path="res://world/interactables/ccd_camera.gd" id="46_ccd"]',
              '[ext_resource type="PackedScene" path="res://assets/models/ccd.glb" id="47_modccd"]',
+             '[ext_resource type="Script" path="res://world/interactables/carryable.gd" id="48_preso"]',
+             '[ext_resource type="PackedScene" path="res://assets/models/termos.glb" id="49_termos"]',
+             '[ext_resource type="PackedScene" path="res://assets/models/tazza.glb" id="50_tazza"]',
+             '[ext_resource type="PackedScene" path="res://assets/models/bottiglia.glb" id="51_bottiglia"]',
              '']
     dims = sorted(set((round(b[3], 3), round(b[4], 3), round(b[5], 3)) for b in blocchi)
                   | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
@@ -483,6 +487,26 @@ def tscn():
               # volta li prende dalle quote SBIG.
               '[sub_resource type="CylinderShape3D" id="s_ccd"]',
               'height = 0.111', 'radius = 0.0625', '',
+              # LA ROBA CHE SI PRENDE IN MANO, e anche qui cilindri invece delle
+              # mesh: sono tre solidi di rotazione, e una collisione convessa da
+              # settecento facce per una sagoma tonda e' spesa a vuoto. Il RAGGIO
+              # E' QUELLO DEL CORPO, non dell'ingombro: il termos misura 14 cm in
+              # pianta ma dieci sono il fusto e quattro il manico, e un cilindro da
+              # sette di raggio lo farebbe stare in piedi su un'aria che non ha.
+              '[sub_resource type="CylinderShape3D" id="s_termos"]',
+              'height = 0.308', 'radius = 0.050', '',
+              # LA TAZZA E' UNA SCATOLA E NON UN CILINDRO, e non e' pigrizia. Un
+              # cilindro alto sette centimetri e largo dieci e' la forma peggiore
+              # che si possa dare a un solutore a punti di contatto: appoggiato,
+              # affondava fino al margine consentito e le correzioni gli davano una
+              # coppia che nessuno smorzamento spegneva. Misurato: girava su se
+              # stessa a un giro e mezzo al secondo, all'infinito, e non si
+              # addormentava mai. La bottiglia, che e' un cilindro ALTO e STRETTO,
+              # non ha nessun problema - e' il rapporto schiacciato a rompere.
+              '[sub_resource type="BoxShape3D" id="s_tazza"]',
+              'size = Vector3(0.096, 0.068, 0.096)', '',
+              '[sub_resource type="CylinderShape3D" id="s_bottiglia"]',
+              'height = 0.299', 'radius = 0.037', '',
               # IL COPIONE DELLA POSTAZIONE STA SULLA RADICE, ed e' l'unico script
               # di questa scena che non sia un interagibile: sedersi non e' una
               # proprieta' del monitor, e' una sequenza fra il monitor, il corpo del
@@ -1324,6 +1348,54 @@ def tscn():
               '[node name="Col" type="CollisionShape3D" parent="Ccd"]',
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.056, 0)',
               'shape = SubResource("s_ccd")', '',
+              # --- LA ROBA IN GIRO ---------------------------------------------
+              # DOVE STANNO NON E' ARREDAMENTO. Il termos e la tazza stanno sulla
+              # consolle, all'estremita' libera: e' il posto dove uno passa la
+              # notte, ed e' li' che si posa quello che si beve. La bottiglia sta
+              # PER TERRA di fianco - vuota, messa giu' e dimenticata - perche' una
+              # bottiglia vuota allineata sul piano sarebbe una natura morta, e per
+              # terra e' una traccia.
+              #
+              # L'ORIGINE E' SOTTO (vedi prop_blender.py), quindi la quota scritta
+              # qui e' quella del PIANO su cui appoggiano: 0,750 e' il top della
+              # consolle, da `ARREDI_PC`, e il millimetro in piu' e' il gioco che
+              # serve a non nascere gia' compenetrati.
+              #
+              # UN MILLIMETRO E NON UN CENTIMETRO, e la differenza si e' misurata:
+              # posati a 0,760 cadevano acquistando velocita' e sfondavano il
+              # margine di compenetrazione del solutore, assestandosi un centimetro
+              # DENTRO il piano. Da li' il correttore li respinge a ogni tick e non
+              # si fermano piu'.
+              '[node name="Termos" type="RigidBody3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.650, 0.751, 1.450)',
+              'mass = 1.0',
+              'script = ExtResource("48_preso")',
+              'nome = "il termos"', '',
+              '[node name="Modello" parent="Termos" instance=ExtResource("49_termos")]', '',
+              '[node name="Col" type="CollisionShape3D" parent="Termos"]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.154, 0)',
+              'shape = SubResource("s_termos")', '',
+              '[node name="Tazza" type="RigidBody3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.590, 0.751, 1.730)',
+              'mass = 0.2',
+              'script = ExtResource("48_preso")',
+              'nome = "la tazza"', '',
+              '[node name="Modello" parent="Tazza" instance=ExtResource("50_tazza")]', '',
+              '[node name="Col" type="CollisionShape3D" parent="Tazza"]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.034, 0)',
+              'shape = SubResource("s_tazza")', '',
+              # IN PIEDI E NON CORICATA: una bottiglia rovesciata per terra dice
+              # «qualcuno l'ha buttata», e non e' quello che e' successo qui - e'
+              # stata finita e appoggiata al fianco della consolle.
+              '[node name="Bottiglia" type="RigidBody3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.180, 0.010, 1.280)',
+              'mass = 0.5',
+              'script = ExtResource("48_preso")',
+              'nome = "la bottiglia"', '',
+              '[node name="Modello" parent="Bottiglia" instance=ExtResource("51_bottiglia")]', '',
+              '[node name="Col" type="CollisionShape3D" parent="Bottiglia"]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.150, 0)',
+              'shape = SubResource("s_bottiglia")', '',
               '[node name="Letto" parent="." instance=ExtResource("28_letto")]',
               # DRITTO, cioe' con la testiera a -Z, che nel magazzino vuol dire
               # verso la porta: e' l'unico verso in cui il letto si puo' usare.

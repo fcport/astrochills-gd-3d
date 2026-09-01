@@ -42,6 +42,10 @@
 [ext_resource type="Script" path="res://world/interactables/mains_button.gd" id="45_fungo"]
 [ext_resource type="Script" path="res://world/interactables/ccd_camera.gd" id="46_ccd"]
 [ext_resource type="PackedScene" path="res://assets/models/ccd.glb" id="47_modccd"]
+[ext_resource type="Script" path="res://world/interactables/carryable.gd" id="48_preso"]
+[ext_resource type="PackedScene" path="res://assets/models/termos.glb" id="49_termos"]
+[ext_resource type="PackedScene" path="res://assets/models/tazza.glb" id="50_tazza"]
+[ext_resource type="PackedScene" path="res://assets/models/bottiglia.glb" id="51_bottiglia"]
 
 [sub_resource type="BoxMesh" id="m_0"]
 size = Vector3(0.018, 0.018, 0.032)
@@ -1226,6 +1230,17 @@ size = Vector3(0.060, 0.060, 0.040)
 [sub_resource type="CylinderShape3D" id="s_ccd"]
 height = 0.111
 radius = 0.0625
+
+[sub_resource type="CylinderShape3D" id="s_termos"]
+height = 0.308
+radius = 0.050
+
+[sub_resource type="BoxShape3D" id="s_tazza"]
+size = Vector3(0.096, 0.068, 0.096)
+
+[sub_resource type="CylinderShape3D" id="s_bottiglia"]
+height = 0.299
+radius = 0.037
 
 [node name="Blockout" type="Node3D"]
 script = ExtResource("24_postazione")
@@ -3660,6 +3675,42 @@ fuoco = NodePath("../Osservatorio/Telescopio/Polo/AssePolare/Declinazione/AsseDe
 [node name="Col" type="CollisionShape3D" parent="Ccd"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.056, 0)
 shape = SubResource("s_ccd")
+
+[node name="Termos" type="RigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.650, 0.751, 1.450)
+mass = 1.0
+script = ExtResource("48_preso")
+nome = "il termos"
+
+[node name="Modello" parent="Termos" instance=ExtResource("49_termos")]
+
+[node name="Col" type="CollisionShape3D" parent="Termos"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.154, 0)
+shape = SubResource("s_termos")
+
+[node name="Tazza" type="RigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.590, 0.751, 1.730)
+mass = 0.2
+script = ExtResource("48_preso")
+nome = "la tazza"
+
+[node name="Modello" parent="Tazza" instance=ExtResource("50_tazza")]
+
+[node name="Col" type="CollisionShape3D" parent="Tazza"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.034, 0)
+shape = SubResource("s_tazza")
+
+[node name="Bottiglia" type="RigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.180, 0.010, 1.280)
+mass = 0.5
+script = ExtResource("48_preso")
+nome = "la bottiglia"
+
+[node name="Modello" parent="Bottiglia" instance=ExtResource("51_bottiglia")]
+
+[node name="Col" type="CollisionShape3D" parent="Bottiglia"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.150, 0)
+shape = SubResource("s_bottiglia")
 
 [node name="Letto" parent="." instance=ExtResource("28_letto")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.340, 0.000, 8.400)

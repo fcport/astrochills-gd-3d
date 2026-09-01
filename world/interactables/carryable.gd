@@ -109,22 +109,36 @@ func _ready() -> void:
 	# cancellerebbe una maschera scelta nell'ispettore.
 	collision_layer |= Interactable.LAYER_WORLD | Interactable.LAYER_INTERACTABLE
 	collision_mask |= Interactable.LAYER_WORLD
-	# `_integrate_forces` su un corpo addormentato non viene chiamato: un oggetto
-	# fermo da un po' non si farebbe raccogliere, e il difetto sarebbe
-	# intermittente — funziona sempre in prova, mai dopo un minuto di gioco.
-	can_sleep = false
-	# LA COLLISIONE SI GUARDA LUNGO IL PERCORSO, non alla fine di ogni passo.
-	# Un corpo mosso a sei metri al secondo copre dieci centimetri per fotogramma,
-	# e il modo normale di risolvere le collisioni guarda solo dov'è arrivato:
-	# contro un tramezzo da dieci si finisce dentro, o oltre. Misurato — spingendo
-	# la mano dentro un muro, senza questa riga la scatola ci entrava per nove
-	# centimetri su dieci, con si ferma alla superficie.
-	continuous_cd = true
+	# IL SONNO SI TOGLIE SOLO IN MANO, e la prima stesura lo toglieva sempre.
+	# `_integrate_forces` su un corpo addormentato non viene chiamato, quindi
+	# mentre lo si tiene il sonno va escluso o la mano smette di funzionare da
+	# sola dopo qualche secondo di immobilità. Ma tenerlo escluso SEMPRE vuol dire
+	# che un oggetto appoggiato su un piano non si assesta mai del tutto: continua
+	# a essere risolto ogni tick e conserva un tremito. Misurato — una tazza sulla
+	# consolle, dopo tre secondi, andava ancora a 8 cm al secondo. Vedi `prendi()`
+	# e `lascia()`, che lo tolgono e lo rimettono.
+	# LA COLLISIONE LUNGO IL PERCORSO SI ACCENDE SOLO IN MANO: vedi `prendi()`.
 	# I CONTATTI SI DEVONO POTER LEGGERE dentro `_integrate_forces`, o
 	# `get_contact_count()` restituisce zero per sempre — senza dirlo. Quattro
 	# bastano: sono le facce che un oggetto può toccare in un angolo.
 	contact_monitor = true
 	max_contacts_reported = 4
+	# SMORZAMENTO, e serve a far FINIRE il movimento invece che a rallentarlo.
+	#
+	# Un corpo appoggiato affonda nella superficie fino al limite che il solutore
+	# consente - un centimetro - e da li' in poi il correttore lo respinge a ogni
+	# tick. Su un cilindro basso quegli impulsi cadono su punti di contatto che non
+	# sono mai perfettamente simmetrici, e la somma e' una COPPIA: misurato, una
+	# tazza appoggiata sulla consolle girava su se stessa a un giro e mezzo al
+	# secondo e non si fermava piu', perche' sopra la soglia di sonno il motore non
+	# la lascia mai dormire.
+	#
+	# Lo smorzamento angolare alto e' anche la cosa vera: una tazza di porcellana su
+	# un piano di formica non e' una trottola, e un termos non rotola come una
+	# biglia. Quello lineare resta basso, o un oggetto lanciato si fermerebbe a
+	# mezz'aria.
+	angular_damp = 4.0
+	linear_damp = 0.2
 
 
 ## La riga che il giocatore legge guardandolo. Non c'è un `can_interact()` da
@@ -170,7 +184,25 @@ func prendi(chi: PhysicsBody3D) -> void:
 	# filo, cioè far scivolare l'oggetto verso il basso finché non tocca il
 	# tetto della velocità. Il peso si sente altrove: vedi `_velocita_massima()`.
 	gravity_scale = 0.0
+	# Sveglio e senza diritto di riaddormentarsi: vedi `_ready()`.
+	can_sleep = false
 	sleeping = false
+	# LA COLLISIONE SI GUARDA LUNGO IL PERCORSO, e SOLO ADESSO. Un corpo spinto
+	# dalla mano a sei metri al secondo copre dieci centimetri per fotogramma, e il
+	# modo normale di risolvere le collisioni guarda solo dov'è arrivato: contro un
+	# tramezzo da dieci si finisce dentro, o oltre. Misurato — spingendo la mano
+	# dentro un muro, senza questa riga la scatola ci entrava per nove centimetri su
+	# dieci, con si ferma alla superficie.
+	#
+	# MA TENERLA ACCESA SEMPRE COSTA UN OGGETTO CHE NON SI FERMA. Un corpo appoggiato
+	# affonda nella superficie fino al margine che il solutore consente, e con la
+	# collisione continua quel margine viene ricontrollato lungo un percorso che a
+	# corpo fermo è lungo zero: le correzioni si sommano invece di spegnersi.
+	# Misurato — una tazza sulla consolle girava su se stessa a un giro e mezzo al
+	# secondo e non si addormentava mai; spenta la collisione continua si ferma.
+	# Cadendo non serve: nessun oggetto lasciato cadere raggiunge la velocità a cui
+	# un tramezzo si attraversa.
+	continuous_cd = true
 	# E SI SMETTE DI URTARE CHI LO TIENE. Senza, l'oggetto tenuto a mezzo metro
 	# dalla faccia è un corpo che spinge il giocatore all'indietro mentre il
 	# giocatore insegue l'oggetto: si cammina da soli, per la stanza, e non si
@@ -188,6 +220,11 @@ func lascia() -> void:
 	# fermo lo posa. Non c'è un comando «lancia» da nessuna parte — c'è la
 	# fisica, che è quello che era stato chiesto.
 	gravity_scale = 1.0
+	# E il sonno torna, insieme alla collisione normale: posato su un piano, questo
+	# oggetto deve poter smettere di essere calcolato invece di tremare per tutta
+	# la notte.
+	can_sleep = true
+	continuous_cd = false
 	if _chi != null:
 		remove_collision_exception_with(_chi)
 		_chi = null

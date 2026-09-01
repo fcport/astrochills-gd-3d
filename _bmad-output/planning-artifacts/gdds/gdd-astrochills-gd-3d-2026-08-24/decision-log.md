@@ -5540,3 +5540,82 @@ delle BOTTIGLIE vuote e un SERVIZIO DA TE'. Non sono decorazioni scelte a caso:
 sono le tre cose che uno porta con se' o si lascia dietro passando una notte
 sveglio in un edificio freddo. Manca il generatore che li riduce e li posa, ed e'
 il passo successivo.
+
+## D-201 Il termos, la bottiglia e la tazza — e un cilindro che non stava fermo
+
+I primi tre oggetti raccoglibili che stanno nel mondo di gioco, da Poly Haven, CC0.
+Non sono decorazioni scelte a caso: sono le cose che uno porta con se' o si lascia
+dietro passando una notte sveglio in un edificio freddo. **Il termos** e' l'oggetto
+personale per definizione di chi sta in un osservatorio d'Appennino a novembre - e
+quello arrivato e' smaltato verde con manico e fascette, del tutto giusto per il
+1999. **La bottiglia** vuota e **la tazza** sono la traccia che qualcuno ci ha
+passato delle ore.
+
+**DOVE STANNO NON E' ARREDAMENTO.** Termos e tazza sulla consolle, all'estremita'
+libera: e' il posto dove si passa la notte, ed e' li' che si posa quello che si
+beve. La bottiglia PER TERRA di fianco - vuota, messa giu' e dimenticata - perche'
+una bottiglia allineata sul piano sarebbe una natura morta, e per terra e' una
+traccia.
+
+**SI DECIMANO, ed e' il lavoro vero.** Arrivano da undicimila facce l'uno: sono
+fatti per un rendering fermo, non per una scena dove tre di loro rotolano per terra.
+Il rapporto si CALCOLA da un budget invece di sceglierlo a occhio - un `ratio` fisso
+su modelli da quattromila e da dodicimila facce da' due risultati diversi, e quello
+sbagliato e' silenzioso.
+
+    termos      11576 -> 900 facce    308 mm
+    bottiglia    6520 -> 700 facce    299 mm
+    tazza        4156 -> 499 facce     68 mm
+
+**IL PROVINO GUARDAVA DAL SOFFITTO**, ed e' di nuovo lo scambio di sistemi di
+D-195: `scatta()` vuole coordinate DI GIOCO - x e z in pianta, y in alto - mentre i
+pezzi erano stati importati e disposti in coordinate di Blender, dove in alto c'e'
+z. Nessun errore, e tre oggetti visti a volo d'uccello.
+
+### UN CILINDRO SCHIACCIATO NON STA FERMO, e ci sono volute quattro prove
+
+La tazza appoggiata sulla consolle **girava su se stessa a un giro e mezzo al
+secondo, per sempre**. Non si spostava - sedici millimetri in otto secondi - ma non
+si fermava e non si addormentava mai. In partita sarebbe stata una tazza che ruota
+da sola su una scrivania.
+
+**Le prime tre cure erano ragionevoli e tutte e tre sbagliate**, e vale la pena
+elencarle perche' ognuna sembrava LA causa:
+
+1. **`can_sleep = false` tolto.** Era vero che impediva il sonno - e la correzione
+   resta, perche' il sonno va escluso solo mentre l'oggetto e' in mano, dove
+   `_integrate_forces` deve girare. Ma non era la causa: la tazza restava sopra la
+   soglia di sonno comunque.
+2. **Smorzamento angolare a 4.** Una rotazione libera con quel valore si spegne in
+   un quarto di secondo. La tazza girava uguale, il che diceva una cosa precisa:
+   **qualcosa la ri-accelerava a ogni tick**.
+3. **Collisione continua accesa solo in mano.** Correzione giusta per altri motivi -
+   serve solo quando la mano spinge a sei metri al secondo - ma i numeri sono usciti
+   IDENTICI a tre decimali, che e' il modo in cui una misura dice «non e' questo».
+
+**LA CAUSA ERA LA FORMA.** Un `CylinderShape3D` alto sette centimetri e largo dieci
+e' la peggiore che si possa dare a un solutore a punti di contatto: appoggiato,
+affondava fino al margine di compenetrazione consentito e le correzioni cadevano su
+contatti mai perfettamente simmetrici, cioe' sommavano una COPPIA. Con una
+`BoxShape3D` la tazza si assesta a **zero millimetri di discesa, velocita' zero, e
+si addormenta**. La bottiglia, che e' un cilindro ALTO E STRETTO, non ha mai avuto
+il problema: e' il rapporto schiacciato a rompere, non il cilindro.
+
+    con il cilindro   scende 10 mm, va a 0,086 m/s, gira 1,508 rad/s, non dorme mai
+    con la scatola    scende  0 mm, ferma,          ferma,            dorme
+
+**E POSARLI UN CENTIMETRO SOPRA IL PIANO ERA UN ERRORE PICCOLO CON UN EFFETTO
+LUNGO**: cadendo acquistano velocita' e sfondano il margine del solutore,
+assestandosi un centimetro DENTRO il piano invece che sopra. Un millimetro di gioco
+basta.
+
+**MISURATO** (`tools/prova_prop.gd`): la sonda non controlla un elenco, cerca da
+sola OGNI `Carryable` dell'albero - stessa regola di `prova_rete.gd`, perche'
+chiedere al generatore se ha posato bene quello che ha posato lui e' ricopiare la
+sua lista in due posti. Di ognuno guarda quanto e' sceso, quanto e' scivolato in
+pianta, se si e' fermato, e se sta sul layer che il raggio del giocatore cerca.
+
+**IL DIFETTO SI RIMETTE** con `PROP_IN_ARIA=1`, che alza tutto di un metro prima di
+far girare la fisica: tutti e tre scendono di quasi un metro e la sonda li vede.
+Senza quel confronto un referto che dice «sono tutti fermi» non direbbe se la sonda
+saprebbe accorgersi di uno che se n'e' andato in cantina.

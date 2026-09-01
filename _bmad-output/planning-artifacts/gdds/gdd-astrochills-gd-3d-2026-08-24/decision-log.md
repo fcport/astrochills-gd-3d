@@ -4454,3 +4454,63 @@ le parti.
 Sono due iniezioni nello stesso giro — questa e quella del tremito che non si spegneva — e
 tutte e due hanno trovato un controllo che diceva ok. Un controllo va provato contro il
 difetto per cui esiste, sempre: quello scritto e non provato e' una riga che rassicura.
+
+
+## D-179 — Un numero che non cambia quando si cambia la causa non sta misurando quella causa
+
+**1 settembre 2026.** «Quando entro nell'osservatorio le ombre sfarfallano e poi si
+stabilizzano, non riesco proprio a capire perche'.» Non l'ho capito nemmeno io, e questa
+voce serve a scrivere che cosa **non** e', perche' il prossimo che ci mette le mani non
+rifaccia le stesse quattro misure.
+
+**Tre porte chiuse, con i numeri.**
+
+*Succede stando fermi?* No. Piantato nello stesso punto per **556 fotogrammi**, con la posa
+riscritta a ogni frame perche' nemmeno l'assestamento della capsula potesse passare per
+sfarfallio, l'immagine non e' cambiata di **un livello su 255**. Cadono la lampada della
+cucina che lampeggia per copione — con undici metri di portata arriva in mezzo edificio — e
+il renderer che rimesta stando li'.
+
+*Le ombre si assestano dopo essere arrivati?* No. Saltando di colpo dalla postazione alla
+cupola, il primo fotogramma e' ancora quello vecchio e **dal secondo in poi l'immagine e'
+gia' quella a regime**, identica per due secondi e mezzo. Niente converge.
+
+*E' la compilazione delle pipeline?* No, e sarebbe stata la risposta piu' probabile:
+in Godot e' la causa piu' comune di «sfarfalla e poi si stabilizza», perche' ogni
+combinazione nuova di mesh, materiale e luce va compilata la prima volta che entra in campo.
+Attraversando l'edificio tre volte, il **primo** passaggio e' il piu' liscio di tutti (7,0 ms
+di media, picco 7,8) e gli scatti isolati stanno nel secondo e nel terzo. E' il contrario
+esatto della firma della compilazione.
+
+**E UN SOSPETTO SCARTATO, che e' la parte che vale.** La sonda diceva che allo stesso
+angolo due giri di testa danno immagini diverse — **72 pose su 89** — e la foto sembrava
+confermarlo in modo spettacolare: le ombre sul muro sfocate al primo giro, nette al secondo.
+Sembrava l'atlante delle ombre che riassegna le tessere, e la spiegazione era buona:
+diciassette luci fanno ombra, e le tessere grandi sono quattro per quadrante.
+
+Era la sonda. Tre indizi, in ordine di forza:
+
+- cambiando i quadranti dell'atlante in **tre modi diversi**, lo scarto peggiore restava
+  **12,744 livelli identico a tre decimali**;
+- restava identico anche mettendo il gioco **in pausa**, con la logica ferma;
+- due pose **consecutive** dello stesso giro differiscono di **11,3 livelli**, cioe' lo
+  stesso ordine di grandezza dello scarto fra i giri.
+
+Il conto torna: l'immagine che si legge in `_process` e' quella del fotogramma precedente, ma
+il ritardo **non e' sempre di uno**, e un confronto disallineato di un fotogramma mette a
+paragone due angoli diversi. La sonda stava misurando la propria rotazione e chiamandola
+sfarfallio.
+
+**LA REGOLA CHE NE ESCE:** un numero che non cambia quando si cambia la causa non sta
+misurando quella causa. Ho cambiato l'atlante tre volte e ho messo il gioco in pausa: quattro
+interventi enormi, e il numero non si e' mosso di un millesimo. Quello e' il momento in cui
+si smette di credere alla propria misura, non quello in cui si cerca una spiegazione piu'
+ingegnosa. Il referto adesso stampa da se' i due numeri di controllo — la stessa posa contro
+se stessa (dev'essere zero) e due pose vicine (quanto vale un passo) — cosi' che chi legge
+veda subito quando il confronto non dice niente.
+
+**Cosa resta da provare**, e non si puo' fare da qui: la camminata vera con la fisica e il
+mouse, e i parametri delle ombre morbide. Ogni plafoniera ha `light_size = 0.35` con
+`shadow_blur = 1.2`: la penombra viene stimata cercando gli occlusori, e una stima che cambia
+col punto di vista da' ombre che nuotano mentre ci si muove e si fermano quando ci si ferma —
+che e' il sintomo, parola per parola. E' il primo esperimento da fare, ed e' un numero solo.

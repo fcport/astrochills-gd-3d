@@ -278,6 +278,39 @@ P = M @ P
 asse_pol = (M.to_3x3() @ dir_pol).normalized()
 asse_dec = (M.to_3x3() @ dir_dec).normalized()
 
+# --- IL FOCHEGGIATORE, misurato finche' i pezzi esistono ---------------------
+# QUI E NON PIU' SOTTO, ed e' l'unico posto possibile: venti righe piu' avanti i
+# cinquantacinque pezzi vengono FUSI in tre, e `Scope1..5` smettono di esistere.
+# La prima stesura calcolava il fuoco insieme alla Mira, dopo la fusione, e
+# `vertici({"Scope1"})` tornava una lista vuota - divisione per zero, non un
+# risultato sbagliato, che e' la fortuna.
+# Il perno vero si crea dopo, insieme alla Mira: questi due valori sono in
+# coordinate del mondo e le trasformazioni che restano non spostano le mesh.
+FUOCO_PEZZI = ("Scope1", "Scope2", "Scope3", "Scope4", "Scope5")
+_centri = []
+for _n in FUOCO_PEZZI:
+    _vs = vertici({_n})
+    _centri.append(sum(_vs, Vector()) / len(_vs))
+_verso_fuoco = (_centri[-1] - _centri[0]).normalized()
+_punte = vertici(set(FUOCO_PEZZI))
+_fuori = max(_punte, key=lambda p: p.dot(_verso_fuoco))
+# E SI CONTROLLA CHE SIA DAVVERO UN FOCHEGGIATORE, invece di fidarsi dei nomi: i
+# cinque pezzi devono uscire perpendicolari all'asse ottico. Se un domani il
+# modello cambia e `Scope*` diventa il cercatore, questo grida invece di far
+# nascere la camera in mezzo al tubo.
+# L'asse ottico qui e' quello del tubo appena trasformato: `verso_cielo` non
+# esiste ancora, e nasce da questo stesso vettore venti righe piu' giu'.
+_ottico = (M.to_3x3() @ dir_tubo).normalized()
+_obliquo = math.degrees(math.acos(min(1.0, abs(_verso_fuoco.dot(_ottico)))))
+if _obliquo < 75.0:
+    print("\nATTENZIONE: i pezzi Scope* escono a %.0f gradi dall'asse ottico: "
+          "non sono un focheggiatore di newtoniano" % _obliquo)
+    sys.exit(1)
+# SULL'ASSE DEL FOCHEGGIATORE, non sul vertice piu' esterno: quel vertice sta sul
+# bordo del portaoculare, fuori centro di mezzo diametro. E' lo stesso errore che
+# la Mira evita proiettando sull'asse ottico, e qui costerebbe un centimetro di
+# camera montata storta.
+
 
 # --- la gerarchia dell'inseguimento ------------------------------------------
 # QUATTRO PERNI, non due, e ognuno fa UNA cosa. "Polo" e "Declinazione" portano solo
@@ -383,6 +416,28 @@ _apertura = asse_de_riposo @ (_dir_loc * _avanti.dot(_dir_loc))
 mira = perno("Mira", asse_de, _apertura, verso_cielo)
 print("  mira: apertura a %.2f m dal pavimento, %.2f m fuori dall'asse del pilastro"
       % (_apertura.z, math.hypot(_apertura.x - P.x, _apertura.y - P.y)))
+
+# --- IL FUOCO: dove si avvita la camera --------------------------------------
+# STESSA IDEA DELLA MIRA, e la stessa ragione: dove va montata la camera CCD e'
+# un DATO DEL MODELLO, non una quota da indovinare in gioco. Ma qui non lo si
+# dichiara - lo si DEDUCE, perche' il focheggiatore nel modello c'e' gia'.
+#
+# I PEZZI `Scope1..Scope5` SONO IL FOCHEGGIATORE, e non e' un'ipotesi sui nomi
+# («scope» vorrebbe dire anche cercatore): sono cinque cilindri in fila, tutti
+# alla STESSA quota lungo l'asse ottico, che escono dal tubo a 89,8 gradi da
+# quell'asse. Novanta gradi dall'asse, vicino all'apertura: e' un focheggiatore di
+# newtoniano, e un cercatore starebbe parallelo.
+#
+# IL PUNTO DI ATTACCO E' L'ESTREMITA' DEL PEZZO PIU' ESTERNO, cioe' il portaoculare
+# dove il naso della camera entra davvero; il VERSO e' quello in cui la catena si
+# allontana dal tubo. Dedurli cosi' vuol dire che se un domani il modello cambia -
+# focheggiatore piu' lungo, montato dall'altra parte - il punto si sposta con lui
+# invece di restare scritto qui a mentire.
+_asse_f = _centri[-1]
+_bocca = _asse_f + _verso_fuoco * ((_fuori - _asse_f).dot(_verso_fuoco))
+fuoco = perno("Fuoco", asse_de, _bocca, _verso_fuoco)
+print("  fuoco: bocca del focheggiatore a %.2f m dal pavimento, "
+      "%.0f gradi dall'asse ottico" % (_bocca.z, _obliquo))
 
 for nodo, angolo in ((asse_ar, AR_POSA), (asse_de, DEC_POSA)):
     nodo.matrix_basis = nodo.matrix_basis @ Matrix.Rotation(angolo, 4, "Z")
@@ -587,7 +642,8 @@ with open(USCITA, "rb") as _f:
 _peso = os.path.getsize(USCITA) / 1e6
 _nodi = [n.get("name") for n in _g["nodes"]]
 _manca = [n for n in ("Telescopio", "Polo", "AssePolare", "Declinazione", "AsseDec",
-                      "Pilastro", "Montatura", "Contrappeso", "Tubo") if n not in _nodi]
+                      "Pilastro", "Montatura", "Contrappeso", "Tubo",
+                      "Mira", "Fuoco") if n not in _nodi]
 if _manca:
     print("\nATTENZIONE: nel .glb mancano i nodi %s" % ", ".join(_manca))
     sys.exit(1)

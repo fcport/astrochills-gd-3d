@@ -141,6 +141,18 @@ func prompt_posa() -> String:
 	return "Posa %s" % nome
 
 
+## Cosa succede premendo il tasto con questo in mano.
+##
+## PERCHÉ NON È SEMPLICEMENTE `lascia()`, che è quello che fa qui. Perché ci sono
+## oggetti che hanno UN POSTO: la camera CCD si avvita al focheggiatore, e
+## lasciarla cadere davanti al telescopio non è la stessa cosa. Chiedendo
+## all'oggetto invece di decidere nel giocatore, il caso speciale sta nella classe
+## che lo conosce — e il giocatore non deve nominare né la camera né il
+## telescopio. Vedi `ccd_camera.gd`.
+func posa() -> void:
+	lascia()
+
+
 ## Se sta in mano a qualcuno adesso.
 func in_mano() -> bool:
 	return _in_mano

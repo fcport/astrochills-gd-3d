@@ -172,6 +172,8 @@ def tscn():
              '[ext_resource type="Script" path="res://world/mains.gd" id="43_rete"]',
              '[ext_resource type="Script" path="res://world/interactables/panel_door.gd" id="44_anta"]',
              '[ext_resource type="Script" path="res://world/interactables/mains_button.gd" id="45_fungo"]',
+             '[ext_resource type="Script" path="res://world/interactables/ccd_camera.gd" id="46_ccd"]',
+             '[ext_resource type="PackedScene" path="res://assets/models/ccd.glb" id="47_modccd"]',
              '']
     dims = sorted(set((round(b[3], 3), round(b[4], 3), round(b[5], 3)) for b in blocchi)
                   | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
@@ -473,6 +475,14 @@ def tscn():
               'size = Vector3(0.294, 0.362, 0.054)', '',
               '[sub_resource type="BoxShape3D" id="s_quadro_fungo"]',
               'size = Vector3(0.060, 0.060, 0.040)', '',
+              # LA CAMERA CCD e' un cilindro e non la propria mesh: si prende in
+              # mano, sbatte sui muri e rotola per terra, e una collisione convessa
+              # costerebbe cinquanta facce per una sagoma che a occhio E' un
+              # cilindro. 12,5 cm di diametro per 11,1 di altezza sono l'ingombro
+              # vero con la ruota filtri montata - da `ccd_blender.py`, che a sua
+              # volta li prende dalle quote SBIG.
+              '[sub_resource type="CylinderShape3D" id="s_ccd"]',
+              'height = 0.111', 'radius = 0.0625', '',
               # IL COPIONE DELLA POSTAZIONE STA SULLA RADICE, ed e' l'unico script
               # di questa scena che non sia un interagibile: sedersi non e' una
               # proprieta' del monitor, e' una sequenza fra il monitor, il corpo del
@@ -1292,7 +1302,29 @@ def tscn():
     # nodi che il vecchio osservatorio aveva e che il trasloco porta con se'. Le
     # posizioni vengono da `geometria.py`, derivate dai mobili su cui poggiano:
     # spostare il bancone della cucina sposta la moka.
-    righe += ['[node name="Letto" parent="." instance=ExtResource("28_letto")]',
+    # --- LA CAMERA CCD -------------------------------------------------------
+    # NASCE MONTATA sul focheggiatore e ci si appende da sola in `_ready()`: la
+    # trasformata scritta qui non conta, e' solo un posto da cui partire.
+    #
+    # IL COLLIDER E' UN CILINDRO E NON LA MESH. La camera e' un corpo rigido che
+    # si prende in mano, sbatte sui muri e rotola per terra: una collisione
+    # convessa dalla mesh costerebbe cinquanta facce per una silhouette che a
+    # occhio E' un cilindro. Dodici centimetri e mezzo di diametro per undici di
+    # altezza sono l'ingombro vero, ruota filtri compresa - da `ccd_blender.py`,
+    # che a sua volta lo prende dalle quote SBIG.
+    righe += ['[node name="Ccd" type="RigidBody3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, 1.200, %.3f)'
+              % (CUPOLA[0] * K, CUPOLA[1] * K),
+              'mass = 1.5',
+              'script = ExtResource("46_ccd")',
+              'nome = "la camera CCD"',
+              'fuoco = NodePath("../Osservatorio/Telescopio/Polo/AssePolare/'
+              'Declinazione/AsseDec/Fuoco")', '',
+              '[node name="Modello" parent="Ccd" instance=ExtResource("47_modccd")]', '',
+              '[node name="Col" type="CollisionShape3D" parent="Ccd"]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.056, 0)',
+              'shape = SubResource("s_ccd")', '',
+              '[node name="Letto" parent="." instance=ExtResource("28_letto")]',
               # DRITTO, cioe' con la testiera a -Z, che nel magazzino vuol dire
               # verso la porta: e' l'unico verso in cui il letto si puo' usare.
               # Vedi `LETTO` in geometria.py.

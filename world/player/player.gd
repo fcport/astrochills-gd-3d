@@ -120,18 +120,27 @@ const PITCH_LIMIT := deg_to_rad(89.0)
 ## dell'ADR sarebbe violato anche rispettandone la lettera.
 const INTERACT_RANGE := 1.2
 
-## DOVE STA LA MANO: davanti all'occhio e un po' più in basso, in metri.
+## DOVE STA LA MANO: davanti all'occhio, in basso e SULLA DESTRA, in metri.
 ##
 ## I 55 cm sono la distanza a cui si tiene una cosa che si sta guardando — più
 ## vicino si va di occhi incrociati, più lontano è un braccio teso, che è un
 ## altro gesto e stanca a vederlo. Sta dentro `INTERACT_RANGE` di proposito: ciò
 ## che si può raccogliere lo si può anche posare dov'è, senza fare un passo.
 ##
-## I 12 cm SOTTO non sono un dettaglio estetico: al centro esatto l'oggetto copre
-## il mirino e metà di dove si sta andando. Tenendolo sotto la linea di vista si
-## cammina guardando la stanza e l'oggetto resta in basso, dove sta una mano.
+## GIÙ E A DESTRA, E NON AL CENTRO, perché non ci sono braccia da disegnare e non
+## ce ne saranno: al centro esatto l'oggetto sta sospeso in mezzo alla faccia,
+## copre il mirino e metà di dove si sta andando, e la mancanza della mano si
+## nota. Spostato nell'angolo in basso a destra legge come «lo sto portando» e
+## lascia libera la stanza — è dove ogni gioco in prima persona tiene quello che
+## hai in mano, per la stessa ragione e da trent'anni.
+##
+## I NUMERI SI TARANO GUARDANDO, e questi vanno verificati d'operatore su
+## `tools/banco_mani.tscn`: a 55 cm il bordo destro del campo cade intorno ai 42
+## cm, quindi 22 porta l'oggetto circa a metà strada verso il bordo — visibile
+## intero, e fuori dal centro.
 const DISTANZA_MANO := 0.55
-const ALTEZZA_MANO := -0.12
+const ALTEZZA_MANO := -0.16
+const LATO_MANO := 0.22
 
 ## Con quanta forza il giocatore sposta ciò che urta camminando, in newton-secondi
 ## per chilo. Un oggetto per terra che non si smuove quando ci cammini dentro
@@ -367,7 +376,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		# guardando, e posare qualcosa vicino a una porta diventerebbe una lotta.
 		# Chi deve aprire una porta posa quello che ha in mano, come nella vita.
 		if _in_mano != null:
-			_in_mano.lascia()
+			# `posa()` E NON `lascia()`: quasi sempre sono la stessa cosa, ma un
+			# oggetto che ha un posto suo lo sa e ci va. Vedi `Carryable.posa()`.
+			_in_mano.posa()
 			return
 		# Si rilegge la mira ADESSO invece di fidarsi di `_focus`, che è stato
 		# calcolato nell'ultimo tick di fisica. Fra un tick e l'altro il mouse
@@ -564,7 +575,8 @@ func _trasformata_mano() -> Transform3D:
 	xf.basis = testa.basis.orthonormalized() * _presa
 	xf.origin = testa.origin \
 		- testa.basis.z * DISTANZA_MANO \
-		+ testa.basis.y * ALTEZZA_MANO
+		+ testa.basis.y * ALTEZZA_MANO \
+		+ testa.basis.x * LATO_MANO
 	return xf
 
 

@@ -5449,3 +5449,94 @@ e quindici: li' i cubi sono la cosa giusta, perche' un banco dev'essere brutto e
 sgombro o si finisce per giudicare l'arredamento. Il GDD, al paragrafo «Inventario e
 oggetti», e' ancora DA SCRIVERE: quali oggetti si raccolgono e' una decisione che non
 si prende scrivendo codice.
+
+## D-200 La camera CCD si avvita al fuoco, e il fuoco lo dice il modello
+
+Federico: «fai la camera CCD da attaccare al telescopio, qualunque prop in giro,
+bicchieri, bottiglie ecc...» - e prima, sul trasporto: «non servono le mani, le
+teniamo sospese in aria a dx».
+
+**LA MANO STA IN BASSO A DESTRA, E NON AL CENTRO.** Non ci sono braccia da
+disegnare e non ce ne saranno: al centro l'oggetto resta sospeso in mezzo alla
+faccia, copre il mirino e meta' di dove si sta andando, e la mancanza del braccio
+si nota. Nell'angolo in basso a destra legge come «lo sto portando» e lascia
+libera la stanza. E' dove ogni gioco in prima persona tiene quello che hai in
+mano, da trent'anni e per questa ragione.
+
+**LA CAMERA NON E' INVENTATA, E NEMMENO SCELTA.** Il GDD la nomina per modello -
+«SBIG ST-8, chip KAF-1600 da 1530x1020 pixel di 9 micron» con la «SBIG CFW-8,
+cinque posizioni» - e dice che va modellata a mano perche' la si guarda da vicino.
+Le quote vengono dal SITO DI SBIG DI ALLORA, ripescato dall'archivio del web:
+
+    testa ottica   5 pollici di diametro x 3 di profondita' = 12,5 x 7,5 cm
+    peso           2,2 libbre / 1 kg
+    attacco        T-Thread, nasi da 1,25" e 2" in dotazione
+    back focus     0,92 pollici / 2,3 cm
+    CFW-8          cinque filtri da 1,25", aggiunge un pollice di back focus
+
+**E LA FOTO DI CATALOGO DICE QUELLO CHE NESSUNA TABELLA DICE**: cilindro NERO -
+alluminio anodizzato - con cinque alette anulari di raffreddamento, base squadrata
+col pannello dei connettori dietro, e in cima, DECENTRATO, un blocchetto quadrato
+con la ghiera filettata. Trecentocinquanta facce.
+
+**IL PROVINO HA BOCCIATO DUE VOLTE, e tutte e due le volte per un motivo che il
+codice non poteva sapere.** Al primo giro il corpo nero usciva GRIGIO CHIARO: non
+era il colore, erano le lampade. Le potenze erano copiate dal provino della
+pulsantiera - mezzo metro di oggetto, luci a mezzo metro - e qui stavano a venti
+centimetri da una camera di dodici, cioe' arrivavano sei volte piu' forti. Un
+provino bruciato risponde sempre di si'. Al secondo giro le proporzioni: base,
+alette e naso spartiti in parti quasi uguali facevano tre dischi impilati, mentre
+nella foto il pacco delle alette prende piu' di meta' dell'altezza.
+
+**IL PUNTO DI ATTACCO NON E' UNA QUOTA, E' UNA DEDUZIONE.** Il focheggiatore nel
+modello del telescopio C'E' GIA': i pezzi `Scope1..5` sono cinque cilindri in fila,
+tutti alla stessa quota lungo l'asse ottico, che escono dal tubo a **89,8 gradi**
+da quell'asse. Novanta gradi e vicino all'apertura vuol dire focheggiatore di
+newtoniano; un cercatore starebbe parallelo. Da li' escono la bocca del
+portaoculare e il verso in cui esce dal tubo, e `telescopio_blender.py` li scrive
+in un Empty `Fuoco` appeso ad `AsseDec` - come gia' faceva per la `Mira`. Se un
+domani il modello cambia, la camera si monta dove sta il nuovo focheggiatore senza
+che nessuno tocchi il codice di gioco. **E c'e' il controllo che lo pretende**: se
+quei pezzi escono a meno di 75 gradi dall'asse, il generatore si ferma invece di
+far nascere la camera in mezzo al tubo.
+
+**IL CALCOLO STA VENTI RIGHE PIU' SU DI DOVE SEMBRAVA**, ed e' l'unico posto
+possibile: subito dopo i cinquantacinque pezzi vengono FUSI in tre, e `Scope1..5`
+smettono di esistere. La prima stesura lo faceva insieme alla Mira e trovava una
+lista vuota - divisione per zero, che e' la fortuna: un risultato sbagliato non
+avrebbe detto niente.
+
+**MONTATA NON SIMULA, E SMONTATA SI'.** Una camera avvitata al fuoco e' solidale
+al tubo: `freeze` e appesa al nodo del fuoco. E' l'unica riparentatura del
+progetto, e ha una ragione fisica - la vite - invece che di comodo: un corpo
+rigido che inseguisse il focheggiatore a mezz'aria oscillerebbe, sbatterebbe
+contro gli anelli e finirebbe per cadere. Staccata torna un `Carryable` come gli
+altri, che cade se lo molli.
+
+**IL PROMPT INSEGNA DA SOLO.** Nessun tutorial dice che la camera va avvitata:
+tenendola in mano la riga dice «Posa la camera CCD», e quando ci si avvicina al
+focheggiatore diventa «Avvita la camera al fuoco». Il cambio E' l'istruzione. Per
+farlo senza che il giocatore debba conoscere il telescopio, `Carryable.posa()` e'
+un metodo virtuale: il caso speciale sta nella classe che lo conosce, e il
+giocatore non nomina ne' la camera ne' lo strumento.
+
+**MISURATO** (`tools/prova_ccd.gd`): non basta guardare che la camera stia al
+fuoco - per un fotogramma l'avvitata e l'appoggiata sono identiche. Si MUOVE IL
+TELESCOPIO e si guarda se lei c'e' ancora.
+
+                              focheggiatore   camera    scarto dal fuoco
+    avvitata (giusto)            +0,573 m     +0,535 m      0,111 m, invariato
+    appoggiata (difetto)         +0,574 m      0,000 m      0,626 m
+
+**IL DIFETTO SI RIMETTE** con `CAMERA_APPOGGIATA=1`, che posa la camera sul fuoco
+senza appenderla. **E LA GUARDIA DELLA SONDA CIECA ERA SBAGLIATA**: misurava
+quanto si e' mossa la CAMERA, cioe' gridava «non ho visto niente» proprio quando
+stava vedendo il difetto - col difetto acceso la camera non si muove affatto. Chi
+non e' autorizzato a stare fermo e' il telescopio, e adesso la guardia guarda lui.
+
+**I PROP SONO SCARICATI E NON ANCORA POSATI.** Da Poly Haven, CC0: un TERMOS -
+in un osservatorio d'Appennino a novembre e' l'oggetto personale per definizione -
+delle BOTTIGLIE vuote e un SERVIZIO DA TE'. Non sono decorazioni scelte a caso:
+sono le tre cose che uno porta con se' o si lascia dietro passando una notte
+sveglio in un edificio freddo. Manca il generatore che li riduce e li posa, ed e'
+il passo successivo.

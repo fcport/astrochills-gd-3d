@@ -112,12 +112,14 @@ func _guarda(punto: Vector3) -> void:
 
 
 ## Quanto e' lontano l'oggetto da dove la mano lo vorrebbe.
+##
+## SI CHIEDE AL GIOCATORE invece di rifare il conto: la posizione della mano e'
+## una cosa che si tara guardando, e una copia della formula qui dentro sarebbe
+## una seconda verita' destinata a divergere alla prima taratura. Quello che
+## questa sonda deve provare non e' DOVE sta la mano - e' che l'oggetto ci arrivi
+## e che per arrivarci non attraversi niente.
 func _scarto_dalla_mano() -> float:
-	var testa := _p.camera().global_transform
-	var voluta := testa.origin \
-		- testa.basis.z * Player.DISTANZA_MANO \
-		+ testa.basis.y * Player.ALTEZZA_MANO
-	return voluta.distance_to(_oggetto.global_position)
+	return _p._trasformata_mano().origin.distance_to(_oggetto.global_position)
 
 
 func _prova() -> void:

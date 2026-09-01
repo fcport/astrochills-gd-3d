@@ -57,6 +57,22 @@ MODELLI = {
                             "osservazioni. Sono gli oggetti che nessuno guarda e che,\n"
                             "se non ci sono, fanno sembrare la stanza un rendering di\n"
                             "catalogo."),
+    # LA ROBA CHE SI PRENDE IN MANO. Sono i primi oggetti raccoglibili del gioco
+    # (vedi world/interactables/carryable.gd), e la scelta non e' arbitraria: sono
+    # le tre cose che uno porta con se' o si lascia dietro passando una notte
+    # sveglio in un edificio freddo. Un termos, delle bottiglie vuote, delle
+    # tazze. Niente di decorativo: se sono in giro e' perche' qualcuno le ha usate.
+    "modified_thermos": ("1k",
+                         "Il termos. In un osservatorio d'Appennino a novembre e' l'oggetto\n"
+                         "personale per definizione: si porta su, si posa dove capita, e a\n"
+                         "meta' notte lo si va a cercare."),
+    "wine_bottles_01": ("1k",
+                        "Bottiglie. Vuote, in giro: sono la traccia che qualcuno ha passato\n"
+                        "delle ore qui dentro, ed e' quello che le rende diverse da un\n"
+                        "soprammobile."),
+    "tea_set_01": ("1k",
+                   "Servizio da te': le tazze sono la cosa piu' ovvia da prendere in mano\n"
+                   "e la piu' facile da dimenticare su un piano."),
 }
 
 

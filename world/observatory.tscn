@@ -33,13 +33,12 @@
 ;
 ; NON DISTURBARE monitor, chime, letto, player: le loro quote sono contratti di
 ; altre storie. La 3.1 aggiunge stanze e ambiente, non sposta l'esistente.
-[gd_scene load_steps=28 format=3]
+[gd_scene load_steps=27 format=3]
 
 [ext_resource type="PackedScene" path="res://world/rooms/computer_room.tscn" id="1_room"]
 [ext_resource type="PackedScene" path="res://world/interactables/crt_monitor.tscn" id="2_monitor"]
 [ext_resource type="PackedScene" path="res://world/player/player.tscn" id="3_player"]
 [ext_resource type="PackedScene" path="res://world/sequence_chime.tscn" id="4_chime"]
-[ext_resource type="PackedScene" path="res://world/interactables/bed.tscn" id="5_bed"]
 [ext_resource type="PackedScene" path="res://world/rooms/kitchen.tscn" id="6_kitchen"]
 [ext_resource type="PackedScene" path="res://world/rooms/dome.tscn" id="7_dome"]
 [ext_resource type="PackedScene" path="res://world/rooms/exterior.tscn" id="8_exterior"]
@@ -316,13 +315,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0.8)
 ; sonora si tara nell'attenuazione (vedi sequence_chime.tscn), non nella posizione.
 [node name="SequenceChime" parent="." instance=ExtResource("4_chime")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, -2.05)
-
-; Il letto contro la parete sinistra, a un paio di passi dalla scrivania: all'alba
-; si legge il riepilogo sul monitor e ci si gira dentro. La parete interna sta a
-; x = -2,0 e il letto è largo 0,92, quindi appoggiato costa 0,46 di stanza — resta
-; oltre un metro di passaggio prima della sedia, che sta sull'asse.
-[node name="Bed" parent="." instance=ExtResource("5_bed")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.54, 0, -0.5)
 
 ; IL VOLUME DELL'EDIFICIO, e le sue misure non sono scelte: sono LETTE dalle stanze.
 ;

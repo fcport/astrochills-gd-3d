@@ -32,9 +32,10 @@ for _m in ("geometria", "modellare"):
         importlib.reload(sys.modules[_m])
 from geometria import (ARREDI_PC, BOMBATURA_MONITOR, CASSA_MONITOR,   # noqa: E402
                        VETRO_MONITOR, verifica_arredi, V_SILL)
-from modellare import (barra, bm_di, cilindro, cilindro_orizz, esporta,   # noqa: E402
-                       finisci, lampada, materiale, posa_modello, prepara_render,
-                       prisma, pulisci, scatola, scatola_inclinata, verifica_impronte)
+from modellare import (barra, bm_di, cavo, cilindro, cilindro_orizz, esporta,   # noqa: E402
+                       faldone, finisci, lampada, materiale, posa_modello,
+                       prepara_render, prisma, pulisci, scatola, scatola_inclinata,
+                       verifica_impronte)
 
 RADICE = os.path.dirname(QUI)
 USCITA = os.path.join(RADICE, "assets", "models", "controllo_pc.glb")
@@ -330,6 +331,114 @@ def sedia(nome, verso_x=-1.0):
                 za - 0.028, za + 0.028)
 
 
+def computer_fisso():
+    """La torre sotto la consolle, e i cavi che la collegano a quello che sta sopra.
+
+    LA RICHIESTA, DA FEDERICO: «mi puoi fare anche dei cavi e sotto al tavolo un
+    computer fisso?». Ed e' il pezzo che mancava per davvero: sul piano c'erano un
+    monitor, una tastiera e un mouse collegati a niente, e un monitor collegato a
+    niente e' un televisore.
+
+    LE MISURE SONO QUELLE DI UN MIDI-TOWER ATX, non inventate: 19 di larghezza per
+    43 di profondita' e 40 di altezza sono l'ingombro di serie di un case del 1999,
+    e i vani del frontale sono standard di specifica - il 5,25 pollici e' 146 x
+    41,3 mm (il lettore CD), il 3,5 e' 101,6 x 25,4 (il floppy). Sono numeri che si
+    guardano, non che si stimano: e' la stessa regola della pulsantiera della
+    cupola.
+
+    STA FUORI DAL VANO GAMBE, come tutto il resto sotto questa consolle: nella
+    campata fra il fianco di testa e il posto dove si siede. Un case in mezzo ai
+    piedi lo si prende a calci tutte le sere, ed e' il motivo per cui in un ufficio
+    vero sta di lato.
+
+    IL FRONTE GUARDA CHI SI SIEDE, cioe' +X: e' da li' che si infila un floppy, ed
+    e' l'unico verso in cui i vani si vedono invece di essere un fianco cieco.
+    """
+    x0, z0, x1, _z1, alt = IMPRONTE["Consolle"]
+    g0, _g1 = VANO_GAMBE
+    L, P, H = 0.19, 0.43, 0.40
+    # in pianta: profondita' lungo X (il fronte verso chi si siede), larghezza
+    # lungo Z, appoggiato nella campata fra il fianco di testa e il vano gambe
+    xf = x1 - 0.06                      # il fronte, rientrato di sei centimetri
+    xr = xf - P                         # il retro
+    zc = (z0 + 0.04 + g0) / 2.0         # in mezzo alla campata libera
+    za, zb = zc - L / 2.0, zc + L / 2.0
+    PIEDI = 0.012                       # i quattro piedini di gomma
+    scatola("Plastica", xr, xf, PIEDI, PIEDI + H, za, zb)                 # la cassa
+    for x in (xr + 0.03, xf - 0.03):
+        for z in (za + 0.02, zb - 0.02):
+            cilindro("Gomma", x, z, 0.0, PIEDI, 0.008, 6)
+    y = PIEDI + H
+    # I VANI DEL FRONTALE, dall'alto: due da 5,25 pollici - uno col lettore, uno
+    # col coperchio cieco, che e' come uscivano - e uno da 3,5 col floppy.
+    scatola("Schermo", xf, xf + 0.004, y - 0.07, y - 0.028, za + 0.02, zb - 0.02)
+    scatola("Plastica", xf, xf + 0.003, y - 0.125, y - 0.084, za + 0.02, zb - 0.02)
+    scatola("Schermo", xf, xf + 0.004, y - 0.175, y - 0.15, za + 0.035, zb - 0.035)
+    # il tasto di espulsione del floppy e la fessura del dischetto
+    scatola("Plastica", xf + 0.004, xf + 0.008, y - 0.172, y - 0.163, zb - 0.055, zb - 0.042)
+    # IL TASTO DI ACCENSIONE E I DUE LED: un tasto grosso quadrato, il reset
+    # piccolo, e le due spie - corrente e disco. Il disco e' quella che lampeggia,
+    # e qui e' accesa perche' la macchina sta lavorando: e' la stessa scelta del
+    # rack di fianco.
+    scatola("Plastica", xf, xf + 0.006, y - 0.245, y - 0.225, za + 0.03, za + 0.05)
+    scatola("Plastica", xf, xf + 0.004, y - 0.243, y - 0.235, za + 0.06, za + 0.07)
+    scatola("Acceso", xf + 0.001, xf + 0.005, y - 0.275, y - 0.269, za + 0.032, za + 0.038)
+    scatola("Acceso", xf + 0.001, xf + 0.005, y - 0.275, y - 0.269, za + 0.048, za + 0.054)
+    # la griglia di aerazione in basso, sei feritoie
+    for k in range(6):
+        yg = PIEDI + 0.04 + k * 0.012
+        scatola("Schermo", xf, xf + 0.002, yg, yg + 0.007, za + 0.03, zb - 0.03)
+    # sul retro l'alimentatore, con la ventola e la presa
+    scatola("Metallo", xr - 0.004, xr, y - 0.09, y - 0.005, za + 0.005, zb - 0.005)
+    cilindro_orizz("Schermo", xr - 0.006, y - 0.048, zc, "x", 0.004, 0.035, 12)
+    return (xr, xf, za, zb, PIEDI + H)
+
+
+def cavi_della_postazione(torre, zm):
+    """I cavi fra la torre, il piano e la presa.
+
+    TRE CAVI E NON UNO, perche' sono tre cose diverse e si vedono tutte e tre: il
+    monitor, la tastiera e la corrente. Prima ce n'era uno solo - un cilindro
+    dritto dal piano al pavimento, dietro il monitor - e un cavo dritto legge come
+    un tubo.
+
+    SCENDONO DAL BORDO DEL PIANO E RISALGONO AL RETRO DELLA TORRE, che e' il
+    percorso vero: sotto una scrivania addossata al muro i cavi non passano dentro
+    il piano, girano dal bordo. Il ventre della curva sta piu' in basso di tutti e
+    due gli attacchi, com'e' di un cavo lasco.
+
+    IL GROVIGLIO NON SI FA APPOSTA: e' quello che viene fuori da tre cavi lunghi
+    quanto servirebbe piu' un pezzo, che e' come li si compra.
+    """
+    xr, _xf, za, zb, ycassa = torre
+    zt = (za + zb) / 2.0
+    x0 = IMPRONTE["Consolle"][0]
+    y_sotto = IMPRONTE["Consolle"][4] - 0.05
+    # il video: dal piano dietro il monitor giu' fino all'alimentatore
+    cavo("Gomma", (x0 + 0.06, y_sotto, zm + 0.17), (xr, ycassa - 0.10, zt + 0.05),
+         0.12, 0.008)
+    # la tastiera: piu' sottile, e parte da dove sta lei
+    cavo("Gomma", (x0 + 0.12, y_sotto, zm - 0.06), (xr, ycassa - 0.16, zt - 0.03),
+         0.16, 0.005)
+    # la corrente: dall'alimentatore giu' al pavimento verso il muro, dove si perde
+    # dietro la consolle
+    cavo("Gomma", (xr - 0.01, ycassa - 0.05, zt), (x0 + 0.04, 0.02, zt + 0.04),
+         0.06, 0.009)
+    # LA MATASSA IN ECCESSO, per terra fra la torre e il muro: un cavo lungo tre
+    # metri sotto una scrivania profonda settanta centimetri avanza, e quello che
+    # avanza si arrotola da solo.
+    #
+    # LE ANSE STANNO LUNGO X, cioe' verso il muro, e non di fianco alla torre: di
+    # fianco uscivano dall'impronta della consolle - il controllo l'ha detto, 64
+    # vertici oltre il bordo - e un cavo che sborda dal mobile in partita e' un
+    # cavo che passa attraverso il fianco.
+    for k in range(3):
+        r = 0.06 + k * 0.014
+        zk = zt - 0.05 + k * 0.05
+        cavo("Gomma", (x0 + 0.14 - r, 0.012, zk), (x0 + 0.14 + r, 0.012, zk),
+             -r * 0.9, 0.006, pezzi=10)
+
+
 def rack():
     x0, z0, x1, z1, alt = IMPRONTE["Rack"]
     scatola("Metallo", x0, x1, 0.0, 0.10, z0, z1)                       # zoccolo
@@ -360,10 +469,28 @@ def schedario():
         scatola("Metallo", x0, x0 + 0.02, a, b, z0 + 0.02, z1 - 0.02)
         scatola("Plastica", x0 - 0.02, x0, (a + b) / 2 - 0.015, (a + b) / 2 + 0.015,
                 (z0 + z1) / 2 - 0.07, (z0 + z1) / 2 + 0.07)
-    # una pila di raccoglitori sopra
-    for k in range(3):
-        scatola("Carta", x0 + 0.10, x0 + 0.42, alt + k * 0.055, alt + 0.05 + k * 0.055,
-                z0 + 0.08 + k * 0.02, z1 - 0.08 + k * 0.02)
+    # UNA PILA DI RACCOGLITORI SOPRA, e adesso sono raccoglitori.
+    #
+    # Erano tre scatole color carta sfalsate di due centimetri: la stessa cosa che
+    # stava sul ripiano del carrello nella sala di divulgazione, e lo stesso
+    # difetto. Il D-213 l'aveva gia' scritto - «un faldone ha la costa rigida,
+    # l'etichetta, il buco per il dito e gli anelli: sono quelle quattro cose a
+    # dirlo» - e aspettava due modelli da scaricare a mano che non sono mai
+    # arrivati. Sono quattro cose, e si fanno.
+    #
+    # DI PIATTO E STORTI, perche' sopra uno schedario ci si posano cosi': uno alla
+    # volta, tornando dalla cupola, senza guardare.
+    # LE COSTE GUARDANO LA PORTA, cioe' z crescente: lo schedario sta nell'angolo
+    # con due muri addosso - a est e a nord - e le uniche due facce che qualcuno
+    # vede sono quella verso la stanza e quella verso l'ingresso. Girati
+    # dall'altra parte si vedevano tre lati aperti, cioe' tre bordi di carta
+    # impilati: un panino, non dei raccoglitori.
+    for k, (dx, dz, g_, col) in enumerate((
+            (0.000,  0.000, 180.0, "Tessuto"),
+            (0.014, -0.020, 185.0, "LibroRosso"),
+            (-0.011, 0.016, 176.0, "Meteorite"))):
+        faldone((x0 + x1) / 2 + dx, alt + k * 0.052, (z0 + z1) / 2 + dz,
+                gradi=g_, coricato=True, colore=col)
 
 
 def mobile_e_stampante():
@@ -425,8 +552,16 @@ def minutaglia():
     # accorciava in un moncone verticale con l'ombra sotto, e sembrava sospesa a
     # mezz'aria. Non lo era: era di scorcio. A 270 sta di traverso, piatta e intera,
     # e il tastierino guarda comunque chi siede.
+    #
+    # E SI APPOGGIA SUL PIEDE, NON SUL PUNTO PIU' BASSO. Federico: «il telefono
+    # fluttua». Fluttuava di sette centimetri e mezzo, ed era il FILO: sotto la
+    # base del modello scendono 75 mm di spirale, misurati - i vertici della fascia
+    # piu' bassa stanno sparsi su 13 x 29 mm contro i 300 x 320 dell'apparecchio.
+    # Posando il minimo dell'ingombro sul piano si posava il filo, e il telefono
+    # restava per aria con l'ombra staccata sotto. Adesso il filo affonda nel legno
+    # e il telefono tocca. Vedi `modellare._piede`.
     posa_modello(TELEFONO, (x0 + 0.06, tz - 0.16, x0 + 0.36, tz + 0.16, 0.40),
-                 gradi=270.0, appoggio=alt)
+                 gradi=270.0, appoggio=alt, piede=True)
     # LA CARTA VIENE DA FUORI, e prima erano sette scatole piatte di colore "Carta".
     # Un blocco di fogli non e' un parallelepipedo: i fogli non sono pari, dietro c'e'
     # il cartone, la costa e' incollata in rosso. Sono le tre cose che dicono
@@ -489,6 +624,8 @@ _monitor = postazione((_s[1] + _s[3]) / 2)
 # 180 gradi: come nasce guarda dalla parte opposta, e girata cosi' finiva rivolta
 # alla finestra invece che alla consolle
 _sedia = posa_modello(SEDIA_UFFICIO, IMPRONTE["Sedia1"], gradi=270.0)
+_torre = computer_fisso()
+cavi_della_postazione(_torre, (_s[1] + _s[3]) / 2)
 rack()
 schedario()
 mobile_e_stampante()
@@ -550,3 +687,6 @@ scatta("controllo-pc-postazione.png", (6.95, 1.45, 1.30), (5.60, 1.00, 1.62), le
 scatta("controllo-pc-vetrata.png", (6.90, 1.65, 2.50), (2.60, 2.05, 2.50), lente=24.0)
 # e da seduti alla postazione accesa, che e' dove si passa la notte
 scatta("controllo-pc-seduti.png", (6.35, 1.22, 1.58), (3.20, 2.15, 2.20), lente=26.0)
+# i raccoglitori sopra lo schedario: da mezzo metro, che e' la distanza a cui il
+# difetto vecchio - tre scatole color carta impilate - si vedeva per quello che era
+scatta("controllo-pc-schedario.png", (7.05, 1.78, 2.95), (7.88, 1.40, 2.00), lente=45.0)

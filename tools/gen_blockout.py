@@ -7,7 +7,9 @@ import re as _re
 
 from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP, H_DOME_BASE, DOME_R, DOME_H,
                        blocchi_edificio, collisioni_infissi,
-                       DISL_RAMPA, ante_porte, verifica_ante, verifica_trappole,
+                       DISL_RAMPA, R_PASS, W_PASS, H_PASS, SP_PASS,
+                       R_PIENO, H_PIENO,
+                       ante_porte, verifica_ante, verifica_trappole,
                        pezzi_anta, arredi, verifica_arredi,
                        ante_mobili, pezzi_anta_mobile,
                        scalati, verifica_aperture, verifica_copertura,
@@ -18,8 +20,8 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        LUCI_ROSSE, PARTE_SPENTA, punti_applique,
                        H_APPLIQUE, NOME_LOCALE, LUCE_MONITOR, SEMPRE_ACCESE,
                        H_INTERRUTTORE, L_PLACCA, A_PLACCA, SP_PLACCA,
-                       LETTO, ATTIVITA_CUPOLA, CUPOLA, SALA_TELESCOPIO,
-                       AR_RIPOSO_GRADI, DEC_RIPOSO_GRADI,
+                       ATTIVITA_CUPOLA, CUPOLA, SALA_TELESCOPIO,
+                       AR_RIPOSO_GRADI, DEC_RIPOSO_GRADI, LATITUDINE,
                        CASSA_MONITOR, VETRO_MONITOR, SEDILE_MONITOR,
                        BOMBATURA_MONITOR, FRANCO_VETRO,
                        PULSANTIERA_STAFFA, PULSANTIERA_TASTI,
@@ -30,6 +32,12 @@ MURI, APERTURE, PAVIMENTI, SOFFITTI, SALA, (_CX, _CZ) = scalati()
 _R = DOME_R
 
 import math as _m
+
+# IL POLO CELESTE NORD, in coordinate del gioco. L'altezza sull'orizzonte vale la
+# LATITUDINE - e' la stessa cosa detta due volte - e l'azimut e' il nord, che in
+# questo modello sta verso +Z: lo dice la misura del telescopio, che a declinazione
+# 90 punta ad azimut -1 (`world/telescope_mount.gd`). Il cielo gira attorno a questo.
+POLO_CELESTE = (0.0, _m.sin(_m.radians(LATITUDINE)), _m.cos(_m.radians(LATITUDINE)))
 
 # Gli spigoli della elle, letti dal perimetro e non ricopiati: servono al volume
 # «dentro l'edificio». Le x del perimetro sono tre (0, il risvolto, il fondo est) e
@@ -66,13 +74,7 @@ for (_cx, _cy, _cz, _sx, _sy, _sz, _nome, *_r) in collisioni_infissi():
     aggiungi(_cx, _cy, _cz, _sx, _sy, _sz, _nome)
 # Gli arredi entrano come SOLA COLLISIONE, come i muri: la forma la da' il modello
 # controllo_pc.glb, che nasce dalle stesse impronte.
-# IL LETTO ESCE DA QUI, e non e' un caso speciale gratuito: e' un INTERAGIBILE, e
-# `world/interactables/bed.tscn` si porta dietro la propria collisione. Lasciandolo
-# anche fra i blocchi ci sarebbero due solidi nello stesso posto - uno che risponde
-# al raggio dell'interazione e uno muto - e chi guarda il letto da un certo angolo
-# colpirebbe quello sbagliato e non vedrebbe nessun prompt. Sta in `ARREDI_MAGAZZINO`
-# per farsi guardare dai controlli della stanza, non per finire in scena due volte.
-blocchi.extend(b for b in arredi() if b[6] != "Letto")
+blocchi.extend(arredi())
 
 # ---------------------------------------------------------------- esterno: prato, recinto, auto
 # prato: continuo con il pavimento interno, cosi' uscendo non si cade
@@ -92,8 +94,17 @@ for (rx0, rz0, rx1, rz1, nm) in [
     else:
         aggiungi(rx0, H_REC / 2, (rz0 + rz1) / 2.0, 0.15, H_REC, abs(rz1 - rz0), nm)
 
-# l'auto: ~40 m dall'ingresso (21,7 / 19)
-aggiungi(46.0 * K, 0.75, 50.0 * K, 4.20, 1.50, 1.80, "Auto")   # l'auto resta a misura vera
+# L'AUTO NON E' UN BLOCCO, ED E' LA STESSA REGOLA DEL LETTO DI PRIMA: e' un
+# INTERAGIBILE - ci si sale per andare a casa, cioe' per far cominciare la notte
+# dopo - e un interagibile si porta dietro la propria collisione. Lasciandola
+# anche fra i blocchi ci sarebbero due solidi nello stesso posto, uno che risponde
+# al raggio e uno muto, e guardandola da certi angoli non comparirebbe nessun
+# prompt. Sta qui sotto, nodo `Macchina`, con la sua mesh e la sua forma.
+#
+# LE MISURE RESTANO QUESTE: 4,20 x 1,50 x 1,80 a misura vera, a una quarantina di
+# metri dall'ingresso, dentro il recinto e a due passi dal varco del cancello.
+AUTO_DOVE = (46.0 * K, 0.75, 50.0 * K)
+AUTO_QUANTO = (4.20, 1.50, 1.80)
 
 def _base(rot_x, rot_z, cx, cy, cz, rot_y=0.0):
     """La matrice del blocco. Le tre rotazioni non si combinano mai: un blocco sale
@@ -164,7 +175,7 @@ def tscn():
              '[ext_resource type="PackedScene" path="res://assets/models/pulsantiera.glb" id="36_pensile"]',
              '[ext_resource type="PackedScene" path="res://crt/crt_screen.tscn" id="26_vetro"]',
              '[ext_resource type="Script" path="res://world/dome_shutter.gd" id="27_cupola"]',
-             '[ext_resource type="PackedScene" path="res://world/interactables/bed.tscn" id="28_letto"]',
+             '[ext_resource type="Script" path="res://world/interactables/macchina.gd" id="28_auto"]',
              '[ext_resource type="PackedScene" path="res://world/sequence_chime.tscn" id="31_chime"]',
              '[ext_resource type="Script" path="res://world/indoors_volume.gd" id="32_dentro"]',
              '[ext_resource type="Script" path="res://world/dome_activity.gd" id="33_attivita"]',
@@ -173,6 +184,7 @@ def tscn():
              '[ext_resource type="Script" path="res://world/dark_adaptation.gd" id="39_occhio"]',
              '[ext_resource type="Script" path="res://world/telescope_mount.gd" id="40_montatura"]',
              '[ext_resource type="Script" path="res://world/dome_azimuth.gd" id="41_azimut"]',
+             '[ext_resource type="Script" path="res://world/tempo_siderale.gd" id="57_siderale"]',
              '[ext_resource type="PackedScene" path="res://assets/models/quadro_elettrico.glb" id="42_quadro"]',
              '[ext_resource type="Script" path="res://world/mains.gd" id="43_rete"]',
              '[ext_resource type="Script" path="res://world/interactables/panel_door.gd" id="44_anta"]',
@@ -187,6 +199,8 @@ def tscn():
              '[ext_resource type="PackedScene" path="res://assets/models/piattino.glb" id="53_piattino"]',
              '[ext_resource type="PackedScene" path="res://assets/models/radiolina.glb" id="54_radio"]',
              '[ext_resource type="Script" path="res://world/corazza.gd" id="55_corazza"]',
+             '[ext_resource type="Script" path="res://world/interactables/oculare.gd" '
+             'id="56_oculare"]',
              '']
     dims = sorted(set((round(b[3], 3), round(b[4], 3), round(b[5], 3)) for b in blocchi)
                   | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
@@ -388,7 +402,18 @@ def tscn():
               'shader_parameter/antialias = 1.0',
               'shader_parameter/luminosita = 1.0',
               'shader_parameter/via_lattea = 0.35',
-              'shader_parameter/polo_galattico = Vector3(0.42, 0.78, -0.46)', '',
+              'shader_parameter/polo_galattico = Vector3(0.42, 0.78, -0.46)',
+              # L'ASSE ATTORNO A CUI GIRA IL CIELO, scritto QUI e non a mano nello
+              # shader: l'altezza del polo sull'orizzonte VALE la latitudine, e la
+              # latitudine sta in `geometria.py` - la stessa riga da cui il
+              # modellatore inclina l'asse polare del telescopio. Un vettore
+              # ribattuto a mano sarebbe la seconda verita' sulla stessa cosa, e il
+              # giorno che l'osservatorio si spostasse di un grado il cielo girerebbe
+              # attorno al polo di prima senza dirlo a nessuno.
+              'shader_parameter/polo_celeste = Vector3(%.4f, %.4f, %.4f)' % POLO_CELESTE,
+              # A che punto e' il giro, in radianti. Zero e' il cielo di inizio
+              # notte; a scriverlo fotogramma per fotogramma e' `TempoSiderale`.
+              'shader_parameter/giro = 0.0', '',
               '[sub_resource type="Sky" id="cielo"]',
               # NIENTE MEZZA RISOLUZIONE: `Sky` la userebbe volentieri, e su un cielo
               # fatto di puntini larghi due pixel il dimezzamento non ammorbidisce, fa
@@ -491,11 +516,51 @@ def tscn():
               # LA CAMERA CCD e' un cilindro e non la propria mesh: si prende in
               # mano, sbatte sui muri e rotola per terra, e una collisione convessa
               # costerebbe cinquanta facce per una sagoma che a occhio E' un
-              # cilindro. 12,5 cm di diametro per 11,1 di altezza sono l'ingombro
+              # cilindro. 12,5 cm di diametro per 12,7 di altezza sono l'ingombro
               # vero con la ruota filtri montata - da `ccd_blender.py`, che a sua
               # volta li prende dalle quote SBIG.
+              #
+              # 12,7 E NON PIU' 11,1: il naso della ruota filtri e' passato da un
+              # centimetro e mezzo a tre, che e' quanto sporge nel vero. Il numero
+              # che NON e' cambiato e' `ALTA` in `ccd_camera.gd` - quello e' quanto
+              # si arretra per montarla, e il centimetro e mezzo di differenza e'
+              # esattamente il pezzo di naso che entra nel focheggiatore.
               '[sub_resource type="CylinderShape3D" id="s_ccd"]',
-              'height = 0.111', 'radius = 0.0625', '',
+              'height = 0.127', 'radius = 0.0625', '',
+              # LA BOCCA DEL FOCHEGGIATORE, cioe' il volume che si mira per
+              # guardare dentro il telescopio. Una sfera da otto centimetri di
+              # raggio: il portaoculare di questo tubo ne misura cinque, e i tre in
+              # piu' sono il margine che rende il bersaglio prendibile guardandolo
+              # da mezzo metro invece che centrandolo al millimetro. Non e' un
+              # ostacolo - `oculare.gd` si toglie dal layer del mondo - quindi
+              # allargarlo non chiude passaggi.
+              '[sub_resource type="SphereShape3D" id="s_oculare"]',
+              'radius = 0.08', '',
+              # IL FONDO INVISIBILE DELLA PASSERELLA, e sta qui perche' e' una
+              # collisione e basta: nessuna mesh, nessun materiale. Il cilindro
+              # e' largo quanto il bordo ESTERNO dell'impalcato e alto dal
+              # pavimento della sala al calpestio - vedi il nodo, che spiega
+              # perche'.
+              '[sub_resource type="CylinderShape3D" id="s_fondo"]',
+              'height = %.3f' % (H_PASS + SP_PASS / 2),
+              'radius = %.3f' % (R_PASS + W_PASS / 2), '',
+              # IL PIENO CENTRALE, cioe' il volume in cui dalla passerella non si
+              # entra: il pozzo del pilastro e tutto lo spazio dello strumento,
+              # fin sopra la testa. I due numeri stanno in `geometria.py`, che e'
+              # anche dove sta scritto perche' e' un CILINDRO e non l'ottagono di
+              # scatole che c'era prima.
+              # L'AUTO: la sua mesh e la sua forma stanno qui e non fra i blocchi,
+              # perche' l'auto e' un interagibile e si porta dietro tutte e due
+              # (vedi `AUTO_DOVE` in cima a questo file). Scatola grigia come tutto
+              # il resto del segnaposto: arrivera' un modello, e questi due numeri
+              # restano quelli.
+              '[sub_resource type="BoxMesh" id="m_auto"]',
+              'size = Vector3(%.2f, %.2f, %.2f)' % AUTO_QUANTO, '',
+              '[sub_resource type="BoxShape3D" id="s_auto"]',
+              'size = Vector3(%.2f, %.2f, %.2f)' % AUTO_QUANTO, '',
+              '[sub_resource type="CylinderShape3D" id="s_pieno"]',
+              'height = %.3f' % H_PIENO,
+              'radius = %.3f' % R_PIENO, '',
               # LA ROBA CHE SI PRENDE IN MANO, e anche qui cilindri invece delle
               # mesh: sono tre solidi di rotazione, e una collisione convessa da
               # settecento facce per una sagoma tonda e' spesa a vuoto. Il RAGGIO
@@ -536,7 +601,20 @@ def tscn():
               '[node name="Blockout" type="Node3D"]',
               'script = ExtResource("24_postazione")', '',
               '[node name="WorldEnvironment" type="WorldEnvironment" parent="."]',
-              'environment = SubResource("env")', '']
+              'environment = SubResource("env")', '',
+              # --- IL CIELO CHE GIRA ------------------------------------------
+              # Sta SUBITO DOPO l'ambiente e prima di tutto il resto, e non e' una
+              # questione di ordine di `_ready`: la montatura se lo cerca da sola
+              # quando le serve. E' che questo nodo e' la sola cosa in scena che
+              # sappia che ora e' in cielo, e leggerlo accanto all'ambiente su cui
+              # scrive e' il modo in cui un .tscn generato resta leggibile.
+              #
+              # LA LATITUDINE ARRIVA DA `geometria.py`, come il vettore del polo
+              # nello shader: due letture della stessa riga, non due numeri.
+              '[node name="TempoSiderale" type="Node" parent="."]',
+              'script = ExtResource("57_siderale")',
+              'ambiente = NodePath("../WorldEnvironment")',
+              'latitudine = %.1f' % LATITUDINE, '']
     usati = {}
     # `*resto` e non tre nomi: non tutte le sorgenti di blocchi hanno le stesse
     # rotazioni - infissi e arredi ne dichiarano meno - e chiedere dieci valori a
@@ -547,7 +625,7 @@ def tscn():
         usati[nome] = usati.get(nome, 0) + 1
         nn = "%s_%d" % (nome, usati[nome])
         n = idx[(round(sx, 3), round(sy, 3), round(sz, 3))]
-        visibile = nome.startswith(("Prato", "Rec", "Auto"))
+        visibile = nome.startswith(("Prato", "Rec"))
         righe += ['[node name="%s" type="StaticBody3D" parent="."]' % nn,
                   'transform = %s' % _base(rot, rotz, cx, cy, cz, roty), '',
                   ] + ([] if not visibile else [
@@ -558,13 +636,70 @@ def tscn():
                       "mat_soff" if nome.startswith("Soff") else
                       "mat_pass" if nome.startswith(("Pass", "Scal")) else
                       "mat_prato" if nome.startswith("Prato") else
-                      "mat_auto" if nome.startswith("Auto") else
                       "mat_tetto" if nome.startswith("Tetto") else
                       "mat_rec" if nome.startswith("Rec") else
                       "mat_tele" if nome.startswith(("Pilastro", "Tubo")) else
                       "mat_pass" if nome.startswith("Rampa") else "mat_muro"), '']) + [
                   '[node name="Col" type="CollisionShape3D" parent="%s"]' % nn,
                   'shape = SubResource("s_%d")' % n, '']
+
+    # IL FONDO INVISIBILE DELLA PASSERELLA. Sotto l'anello ci sono 59 cm di
+    # vuoto - il pozzo del pilastro dentro, la luce dell'impalcato fuori - e
+    # quello e' l'unico posto dell'edificio da cui una cosa caduta non torna
+    # piu' su: il giocatore cammina sul calpestio, nel pozzo non entra (lo
+    # chiude l'ottagono della montatura), e da un occhio accovacciato a 1,05 un
+    # oggetto a cinque centimetri da terra resta fuori portata comunque lo si
+    # guardi. Misurato: quattro pose di smontaggio della camera su cinque
+    # finivano li'.
+    #
+    # E LA CAMERA CCD LO RENDE GRAVE: senza di lei non si fotografa piu', cioe'
+    # la partita non puo' piu' finire.
+    #
+    # LA PRIMA CURA ERA UN DIVIETO, ED E' STATA BOCCIATA GIOCANDOCI. La mano non
+    # lasciava andare la camera sul vuoto e il prompt lo diceva; Federico:
+    # «adesso sono bloccato con la camera in mano... ma che discorso e' fare un
+    # prompt che dice qui sotto non c'e' dove posare la camera, uno impazzisce».
+    # Aveva ragione due volte: un divieto che non dice dove SI puo' e' una
+    # punizione, e per giunta lasciava addosso l'oggetto che si stava cercando
+    # di mettere giu'.
+    #
+    # QUINDI SI TAPPA IL BUCO, che e' quello che ha chiesto: «metti un muro
+    # invisibile che sta sotto nel buco del telescopio, che non si possa
+    # fisicamente droppare la telecamera li'». Un cilindro alto dal pavimento
+    # della sala al calpestio e largo quanto il bordo esterno dell'impalcato:
+    # quello che cade dentro l'anello si ferma A FILO DEL PIANO SU CUI SI
+    # CAMMINA - dove si vede e si raccoglie, in piedi o accovacciandosi - e
+    # quello che rotola verso la passerella non ci si infila sotto.
+    #
+    # UN CILINDRO PIENO E NON UN ANELLO, apposta: sotto l'impalcato non ci deve
+    # entrare niente piu' di quanto ci debba cadere dentro il pozzo, e una forma
+    # sola costa una collisione invece di ventiquattro.
+    #
+    # INVISIBILE, E SOLO PER LE COSE: layer degli APPOGGI e maschera zero, come
+    # la corazza (vedi `world/corazza.gd`). Il giocatore non lo tocca - per lui
+    # quel volume era gia' pieno - non si vede, e la pianta dell'edificio non
+    # cambia di un centimetro.
+    # IL PIENO CENTRALE, e sta qui per la stessa ragione del fondo qui sotto: e'
+    # una collisione tonda, e `blocchi_edificio()` fa scatole. Un cerchio fatto di
+    # scatole e' un poligono, ed e' esattamente il difetto che si sta togliendo.
+    #
+    # IL RAGGIO E' IL BORDO INTERNO DELL'IMPALCATO: ci si ferma dove finisce il
+    # pavimento che si vede, non venti centimetri prima. Layer di fabbrica come
+    # ogni altro ingombro: e' il mondo su cui si cammina.
+    righe += ['[node name="PienoCentrale" type="StaticBody3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, '
+              '%.3f, %.3f, %.3f)' % (CX, H_PIENO / 2, CZ), '',
+              '[node name="Col" type="CollisionShape3D" parent="PienoCentrale"]',
+              'shape = SubResource("s_pieno")', '']
+
+    righe += ['[node name="FondoPasserella" type="StaticBody3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, '
+              '%.3f, %.3f, %.3f)' % (CX, (H_PASS + SP_PASS / 2) / 2, CZ),
+              'collision_layer = 8',
+              'collision_mask = 0', '',
+              '[node name="Col" type="CollisionShape3D" parent="FondoPasserella"]',
+              'shape = SubResource("s_fondo")', '']
+
     # Il modello sostituisce le scatole a vista. Le scatole restano come COLLISIONE:
     # forme convesse semplici, che la fisica preferisce a una mesh con gli infissi.
     # IL VETRO LO RIFA' LA SCENA, e non e' un ripiego. Nel .glb il materiale e'
@@ -1355,9 +1490,9 @@ def tscn():
     # IL COLLIDER E' UN CILINDRO E NON LA MESH. La camera e' un corpo rigido che
     # si prende in mano, sbatte sui muri e rotola per terra: una collisione
     # convessa dalla mesh costerebbe cinquanta facce per una silhouette che a
-    # occhio E' un cilindro. Dodici centimetri e mezzo di diametro per undici di
-    # altezza sono l'ingombro vero, ruota filtri compresa - da `ccd_blender.py`,
-    # che a sua volta lo prende dalle quote SBIG.
+    # occhio E' un cilindro. Dodici centimetri e mezzo di diametro per dodici e
+    # sette di altezza sono l'ingombro vero, ruota filtri e naso compresi - da
+    # `ccd_blender.py`, che a sua volta lo prende dalle quote SBIG.
     righe += ['[node name="Ccd" type="RigidBody3D" parent="."]',
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, 1.200, %.3f)'
               % (CUPOLA[0] * K, CUPOLA[1] * K),
@@ -1368,8 +1503,27 @@ def tscn():
               'Declinazione/AsseDec/Fuoco")', '',
               '[node name="Modello" parent="Ccd" instance=ExtResource("47_modccd")]', '',
               '[node name="Col" type="CollisionShape3D" parent="Ccd"]',
-              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.056, 0)',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0635, 0)',
               'shape = SubResource("s_ccd")', '',
+              # --- L'OCULARE ---------------------------------------------------
+              # STA DENTRO L'ISTANZA DEL MODELLO, appeso al nodo `Fuoco`, e non e'
+              # una scorciatoia: un corpo appeso li' segue il tubo mentre insegue
+              # il cielo, senza che nessuno debba aggiornargli la posa. La camera
+              # CCD lo fa riparentandosi a mano in `_ready()` perche' lei deve
+              # potersi anche STACCARE; l'oculare no - e' la bocca del
+              # focheggiatore, e la bocca non si smonta.
+              #
+              # LA VISTA PERO' NON E' QUI: e' su `Mira`, l'asse ottico, ed e'
+              # `oculare.gd` a spiegare perche' l'occhio va dove entra la luce e
+              # non dove sta il portaoculare.
+              '[node name="Oculare" type="StaticBody3D" parent="Osservatorio/'
+              'Telescopio/Polo/AssePolare/Declinazione/AsseDec/Fuoco"]',
+              'script = ExtResource("56_oculare")',
+              'prompt_text = "Guarda nell\'oculare"',
+              'mira = NodePath("../../Mira")', '',
+              '[node name="Col" type="CollisionShape3D" parent="Osservatorio/'
+              'Telescopio/Polo/AssePolare/Declinazione/AsseDec/Fuoco/Oculare"]',
+              'shape = SubResource("s_oculare")', '',
               # --- LA ROBA IN GIRO ---------------------------------------------
               # DOVE STANNO NON E' ARREDAMENTO. Il termos e la tazza stanno sulla
               # consolle, all'estremita' libera: e' il posto dove uno passa la
@@ -1397,8 +1551,15 @@ def tscn():
               '[node name="Col" type="CollisionShape3D" parent="Termos"]',
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.154, 0)',
               'shape = SubResource("s_termos")', '',
+              # CINQUE CENTIMETRI PIU' IN QUA DEL MONITOR, e i cinque centimetri
+              # sono misurati: la cassa di quel monitor comincia a z=1,785 e la
+              # tazza con il manico e' larga tredici centimetri, quindi posata a
+              # 1,73 ci finiva dentro con mezzo manico. Da quando le mesh dei prop
+              # stanno sulla propria origine (`prop_blender.origine_alla_base`) la
+              # cosa si vede dove sta, e questa quota si puo' finalmente scrivere
+              # guardando i numeri invece che il render.
               '[node name="Tazza" type="RigidBody3D" parent="."]',
-              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.590, 0.751, 1.730)',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.590, 0.751, 1.680)',
               'mass = 0.2',
               'script = ExtResource("48_preso")',
               'nome = "la tazza"', '',
@@ -1409,8 +1570,17 @@ def tscn():
               # IN PIEDI E NON CORICATA: una bottiglia rovesciata per terra dice
               # «qualcuno l'ha buttata», e non e' quello che e' successo qui - e'
               # stata finita e appoggiata al fianco della consolle.
+              #
+              # E IL FIANCO E' QUELLO DI TESTA, non quello lungo. Stava a x 5,18,
+              # che sembra «di fianco alla consolle» e invece e' DENTRO IL MURO:
+              # il parapetto della vetrata occupa 5,10..5,30 e la consolle gli e'
+              # addossata, quindi fra i due non c'e' un dito. Una trimesh non ha un
+              # dentro - la bottiglia non toccava nessuna faccia e restava li',
+              # murata, e nessuno se n'era accorto perche' una bottiglia dentro un
+              # parapetto alto novanta non si vede. L'ha trovata la rete di
+              # `Carryable`, che ha cominciato a dire «qui non ci si arriva».
               '[node name="Bottiglia" type="RigidBody3D" parent="."]',
-              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.180, 0.010, 1.280)',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.600, 0.010, 1.050)',
               'mass = 0.5',
               'script = ExtResource("48_preso")',
               'nome = "la bottiglia"', '',
@@ -1470,12 +1640,21 @@ def tscn():
               '[node name="Col" type="CollisionShape3D" parent="TazzaCucina"]',
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.034, 0)',
               'shape = SubResource("s_tazza")', '',
-              '[node name="Letto" parent="." instance=ExtResource("28_letto")]',
-              # DRITTO, cioe' con la testiera a -Z, che nel magazzino vuol dire
-              # verso la porta: e' l'unico verso in cui il letto si puo' usare.
-              # Vedi `LETTO` in geometria.py.
-              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, 0.000, %.3f)'
-              % LETTO, '',
+              # L'AUTO, cioe' il modo di finire la notte e cominciare quella dopo.
+              # NASCE SPENTA: andarsene con una posa in corso chiuderebbe la notte
+              # a meta'. La accende `main.gd` all'alba - vedi `macchina.gd`.
+              '[node name="Macchina" type="StaticBody3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, '
+              '%.3f, %.3f, %.3f)' % AUTO_DOVE,
+              'collision_mask = 0',
+              'script = ExtResource("28_auto")',
+              'prompt_text = "Torna a casa"',
+              'enabled = false', '',
+              '[node name="Mesh" type="MeshInstance3D" parent="Macchina"]',
+              'mesh = SubResource("m_auto")',
+              'material_override = SubResource("mat_auto")', '',
+              '[node name="Col" type="CollisionShape3D" parent="Macchina"]',
+              'shape = SubResource("s_auto")', '',
               # LA MOKA E LA LAMPADA NON SI POSANO PIU', e non e' una bocciatura
               # del loro codice: e' che tre scatole grigie su un bancone non sono
               # un segnaposto, sono un oggetto brutto in mezzo alla stanza. Fra un
@@ -1630,7 +1809,7 @@ def verifica_raccordi(tolleranza=0.03):
     return problemi
 
 
-ESTERNI = ("Prato", "Rec", "Auto", "Tetto")   # gli unici blocchi ammessi fuori dai muri
+ESTERNI = ("Prato", "Rec", "Tetto")   # gli unici blocchi ammessi fuori dai muri
 
 
 def verifica_ingombri(margine=0.40):
@@ -2144,14 +2323,15 @@ _attesi = [("ambient_light_energy = 0.035", "la luce ambientale della notte"),
            # l'apertura sul bus e nessuno la ascolta. Nessun errore, nessun log:
            # solo una cupola che resta chiusa mentre il pannello dice OPEN.
            ('script = ExtResource("27_cupola")', "i battenti della cupola"),
-           # IL LETTO E' L'UNICO MODO DI ARRIVARE ALLA NOTTE DOPO: senza, `main.gd`
+           # L'AUTO E' L'UNICO MODO DI ARRIVARE ALLA NOTTE DOPO: senza, `main.gd`
            # grida una volta all'avvio e poi il giocatore gira all'infinito in un
            # osservatorio in cui l'alba non finisce mai.
-           ('instance=ExtResource("28_letto")', "il letto"),
+           ('script = ExtResource("28_auto")', "l'auto con cui si torna a casa"),
            ('script = ExtResource("32_dentro")', "il volume dentro/fuori"),
            # SENZA IL CIELO SI VEDE IL VUOTO dalla vetrata e dalla fenditura, e non e'
            # una mancanza che salta all'occhio come un errore: sembra solo notte fonda.
            ('sky = SubResource("cielo")', "il cielo con le stelle"),
+           ('script = ExtResource("57_siderale")', "il cielo che gira sopra la cupola"),
            ('script = ExtResource("38_lucecielo")', "la luce del cielo in cupola"),
            # Senza l'elenco delle lampade l'adattamento al buio non si spegne quando
            # si accende la luce rossa, e il patto - «lo hai perche' stai al buio» -

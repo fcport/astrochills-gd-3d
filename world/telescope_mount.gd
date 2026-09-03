@@ -30,6 +30,19 @@
 ## retta di regressione della nuvola di vertici dava 62 gradi dove il tubo ne faceva
 ## 43, perché in quella nuvola ci sono anche cercatore, anelli e bulloni.
 ##
+## E INSEGUE, da quando il cielo gira davvero. Fino a ieri questa montatura si
+## portava dove le si diceva e ci restava per sempre, il che era giusto finché anche
+## le stelle stavano ferme: adesso `world/tempo_siderale.gd` le fa girare di quindici
+## gradi l'ora, e un tubo fermo perde il soggetto in un minuto. Inseguire vuol dire
+## una riga — l'angolo orario comandato cresce insieme al cielo — e vale per tutto il
+## resto della notte, senza che nessuno lo debba chiedere ogni fotogramma.
+##
+## E QUESTO FILE SE LO ASPETTAVA GIÀ: `partenza_gradi` e la sua isteresi sono state
+## scritte per l'inseguimento («il cielo deriva di un sesto di grado al secondo:
+## inseguire non è viaggiare»), e `banda_morta_gradi` è stata portata a zero perché
+## una montatura equatoriale «insegue il cielo di continuo». Erano due tarature per
+## un moto che non c'era ancora.
+##
 ## E L'APERTURA SERVE PIÙ DELLA DIREZIONE, per via della cupola: su una equatoriale
 ## tedesca il tubo sta di fianco al pilastro, quindi il raggio non parte dal centro
 ## della cupola e l'azimut da dare alla fessura non è quello del telescopio. Vedi
@@ -106,11 +119,54 @@ const ARRIVATO := 0.05
 ## con un significato fisico — è dove il modello aveva il tubo quando è stato
 ## montato — ed è esattamente per questo che va misurato invece che ragionato.
 ##
-## E il polo esce a 43,1 dove la latitudine di Montegrimano è 43,9: otto decimi di
-## grado di disallineamento polare, che il modellatore crede di aver raddrizzato e
-## non ha raddrizzato. È poco per vedersi e troppo per un gioco che ha una fase
-## sull'allineamento polare; sta scritto qui perché qualcuno ci torni.
+## E il polo esce a 43,1 dove la latitudine di Montegrimano è 43,9. Per due anni
+## questa riga ha chiamato quello scarto «disallineamento polare»: SBAGLIATO, e la
+## misura che lo corregge è di oggi.
+##
+## `tools/prova_rotazione.gd` misura l'asse come BISETTRICE fra due puntamenti
+## opposti — dec 90 con l'ascensione a 0 e a 180 — invece che leggendo dove guarda il
+## tubo in una posa sola. L'asse esce a **43,900 gradi d'altezza e azimut 0,000**: il
+## polo celeste esatto, a meno di un millesimo. Quello che è storto è il TUBO, che a
+## declinazione 90 guarda **0,951 gradi fuori dal proprio asse** e girando l'ascensione
+## descrive un cono invece di stare fermo. Le tre righe della tabella qui sopra sono
+## tre punti di quel cono, ed è per questo che davano tre altezze diverse.
+##
+## E LA DIFFERENZA CONTA, perché sono due guasti opposti. Un asse storto rovina
+## l'INSEGUIMENTO — la stella scivola comunque la si punti, e l'unica cura è
+## raddrizzare il treppiede. Un tubo storto sposta il PUNTAMENTO — si va sempre un
+## grado più in là di dove si è chiesto, e si azzera sincronizzandosi su una stella
+## nota, che è la fase 3 e che quindi non è una fase inventata per far scena.
 const AR_ZERO := 90.0
+
+## I MOTORI DI INSEGUIMENTO SONO ACCESI.
+##
+## ESISTE DAVVERO, su qualunque montatura: è l'interruttore che si spegne per
+## smontare, per parcheggiare, o quando si è finito. Qui serve anche a un'altra cosa,
+## ed è la ragione per cui è un parametro e non una riga: A FALSO QUESTA MONTATURA È
+## QUELLA DI IERI — si porta dove le si dice e ci resta, mentre il cielo le scorre
+## sotto. `tools/prova_rotazione.gd` deve vedere la differenza: con l'inseguimento
+## spento il tubo perde la stella di quindici gradi ogni ora, e se la sonda non se
+## ne accorgesse non starebbe misurando l'inseguimento ma la propria aritmetica.
+@export var insegue_il_cielo := true
+
+## FIN DOVE PUÒ ARRIVARE L'ANGOLO ORARIO INSEGUENDO, in gradi.
+##
+## SERVE PERCHÉ L'INSEGUIMENTO NON HA FINE DA SOLO. Il cielo gira di 135 gradi in una
+## notte: un tubo lasciato su un soggetto dalle 21 alle 6 arriverebbe a un angolo
+## orario che nessuna montatura può fare, e `_scrivi()` lo ruoterebbe lo stesso —
+## dentro il pilastro, sotto il pavimento, senza che nulla protesti. Una equatoriale
+## tedesca si ferma prima che il tubo incontri il pilastro: è il limite per cui
+## esiste il ribaltamento al meridiano.
+##
+## CENTOVENTI, e il numero è largo apposta: sono otto ore di angolo orario, cioè ben
+## oltre qualunque cosa questa cupola possa vedere — il suo orizzonte è a 47,7 gradi
+## di altezza, e a quel punto non c'è più niente sopra la gronda da nessuna parte.
+## Fermare prima vorrebbe dire inventare una meccanica che nessuno ha specificato;
+## non fermare affatto vorrebbe dire il telescopio nel pavimento.
+##
+## A ZERO IL LIMITE NON C'È, ed è così che si rimette il difetto: `tools/prova_rotazione.gd`
+## fa correre la notte e guarda dove finisce il tubo.
+@export var limite_ha_gradi := 120.0
 
 ## I due perni del modello, e la posa che portano addosso. Li scrive il generatore:
 ## quali nodi siano e quanto valga la posa lo sa `geometria.py`, non questo file.
@@ -143,6 +199,22 @@ var _viaggia := false
 ## L'ultimo «si muove» detto sul bus, per non ripetersi.
 var _annunciato := false
 
+## I MOTORI INSEGUONO. Falso a montatura parcheggiata: a riposo il tubo guarda il
+## polo e i motori sono spenti, che è come si trova uno strumento entrando. Si
+## accende al primo comando di puntamento e non si spegne più, se non al limite —
+## è quello che fa un GOTO, che accende la traccia insieme al moto.
+var _insegue := false
+
+## Dove il puntamento aveva chiesto di stare, e a che punto era il cielo allora.
+## L'angolo orario voluto è la somma dei due: così l'inseguimento non ACCUMULA, e
+## mille fotogrammi non lo portano via di un grado.
+var _ha_comandato := 0.0
+var _cielo_al_comando := 0.0
+
+## Chi sa dove è arrivato il cielo. Si cerca alla prima occasione e non prima: al
+## `_ready` di questa montatura il nodo del cielo può non essere ancora in albero.
+var _cielo: TempoSiderale
+
 
 func _ready() -> void:
 	add_to_group(GROUP)
@@ -174,6 +246,13 @@ func _ready() -> void:
 func punta(ha_gradi: float, dec_gradi: float) -> void:
 	_ha_v = wrapf(ha_gradi, -180.0, 180.0)
 	_dec_v = clampf(dec_gradi, -90.0, 90.0)
+	# SI RICORDA IL COMANDO E L'ORA DEL CIELO, e da qui in poi l'angolo orario voluto
+	# è la loro somma. Non si somma un pezzetto per fotogramma: un integratore su una
+	# notte intera accumula, e la differenza fra «dove il cielo è adesso» e «dove era
+	# quando me l'hanno detto» non accumula mai.
+	_ha_comandato = _ha_v
+	_cielo_al_comando = _cielo_ora()
+	_insegue = insegue_il_cielo
 	# IL VIAGGIO COMINCIA QUI, e non in `_process()`: è il momento in cui qualcuno
 	# ha mandato il tubo da un'altra parte, e l'unico in cui si può distinguere un
 	# comando nuovo da un inseguimento che continua.
@@ -195,6 +274,11 @@ func piazza(ha_gradi: float, dec_gradi: float) -> void:
 	# Non è un viaggio: è già arrivata. `punta()` qui sopra può aver acceso il
 	# viaggio, e senza questa riga resterebbe acceso su una montatura ferma.
 	_viaggia = false
+	# E NON È NEMMENO UN INSEGUIMENTO. Piazzare è dichiarare dove la montatura si
+	# TROVA — è quello che succede sbloccandola dal parcheggio — e una montatura
+	# appena sbloccata ha i motori fermi. `punta()` qui sopra ha acceso la traccia
+	# perché non sa da dove è stata chiamata; qui si sa, e la si rispegne.
+	_insegue = false
 	_scrivi()
 
 
@@ -202,6 +286,11 @@ func piazza(ha_gradi: float, dec_gradi: float) -> void:
 ## centesimo di grado per stare dietro al cielo. Vedi `partenza_gradi`.
 func in_moto() -> bool:
 	return _viaggia
+
+
+## Vero mentre i motori inseguono il cielo.
+func insegue() -> bool:
+	return _insegue
 
 
 ## Quanto manca ad arrivare, in gradi: il peggiore dei due assi.
@@ -229,6 +318,21 @@ static func find_in(tree: SceneTree) -> TelescopeMount:
 
 
 func _process(delta: float) -> void:
+	# SI INSEGUE PRIMA DI GUARDARE SE SI È ARRIVATI, perché inseguire SPOSTA il
+	# bersaglio: leggendo il residuo prima, ogni fotogramma risponderebbe sulla meta
+	# del fotogramma precedente.
+	if _insegue:
+		var voluto := _ha_comandato + (_cielo_ora() - _cielo_al_comando)
+		if limite_ha_gradi > 0.0 and absf(voluto) > limite_ha_gradi:
+			# IL FINECORSA. Si spegne la traccia e si lascia il tubo dov'è: non lo si
+			# riporta indietro, non lo si parcheggia. Una montatura al limite si
+			# ferma e aspetta che qualcuno decida — il ribaltamento al meridiano è
+			# un gesto, e questo progetto non ne ha ancora deciso il gesto.
+			_insegue = false
+			Log.info("montatura", "finecorsa: angolo orario %.0f gradi, i motori si fermano"
+				% voluto)
+		else:
+			_ha_v = voluto
 	# IL VIAGGIO FINISCE QUANDO SI E' ARRIVATI, e l'arrivo si guarda PRIMA di
 	# tutto il resto: e' l'istante in cui il tubo si ferma quello che interessa a
 	# chi aspetta, e uscendo prima non lo si direbbe mai.
@@ -247,6 +351,18 @@ func _process(delta: float) -> void:
 	_ha = move_toward(_ha, _ha_v, passo)
 	_dec = move_toward(_dec, _dec_v, passo)
 	_scrivi()
+
+
+## A che punto è il giro del cielo, in gradi. Zero se il cielo non c'è: una
+## montatura senza cielo non insegue niente, e non è un caso da inventare.
+##
+## SI CERCA PIGRAMENTE e non al `_ready`: l'ordine in cui i nodi entrano in albero è
+## una proprietà della scena, non di questo file, e legarcisi vorrebbe dire una
+## montatura che non insegue perché qualcuno ha spostato una riga nel generatore.
+func _cielo_ora() -> float:
+	if _cielo == null:
+		_cielo = TempoSiderale.find_in(get_tree())
+	return _cielo.gradi() if _cielo != null else 0.0
 
 
 ## I due angoli diventano le due rotazioni. È tutto qui il puntamento.

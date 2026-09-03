@@ -32,10 +32,10 @@ if "geometria" in sys.modules:
     importlib.reload(sys.modules["geometria"])
 
 from geometria import (blocchi_edificio, blocchi_infissi, ante_porte, verifica_ante,   # noqa: E402
-                       pezzi_anta,
+                       pezzi_anta, fuori_dal_varco,
                        CUPOLA, K, H_DOME_BASE, DOME_R, H_TETTO, SP_TETTO,
                        SALA_TELESCOPIO, R_PASS, W_PASS, H_PASS, SP_PASS, LUNGO_RAMPA,
-                       DISL_RAMPA)
+                       DISL_RAMPA, N_ANELLO)
 from modellare import applica_texture, metri_ripetizione, uv_a_scatola   # noqa: E402
 
 RADICE = os.path.dirname(QUI)
@@ -120,7 +120,7 @@ def costruisci():
             continue          # lo rifa' tetto_forato(): a strisce il bordo e' a gradini
         if nome.startswith(("Pilastro", "Tubo")):
             continue          # li rimpiazza il modello del telescopio
-        if nome.startswith(("Pass", "Rampa", "Scal", "Parapetto", "Montatura")):
+        if nome.startswith(("Pass", "Rampa", "Scal", "Parapetto")):
             continue          # sono COLLISIONE: la forma la danno passerella_e_scala()
                               # e il modello del telescopio
         etichetta, colore = parte_di(nome)
@@ -219,14 +219,15 @@ def passerella_e_scala():
     cx, cz = CUPOLA[0] * K, CUPOLA[1] * K
     calpestio = H_PASS + SP_PASS / 2
     r_int, r_est = R_PASS - W_PASS / 2, R_PASS + W_PASS / 2
-    SETTORI = 72
-    # la scala arriva dal lato -Y di Blender, cioe' da z crescente in gioco
-    varco = math.radians(-90.0)
-    mezzo_varco = math.radians(16.0)
-
-    def fuori_dal_varco(ang):
-        d = math.atan2(math.sin(ang - varco), math.cos(ang - varco))
-        return abs(d) > mezzo_varco
+    # QUANTI LATI, E DOVE SI APRE IL VARCO: da `geometria.py`, che e' anche dove
+    # li legge la collisione. Erano scritti qui a mano, e non erano gli stessi:
+    # 72 lati contro 24, e un varco di 40 gradi contro uno di 45. La ringhiera si
+    # vedeva tonda e si toccava a scatti, e a fianco della scala restavano otto
+    # centimetri per parte che si vedevano e non si toccavano.
+    #
+    # Il segno cambia e basta: la scala arriva dal lato -Y di Blender, cioe' da z
+    # crescente in gioco, quindi l'angolo di gioco `a` si legge qui come `-a`.
+    SETTORI = N_ANELLO
 
     bm = bmesh.new()
     # --- impalcato: una corona circolare con lo spessore ---------------------
@@ -250,6 +251,49 @@ def passerella_e_scala():
             k2 = (k + 1) % 4
             bm.faces.new((giu[k], giu[k2], su[k2], su[k]))
 
+    # --- il fermapiede -------------------------------------------------------
+    # LA RINGHIERA NON FERMA UN OGGETTO, e non e' un difetto della ringhiera: sono
+    # due correnti tonde a mezzo metro e a un metro, e sotto quella bassa restano
+    # cinquanta centimetri d'aria. Il corpo del giocatore non ci passa - per lui il
+    # parapetto e' un ingombro pieno - ma una borraccia che rotola si', e finisce
+    # nell'anello di pavimento fra la passerella e i muri, dove non ci si cammina
+    # (quarantasette centimetri a nord, e il giocatore ne misura sessanta).
+    # Federico ci ha perso la camera: «anche qui mi sa che e' persa per sempre».
+    #
+    # OGNI PASSERELLA A GRIGLIATO NE HA UNO, e si chiama cosi': una lamiera di
+    # dieci-quindici centimetri sul filo del bordo, messa perche' gli attrezzi non
+    # cadano sulla testa di chi sta sotto. Qui fa lo stesso mestiere per la stessa
+    # ragione, e la collisione arriva da se': gli oggetti cadono sulla geometria
+    # che si VEDE (`world/corazza.gd`), quindi basta che il fermapiede ci sia.
+    #
+    # DODICI CENTIMETRI, e lo spessore di una lamiera piegata. Sta sul bordo
+    # ESTERNO e dentro l'ingombro del parapetto, quindi per chi cammina non cambia
+    # niente. Il varco della scala resta aperto: un fermapiede in mezzo a un
+    # passaggio e' la cosa in cui si inciampa.
+    # E STA SU TUTTI E DUE I BORDI. Su quello interno non c'e' una ringhiera da
+    # completare - il pozzo lo tappa il fondo invisibile (D-218) - ma c'e' lo
+    # stesso difetto: quello che rotola verso il centro finisce sul fondo, cioe'
+    # sospeso a filo del calpestio dentro l'anello, e li' non lo prende nessuno
+    # perche' fra l'occhio e la cosa c'e' il pieno centrale (D-222). Misurato:
+    # con il solo fermapiede esterno la camera ci finiva rimbalzando indietro.
+    # Il bordo interno non ha varco: la scala arriva da fuori.
+    ALTO_FERMAPIEDE, SP_FERMAPIEDE = 0.12, 0.03
+    for raggio, verso in ((r_est, -1), (r_int, +1)):
+        for i in range(SETTORI):
+            a0 = 2 * math.pi * i / SETTORI
+            a1 = 2 * math.pi * (i + 1) / SETTORI
+            if verso < 0 and not fuori_dal_varco(-a0, -a1):
+                continue
+            am = (a0 + a1) / 2.0
+            corda = 2 * raggio * math.sin(math.pi / SETTORI)
+            r = raggio + verso * SP_FERMAPIEDE / 2
+            bmesh.ops.create_cube(bm, size=1.0, matrix=(
+                Matrix.Translation(Vector((cx + r * math.cos(am), -cz + r * math.sin(am),
+                                           calpestio + ALTO_FERMAPIEDE / 2)))
+                @ Matrix.Rotation(am + math.pi / 2, 4, "Z")
+                @ Matrix.Diagonal(Vector((corda * 1.02, SP_FERMAPIEDE,
+                                          ALTO_FERMAPIEDE, 1.0)))))
+
     # --- parapetto: due correnti e i montanti, sui due bordi -----------------
     # SOLO IL BORDO ESTERNO. Quella interna proteggeva il pozzo centrale, che
     # adesso e' pieno: e' sparita dalla collisione in geometria.py e deve sparire
@@ -260,7 +304,7 @@ def passerella_e_scala():
             for i in range(SETTORI):
                 a0 = 2 * math.pi * i / SETTORI
                 a1 = 2 * math.pi * (i + 1) / SETTORI
-                if not (fuori_dal_varco(a0) and fuori_dal_varco(a1)):
+                if not fuori_dal_varco(-a0, -a1):
                     continue
                 p0 = Vector((cx + raggio * math.cos(a0), -cz + raggio * math.sin(a0), quota))
                 p1 = Vector((cx + raggio * math.cos(a1), -cz + raggio * math.sin(a1), quota))
@@ -271,7 +315,7 @@ def passerella_e_scala():
                     matrix=Matrix.Translation((p0 + p1) / 2) @ d.to_track_quat("Z", "Y").to_matrix().to_4x4())
         for i in range(0, SETTORI, 6):
             a = 2 * math.pi * i / SETTORI
-            if not fuori_dal_varco(a):
+            if not fuori_dal_varco(-a, -a):
                 continue
             bmesh.ops.create_cone(
                 bm, cap_ends=True, cap_tris=False, segments=8,
@@ -548,4 +592,8 @@ scatta("osservatorio-cupola.png", (9.5, -12.0, 7.5), (2.6, -2.5, 3.3), lente=52.
 scatta("osservatorio-telescopio.png", (5.4, -5.6, 2.15), (2.6, -2.5, 2.0), lente=30.0)
 # dentro la sala: oltre y=-6,5 si finisce nel muro
 scatta("osservatorio-passerella.png", (4.85, -6.15, 2.35), (2.9, -3.7, 0.9), lente=22.0)
+# IL FERMAPIEDE DA VICINO, e serve guardarlo: e' alto dodici centimetri su un
+# impalcato che ne e' spesso diciotto, e da lontano i due si leggono come una
+# fascia sola. Da qui si vede se il bordo esterno ha il gradino che deve avere.
+scatta("osservatorio-fermapiede.png", (4.90, -4.60, 0.95), (3.96, -3.86, 0.66), lente=40.0)
 scatta("osservatorio-ingresso.png", (15.5, -16.5, 2.6), (10.4, -9.2, 1.2), lente=42.0)

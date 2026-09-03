@@ -585,6 +585,40 @@ def barra(mat, p0, p1, r, seg=6):
                           @ d.to_track_quat("Z", "Y").to_matrix().to_4x4())
 
 
+def cavo(mat, p0, p1, sag, r, seg=6, pezzi=12):
+    """Un cavo che PENDE fra due punti, in coordinate di gioco.
+
+    PERCHE' NON E' UNA `barra`. Un cavo teso fra due punti e' una retta solo se
+    qualcuno lo tira: quello di un monitor, di una tastiera, di una presa, sta
+    lasco e scende. Ed e' esattamente la cosa che si vede - un cavo dritto legge
+    come un tubo, e un tubo fra il retro di un PC e il piano di una scrivania non
+    c'e'.
+
+    `sag` e' QUANTO SCENDE nel punto piu' basso rispetto alla congiungente, in
+    metri: e' l'unica misura che si guarda davvero, e si tara a occhio come si
+    tara la lunghezza del cavo che si compra.
+
+    E' UNA PARABOLA E NON UNA CATENARIA, dichiarato. Un filo appeso segue un
+    coseno iperbolico; risolverlo per un abbassamento dato vuol dire un'equazione
+    trascendente da invertire a ogni cavo. Per i cavi di questa stanza - che
+    scendono meno di un quinto della propria luce - le due curve si scostano di
+    meno di un millimetro, cioe' meno del raggio del cavo stesso.
+
+    I PEZZI SONO CILINDRI DRITTI, uno per tratto: dodici bastano perche' a mezzo
+    metro non si contino gli spigoli, e costano settantadue facce l'uno con sei
+    segmenti - meno di quello che costerebbe una vera curva estrusa.
+    """
+    prima = None
+    for i in range(pezzi + 1):
+        t = i / float(pezzi)
+        x = p0[0] + (p1[0] - p0[0]) * t
+        y = p0[1] + (p1[1] - p0[1]) * t - 4.0 * sag * t * (1.0 - t)
+        z = p0[2] + (p1[2] - p0[2]) * t
+        if prima is not None:
+            barra(mat, prima, (x, y, z), r, seg)
+        prima = (x, y, z)
+
+
 def sasso(mat, cx, cy, cz, raggio, seme, schiacciamento=0.75, ruvidezza=0.35):
     """Un ciottolo irregolare: una sfera geodetica con i vertici spostati a caso.
 
@@ -609,6 +643,106 @@ def sasso(mat, cx, cy, cz, raggio, seme, schiacciamento=0.75, ruvidezza=0.35):
         d *= 1.0 + rnd.uniform(-ruvidezza, ruvidezza)
         d.z *= schiacciamento
         v.co = centro + d
+
+
+def faldone(cx, cy, cz, gradi=0.0, pende=0.0, coricato=False,
+            colore="Tessuto", costa=0.05, alt=0.315, prof=0.285):
+    """UN RACCOGLITORE AD ANELLI: il «registratore» da ufficio italiano.
+
+    QUATTRO COSE LO FANNO, e sono quelle quattro che una scatola non ha (D-213):
+    la COSTA rigida, l'ETICHETTA sulla costa, il FORO PER IL DITO e il CANTONALE
+    di metallo in basso. Senza, restano tre parallelepipedi color carta impilati -
+    che e' esattamente quello che c'era sul ripiano del carrello del proiettore e
+    sopra lo schedario della sala di controllo, e che da mezzo metro si legge come
+    un blocco di cartone, non come dei raccoglitori.
+
+    LE MISURE SONO QUELLE VERE, non inventate: il registratore commerciale italiano
+    e' 315 mm di altezza per 285 di profondita' - i due centimetri in piu' del
+    foglio A4, cosi' la carta non sporge - con la costa da 50 o da 80 mm. Il foro
+    sta in basso sulla costa, a cinque centimetri dal piede, e ha il diametro di un
+    dito perche' e' li' che si infila per tirare giu' il raccoglitore dallo
+    scaffale. L'etichetta e' una finestrella nel terzo alto.
+
+    IL FORO E' UN FORO VERO, e non un disco scuro appiccicato sopra: la costa e'
+    fatta di quattro pezzi che gli girano intorno, e nell'apertura si vede il buio
+    di dentro. Un disco nero incollato sulla costa si smaschera appena la luce
+    radente lo prende - e in questa casa la luce radente c'e' sempre.
+
+    `cx, cy, cz` sono il punto d'APPOGGIO: cy e' il piano su cui sta, non il centro.
+    `gradi` lo gira in pianta (a 0 la costa guarda verso z decrescente), `pende` lo
+    fa pendere di lato come un raccoglitore in una fila mezza vuota, e `coricato`
+    lo mette di piatto - la posa delle pile sopra un mobile.
+    """
+    incl = math.radians(pende)
+    # QUANTO E' ALTO IN QUESTA POSA, che serve a farlo poggiare davvero: un
+    # raccoglitore inclinato ruota sul proprio spigolo basso, non affonda nel
+    # ripiano di mezzo centimetro come farebbe girando attorno al centro.
+    h = costa if coricato else alt * math.cos(incl) + costa * abs(math.sin(incl))
+    base = (Matrix.Translation(Vector((cx, -cz, cy + h / 2)))
+            @ Matrix.Rotation(math.radians(-gradi), 4, "Z")
+            @ Matrix.Rotation(math.radians(90.0 if coricato else 0.0) + incl, 4, "Y"))
+
+    def pezzo(mat, lx, ly, lz, sx, sy, sz, gira=0.0):
+        """Una scatola nel sistema del raccoglitore: x lungo la costa, y in
+        profondita' (la costa sta a y positiva), z in altezza. `gira` la ruota
+        nel piano della costa, e serve solo agli spicchi del foro."""
+        bmesh.ops.create_cube(bm_di(mat), size=1.0, matrix=(
+            base @ Matrix.Translation(Vector((lx, ly, lz)))
+            @ Matrix.Rotation(math.radians(gira), 4, "Y")
+            @ Matrix.Diagonal(Vector((sx, sy, sz, 1.0)))))
+
+    cart = 0.0028                      # il cartone delle copertine
+    sp = 0.0035                        # lo spessore della costa
+    y_costa = prof / 2 - sp / 2
+    # le due copertine
+    for lato in (-1, 1):
+        pezzo(colore, lato * (costa / 2 - cart / 2), 0.0, 0.0, cart, prof, alt)
+    # LA CARTA DENTRO STA INDIETRO, e non e' un dettaglio: se arriva a filo della
+    # costa, dal foro per il dito si vede la carta illuminata e il foro legge come
+    # una seconda etichetta invece che come un buco. Sta indietro di un centimetro
+    # e mezzo, che e' anche dove sta in un raccoglitore vero - la carta e' appesa
+    # agli anelli, non incollata alla costa.
+    # E STA ANCHE SPOSTATA VERSO LA COSTA, perche' i fogli sono appesi agli
+    # anelli: dalla parte aperta il bordo della carta rientra di quasi tre
+    # centimetri dentro la copertina, e non arriva a filo come un panino.
+    pezzo("Carta", 0.0, 0.006, -0.004, costa - 2 * cart - 0.004, prof - 0.046, alt - 0.024)
+    # LA COSTA, in quattro bande attorno al foro piu' quattro spicchi che ne
+    # smussano gli angoli: un'apertura quadrata si vede che e' quadrata, un
+    # ottagono da mezzo metro e' un foro tondo.
+    r_foro = 0.0125
+    z_foro = -alt / 2 + 0.050
+    pezzo(colore, 0.0, y_costa, (z_foro - r_foro - alt / 2) / 2, costa, sp,
+          z_foro - r_foro + alt / 2)
+    pezzo(colore, 0.0, y_costa, (z_foro + r_foro + alt / 2) / 2, costa, sp,
+          alt / 2 - z_foro - r_foro)
+    for lato in (-1, 1):
+        pezzo(colore, lato * (costa / 2 + r_foro) / 2, y_costa, z_foro,
+              costa / 2 - r_foro, sp, 2 * r_foro)
+    # GLI SPICCHI STANNO DENTRO LA COSTA, e alla prima posa non ci stavano: erano
+    # lunghi quattro centimetri su una costa da cinque, e girati di quarantacinque
+    # gradi sporgevano di un centimetro per parte - cinque alette appuntite in fila
+    # sotto il carrello. Devono coprire l'angolo dell'apertura e nient'altro:
+    # otto millimetri di spessore e sedici di lunghezza, con la faccia interna a
+    # filo del raggio del foro.
+    _t, _w = 0.008, 0.016
+    d = (r_foro + _t / 2) / math.sqrt(2.0)
+    for sx_ in (-1, 1):
+        for sz_ in (-1, 1):
+            # MENO QUARANTACINQUE, non piu': `gira` porta l'asse sottile su
+            # (cos g, 0, -sin g), quindi per stare perpendicolare alla diagonale
+            # dell'angolo (+,+) il segno e' quello opposto a quello che verrebbe
+            # da scrivere. Con il segno sbagliato gli spicchi coprono l'altra
+            # diagonale: due angoli restano aperti e il foro diventa un papillon.
+            pezzo(colore, sx_ * d, y_costa, z_foro + sz_ * d,
+                  _t, sp, _w, gira=-45.0 * sx_ * sz_)
+    # il fondo del foro: il buio di dentro, subito dietro la costa
+    pezzo("Schermo", 0.0, y_costa - 0.006, z_foro, 2 * r_foro, sp, 2 * r_foro)
+    # l'etichetta, nel terzo alto
+    pezzo("Carta", 0.0, prof / 2 + 0.0006, alt / 2 - 0.085,
+          costa - 0.012, 0.0012, 0.042)
+    # il cantonale di metallo sul piede della costa
+    pezzo("Metallo", 0.0, y_costa - 0.004, -alt / 2 + 0.011,
+          costa + 0.0015, sp + 0.010, 0.022)
 
 
 def prisma(mat, davanti, dietro):
@@ -783,7 +917,7 @@ def _collega_texture_vicine(percorso, oggetti):
 
 
 def posa_modello(percorso, impronta, gradi=0.0, riempi=1.0, appoggio=0.0,
-                 appeso=False, tieni=None):
+                 appeso=False, tieni=None, piede=False):
     """Importa un modello esterno e lo POSA DENTRO la sua impronta.
 
     Un modello preso da fuori non conosce ne' la scala ne' l'orientamento di
@@ -809,6 +943,10 @@ def posa_modello(percorso, impronta, gradi=0.0, riempi=1.0, appoggio=0.0,
     Con `appeso` la quota e' quella del punto piu' ALTO invece che del piu' basso:
     una plafoniera non si appoggia al soffitto, ci si attacca sotto, e il suo
     ingombro verticale non lo si conosce prima di averla scalata.
+
+    Con `piede` si appoggia sulla BASE invece che sul punto piu' basso: serve ai
+    modelli che hanno un'appendice sotto - il filo di un telefono - e va
+    DICHIARATO, non dedotto. Vedi `_piede`, che spiega perche'.
     """
     x0, z0, x1, z1, alt = impronta
     prima = set(bpy.data.objects)
@@ -859,12 +997,106 @@ def posa_modello(percorso, impronta, gradi=0.0, riempi=1.0, appoggio=0.0,
     perno.scale = (scala, scala, scala)
     bpy.context.view_layer.update()
     minimi, massimi = ingombro()
+    quota = massimi[2] if appeso else minimi[2]
+    if not appeso:
+        # SI MISURA SEMPRE E SI SPOSTA SOLO SE CHIESTO: la misura e' un avviso che
+        # non costa niente, lo spostamento cambia dove sta un pezzo di arredo.
+        sul_piede = _piede(nuovi, minimi, massimi,
+                           os.path.basename(os.path.dirname(percorso)))
+        if piede:
+            quota = sul_piede
     perno.location = (
         perno.location.x + (x0 + x1) / 2 - (minimi[0] + massimi[0]) / 2,
         perno.location.y - (z0 + z1) / 2 - (minimi[1] + massimi[1]) / 2,
-        perno.location.z - (massimi[2] if appeso else minimi[2]) + appoggio)
+        perno.location.z - quota + appoggio)
     bpy.context.view_layer.update()
     return [perno] + nuovi
+
+
+# Quanto e' grosso il gradino con cui si guarda la base di un modello, in metri.
+# Cinque millimetri: piu' fine e una fascia contiene il solo spessore di una faccia
+# storta, piu' grosso e il piede di un telefono sparisce dentro la prima fascia.
+PASSO_PIEDE = 0.005
+
+# Quanta impronta deve avere una fascia perche' sia un APPOGGIO e non un'appendice.
+# Un decimo del rettangolo del modello: le quattro gambe di una sedia occupano
+# l'impronta intera anche se sono quattro tubi, un filo a spirale che pende sotto
+# la base ne occupa mezzo per cento.
+FRAZIONE_PIEDE = 0.10
+
+
+def _piede(nuovi, minimi, massimi, nome):
+    """La quota su cui il modello APPOGGIA, che non e' il suo punto piu' basso.
+
+    IL DIFETTO, DETTO DA FEDERICO: «il telefono fluttua». E fluttuava: posato con
+    il minimo del suo ingombro sul piano della consolle, il telefono da tavolo
+    stava due centimetri sopra il legno, con l'ombra staccata sotto.
+
+    NON ERA UN NUMERO SBAGLIATO, ERA LA DOMANDA SBAGLIATA. Il punto piu' basso di
+    quel modello non e' la base: e' il FILO A SPIRALE, che scende sotto il piano
+    d'appoggio - misurato, i vertici della prima fascia stanno sparsi su 13 x 29
+    mm, contro i 300 x 320 dell'apparecchio. Appoggiando quello, tutto il resto
+    resta per aria. E' lo stesso per qualunque modello con un'appendice bassa: un
+    cavo, una vite, una goccia di geometria dimenticata sotto lo zero dell'autore.
+
+    QUINDI SI CERCA IL PIEDE: si guarda il modello per fasce di cinque millimetri
+    dal basso e si prende la prima che ha un'IMPRONTA vera, cioe' un rettangolo in
+    pianta grande almeno un decimo di quello del modello intero. Le quattro gambe
+    di una sedia lo hanno - sono quattro tubi, ma stanno ai quattro angoli - e un
+    filo che pende no.
+
+    Quello che resta sotto affonda nel piano, ed e' la cosa giusta: il filo del
+    telefono sparisce dentro il legno e nessuno lo vede, un telefono sospeso lo
+    vede subito chiunque.
+
+    MA NON SI APPLICA DA SOLA, E IL LAVABO SPIEGA PERCHE'. Con la regola accesa su
+    tutto, il lavabo a semicolonna del bagno si sarebbe abbassato di 745 mm: la
+    sua colonna e' STRETTA - meno di un decimo del rettangolo del bacino - quindi
+    passa per appendice, e il lavabo sarebbe finito dentro il pavimento. Un piede
+    stretto e' comunque un piede, e nessuna soglia sa distinguere una colonna da
+    un cavo guardando solo l'impronta.
+
+    Quindi qui si MISURA sempre e si stampa il sospetto - «appoggia N mm sopra il
+    suo punto piu' basso» - e a spostare il modello e' chi lo posa, passando
+    `piede=True` dopo aver guardato. La misura e' automatica, la decisione no.
+    """
+    basso = minimi[2]
+    area = max(1e-9, (massimi[0] - minimi[0]) * (massimi[1] - minimi[1]))
+    # UN GIRO SOLO SUI VERTICI, e non uno per fascia: un modello di fuori ne ha
+    # ventimila e le fasce sono trecento: chiedere «chi sta in questa fascia»
+    # trecento volte vuol dire sei milioni di confronti per un telefono.
+    fasce = {}
+    for o in nuovi:
+        if o.type != "MESH" or o.data is None:
+            continue
+        M = o.matrix_world
+        for v in o.data.vertices:
+            q = M @ v.co
+            k = int((q.z - basso) / PASSO_PIEDE)
+            b = fasce.get(k)
+            if b is None:
+                fasce[k] = [q.x, q.x, q.y, q.y]
+            else:
+                if q.x < b[0]:
+                    b[0] = q.x
+                elif q.x > b[1]:
+                    b[1] = q.x
+                if q.y < b[2]:
+                    b[2] = q.y
+                elif q.y > b[3]:
+                    b[3] = q.y
+    if not fasce:
+        return basso
+    for k in sorted(fasce):
+        b = fasce[k]
+        if (b[1] - b[0]) * (b[3] - b[2]) >= area * FRAZIONE_PIEDE:
+            piede = basso + k * PASSO_PIEDE
+            if piede - basso > 0.002:
+                print("  %s appoggia %.0f mm sopra il suo punto piu' basso: "
+                      "sotto c'e' un'appendice, non un piede"
+                      % (nome, (piede - basso) * 1000.0))
+            return piede
+    return basso
 
 
 def raddrizza_normali(pezzi):

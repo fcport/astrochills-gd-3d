@@ -99,7 +99,7 @@ const BBS := preload("res://bbs/bbs.tscn")
 ## release questi file non vengono nemmeno aperti.
 ## Quanto dura mezza dissolvenza. Mezzo secondo per lato: abbastanza da leggersi
 ## come un salto di tempo, poco abbastanza da non far aspettare chi ha appena
-## deciso di andare a dormire.
+## deciso di andare a casa.
 const FADE_SEC := 0.5
 
 const DEBUG_OVERLAY_PATH := "res://debug/debug_overlay.tscn"
@@ -116,10 +116,11 @@ var _crt: CrtScreen
 var _desk: DeskCamera
 var _monitor: CrtMonitor
 
-## Il letto. È l'unico modo di far cominciare la notte dopo, e vale per lui la
-## stessa divisione del monitor: `world/` lo possiede, questo file decide quando
-## merita un prompt.
-var _bed: Bed
+## L'auto. È l'unico modo di far cominciare la notte dopo, e vale per lei la
+## stessa divisione del monitor: `world/` la possiede, questo file decide quando
+## merita un prompt. Era un letto nel magazzino: vedi `macchina.gd` per il perché
+## se n'è andato.
+var _macchina: Macchina
 
 ## Il velo nero delle dissolvenze. Sta sopra il mondo ma SOTTO gli strumenti di
 ## debug, che entrano in albero dopo: chi sviluppa deve poter leggere l'overlay
@@ -127,11 +128,11 @@ var _bed: Bed
 @onready var _fade: ColorRect = %Fade
 
 ## Vero dall'alba fino all'inizio della notte successiva. È la sola condizione che
-## accende il letto: dormire con una posa in corso chiuderebbe la notte a metà, e
+## accende l'auto: andarsene con una posa in corso chiuderebbe la notte a metà, e
 ## nessuno ha ancora deciso cosa debba succedere in quel caso.
 var _dawn := false
 
-## Vero mentre la dissolvenza sta girando. Senza, una seconda `E` sul letto
+## Vero mentre la dissolvenza sta girando. Senza, una seconda `E` sull'auto
 ## partirebbe a metà transizione e smonterebbe una notte già smontata.
 var _sleeping := false
 
@@ -173,7 +174,7 @@ func _ready() -> void:
 	# non parte con un tasto che risulta premuto da chissà quando.
 	_set_world_active(true)
 	_connect_monitor()
-	_connect_bed()
+	_connect_macchina()
 	# LE POSIZIONI DI PARTENZA SI CATTURANO ORA, prima che qualcuno cammini: la
 	# notte successiva rimette il giocatore dove la prima l'aveva trovato, e
 	# «dove» è ciò che la scena dichiara, non una costante ricopiata qui.
@@ -302,7 +303,7 @@ func _start_new_night() -> void:
 	_refresh_affordances()
 
 
-## Il monitor e il letto promettono solo ciò che possono mantenere.
+## Il monitor e l'auto promettono solo ciò che possono mantenere.
 ##
 ## `Interactable.enabled` è già nel contratto degli interagibili, e `can_interact()`
 ## lo legge: da spento il monitor non mostra il prompt e non risponde a `E`.
@@ -316,32 +317,32 @@ func _start_new_night() -> void:
 func _refresh_affordances() -> void:
 	if _monitor != null:
 		_monitor.enabled = _night != null and _night.has_phase()
-	# IL LETTO SEGUE LA REGOLA OPPOSTA AL MONITOR, ed è la simmetria che rende la
-	# stanza leggibile senza spiegazioni: quando c'è lavoro si può usare il
-	# monitor, quando la notte è finita si può andare a dormire. I due non
-	# invitano mai insieme.
+	# L'AUTO SEGUE LA REGOLA OPPOSTA AL MONITOR, ed è la simmetria che rende la
+	# notte leggibile senza spiegazioni: quando c'è lavoro si può usare il
+	# monitor, quando la notte è finita si può andare a casa. I due non invitano
+	# mai insieme.
 	#
 	# MA ESISTE UNA FINESTRA IN CUI NESSUNO DEI DUE INVITA, e va detta invece che
-	# scoperta: fra il piano esaurito e l'alba il monitor è spento e il letto non
-	# è ancora acceso. Non è un buco da tappare — è l'attesa, cioè la cosa che
-	# l'epica 3 esiste per riempire. Accendere il letto lì dentro darebbe al
+	# scoperta: fra il piano esaurito e l'alba il monitor è spento e l'auto non è
+	# ancora accesa. Non è un buco da tappare — è l'attesa, cioè la cosa che
+	# l'epica 3 esiste per riempire. Accendere l'auto lì dentro darebbe al
 	# giocatore un modo di saltarla, e l'MVP smetterebbe di misurare ciò per cui
 	# esiste.
-	if _bed != null:
-		_bed.enabled = _dawn and not _sleeping
+	if _macchina != null:
+		_macchina.enabled = _dawn and not _sleeping
 
 
-## Il letto si trova per GRUPPO, come il monitor e per la stessa ragione.
+## L'auto si trova per GRUPPO, come il monitor e per la stessa ragione.
 ##
-## La sua assenza è canale 1: senza letto la notte 2 è irraggiungibile e il
-## giocatore girerebbe per la stanza senza capire perché non succede niente.
-func _connect_bed() -> void:
-	var bed := Bed.find_in(get_tree())
-	if bed == null:
-		push_error("[main] nessun Bed nel gruppo '%s'" % Bed.GROUP)
+## La sua assenza è canale 1: senza auto la notte 2 è irraggiungibile e il
+## giocatore girerebbe per il prato senza capire perché non succede niente.
+func _connect_macchina() -> void:
+	var auto := Macchina.find_in(get_tree())
+	if auto == null:
+		push_error("[main] nessuna Macchina nel gruppo '%s'" % Macchina.GROUP)
 		return
-	bed.interacted.connect(_on_bed_interacted)
-	_bed = bed
+	auto.interacted.connect(_on_macchina_interacted)
+	_macchina = auto
 
 
 ## Dove il giocatore comincia, letto dalla SCENA e non da una costante.
@@ -366,7 +367,7 @@ func _on_sequence_ended() -> void:
 		_close_bbs()
 
 
-## L'alba è arrivata: da adesso si può andare a dormire.
+## L'alba è arrivata: da adesso si può andare a casa.
 ##
 ## SE IL TERMINALE È APERTO ALL'ALBA, si sgancia lo stato SENZA ripristinare: `night/`
 ## ha già mostrato il riepilogo sul CRT, e il riepilogo vince (I/O matrix). Ripristinare
@@ -392,8 +393,8 @@ func _on_dawn_reached() -> void:
 	_refresh_affordances()
 
 
-## `E` sul letto: si dorme, e domani è un'altra notte.
-func _on_bed_interacted(_by: Node3D) -> void:
+## `E` sull'auto: si torna a casa, e domani è un'altra notte.
+func _on_macchina_interacted(_by: Node3D) -> void:
 	_sleep()
 
 

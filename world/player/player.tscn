@@ -40,6 +40,27 @@
 ; misuri l'INTONACO: sulla prima parete che il banco aveva pescato, un battente di
 ; noce, la stessa lampada dava trenta livelli invece di duecento, e la taratura
 ; usciva sbagliata di dieci volte.
+;
+; `safe_margin = 0.02` E NON IL MILLIMETRO DI FABBRICA, ed è il numero che ha
+; tolto gli scatti dalla passerella. Il margine è quanto il corpo si tiene
+; staccato dalle superfici mentre la fisica lo rimette a posto; a 0,001 la
+; capsula arriva a sfiorare i piani, e nel punto in cui DUE piani si toccano —
+; il giunto fra un concio e l'altro di un muro fatto di scatole — si incastra
+; fra i due e `move_and_slide()` le azzera la velocità di netto.
+;
+; MISURATO con `tools/prova_ringhiera.gd`, che cammina un giro della passerella
+; appoggiato alla ringhiera: con 0,001 il giro costa 345 passi di fisica invece
+; di 246 e si azzera la velocità 37 volte, una a ogni giunto della ringhiera;
+; con 0,01 sono 247 passi e zero azzeramenti; con 0,04 e con 0,08 non cambia
+; più niente. Si prende 0,02: il doppio di quanto serve, e due centimetri non
+; si vedono — la capsula ne misura sessanta e il vano più stretto della casa,
+; la porta del magazzino, ne misura novanta.
+;
+; NON E' UNA CURA PER LA SOLA PASSERELLA. Tutta la collisione di questa scena è
+; fatta di scatole affiancate (`gen_blockout.py`), quindi di giunti: la
+; ringhiera è solo il posto dove ce ne sono settantadue in fila e il difetto si
+; sente. Sugli altri muri c'era lo stesso inciampo, più raro.
+;
 ; `collision_layer = 2` è il layer GIOCATORE (vedi `Interactable.LAYER_PLAYER` e
 ; `project.godot`, sezione `layer_names/3d_physics`): il corpo sta su un layer
 ; suo perché il raggio dell'interazione, che cerca mondo e interagibili, non
@@ -58,6 +79,7 @@ height = 1.8
 [node name="Player" type="CharacterBody3D"]
 collision_layer = 2
 collision_mask = 1
+safe_margin = 0.02
 script = ExtResource("1_player")
 
 [node name="Collision" type="CollisionShape3D" parent="."]

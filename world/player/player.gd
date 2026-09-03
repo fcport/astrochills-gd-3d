@@ -120,6 +120,14 @@ const PITCH_LIMIT := deg_to_rad(89.0)
 ## dell'ADR sarebbe violato anche rispettandone la lettera.
 const INTERACT_RANGE := 1.2
 
+## Quanti corpi al massimo si attraversano cercando una cosa da raccogliere dentro
+## un ingombro. Vedi `_dentro_l_ingombro`.
+const STRATI := 4
+
+## Quanto prima del punto colpito si ferma il raggio che chiede «questa cosa si
+## vede?», in metri. Vedi `_dentro_l_ingombro`.
+const MARGINE_VISTA := 0.02
+
 ## DOVE STA LA MANO: davanti all'occhio, in basso e SULLA DESTRA, in metri.
 ##
 ## I 55 cm sono la distanza a cui si tiene una cosa che si sta guardando — più
@@ -165,6 +173,16 @@ const OWN_ACTIONS: Array[StringName] = [
 ## un nome unico risolto da fuori si rompe allo stesso modo, al primo
 ## spostamento, e con un solo `push_error` a runtime a dirlo.
 const GROUP := &"player"
+
+## IL MODO SBAGLIATO, tenuto a portata di mano perché lo si possa misurare.
+##
+## A `true` la mira si ferma sugli ingombri come faceva prima, e rimette il
+## difetto della borraccia sul carrello del proiettore: vedi `_dentro_l_ingombro`.
+## Senza il confronto, un referto che dice «l'oggetto si prende» non distingue il
+## merito della cura dal fatto che nessuno abbia provato a posare qualcosa dentro
+## un ingombro. Vedi `tools/prova_mira.gd`, che lo accende con
+## `MIRA_SUGLI_INGOMBRI=1`.
+@export var mira_sugli_ingombri := false
 
 @onready var _cam: Camera3D = %Camera
 @onready var _forma: CollisionShape3D = $Collision
@@ -290,6 +308,37 @@ func camera() -> Camera3D:
 ## che si vuole tenere.
 ##
 ## Non tocca la gravità: chi resta bloccato a mezz'aria continua a cadere.
+## Cosa il giocatore sta mirando adesso, se è una cosa da usare stando dov'è.
+## Stessa ragione di `mirato()` qui sotto: la risposta giusta è quella che dà il
+## raggio nel tick di fisica, non quella che una sonda si ricalcola per conto suo.
+func focus() -> Interactable:
+	return _focus
+
+
+## Cosa il giocatore sta mirando adesso, se è una cosa da raccogliere.
+##
+## ESISTE PER LE SONDE, e non è un accessorio di comodo: la domanda «in partita
+## questo oggetto si prende?» ha una sola risposta giusta, ed è quella che il
+## raggio del giocatore dà nel tick di fisica. Una sonda che se la ricalcola per
+## conto suo prova il proprio raycast, non il gioco — è già successo con il quadro
+## della cupola, che rispondeva alla sonda e non a chi giocava. Vedi
+## `tools/prova_mira.gd`.
+func mirato() -> Carryable:
+	return _mirato
+
+
+## Accende e spegne il MIRINO, e serve a chi mette l'occhio da un'altra parte.
+##
+## Il punto al centro dello schermo lo disegna `crosshair.gd` SEMPRE - anche a
+## controllo spento, perché a controllo spento il mirino resta quello che era: la
+## croce si chiude, il punto no. Va bene dappertutto tranne dentro un oculare, dove
+## quel puntino diventa una stella finta in mezzo al campo — e ci mette un attimo a
+## sembrare l'oggetto che si sta cercando. Vedi `oculare.gd`.
+func mostra_mirino(visibile: bool) -> void:
+	if _mirino != null:
+		_mirino.visible = visibile
+
+
 func set_movement_locked(value: bool) -> void:
 	_movement_locked = value
 
@@ -528,7 +577,93 @@ func _aggiorna_mira() -> void:
 	var usabile := colpito as Interactable
 	if usabile != null and not usabile.can_interact():
 		usabile = null
-	_mostra_mira(usabile, colpito as Carryable)
+	var oggetto := colpito as Carryable
+	# PRIMA DI DIRE «NON C'È NIENTE», si guarda se quell'occlusore è una cima
+	# finta con sotto una cosa vera. Il primo raggio comanda comunque: si arriva
+	# qui solo quando ha colpito qualcosa che non si può né usare né raccogliere.
+	if usabile == null and oggetto == null:
+		oggetto = _dentro_l_ingombro()
+	_mostra_mira(usabile, oggetto)
+
+
+## L'OGGETTO CHE SI VEDE MA STA DENTRO UN INGOMBRO — e senza questo sparisce.
+##
+## IL DIFETTO, DETTO DA FEDERICO: «ho preso la borraccia dalla stanza di
+## controllo, l'ho messa sul carrello dove c'è il proiettore, e non potevo più
+## prendere la borraccia». Non era caduta e non era sparita: si vedeva lì sul
+## ripiano, e il prompt non compariva.
+##
+## PERCHÉ SUCCEDE. Il mondo ha DUE collisioni (vedi `world/corazza.gd`): gli
+## INGOMBRI, un blocco pieno per mobile alto quanto il suo pezzo più alto, su cui
+## cammina il giocatore; e la GEOMETRIA VERA, i triangoli delle mesh, su cui si
+## posano le cose. Il carrello del proiettore ha il ripiano a 72 cm e l'ingombro
+## alto 1,05: una borraccia posata sul ripiano sta trentatré centimetri DENTRO il
+## blocco pieno. Ci arriva perché cadendo l'ingombro non lo vede; il raggio della
+## mira invece sì, e si ferma sulla faccia del blocco a settanta centimetri
+## dall'occhio. Misurato in `tools/prova_mira.gd`.
+##
+## LA CURA È RIFARE LA DOMANDA ALL'ALTRA COPIA DEL MONDO. Ai soli interagibili —
+## che l'ingombro non ce l'hanno — si chiede cosa c'è lungo lo stesso raggio; se è
+## una cosa da raccogliere le si chiede l'unica cosa che conta: SI VEDE? cioè, fra
+## l'occhio e il punto colpito c'è geometria VERA? Se non c'è, quell'oggetto è
+## visibile davvero e prenderlo è il gesto giusto. Se c'è — un muro, un'anta
+## chiusa, il fianco del carrello — resta dov'è, e la borraccia in fondo al
+## corridoio non si raccoglie attraverso la parete.
+##
+## NON SONO «DUE RAYCAST CHE POSSONO DIVERGERE», il difetto contro cui mette in
+## guardia il commento di `_aggiorna_mira`: il secondo raggio non è una seconda
+## risposta alla stessa domanda, è la stessa domanda rifatta dietro un ostacolo
+## che si è già deciso di scavalcare, e ci si arriva solo quando la prima risposta
+## è «niente». Costa un'interrogazione in più guardando un occlusore, due se
+## dietro c'è davvero qualcosa da prendere.
+func _dentro_l_ingombro() -> Carryable:
+	if mira_sugli_ingombri:
+		return null
+	var spazio := get_world_3d().direct_space_state
+	var da := _ray.global_position
+	var solo_le_cose := PhysicsRayQueryParameters3D.create(
+		da, _ray.to_global(_ray.target_position))
+	solo_le_cose.collision_mask = Interactable.LAYER_INTERACTABLE
+	# SI GUARDA OLTRE ANCHE QUI, fino a `STRATI` corpi. Sul layer degli
+	# interagibili non c'è solo la roba da raccogliere: c'è anche il volume di
+	# MIRA degli interagibili, che a volte è più grande della cosa — quello del
+	# letto è alto 1,05 contro i 58 cm del materasso, per farsi trovare dal raggio
+	# dell'occhio (vedi `bed.tscn`). Una tazza posata sulle coperte sta dentro
+	# quel volume, e fermandosi al primo colpo si troverebbe il letto e mai la
+	# tazza. Quattro strati bastano: sono i corpi che si possono infilare fra
+	# l'occhio e una cosa a mezzo metro.
+	var trovato := {}
+	var oggetto: Carryable = null
+	for _i in STRATI:
+		trovato = spazio.intersect_ray(solo_le_cose)
+		if trovato.is_empty():
+			return null
+		oggetto = trovato["collider"] as Carryable
+		if oggetto != null:
+			break
+		solo_le_cose.exclude = solo_le_cose.exclude + [trovato["rid"]]
+	if oggetto == null:
+		return null
+	# SI GUARDA FINO A UN PELO PRIMA DEL PUNTO COLPITO, e i due centimetri non
+	# sono prudenza: il punto sta sulla superficie dell'oggetto, e un oggetto
+	# appoggiato TOCCA il ripiano su cui sta. Arrivando fino in fondo il raggio di
+	# verifica sfiora i triangoli di quel ripiano e dichiara nascosta la cosa da
+	# ciò su cui è posata — misurato, il termos sul carrello.
+	var punto: Vector3 = trovato["position"]
+	var quanto := da.distance_to(punto)
+	if quanto <= MARGINE_VISTA:
+		return oggetto
+	var vista := PhysicsRayQueryParameters3D.create(
+		da, da + (punto - da).normalized() * (quanto - MARGINE_VISTA))
+	vista.collision_mask = Corazza.LAYER_APPOGGI
+	# E NON CONTA SÉ STESSO: gli oggetti stanno anche loro sul layer degli
+	# appoggi — è così che una tazza sta sopra un'altra — quindi senza questa riga
+	# l'oggetto farebbe da schermo a sé stesso ogni volta che il margine non
+	# basta.
+	vista.exclude = [oggetto.get_rid()]
+	if not spazio.intersect_ray(vista).is_empty():
+		return null
+	return oggetto
 
 
 ## Scrive la mira e ne mostra il prompt. I due casi non si sovrappongono mai — un

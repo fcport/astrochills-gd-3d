@@ -35,6 +35,7 @@ import sys
 
 import bmesh
 import bpy
+from mathutils import Matrix
 
 QUI = os.path.dirname(os.path.abspath(__file__))
 if QUI not in sys.path:
@@ -118,22 +119,40 @@ def decima(o, budget):
 
 
 def origine_alla_base(o):
-    """Sposta l'origine sotto e al centro in pianta, SENZA muovere il pezzo.
+    """Porta il pezzo sull'origine: mesh centrata in pianta, base a quota zero.
 
-    DUE MOSSE CHE SI ANNULLANO, ed e' l'errore di D-195: la mesh indietro nelle
-    proprie coordinate, l'oggetto avanti nel mondo. Farne una sola sposta il pezzo
-    per davvero - qui vorrebbe dire una bottiglia mezzo metro sopra il tavolo.
+    DUE COSE INSIEME, e la seconda mancava. La prima e' l'origine sotto il pezzo,
+    perche' chi lo posa scriva la quota del PIANO e non debba sottrarre mezza
+    altezza. La seconda e' che il pezzo stia sull'origine DEL MONDO: un modello
+    preso da un set arriva dove capitava di trovarlo dentro quel set - la tazza a
+    quindici centimetri, il bottiglione a quarantuno - e quella posizione finisce
+    nel .glb come trasformata del nodo.
+
+    IL DIFETTO CHE NE VENIVA, detto da Federico: «c'e' una tazza incastrata nel
+    monitor». Non era la fisica: in Godot il corpo rigido sta dove dice il
+    generatore e la mesh gli sta quindici centimetri piu' in la' - dentro la cassa
+    del monitor, che e' proprio li'. Misurato, mesh contro collisore: tazza 15 cm
+    fuori asse, bottiglia 21, piattino 40, bottiglione 41. La tazza e il piattino
+    della cucina, posati nello STESSO punto dal generatore, si vedevano a un
+    quarto di metro l'uno dall'altro.
+
+    I VERTICI SI PORTANO IN COORDINATE DI MONDO PRIMA DI GUARDARLI, e poi la
+    trasformata dell'oggetto si azzera: cosi' la rotazione e la scala che il pezzo
+    si porta dietro dal set finiscono dentro la mesh invece di restare appese al
+    nodo. Farlo in coordinate locali darebbe il centro sbagliato su qualunque
+    pezzo importato storto.
     """
-    vs = [o.matrix_world @ v.co for v in o.data.vertices]
-    cx = (min(v.x for v in vs) + max(v.x for v in vs)) / 2
-    cy = (min(v.y for v in vs) + max(v.y for v in vs)) / 2
-    cz = min(v.z for v in vs)
     bm = bmesh.new()
     bm.from_mesh(o.data)
+    bm.transform(o.matrix_world)
+    xs = [v.co for v in bm.verts]
+    cx = (min(v.x for v in xs) + max(v.x for v in xs)) / 2
+    cy = (min(v.y for v in xs) + max(v.y for v in xs)) / 2
+    cz = min(v.z for v in xs)
     bmesh.ops.translate(bm, verts=bm.verts, vec=(-cx, -cy, -cz))
     bm.to_mesh(o.data)
     bm.free()
-    o.location = (o.location.x + cx, o.location.y + cy, o.location.z + cz)
+    o.matrix_world = Matrix.Identity(4)
     o.data.update()
 
 

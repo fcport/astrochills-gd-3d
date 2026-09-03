@@ -153,7 +153,7 @@ def vertici(nomi):
 COLORE_PILASTRO = (0.62, 0.61, 0.58)
 
 
-def costruisci_pilastro(genitore):
+def costruisci_pilastro(genitore, dove=None):
     m = bpy.data.materials.new("Pilastro")
     m.use_nodes = True
     p = m.node_tree.nodes["Principled BSDF"]
@@ -164,11 +164,12 @@ def costruisci_pilastro(genitore):
                     set_texture=("metallo", 0.55), metallico=False)
 
     bm = bmesh.new()
+    _dx, _dy = (0.0, 0.0) if dove is None else (dove.x, dove.y)
     for raggio, alto, quota in ((D_PILASTRO / 2, H_PILASTRO, H_PILASTRO / 2),
                                 (D_PILASTRO / 2 + 0.09, 0.10, 0.05)):
         bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=32,
                               radius1=raggio, radius2=raggio, depth=alto,
-                              matrix=Matrix.Translation(Vector((0, 0, quota))))
+                              matrix=Matrix.Translation(Vector((_dx, _dy, quota))))
     bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-5)
     malla = bpy.data.meshes.new("Pilastro")
     uv_a_scatola(bm, 0.55)
@@ -260,12 +261,20 @@ giro = Matrix.Rotation(AZIMUT - azimut_modello, 4, "Z")
 raddrizza = (giro.to_3x3() @ dir_pol).normalized().rotation_difference(
     bersaglio).to_matrix().to_4x4()
 
-# IL PILASTRO VA SOTTO L'INCROCIO DEGLI ASSI, non sotto la colonna della montatura.
-# Sembra la stessa cosa e non lo e': su una equatoriale tedesca l'asse polare e'
-# inclinato, e il punto in cui incrocia quello di declinazione - il punto attorno a
-# cui l'intera testa gira - sta ventun centimetri di lato rispetto alla colonna.
-# Centrando la colonna, tutto cio' che ruota spazzava un cerchio scentrato di
-# altrettanto nella cupola.
+# L'INCROCIO DEGLI ASSI VA AL CENTRO DELLA CUPOLA, e questo resta vero: su una
+# equatoriale tedesca l'asse polare e' inclinato, e il punto in cui incrocia quello
+# di declinazione - il punto attorno a cui l'intera testa gira - sta ventun
+# centimetri di lato rispetto alla colonna della montatura. Centrando la COLONNA,
+# tutto cio' che ruota spazzerebbe un cerchio scentrato di altrettanto nella cupola.
+#
+# MA IL PILASTRO NON VA MESSO LI'. La prima stesura ne concludeva che il pilastro
+# dovesse stare sotto l'incrocio, e in partita si vedeva il risultato: la colonna
+# della montatura appoggiata sul BORDO del pilastro, con mezza base nel vuoto -
+# «tutta la base del telescopio e' shiftata fuori dal pilastro». Un pilastro regge
+# quello che ha sopra: sta sotto la COLONNA, e l'incrocio degli assi gli passa di
+# fianco, che e' come sta in ogni osservatorio. Le due cose non sono in conflitto -
+# si centra il telescopio sull'incrocio, come qui sotto, e poi si sposta il
+# PILASTRO sotto il piede della montatura (piu' avanti, dove lo si costruisce).
 M = Matrix.Scale(SCALA, 4) @ raddrizza @ giro
 base_modello = Vector((0.0, 0.0, min(v.z for v in vertici(FISSO))))
 alza = H_PILASTRO - (M @ base_modello).z
@@ -278,6 +287,9 @@ P = M @ P
 asse_pol = (M.to_3x3() @ dir_pol).normalized()
 asse_dec = (M.to_3x3() @ dir_dec).normalized()
 
+FUOCO_PEZZI = ("Scope1", "Scope2", "Scope3", "Scope4", "Scope5")
+STRETTO = 0.62            # quanto si stringe il focheggiatore, in sezione
+
 # --- IL FOCHEGGIATORE, misurato finche' i pezzi esistono ---------------------
 # QUI E NON PIU' SOTTO, ed e' l'unico posto possibile: venti righe piu' avanti i
 # cinquantacinque pezzi vengono FUSI in tre, e `Scope1..5` smettono di esistere.
@@ -286,7 +298,6 @@ asse_dec = (M.to_3x3() @ dir_dec).normalized()
 # risultato sbagliato, che e' la fortuna.
 # Il perno vero si crea dopo, insieme alla Mira: questi due valori sono in
 # coordinate del mondo e le trasformazioni che restano non spostano le mesh.
-FUOCO_PEZZI = ("Scope1", "Scope2", "Scope3", "Scope4", "Scope5")
 _centri = []
 for _n in FUOCO_PEZZI:
     _vs = vertici({_n})
@@ -306,6 +317,74 @@ if _obliquo < 75.0:
     print("\nATTENZIONE: i pezzi Scope* escono a %.0f gradi dall'asse ottico: "
           "non sono un focheggiatore di newtoniano" % _obliquo)
     sys.exit(1)
+# LA STRETTA VIENE DOPO LA MISURA, e prima era il contrario. La bocca e il verso
+# del focheggiatore si deducono dai baricentri dei cinque pezzi: quei pezzi non
+# sono simmetrici - c'e' la manopola di messa a fuoco - e stringendoli i loro
+# baricentri si spostano di quel tanto che basta a inclinare di tre gradi la retta
+# che li unisce. Il fuoco scendeva di undici centimetri e il controllo della
+# passerella passava da 26 a 44 gradi: la geometria era la stessa, era la MISURA
+# a essere stata presa su un modello gia' toccato. Misurare prima, toccare dopo:
+# la stretta non cambia nulla lungo l'asse, quindi la bocca misurata resta la
+# bocca vera.
+# --- IL FOCHEGGIATORE SI STRINGE, E NON SI ACCORCIA --------------------------
+# IL NUMERO CHE NON TORNA E' IL DIAMETRO. Misurato sul .glb: il porta-oculare di
+# questo modello e' un tubo da 11-13 cm, e la camera CCD che ci si avvita in cima
+# ne misura 12,5. Sono LA STESSA COSA, e infatti in partita la camera non legge
+# come una camera: legge come un tappo in fondo a un tubo largo uguale. Su uno
+# strumento vero il rapporto e' il doppio - un focheggiatore da due pollici sta
+# sui sette centimetri - ed e' quel rapporto a dire l'occhio quale dei due pezzi
+# e' lo strumento e quale il raccordo.
+#
+# SI STRINGE SOLO IN SEZIONE. Un primo tentativo aveva scalato la catena in modo
+# UNIFORME, che accorcia e assottiglia insieme: la camera si e' avvicinata al tubo
+# e il giudizio in partita e' stato «peggio di prima» - avvicinandola si perde il
+# fatto che una camera CCD sta in fondo a un braccio, che e' come sta davvero.
+# Qui la scala e' applicata alle sole due direzioni perpendicolari all'asse del
+# focheggiatore: la lunghezza resta quella che e', la camera non si sposta di un
+# millimetro, e cambia solo lo spessore del tubo su cui e' avvitata. Un cilindro
+# stretto cosi' resta un cilindro.
+#
+# SI FA PRIMA DI MISURARE LA BOCCA, come per qualunque altra modifica ai
+# `Scope*`: venti righe piu' giu' il fuoco si calcola DA QUESTA geometria.
+# L'ASSE SI MISURA, NON SI PRENDE DA UN BARICENTRO. Il primo tentativo stringeva
+# attorno al centroide di `Scope1`, che e' un pezzo asimmetrico - la base con le
+# manopole - e quindi NON sta sull'asse del tubo porta-oculare: la stretta lo
+# assottigliava e insieme lo SPOSTAVA, di quanto bastava a cambiare di tre gradi
+# la direzione dedotta e a far scendere il fuoco di undici centimetri. Con lo
+# strumento spostato il controllo della passerella e' passato da 26 a 44 gradi,
+# cioe' ha gridato - e aveva ragione. `direzione()` e' la stessa funzione con cui
+# questo file trova l'asse polare e quello di declinazione: l'asse principale
+# della nuvola di punti, che per un tubo e' l'asse del tubo.
+# L'ASSE E' QUELLO GIA' MISURATO SOPRA, non uno nuovo. `_verso_fuoco` esce dai
+# baricentri dei cinque pezzi in fila ed e' lo stesso vettore con cui si trova la
+# bocca; `_centri[-1]` e' il punto che questo file considera SULL'asse. Dedurne un
+# altro con `direzione()` dava una retta diversa - la nuvola dei Scope* e' larga
+# quasi quanto e' lunga, e l'asse principale non e' garantito essere il tubo.
+# SI SPOSTANO I VERTICI, NON LE MATRICI. Comporre una scala non uniforme attorno
+# a un asse obliquo - T(c) R S R-1 T(-c) - e' la strada elegante, ed e' anche
+# quella su cui ho sbagliato due volte di fila: la prima con `to_track_quat`, che
+# nel caso degenere torna una rotazione arbitraria; la seconda con una base
+# costruita a mano che comunque, misurata, ALLARGAVA il focheggiatore da 8,8 cm di
+# raggio a 72,7 invece di stringerlo. Qui la stessa cosa si scrive in cinque
+# righe che si leggono: per ogni vertice, la parte lungo l'asse resta, la parte
+# perpendicolare si moltiplica. Niente casi degeneri e niente ordine di
+# composizione da azzeccare.
+_gia = set()
+for _o in [_x for _x in bpy.data.objects if _x.type == "MESH"
+           and _x.name.split("_")[0] in FUOCO_PEZZI]:
+    if _o.data.name in _gia:      # due oggetti possono condividere una mesh
+        continue
+    _gia.add(_o.data.name)
+    _Mw = _o.matrix_world.copy()
+    _Mi = _Mw.inverted()
+    for _v in _o.data.vertices:
+        _p = _Mw @ _v.co
+        _u = _p - _centri[-1]
+        _t = _u.dot(_verso_fuoco)
+        _perp = _u - _verso_fuoco * _t
+        _v.co = _Mi @ (_centri[-1] + _verso_fuoco * _t + _perp * STRETTO)
+bpy.context.view_layer.update()
+print("  focheggiatore stretto per %.2f in sezione, lunghezza invariata" % STRETTO)
 # SULL'ASSE DEL FOCHEGGIATORE, non sul vertice piu' esterno: quel vertice sta sul
 # bordo del portaoculare, fuori centro di mezzo diametro. E' lo stesso errore che
 # la Mira evita proiettando sull'asse ottico, e qui costerebbe un centimetro di
@@ -344,7 +423,21 @@ def perno(nome, genitore=None, posizione=None, verso=None, giro=0.0):
 
 
 radice = perno("Telescopio")
-costruisci_pilastro(radice)
+# DOVE APPOGGIA DAVVERO LA MONTATURA: il centro in pianta dei vertici piu' bassi
+# dei pezzi FISSI, cioe' del piede della colonna. Non il centro di tutta la
+# montatura - quella e' una L, e il suo baricentro sta per aria - e non l'origine,
+# che e' l'incrocio degli assi.
+_piede = vertici(FISSO)
+_zmin = min(_v.z for _v in _piede)
+_appoggio = [_v for _v in _piede if _v.z < _zmin + 0.05]
+_sotto = sum(_appoggio, Vector()) / len(_appoggio)
+_largo = max((Vector((_v.x - _sotto.x, _v.y - _sotto.y, 0.0))).length for _v in _appoggio)
+print("  pilastro: spostato di %.2f m sotto il piede della montatura, "
+      "che ha raggio %.2f" % (math.hypot(_sotto.x, _sotto.y), _largo))
+if _largo > D_PILASTRO / 2 + 0.02:
+    print("\nATTENZIONE: il piede della montatura ha raggio %.2f e il pilastro "
+          "%.2f: la base sporge nel vuoto" % (_largo, D_PILASTRO / 2))
+costruisci_pilastro(radice, _sotto)
 polo = perno("Polo", radice, P, asse_pol)
 asse_ar = perno("AssePolare", polo, P, asse_pol)
 declinazione = perno("Declinazione", asse_ar, P, asse_dec)

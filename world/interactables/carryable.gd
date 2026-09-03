@@ -60,6 +60,7 @@ const VELOCITA_GIRO := 12.0
 const STRAPPO := 1.1
 const STRAPPO_SECONDI := 0.35
 
+
 ## Emesso quando l'oggetto smette di stare in mano, per qualunque ragione — posato
 ## dal giocatore o strappato via da un muro. Chi lo teneva lo ascolta: senza,
 ## resterebbe a credere di avere in mano una cosa che è per terra due stanze fa.
@@ -89,9 +90,133 @@ signal posato
 ## `tools/prova_mani.gd`, che lo accende con `PROP_OSTACOLO=1`.
 @export var ostacolo_per_il_giocatore := false
 
+## LA RETE, cioè la promessa che una cosa caduta si ritrova, e vale per tutto
+## quello che si prende in mano — non solo per la camera CCD, che è stata la prima
+## ad averla (D-217).
+##
+## IL FATTO, misurato da `tools/prova_smarrimenti.gd`: DIECI METRI QUADRI del
+## pavimento di questa casa, in cinquantatre pozze, sono posti in cui una cosa a
+## terra non si riprende e in cui una cosa a terra ci può arrivare rotolando. Non
+## sono buchi né trappole spettacolari: sono le fessure fra un mobile e il muro e
+## fra due mobili affiancati. Il giocatore è largo sessanta e il suo braccio arriva
+## a un metro e venti; una borraccia è larga dieci e rotola dove capita.
+##
+## PERCHÉ NON SI TAPPANO I BUCHI. Sono cinquantatre, e tapparli vorrebbe dire
+## cinquantatre volumi invisibili scritti a mano, da rifare a ogni mobile che si
+## sposta. `FondoPasserella` esiste perché lì il buco è UNO e profondo un metro e
+## sessanta (D-218); qui i buchi sono tanti e profondi zero.
+##
+## COSA FA: quando una cosa si ferma, si chiede se da qualche parte la si potrebbe
+## riprendere. Se no, la si sposta nel posto buono più vicino — e la misura dice
+## che quasi sempre sta a un palmo, quindici centimetri; il peggio è mezzo metro,
+## dietro la pattumiera della cucina. Non è un teletrasporto: è la cosa che non ci
+## stava, nella fessura in cui era rotolata.
+##
+## SEI DECIMI PRIMA DI GUARDARE: una cosa lasciata cadere rimbalza e rotola, e
+## chiedersi «dove sono finita» mentre ci si muove ancora vuol dire chiederselo
+## nel posto sbagliato.
+const QUIETE := 0.6
+
+## Quanto lontano si cerca un posto da cui prenderla, e in quante direzioni: sono
+## le distanze in pianta.
+##
+## SI ARRIVA FINO A 1,15, cioè fin quasi a `Player.INTERACT_RANGE`, e prima ci si
+## fermava a 0,85: una cosa appoggiata SOPRA qualcosa — il tubo, il pilastro — si
+## raccoglie stando lontani, perché la distanza da coprire è quasi tutta
+## orizzontale. Con il giro corto la sonda la dichiarava persa mentre stava
+## all'altezza del petto di chi la guardava.
+##
+## SEDICI DIREZIONI E NON DODICI, e la differenza è un caso vero: nell'angolo fra
+## il rack e la cassettiera della stampante il solo posto in cui il corpo ci sta è
+## sulla diagonale a 135 gradi, e con il passo di trenta gradi quella diagonale
+## non si prova mai.
+const GIRO := [0.25, 0.45, 0.65, 0.85, 1.05, 1.15]
+const VERSI := 16
+
+## Quanti piani si attraversano cercando dove stanno i piedi. Il primo corpo che
+## il raggio incontra scendendo può essere la cima di un mobile, o il tappo del
+## pozzo della cupola: da lassù non ci si arriva, e i piedi vanno più sotto.
+const STRATI_SUOLO := 3
+
+## Di quanto si stacca da terra la capsula di prova, in metri. Cinque centimetri,
+## e non zero: appoggiata esattamente sul punto colpito dal raggio, la capsula
+## TOCCA il pavimento che l'ha fermata, e `intersect_shape` risponde «occupato»
+## per ogni posto del mondo. Misurato: con la capsula a filo, otto pose su undici
+## risultavano irraggiungibili — cioè in questa casa non si poteva raccogliere
+## niente da terra.
+const FRANCO_SUOLO := 0.05
+
+## Dove si va a cercare il posto buono in cui rimetterla: anelli via via più
+## larghi, fino a un metro. Oltre, spostarla smetterebbe di somigliare a «non ci
+## stava» e comincerebbe a somigliare a una sparizione.
+const RIPESCAGGIO := [0.15, 0.25, 0.35, 0.50, 0.65, 0.80, 1.00]
+
+## Quante volte di fila si prova a ripescare la stessa cosa prima di arrendersi.
+##
+## SEI, e il tetto non serve a essere severi: serve a non fare la spola. Nelle
+## fessure peggiori il posto buono piu' vicino e' esso stesso stretto — la cosa ci
+## rotola dentro e la rete la riguarda — e senza un tetto le due cose si
+## rimpallerebbero per tutta la notte. Misurato: due mosse bastano quasi sempre
+## (l'angolo nord-ovest della cupola, 65 cm), e le fessure che ne chiedono di piu'
+## sono quelle in cui la cosa scivola mentre la si sposta. Sotto le sei si
+## arrendeva a meta' ripescaggio.
+const RIPESCAGGI_MAX := 6
+
+## QUANTO DEV'ESSERE GRANDE IL PAVIMENTO ATTORNO A UN POSTO perché sia un posto e
+## non un'ISOLA, in metri quadri.
+##
+## IL FATTO CHE L'HA RESA NECESSARIA. La domanda «esiste un punto in cui il corpo
+## ci sta?» non è la domanda «ci si può andare?», e nella cupola le due danno
+## risposte opposte: la passerella anulare lascia fra sé e i muri della sala
+## quarantasette centimetri a nord e cinquantasette a est e a ovest, e il corpo ne
+## misura sessanta. Nei QUATTRO ANGOLI della sala, dove il cerchio si allontana
+## dal rettangolo, di spazio ce n'è — e sono quattro isole da un terzo di metro
+## quadro in cui non si entrerà mai, perché per arrivarci bisogna passare da un
+## collo di cinquanta. Federico ci ha perso la camera per la seconda volta, e la
+## rete gli ha detto di sì: «anche qui mi sa che è persa per sempre».
+##
+## COME SI RICONOSCE UN'ISOLA: si allaga il pavimento camminabile a partire dai
+## piedi, e si conta. Se il pezzo finisce prima di un metro quadro non è una
+## stanza, è un buco. Un metro quadro sta comodamente sopra le isole misurate
+## (0,36 m² l'una) e sotto il pavimento libero della stanza più piccola della
+## casa, che è il bagno.
+##
+## E COSTA POCO perché si ferma appena supera il conto: venticinque caselle da
+## venti centimetri, non l'allagamento della casa.
+const ISOLA_MAX := 1.0
+const MAGLIA := 0.20
+
+## Quanto dislivello si accetta fra due caselle vicine allagando: un gradino più
+## alto di così un `CharacterBody3D` non lo sale (D-033), quindi non è pavimento
+## che continua — è un altro piano.
+const GRADINO := 0.25
+
+## IL MODO SBAGLIATO, tenuto a portata di mano perché lo si possa misurare: a
+## `true` nessuno va a riprendere questa cosa quando finisce dove non ci si
+## arriva. Le sonde lo accendono — `prova_ccd.gd` con `CAMERA_SI_PERDE=1`, che
+## insieme a questo toglie di scena anche il `FondoPasserella`, perché solo con
+## tutte e due le difese spente il pozzo torna quello che era e si vede la partita
+## rompersi davvero.
+@export var si_puo_perdere := false
+
 ## La trasformata dove la mano vuole che stia. La scrive chi lo tiene, a ogni
 ## passo di fisica, con `punta()`.
 var _mano := Transform3D.IDENTITY
+
+## Da quanto sta ferma, e se la rete l'ha già guardata in questa fermata. Il conto
+## costa una trentina di interrogazioni allo spazio: poco per una volta, troppo
+## per sessanta volte al secondo.
+var _quieta_da := 0.0
+var _gia_guardata := false
+## Dov'era quando la rete l'ha guardata: se striscia via, la si riguarda.
+var _dove_guardata := Vector3.ZERO
+
+## Quante volte la rete l'ha gia' spostata da quando e' stata lasciata. Serve a
+## non fare la spola: nelle fessure peggiori il posto buono piu' vicino e' esso
+## stesso una fessura, la cosa ci rotola dentro e la rete la riguarda — e senza un
+## tetto le due cose si rimpallano per tutta la notte. Tre tentativi, poi si passa
+## a `_perduta()`, che per la camera CCD vuol dire tornarsene al fuoco.
+var _ripescaggi := 0
 
 var _in_mano := false
 
@@ -129,6 +254,10 @@ func _ready() -> void:
 	# Il prezzo è il calcio: non si spostano più camminandoci dentro. Si spostano
 	# prendendoli in mano, che è come si spostano le cose.
 	collision_layer |= Interactable.LAYER_INTERACTABLE
+	# E STA ANCHE NELLA COPIA DEL MONDO FATTA COME SI VEDE, che è dove vanno le
+	# cose su cui ci si posa sopra: una tazza appoggiata su un'altra sta sopra
+	# l'altra, e quello lo decide questo layer. Vedi più sotto la maschera.
+	collision_layer |= Corazza.LAYER_APPOGGI
 	if ostacolo_per_il_giocatore:
 		collision_layer |= Interactable.LAYER_WORLD
 	else:
@@ -138,8 +267,20 @@ func _ready() -> void:
 	# triangoli delle mesh, giusti per le cose che ci si posano sopra. Un oggetto
 	# che urtasse gli ingombri si fermerebbe sulla cima di una fila di sedie -
 	# novanta centimetri, e sotto solo aria fra gli schienali. Vedi `corazza.gd`.
-	collision_mask |= Corazza.LAYER_APPOGGI | Interactable.LAYER_INTERACTABLE
-	collision_mask &= ~Interactable.LAYER_WORLD
+	# E NON SUI VOLUMI D'INTERAZIONE, che è la seconda metà della stessa regola e
+	# la prima stesura non ce l'aveva. `Interactable` sta su `LAYER_INTERACTABLE`
+	# con la forma che serve a essere MIRATO, e quella forma non è la cosa: il
+	# letto ha un volume alto 1,05 - l'altezza della testiera, messa lì apposta
+	# perché il raggio dell'occhio lo trovi (vedi `bed.tscn`) - mentre il materasso
+	# su cui si dorme sta a 0,58. Con quel layer nella maschera, una tazza posata
+	# sul letto si fermava sul volume: mezzo metro sopra le coperte, a mezz'aria.
+	# Misurato da `tools/prova_appoggi.gd`.
+	#
+	# Gli altri oggetti si continuano a urtare perché adesso stanno anche loro
+	# sugli APPOGGI, e i mobili veri continuano a fermare la roba perché la
+	# corazza copre ogni mesh che si vede - monitor e ante comprese.
+	collision_mask |= Corazza.LAYER_APPOGGI
+	collision_mask &= ~(Interactable.LAYER_WORLD | Interactable.LAYER_INTERACTABLE)
 	# IL SONNO SI TOGLIE SOLO IN MANO, e la prima stesura lo toglieva sempre.
 	# `_integrate_forces` su un corpo addormentato non viene chiamato, quindi
 	# mentre lo si tiene il sonno va escluso o la mano smette di funzionare da
@@ -265,6 +406,274 @@ func lascia() -> void:
 ## legge sempre un valore di questo tick e non di quello prima.
 func punta(mano: Transform3D) -> void:
 	_mano = mano
+
+
+# ---------------------------------------------------------------------------
+# LA RETE: una cosa caduta si ritrova
+# ---------------------------------------------------------------------------
+
+## QUANDO SCATTA: appena la cosa è ferma, e una volta sola per fermata. Non mentre
+## rotola — «da qui ci si arriva?» ha senso solo su qualcosa che ha finito di
+## muoversi — e non a ogni tick, che costerebbe trenta interrogazioni allo spazio
+## sessanta volte al secondo.
+func _physics_process(delta: float) -> void:
+	if si_puo_perdere or _fuori_dalla_rete() or linear_velocity.length() > 0.05:
+		_quieta_da = 0.0
+		_gia_guardata = false
+		# IN MANO O CONGELATA IL CONTO SI AZZERA: qualcuno l'ha presa e messa
+		# dove voleva, e i tentativi di prima non c'entrano piu' niente.
+		if _fuori_dalla_rete():
+			_ripescaggi = 0
+		return
+	# E SI RIGUARDA SE NEL FRATTEMPO E' STRISCIATA VIA. «Ferma» qui vuol dire
+	# sotto i cinque centimetri al secondo, e una cosa che striscia a quattro
+	# centimetri al secondo per due secondi se ne va di otto: abbastanza da
+	# passare dal calpestio al fondo del pozzo. Guardata una volta sola, la rete
+	# rispondeva sulla posizione di prima. Misurato: due pose su dieci in
+	# `prova_ccd.gd` finivano irraggiungibili senza che la rete avesse detto
+	# niente, perche' quando aveva guardato la camera era ancora sull'impalcato.
+	if _gia_guardata and global_position.distance_to(_dove_guardata) > 0.05:
+		_gia_guardata = false
+		_quieta_da = 0.0
+	if _gia_guardata:
+		return
+	_quieta_da += delta
+	if _quieta_da >= QUIETE:
+		_gia_guardata = true
+		_dove_guardata = global_position
+		_rete_di_sicurezza()
+
+
+## Quando la rete non deve nemmeno guardare. Qui basta «in mano o congelata»; la
+## camera CCD ci aggiunge «avvitata al fuoco», che è il suo modo di stare ferma.
+func _fuori_dalla_rete() -> bool:
+	return in_mano() or freeze
+
+
+## SI CHIEDE AL MONDO invece di elencare i posti brutti — è la regola del D-217, e
+## il motivo per cui questa rete non invecchia con la pianta dell'edificio. La
+## fessura dietro il rack è quella che l'ha fatta nascere, ma la stessa domanda
+## copre l'armadio di domani e il mobile che qualcuno sposterà.
+func _rete_di_sicurezza() -> void:
+	if si_riesce_a_prendere():
+		_ripescaggi = 0
+		return
+	var dove := _posto_da_cui_si_prende()
+	if dove == Vector3.INF or _ripescaggi >= RIPESCAGGI_MAX:
+		_perduta()
+		return
+	_ripescaggi += 1
+	Log.info("presa", "%s era finita dove non ci si arriva (%.2f, %.2f, %.2f): "
+		% [nome, global_position.x, global_position.y, global_position.z]
+		+ "spostata di %.0f cm" % (global_position.distance_to(dove) * 100.0))
+	linear_velocity = Vector3.ZERO
+	angular_velocity = Vector3.ZERO
+	global_position = dove
+
+
+## L'ULTIMA SPIAGGIA, quando neanche un posto buono esiste. Qui non si fa niente:
+## una tazza dimenticata sotto un armadio è una tazza dimenticata, e spostarla in
+## un'altra stanza sarebbe più strano che lasciarla lì. La camera CCD sovrascrive
+## — senza di lei la partita non può più finire, e per lei si torna al fuoco.
+func _perduta() -> void:
+	Log.info("presa", "%s è ferma dove non ci si arriva (%.2f, %.2f, %.2f) e non c'è "
+		% [nome, global_position.x, global_position.y, global_position.z]
+		+ "un posto migliore entro un metro")
+
+
+## IL POSTO BUONO PIÙ VICINO: anelli via via più larghi attorno a dov'è, e per
+## ciascun candidato si chiede due cose — che la cosa ci STIA (niente geometria
+## addosso) e che da lì la si POSSA prendere. Si scende sul pavimento con un
+## raggio invece di tenere la quota: la fessura in cui è rotolata e il pavimento
+## di fianco non sono sempre alla stessa altezza.
+func _posto_da_cui_si_prende() -> Vector3:
+	var spazio := get_world_3d().direct_space_state
+	var alto := _centro().y - global_position.y
+	for d in RIPESCAGGIO:
+		for k in VERSI:
+			var ang := TAU * float(k) / float(VERSI)
+			var x: float = global_position.x + cos(ang) * (d as float)
+			var z: float = global_position.z + sin(ang) * (d as float)
+			var giu := PhysicsRayQueryParameters3D.create(
+				Vector3(x, global_position.y + 0.6, z),
+				Vector3(x, global_position.y - 1.2, z))
+			giu.collision_mask = Corazza.LAYER_APPOGGI
+			giu.exclude = [get_rid()]
+			var suolo := spazio.intersect_ray(giu)
+			if suolo.is_empty():
+				continue
+			var base: Vector3 = suolo["position"]
+			if not _ci_sta(spazio, base):
+				continue
+			if si_riesce_a_prendere(base + Vector3.UP * alto):
+				return base
+	return Vector3.INF
+
+
+## La cosa ci sta, in quel punto? Si prova la sua stessa forma contro la geometria
+## vera: rimetterla dentro un mobile sarebbe peggio di lasciarla nella fessura.
+func _ci_sta(spazio: PhysicsDirectSpaceState3D, base: Vector3) -> bool:
+	for f in get_children():
+		var forma := f as CollisionShape3D
+		if forma == null:
+			continue
+		var q := PhysicsShapeQueryParameters3D.new()
+		q.shape = forma.shape
+		# LA POSA SI TIENE: una bottiglia coricata resta coricata, e provarla in
+		# piedi direbbe che non ci sta dove invece ci sta.
+		#
+		# E SI ALZA DI UN CENTIMETRO, che è lo stesso inciampo del `FRANCO_SUOLO`
+		# della capsula: posata esattamente sul punto colpito dal raggio, la forma
+		# TOCCA il pavimento che l'ha fermata e `intersect_shape` risponde
+		# «occupato» per ogni posto della casa. Misurato: senza questo centimetro
+		# la rete non trovava un posto buono da nessuna parte, e ogni cosa finiva
+		# dichiarata perduta.
+		q.transform = Transform3D(forma.global_basis,
+			base + forma.global_position - global_position + Vector3.UP * 0.01)
+		q.collision_mask = Corazza.LAYER_APPOGGI
+		q.exclude = [get_rid()]
+		q.margin = 0.0
+		if not spazio.intersect_shape(q, 1).is_empty():
+			return false
+	return true
+
+
+## C'È UN POSTO DA CUI PRENDERLA? Ci si sta con la capsula del giocatore, la si
+## vede senza mondo in mezzo, ed è dentro la portata dell'interazione — da in
+## piedi o accovacciati, che è come si raccoglie una cosa da terra.
+##
+## I PIEDI SI CERCANO A PIÙ PIANI. Il raggio che scende cercando il pavimento si
+## ferma sul PRIMO corpo che trova, e il primo corpo può essere la cima di un
+## mobile o il tappo del pozzo della cupola: da lassù non ci si arriva, e la
+## funzione concludeva che non ci si arriva da nessuna parte. Si scende di piano
+## in piano e ci si ferma sul primo su cui una persona ci sta davvero.
+func si_riesce_a_prendere(bersaglio := Vector3.INF) -> bool:
+	var spazio := get_world_3d().direct_space_state
+	if bersaglio == Vector3.INF:
+		bersaglio = _centro()
+	for d in GIRO:
+		for k in VERSI:
+			var ang := TAU * float(k) / float(VERSI)
+			var x: float = bersaglio.x + cos(ang) * (d as float)
+			var z: float = bersaglio.z + sin(ang) * (d as float)
+			var scartati: Array[RID] = []
+			for _strato in STRATI_SUOLO:
+				var giu := PhysicsRayQueryParameters3D.create(
+					Vector3(x, bersaglio.y + 1.2, z),
+					Vector3(x, bersaglio.y - 2.5, z))
+				giu.collision_mask = Interactable.LAYER_WORLD
+				giu.exclude = scartati
+				var suolo := spazio.intersect_ray(giu)
+				if suolo.is_empty():
+					break
+				scartati.append(suolo["rid"])
+				if _ci_si_arriva(spazio, suolo["position"], bersaglio):
+					return true
+	return false
+
+
+## Stando con i piedi lì, la cosa si raccoglie? Si prova prima in piedi e poi
+## accovacciati: sono due corpi diversi, e quello basso arriva dove l'alto non
+## entra. E la capsula è quella giusta per la posa — in piedi si guarda con
+## l'occhio in piedi e l'ingombro in piedi, o ogni posto sotto un ripiano
+## risulterebbe inagibile.
+##
+## LA VISTA SI CHIEDE AL LAYER DEL MONDO, che è quello che occlude il raggio del
+## giocatore (vedi `player.gd`, `_ray.collision_mask`). Prima si chiedeva alla
+## CORAZZA, cioè alla geometria che si VEDE, e sono due cose diverse: sotto una
+## scrivania la corazza lascia passare — lì sotto c'è aria — mentre l'ingombro è
+## una scatola piena, e il raggio del giocatore ci sbatte. Una cosa lì sotto
+## risultava prendibile e non lo era.
+func _ci_si_arriva(spazio: PhysicsDirectSpaceState3D, piedi: Vector3,
+		bersaglio: Vector3) -> bool:
+	for in_piedi in [true, false]:
+		var alto: float = Player.STAND_HEIGHT if in_piedi else Player.CROUCH_HEIGHT
+		var occhio: float = Player.EYE_HEIGHT if in_piedi else Player.CROUCH_EYE_HEIGHT
+		var testa := piedi + Vector3.UP * occhio
+		if testa.distance_to(bersaglio) > Player.INTERACT_RANGE:
+			continue
+		var capsula := CapsuleShape3D.new()
+		capsula.radius = 0.30
+		capsula.height = alto
+		var dove := PhysicsShapeQueryParameters3D.new()
+		dove.shape = capsula
+		dove.transform = Transform3D(Basis.IDENTITY,
+			piedi + Vector3.UP * (alto / 2.0 + FRANCO_SUOLO))
+		dove.collision_mask = Interactable.LAYER_WORLD
+		if not spazio.intersect_shape(dove, 1).is_empty():
+			continue
+		var vista := PhysicsRayQueryParameters3D.create(testa, bersaglio)
+		vista.collision_mask = Interactable.LAYER_WORLD
+		if not spazio.intersect_ray(vista).is_empty():
+			continue
+		# E CI SI DEVE POTER ANDARE. È l'ultima domanda perché è la più cara, e
+		# perché ha senso solo su un posto che ha già passato tutte le altre.
+		if _e_un_isola(spazio, piedi, alto):
+			continue
+		return true
+	return false
+
+
+## QUEL PEZZO DI PAVIMENTO È UN'ISOLA? Si allaga il camminabile a partire dai
+## piedi, a maglia di venti centimetri, e ci si ferma appena il conto supera
+## `ISOLA_MAX`: da lì in poi è una stanza, e quanto sia grande non interessa.
+##
+## SI ALLAGA CON LA STESSA CAPSULA con cui ci si è appena provati a stare: in
+## piedi si cammina dove si sta in piedi, accovacciati dove si sta accovacciati.
+func _e_un_isola(spazio: PhysicsDirectSpaceState3D, piedi: Vector3, alto: float) -> bool:
+	var tetto := int(ISOLA_MAX / (MAGLIA * MAGLIA))
+	var quote := {Vector2i.ZERO: piedi.y}
+	var coda: Array[Vector2i] = [Vector2i.ZERO]
+	var quante := 0
+	var capsula := CapsuleShape3D.new()
+	capsula.radius = 0.30
+	capsula.height = alto
+	var dove := PhysicsShapeQueryParameters3D.new()
+	dove.shape = capsula
+	dove.collision_mask = Interactable.LAYER_WORLD
+	while not coda.is_empty():
+		var v: Vector2i = coda.pop_back()
+		quante += 1
+		if quante > tetto:
+			return false
+		var y0: float = quote[v]
+		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var q: Vector2i = v + d
+			if quote.has(q):
+				continue
+			var x := piedi.x + q.x * MAGLIA
+			var z := piedi.z + q.y * MAGLIA
+			var giu := PhysicsRayQueryParameters3D.create(
+				Vector3(x, y0 + GRADINO + 0.05, z), Vector3(x, y0 - GRADINO - 0.05, z))
+			giu.collision_mask = Interactable.LAYER_WORLD
+			var suolo := spazio.intersect_ray(giu)
+			if suolo.is_empty():
+				quote[q] = NAN            # niente pavimento: di là non si va
+				continue
+			var p: Vector3 = suolo["position"]
+			dove.transform = Transform3D(Basis.IDENTITY,
+				p + Vector3.UP * (alto / 2.0 + FRANCO_SUOLO))
+			if not spazio.intersect_shape(dove, 1).is_empty():
+				quote[q] = NAN
+				continue
+			quote[q] = p.y
+			coda.append(q)
+	return true
+
+
+## IL CENTRO DEL CORPO, che NON è la sua origine: quasi tutte queste cose hanno
+## l'origine sulla BASE, cioè nel punto in cui toccano il piano su cui stanno.
+## Puntarci il raggio della vista vorrebbe dire puntare al pavimento — il raggio
+## arriva sul pavimento un attimo prima della cosa, la vista risulta ostruita, e
+## una cosa posata benissimo viene dichiarata perduta.
+##
+## SI CHIEDE AL COLLISORE dov'è il proprio centro, invece di scrivere qui un
+## numero: il giorno che il modello cambia, questo continua a valere.
+func _centro() -> Vector3:
+	for f in get_children():
+		if f is CollisionShape3D:
+			return (f as CollisionShape3D).global_position
+	return global_position
 
 
 ## Il tetto alla velocità con cui questo oggetto insegue la mano.

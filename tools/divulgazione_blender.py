@@ -32,8 +32,8 @@ for _m in ("geometria", "modellare"):
     if _m in sys.modules:
         importlib.reload(sys.modules[_m])
 from geometria import ARREDI_DIVULGAZIONE, verifica_arredi, W_SILL   # noqa: E402
-from modellare import (barra, cilindro, cilindro_orizz, esporta, finisci,   # noqa: E402
-                       lampada, prepara_render, pulisci, sasso, scatola,
+from modellare import (barra, cilindro, cilindro_orizz, esporta, faldone,   # noqa: E402
+                       finisci, lampada, prepara_render, pulisci, sasso, scatola,
                        posa_modello, scatola_inclinata, verifica_impronte,
                        verifica_luce)
 
@@ -288,10 +288,32 @@ def proiettore():
         for b in (z0 + 0.05, z1 - 0.09):
             cilindro("Metallo", a + 0.02, b + 0.02, 0.06, y_piano - 0.03, 0.014, 10)
             cilindro("Gomma", a + 0.02, b + 0.02, 0.0, 0.06, 0.030, 12)
-    # scatole di pellicole sul ripiano di sotto
-    for k in range(3):
-        scatola("Carta", x0 + 0.10, x0 + 0.34, 0.33 + k * 0.045, 0.372 + k * 0.045,
-                z0 + 0.10 + k * 0.01, z1 - 0.12 + k * 0.01)
+    # I RACCOGLITORI DELLE SERATE, sul ripiano di sotto.
+    #
+    # Erano TRE SCATOLE color carta impilate e sfalsate di un centimetro, e da
+    # mezzo metro erano un blocco di cartone: Federico li ha chiamati «i faldoni»
+    # e ha chiesto di aggiustarli. Un raccoglitore lo fanno la costa, l'etichetta,
+    # il foro per il dito e il cantonale - vedi `modellare.faldone`.
+    #
+    # IN PIEDI IN FILA, NON IN PILA, e non e' una scelta estetica: sotto un
+    # proiettore la roba si tiene in piedi perche' la si prende a serata iniziata,
+    # al buio, tirandola per il foro. Gli ultimi due pendono, come pende sempre
+    # l'ultimo raccoglitore di una fila che non arriva in fondo al ripiano; gli
+    # altri due sono coricati di piatto nello spazio che avanza.
+    # LE COSTE GUARDANO A OVEST, cioe' da dove si entra in sala. Alla prima posa
+    # guardavano il muro dietro: dal carrello si vedevano cinque COPERTINE, che
+    # sono la faccia liscia, e restavano cinque libroni. Un raccoglitore lo si
+    # riconosce dalla costa, quindi la costa va dove qualcuno passa - qui il lato
+    # lungo del corridoio fra le sedie e le teche.
+    for (dz, pende, col) in ((0.000,  0.0, "Tessuto"),
+                             (0.056,  0.0, "LibroBlu"),
+                             (0.110,  0.0, "Meteorite"),
+                             (0.168,  7.0, "LibroRosso"),
+                             (0.228, 12.0, "Tessuto")):
+        faldone(x0 + 0.28, 0.33, z0 + 0.14 + dz, gradi=-90.0, pende=pende, colore=col)
+    for k, (col, g_) in enumerate((("LibroVerde", -90.0), ("Tessuto", -84.0))):
+        faldone(x0 + 0.585, 0.33 + k * 0.052, z0 + 0.30, gradi=g_,
+                coricato=True, colore=col)
     cilindro("Gomma", cx + 0.16, z1 - 0.10, 0.02, 0.06, 0.010, 8)      # il cavo per terra
     # IL MUSO GUARDA A NORD, verso lo schermo. I gradi non li ho dedotti: li ho
     # provati tutti e quattro contro il controllo in fondo al file, perche' avevo
@@ -503,5 +525,10 @@ scatta("divulgazione-proiezioni.png", (17.30, 1.55, 8.90), (16.30, 1.05, 4.20), 
 scatta("divulgazione-distributore.png", (11.10, 1.35, 6.20), (9.05, 1.00, 6.82), lente=30.0)
 # le teche a muro sul lato est
 scatta("divulgazione-teche.png", (16.20, 1.62, 4.60), (18.60, 1.25, 2.60), lente=26.0)
+# LA CARTA DA VICINO, che da lontano e' un colore e da mezzo metro e' un oggetto:
+# il ripiano basso del carrello e il piano del tavolo.
+scatta("divulgazione-carta-carrello.png", (15.30, 0.78, 7.70), (16.40, 0.42, 7.08), lente=45.0)
+scatta("divulgazione-carta-coricati.png", (15.90, 0.62, 7.72), (16.70, 0.36, 7.06), lente=70.0)
+scatta("divulgazione-carta-tavolo.png", (15.95, 1.30, 4.15), (16.35, 0.79, 3.10), lente=45.0)
 # il proiettore da vicino, di tre quarti: il muso deve guardare lo schermo
 scatta("divulgazione-proiettore.png", (15.60, 1.20, 8.10), (16.50, 0.86, 7.10), lente=45.0)

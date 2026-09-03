@@ -36,8 +36,24 @@ const COL_POWER := 160
 const COL_LINK := 208
 
 ## La prima riga della tabella e il passo fra una e l'altra.
-const ROW_TOP := 62
-const ROW_STEP := 18
+##
+## SEDICI E NON PIU' DICIOTTO. Il testo della tabella e' alto tredici pixel, quindi
+## diciotto erano cinque pixel d'aria per riga: quindici in tre righe, cioe' una
+## riga di registro. Su un quadro da 192 pixel quello spazio serviva piu' in basso.
+## E LA TABELLA COMINCIA QUATTRO PIXEL PIU' SU, per la stessa ragione: sotto
+## l'intestazione bastano due pixel d'aria, e quei quattro servono a staccare
+## l'ultima riga della tabella dalla prima del registro, che altrimenti si toccano.
+const ROW_TOP := 58
+const ROW_STEP := 16
+
+## L'aria fra un blocco di testo e quello sotto, in pixel.
+##
+## UNO, ED E' QUELLO CHE C'E'. Questo quadro deve tenere titolo, tabella, quattro
+## righe di registro, il messaggio e due righe di comandi dentro 192 pixel: due
+## pixel d'aria per blocco sono una riga di registro in meno. Uno basta perche' le
+## righe non si tocchino - il font ha gia' la sua discesa e la sua ascesa dentro
+## l'altezza.
+const ARIA := 1
 
 var _font: SystemFont
 
@@ -94,10 +110,30 @@ func _draw() -> void:
 	for i in _names.size():
 		_riga(i)
 
-	_registro()
+	# DA QUI IN GIU' LE QUOTE NON SONO SCRITTE, SI IMPILANO — e la ragione è un
+	# difetto che si vedeva in partita: «le scritte si overlappano». Le quote erano
+	# fisse (registro a 124 con passo 11, messaggio a 164, comandi a 176 e 188) e
+	# il passo era più stretto dell'ALTEZZA VERA del font: a 11 pixel una riga ne è
+	# alta 12, a 12 ne è alta 13. Con quattro righe di registro l'ultima finiva
+	# sopra il messaggio, e le due righe di comandi si toccavano.
+	#
+	# Adesso ogni blocco si mette sotto quello precedente misurando il font invece
+	# di indovinare, e si parte dal BASSO perché è il fondo del quadro a essere
+	# fisso: i comandi stanno sull'ultima riga utile, il messaggio sopra di loro, e
+	# il registro riempie quello che resta. Se un domani il font cambia o il
+	# messaggio diventa due righe, il registro si accorcia da solo invece di
+	# scrivere sopra qualcosa.
+	var giu := DESIGN_SIZE.y - 1.0 - _font.get_descent(12)
+	_text(Vector2(MARGIN, giu), "R RESET PORT", DIM, 12)
+	var su := giu - _font.get_ascent(12) - ARIA - _font.get_descent(12)
+	_text(Vector2(MARGIN, su), "UP/DOWN SELECT   ENTER ACT", DIM, 12)
+
+	var base := su - _font.get_ascent(12) - ARIA
 	if _message != "":
-		_text(Vector2(MARGIN, 164), _message, FG, 11)
-	_piede()
+		base -= _font.get_descent(11)
+		_text(Vector2(MARGIN, base), _message, FG, 11)
+		base -= _font.get_ascent(11) + ARIA
+	_registro(base - _font.get_descent(11))
 
 
 ## Il registro del software: quello che è successo, dal più vecchio al più nuovo.
@@ -106,13 +142,26 @@ func _draw() -> void:
 ## come in ogni console che il giocatore abbia mai visto. Le vecchie sbiadiscono:
 ## contano meno, e un blocco di quattro righe tutte uguali di peso si legge come
 ## un muro invece che come una storia.
-func _registro() -> void:
-	var y := 124
+##
+## SI DISEGNA DAL BASSO, dalla riga più nuova in su, perché è la posizione della
+## più nuova a essere fissa: sta appena sopra il messaggio. `ultima` è la sua
+## linea di base, e la gliela passa `_draw()`.
+##
+## E QUELLO CHE NON CI STA NON SI DISEGNA. Il registro non deve mai salire sopra
+## la tabella degli apparecchi: se lo spazio non basta, le righe più vecchie
+## restano fuori — che è esattamente quello che fa una telescrivente quando la
+## carta finisce, e l'unica alternativa sarebbe scrivere sopra la tabella.
+func _registro(ultima: float) -> void:
+	var passo := _font.get_height(11) + ARIA
+	var tetto := ROW_TOP + (maxi(_names.size(), 1) - 1) * ROW_STEP 		+ _font.get_descent(12) + ARIA + _font.get_ascent(11)
 	var quante := _log.size()
 	for i in quante:
 		var eta := quante - 1 - i
+		var y := ultima - eta * passo
+		if y < tetto:
+			continue
 		var colore := FG if eta == 0 else (DIM if eta == 1 else FAINT)
-		_text(Vector2(MARGIN, y + i * 11), "> " + _log[i], colore, 11)
+		_text(Vector2(MARGIN, y), "> " + _log[i], colore, 11)
 
 
 func _intestazione() -> void:
@@ -166,11 +215,6 @@ func _colore_link(i: int, bit: int) -> Color:
 	if _attempted & bit == 0:
 		return FAINT
 	return FG
-
-
-func _piede() -> void:
-	_text(Vector2(MARGIN, 176), "UP/DOWN SELECT   ENTER ACT", DIM, 12)
-	_text(Vector2(MARGIN, 188), "R RESET PORT", DIM, 12)
 
 
 func _quanti(maschera: int) -> int:

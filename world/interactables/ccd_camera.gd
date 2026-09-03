@@ -37,11 +37,43 @@ const GRUPPO := &"ccd_camera"
 ## camera stando dall'altra parte della passerella.
 const PORTATA_ATTACCO := 0.55
 
-## Quanto è alta la camera dal piano di appoggio all'imboccatura del naso, in
-## metri: 7,5 cm di testa, più la ruota filtri e il suo naso. È il numero con cui
-## la si infila nel focheggiatore, e viene da `tools/ccd_blender.py` — dove a sua
-## volta viene dalle quote SBIG.
-const ALTA := 0.111
+## Di quanto si arretra la camera perché il naso entri nel focheggiatore, in
+## metri: 7,5 cm di testa più 2,2 di ruota filtri. Il naso, tre centimetri, sta
+## tutto DENTRO il portaoculare.
+##
+## NON È L'ALTEZZA DELL'OGGETTO, e prima lo era. Il modello è alto 12,7 cm — il
+## naso della CFW-8 sporge di tre centimetri, come nel vero — ma arretrarla di
+## tutti e 12,7 le lascerebbe il naso appoggiato sulla bocca del focheggiatore,
+## e un naso appoggiato non è un naso montato.
+##
+## ED È SCESA DI UN CENTIMETRO E MEZZO, da 0,111 a 0,097, guardandola in partita:
+## Federico, davanti al telescopio, «forse va abbassata leggermente la camera».
+## Con 0,111 dentro il portaoculare ci stava metà naso e l'altra metà restava a
+## vista, cioè un dito di vuoto fra il collare del focheggiatore e la ruota
+## filtri — la camera sembrava appesa davanti al tubo invece che avvitata. Adesso
+## il naso entra fino alla battuta della ruota filtri, che è dove si ferma
+## infilando un 31,75 vero.
+## Le quote stanno in `tools/ccd_blender.py`, che a sua volta le prende da SBIG.
+const ALTA := 0.097
+
+## Come sta la camera rispetto al nodo `Fuoco`: arretrata di `ALTA` lungo il suo
+## +Y, e girata di mezzo giro perché il naso guardi dentro il focheggiatore.
+##
+## IL +Y, E NON IL -Z. Questa riga è stata sbagliata per due settimane e nessun
+## controllo se n'è accorto: `-Z` è la convenzione di Godot per «dove guarda un
+## nodo», ma il nodo `Fuoco` non lo scrive Godot — lo esporta Blender, dove
+## `perno()` allinea al verso del focheggiatore il proprio **+Z**, che passando
+## per il glTF diventa il **+Y** di qui. Montata sul -Z la camera finiva di
+## traverso, appiccicata al fianco del tubo: in partita si vedeva, e
+## `prova_ccd.gd` diceva ok perché misurava solo la DISTANZA dalla bocca — che
+## di traverso è identica. Adesso quella prova misura anche da che parte.
+const POSA := Transform3D(Basis(Vector3.RIGHT, PI), Vector3(0.0, ALTA, 0.0))
+
+## LE MISURE DELLA RETE — quanto ferma, quanto lontano si cerca, quanti piani si
+## scendono — non stanno più qui: stanno in `Carryable`, perché la promessa che
+## una cosa caduta si ritrova vale per tutto quello che si prende in mano e non
+## per la sola camera. Qui resta la sola cosa che di questa camera è speciale:
+## dove va a finire quando un posto buono non c'è (vedi `_perduta()`).
 
 ## Emesso quando la camera viene montata o smontata. È un FATTO del mondo, non un
 ## comando: chi vuole saperlo — un domani la fase che pretende la camera al suo
@@ -101,6 +133,13 @@ func _ready() -> void:
 		_monta.call_deferred()
 
 
+## AVVITATA AL FUOCO È FERMA, e la rete non deve nemmeno guardarla: è appesa a un
+## tubo che si muove, non è caduta da nessuna parte. Il resto — quanto ferma,
+## quando guardare — lo fa `Carryable`.
+func _fuori_dalla_rete() -> bool:
+	return _montata or super()
+
+
 func montata() -> bool:
 	return _montata
 
@@ -121,6 +160,22 @@ func prompt_posa() -> String:
 	return super()
 
 
+## Cosa succede premendo il tasto con la camera in mano: al focheggiatore si
+## avvita, altrove si posa come qualunque altra cosa.
+##
+## E SI POSA SEMPRE, ANCHE SUL POZZO. Per una settimana qui c'è stato un DIVIETO —
+## sul vuoto la mano non la lasciava andare, e il prompt lo diceva — messo per non
+## perdere la camera nel pozzo del pilastro. Federico l'ha bocciato giocandoci:
+## «adesso sono bloccato con la camera in mano... ma che discorso è fare un prompt
+## che dice qui sotto non c'è dove posare la camera, uno impazzisce». Aveva ragione:
+## un divieto che non dice dove SI può è una punizione, e questo per giunta lasciava
+## in mano l'oggetto che si stava cercando di mettere giù.
+##
+## IL BUCO ADESSO È TAPPATO, e non è più affare di questo file: sotto la passerella
+## c'è un fondo invisibile sul layer degli appoggi (vedi `tools/gen_blockout.py`,
+## nodo `FondoPasserella`) che ferma a filo del calpestio tutto quello che ci cade
+## dentro — la camera, il termos, una tazza. Il posto dove non si poteva più
+## raccogliere niente non esiste più, quindi non c'è più niente da vietare.
 func posa() -> void:
 	if _si_arriva_al_fuoco():
 		_monta()
@@ -134,6 +189,26 @@ func prendi(chi: PhysicsBody3D) -> void:
 	if _montata:
 		_smonta()
 	super(chi)
+
+
+## L'ULTIMA SPIAGGIA, e sta sotto al fondo invisibile per la stessa ragione per
+## cui una rete sta sotto un trapezio: il fondo chiude il buco che CONOSCIAMO. La
+## camera può ancora essere strappata dalla mano contro uno stipite (vedi
+## `Carryable.STRAPPO`) e finire chissà dove.
+##
+## `Carryable` la ripesca da solo finché entro un metro c'è un posto da cui
+## prenderla, e nella casa vera ce n'è sempre uno: la fessura più profonda si
+## risolve spostandola di un palmo. Questa funzione è per il caso che resta —
+## nessun posto buono da nessuna parte — e la camera, che è l'unico oggetto senza
+## il quale la partita non può più finire, torna al fuoco. Non è un teletrasporto
+## di comodo: è la sola cosa che distingue «l'ho persa» da «la partita è rotta».
+func _perduta() -> void:
+	if _fuoco == null:
+		return
+	Log.info("ccd", "la camera era finita dove non ci si arriva (%.2f, %.2f, %.2f) e "
+		% [global_position.x, global_position.y, global_position.z]
+		+ "non c'era un posto migliore: rimessa al fuoco")
+	_monta()
 
 
 func _si_arriva_al_fuoco() -> bool:
@@ -153,19 +228,11 @@ func _monta() -> void:
 	# i muri diventerebbe il motivo per cui la camera si stacca da sola.
 	freeze = true
 	if appoggiata_e_basta:
-		global_transform = _fuoco.global_transform * Transform3D(
-			Basis(Vector3.RIGHT, deg_to_rad(-90.0)), Vector3(0.0, 0.0, ALTA))
+		global_transform = _fuoco.global_transform * POSA
 		montaggio_cambiato.emit(true)
 		return
 	reparent(_fuoco, false)
-	# IL NASO DENTRO IL FOCHEGGIATORE. Il modello ha l'asse ottico sul proprio +Y
-	# con l'origine sotto; il nodo `Fuoco` guarda fuori dal tubo lungo il proprio
-	# -Z, che è la convenzione di Godot per «dove guarda un nodo». La camera va
-	# quindi girata di novanta gradi e infilata all'indietro della propria altezza,
-	# così il naso entra nella bocca invece di restare a mezz'aria davanti.
-	transform = Transform3D(
-		Basis(Vector3.RIGHT, deg_to_rad(-90.0)),
-		Vector3(0.0, 0.0, ALTA))
+	transform = POSA
 	montaggio_cambiato.emit(true)
 
 

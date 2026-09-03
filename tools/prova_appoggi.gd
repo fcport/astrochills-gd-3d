@@ -1,4 +1,17 @@
-## UN OGGETTO POSATO SI FERMA DOVE SI VEDE, O SULLA CIMA FINTA DEL BLOCCO?
+## UN OGGETTO POSATO SI FERMA DOVE SI VEDE - E DA LI' SI RIPRENDE?
+##
+## DUE DOMANDE, E LA SECONDA E' ARRIVATA DOPO. La prima e' la caduta: dove si
+## ferma una cosa lasciata andare sopra un mobile. La seconda l'ha trovata
+## Federico giocando, ed e' il seguito esatto della prima: «ho preso la borraccia
+## dalla stanza di controllo, l'ho messa sul carrello dove c'e' il proiettore, e
+## non potevo piu' prendere la borraccia». Si posava dove si vede, e da li' non si
+## riprendeva piu'.
+##
+## STANNO NELLA STESSA SONDA PERCHE' SONO LO STESSO POSTO. Servono la stessa
+## scena, lo stesso oggetto e soprattutto la stessa ricerca - i blocchi la cui
+## cima e' aria - e una seconda sonda vorrebbe dire ricopiare quella ricerca e
+## lasciare che le due copie invecchino ognuna per conto suo. Qui l'oggetto cade,
+## e appena e' fermo gli si gira intorno per vedere se lo si puo' ancora prendere.
 ##
 ## LA DOMANDA. La collisione di questa scena la genera `gen_blockout.py` da
 ## `geometria.py`, e ogni mobile e' UN BLOCCO PIENO alto quanto il suo pezzo piu'
@@ -18,11 +31,14 @@
 ## armadio non direbbe niente, perche' sopra un armadio le due collisioni
 ## coincidono.
 ##
-## IL DIFETTO SI RIMETTE: `SUGLI_INGOMBRI=1` riporta gli oggetti a cadere sui
-## blocchi grezzi, ed e' il comportamento di prima.
+## I DIFETTI SI RIMETTONO, uno per domanda: `SUGLI_INGOMBRI=1` riporta gli oggetti
+## a cadere sui blocchi grezzi, ed e' il comportamento di prima della corazza;
+## `MIRA_SUGLI_INGOMBRI=1` riporta la mira a fermarsi sugli ingombri, ed e' il
+## comportamento con cui la borraccia spariva.
 ##
 ##     Godot_v4.7.2-stable_win64.exe --headless --path . tools/prova_appoggi.tscn
 ##     SUGLI_INGOMBRI=1 Godot_v4.7.2-stable_win64.exe --headless --path . tools/prova_appoggi.tscn
+##     MIRA_SUGLI_INGOMBRI=1 Godot_v4.7.2-stable_win64.exe --headless --path . tools/prova_appoggi.tscn
 extends Node
 
 ## Il passo con cui si guarda la cima di un blocco, in metri.
@@ -38,8 +54,26 @@ const VUOTO := 0.20
 ## Quanto puo' restare sopra la geometria vera un oggetto posato, in metri.
 const TOLLERANZA := 0.06
 
+## Da quanto lontano si prova a guardare l'oggetto posato, in metri, misurati in
+## orizzontale. Piu' della portata dell'interazione non ha senso provarlo - a
+## quella distanza non si prende niente, ed e' giusto cosi' - e piu' vicino di
+## mezzo metro il giocatore sta dentro il mobile.
+const GIRO_INTORNO := [0.55, 0.70, 0.85]
+
+## Quante direzioni si provano intorno all'oggetto. Otto: i quattro lati e i
+## quattro angoli. Un carrello si guarda da dove ci si arriva, e da che parte sia
+## non lo sa nessuno qui dentro.
+const VERSI := 8
+
 var _guasti := 0
 var _spazio: PhysicsDirectSpaceState3D
+## Quanti oggetti si e' provato a riprendere, e quanti si sono lasciati prendere.
+var _ripresi := 0
+var _tentati := 0
+## Da quanti posti, nell'ultimo giro, un giocatore in piedi avrebbe davvero potuto
+## provarci: ci sta con la capsula E ha l'oggetto dentro la portata del raggio.
+## Zero vuol dire che il caso non era provabile, non che la mira ha sbagliato.
+var _posti_utili := 0
 
 
 func _ready() -> void:
@@ -143,7 +177,15 @@ func _prova() -> void:
 	get_tree().current_scene = scena
 	for _i in 6:
 		await get_tree().physics_frame
-	_spazio = (Player.find_in(get_tree())).get_world_3d().direct_space_state
+	var player := Player.find_in(get_tree())
+	if player == null:
+		print("[appoggi] il giocatore non c'e': la prova non vale")
+		get_tree().quit(1)
+		return
+	_spazio = player.get_world_3d().direct_space_state
+	# IL DIFETTO DELLA MIRA: a `true` il raggio torna a fermarsi sugli ingombri, e
+	# la borraccia sul carrello torna a sparire. Vedi `world/player/player.gd`.
+	player.mira_sugli_ingombri = OS.get_environment("MIRA_SUGLI_INGOMBRI") == "1"
 
 	if Corazza.find_in(get_tree()) == null:
 		print("[appoggi] la corazza non c'e': la prova non vale")
@@ -163,7 +205,11 @@ func _prova() -> void:
 
 	# Su ognuno si lascia cadere un oggetto vero - non un raggio: un raggio prova
 	# la collisione, un corpo prova anche che ci si fermi sopra.
-	var quanti := mini(finte.size(), 6)
+	# DIECI E NON SEI: da quando la sonda fa anche la seconda domanda, i casi che
+	# contano sono quelli in cui l'oggetto RESTA sul mobile, e la meta' scivola via
+	# dai sedili e dai bordi. Con sei blocchi si finiva a provare la mira una volta
+	# sola.
+	var quanti := mini(finte.size(), 10)
 	for k in quanti:
 		var caso: Array = finte[k]
 		var nome: String = caso[0]
@@ -196,10 +242,130 @@ func _prova() -> void:
 		if finito > vera + TOLLERANZA:
 			_guasto("sopra %s la sonda resta a %.2f invece che a %.2f: e' "
 				% [nome, finito, vera] + "appoggiata sulla cima finta del blocco")
+		else:
+			# SECONDA DOMANDA. La si fa dove l'oggetto e' rimasto, qualunque sia
+			# la quota: e' `_si_riprende` a dire se da qualche parte, li' intorno,
+			# un giocatore in piedi ci arriverebbe.
+			var da_dove := await _si_riprende(sasso)
+			if _posti_utili == 0:
+				# NESSUN POSTO DA CUI PROVARE, e non e' un guasto: una scatola
+				# rotolata sotto una sedia sta a mezzo metro da terra, e da in
+				# piedi e' fuori dalla portata della mira comunque - 1,60 di
+				# occhio contro 1,20 di raggio. A terra ci si arriva
+				# accovacciandosi: altro gesto, altra prova.
+				print("[appoggi] %-16s ferma a %.2f: da in piedi non ci si "
+					% [nome, finito] + "arriva nemmeno senza ingombri, la mira "
+					+ "non si prova qui")
+			else:
+				_tentati += 1
+				if da_dove.is_empty():
+					_guasto("posata a %.2f dentro il blocco %s - che arriva a "
+						% [finito, nome] + "%.2f - la sonda non si riesce piu' a "
+						% cima + "mirare da nessuno dei %d posti da cui ci si "
+						% _posti_utili + "arriverebbe")
+				else:
+					_ripresi += 1
+					print("[appoggi] %-16s e da li' si riprende: %s"
+						% [nome, da_dove])
 		sasso.queue_free()
 
+	# SONDA CIECA, il secondo modo: se nessun oggetto e' finito dentro un ingombro
+	# non si e' provato niente, e un referto pulito non varrebbe niente.
+	if _tentati == 0:
+		_guasto("SONDA CIECA: nessun oggetto e' rimasto dentro un ingombro, "
+			+ "quindi la mira non e' stata messa alla prova")
 	if _guasti == 0:
 		print("[appoggi] ok: si posa dove si vede, non sulla cima degli ingombri")
+		print("[appoggi] ok: %d oggetti su %d posati dentro un ingombro si "
+			% [_ripresi, _tentati] + "possono ancora prendere")
 	else:
 		print("[appoggi] GUASTO: %d controlli falliti" % _guasti)
 	get_tree().quit(1 if _guasti > 0 else 0)
+
+
+## DA FUORI, QUELLA COSA SI PUO' ANCORA PRENDERE? Torna da dove la si e' vista, o
+## una stringa vuota se non la si vede da nessuna parte.
+##
+## SI CHIEDE AL GIOCATORE, NON AL MOTORE, ed e' la differenza fra questa prova e
+## una che non proverebbe niente. Il raggio della mira ha origine, portata,
+## maschera e regole sue - e il difetto della borraccia stava proprio li' dentro:
+## un raycast rifatto a mano dalla sonda avrebbe detto «si vede benissimo» mentre
+## in partita il prompt non compariva. Quindi si mette il giocatore vero davanti
+## all'oggetto, si lascia girare un tick di fisica - il suo raggio si aggiorna li'
+## - e gli si chiede `mirato()`.
+##
+## GLI SI GIRA INTORNO, invece di sceglierne il davanti: un carrello in mezzo a
+## una sala si guarda da dove capita, e da che parte ci si arrivi non lo sa
+## nessuno. Basta UNA posizione buona perche' l'oggetto sia prendibile, e se non
+## ce n'e' nemmeno una e' sparito davvero.
+##
+## SI STA DOVE UN GIOCATORE STAREBBE. La capsula viene provata prima di
+## teletrasportarcelo, e non e' pignoleria: dentro l'ingombro il raggio non lo
+## colpisce - un `RayCast3D` che parte dentro una forma non la vede - e la sonda
+## direbbe «ok» proprio dal punto in cui nessuno puo' stare.
+func _si_riprende(sasso: Carryable) -> String:
+	var player := Player.find_in(get_tree())
+	if player == null:
+		return ""
+	var cam := player.camera()
+	var bersaglio := sasso.global_position + Vector3(0.0, 0.03, 0.0)
+	_posti_utili = 0
+	for d in GIRO_INTORNO:
+		for k in VERSI:
+			var ang := TAU * float(k) / float(VERSI)
+			var x: float = bersaglio.x + cos(ang) * (d as float)
+			var z: float = bersaglio.z + sin(ang) * (d as float)
+			var suolo := _quota(x, z, bersaglio.y + 1.2, Interactable.LAYER_WORLD)
+			if suolo < -1e8:
+				continue
+			var dove := Vector3(x, suolo, z)
+			if not _c_e_da_stare(dove, player):
+				continue
+			# E DA QUI CI SI ARRIVA? La portata del raggio e' 1,20 m dall'OCCHIO,
+			# che sta a 1,60 da terra: una cosa a mezzo metro d'altezza e' fuori
+			# portata da qualunque posizione in piedi, ingombri o no. Contarla
+			# come «non si vede» sarebbe accusare la mira di un limite che e'
+			# scritto in `INTERACT_RANGE` ed e' voluto.
+			var occhio := Vector3(dove.x, dove.y + Player.EYE_HEIGHT, dove.z)
+			if occhio.distance_to(bersaglio) > Player.INTERACT_RANGE:
+				continue
+			# E DA QUI SI VEDE? Fra l'occhio e l'oggetto non deve esserci
+			# GEOMETRIA VERA - non gli ingombri, che sono proprio quello che
+			# questa prova accusa di essere di troppo. Dietro la testiera del
+			# letto una tazza sul materasso e' nascosta davvero, e pretendere di
+			# poterla prendere da li' sarebbe pretendere di vedere attraverso il
+			# legno. La sonda scarta quei posti; se non ne resta nemmeno uno, il
+			# caso non e' provabile e lo dice.
+			var vista := PhysicsRayQueryParameters3D.create(occhio, bersaglio)
+			vista.collision_mask = Corazza.LAYER_APPOGGI
+			# SENZA CONTARE LA SONDA STESSA: da quando gli oggetti stanno sul
+			# layer degli appoggi - ci si posa sopra roba - un raggio che punta al
+			# loro centro colpisce prima la loro superficie, e ogni posto
+			# risulterebbe cieco.
+			vista.exclude = [sasso.get_rid()]
+			if not _spazio.intersect_ray(vista).is_empty():
+				continue
+			_posti_utili += 1
+			player.global_position = dove
+			player.look_at(Vector3(bersaglio.x, dove.y, bersaglio.z), Vector3.UP)
+			if cam != null:
+				cam.look_at(bersaglio, Vector3.UP)
+			await get_tree().physics_frame
+			await get_tree().physics_frame
+			if player.mirato() == sasso:
+				return "da %.2f m, guardando verso %d gradi" % [d, int(rad_to_deg(ang))]
+	return ""
+
+
+## Ci si sta in piedi, qui? Stessa capsula del giocatore, stessa domanda di
+## `prova_quadro.gd`: alzata da terra, o il pavimento conterebbe come ostacolo.
+func _c_e_da_stare(dove: Vector3, player: Player) -> bool:
+	var forma := CapsuleShape3D.new()
+	forma.radius = 0.30
+	forma.height = 1.80
+	var q := PhysicsShapeQueryParameters3D.new()
+	q.shape = forma
+	q.transform = Transform3D(Basis.IDENTITY, Vector3(dove.x, dove.y + 0.95, dove.z))
+	q.collision_mask = Interactable.LAYER_WORLD
+	q.exclude = [player.get_rid()]
+	return _spazio.intersect_shape(q, 1).is_empty()

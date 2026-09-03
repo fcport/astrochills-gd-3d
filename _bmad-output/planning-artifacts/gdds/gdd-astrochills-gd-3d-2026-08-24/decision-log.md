@@ -5808,3 +5808,1421 @@ superficie piana ha vertici solo AGLI ANGOLI - in mezzo alla cima di un frigo no
 ce n'e' nessuno - e cosi' la prima versione ha bocciato 82 blocchi su 84, frigo e
 teche compresi. La geometria vera si chiede al motore, costruendo la collisione e
 tirandoci un raggio: e' lui a sapere dove ci si posa.
+
+---
+
+## D-206 La camera CCD rifatta sulle sue fotografie, e un provino che mentiva
+
+Federico, con in mano la foto di una SBIG rossa: «ti ho aperto blender, vorrei che
+mi facessi una camera ccd fatta meglio rispetto a quella che abbiamo messo ora.
+prendi questa come riferimento».
+
+**LA FOTO DI RIFERIMENTO ERA DI UN'ALTRA CAMERA, e valeva la pena dirlo.** Il
+corpo rosso squadrato con la piastra nera e il barilotto e' una SBIG della serie
+STF/STT-8300: e' del 2011, e questo gioco e' ambientato nel 1999 con una ST-8
+nominata per modello e per chip nel GDD. Le due strade erano davvero diverse - una
+camera bella e anacronistica, oppure la ST-8 vera fatta bene - e la scelta l'ha
+fatta lui: la ST-8. Del riferimento resta quello che era il vero motivo per cui
+piaceva, e che non ha eta': le viti a vista, gli spigoli netti, il contrasto fra
+corpo opaco e metallo lucido.
+
+**LA PRIMA ST-8 ERA COPIATA DA UNA FOTO SOLA, ED ERA SBAGLIATA.** Era un cilindro
+in piedi su una base quadrata, e nel provino leggeva come una scatola di biscotti.
+Cercandole, di fotografie ne sono uscite tre, e ognuna diceva una cosa che le
+altre non dicevano:
+
+    catalogo SBIG (Company Seven, ST-7.jpg)   la piastra frontale circolare con
+                                              le sei brugole, il pacco alettato,
+                                              il vano quadrato che sporge dagli
+                                              angoli, il naso decentrato
+    ST-8E su un C14 (Pedro Re')               il RETRO: ventola avvitata fuori,
+                                              griglia di feritoie, etichetta
+                                              bianca col marchio CE, una spia
+    catalogo CFW-8 (Company Seven)            la ruota e' un disco piatto con la
+                                              GOBBA TONDA del motore sul bordo
+
+**IL NASO DECENTRATO NON E' UN VEZZO.** La CFW-8 e' un carosello che gira attorno
+al proprio perno, e l'asse ottico passa per UNA delle cinque posizioni: e' per
+questo che il naso non e' in mezzo al disco, ne' nel modello ne' in catalogo.
+Saperlo ha cambiato la geometria: prima ruota e naso erano concentrici, e il pezzo
+non poteva funzionare.
+
+**IL PROVINO MENTIVA, E NON PER COLPA DEL MODELLO.** Due giri sono stati giudicati
+su un'inquadratura sbagliata: la camera nasce con l'asse ottico in su - lo vuole il
+montaggio - e fotografata in quella posa sembra una torta a strati qualunque cosa
+ci sia sotto. Coricata, che e' come sta in catalogo ED e' come sta in gioco -
+avvitata a un telescopio che punta il cielo - lo stesso identico modello legge come
+una camera CCD. La rotazione sta dopo `esporta()`: il .glb non se ne accorge.
+E' lo stesso errore di D-174 fatto un piano piu' su: non «non l'ho guardato», ma
+«l'ho guardato da dove non lo si guarda mai».
+
+**DUE DIFETTI TROVATI SOLO GUARDANDO.** La ventola era una scatola PIENA con
+dentro il suo pozzetto, e una scatola piena non ha un dentro: e' uscita una
+piastrina liscia con quattro viti. Ora la cornice sono quattro barre attorno a un
+buco. E l'etichetta usava `Carta`, che porta la trama della carta a trenta
+centimetri per ripetizione: su una targhetta da tre centimetri se ne vede un
+decimo, cioe' un rettangolo beige rigato che leggeva come compensato incollato
+dietro la camera. Una targhetta stampata e' una tinta piatta.
+
+**IL NASO E' DI TRE CENTIMETRI, E LA CAMERA E' 12,7.** Un barilotto da un
+centimetro e mezzo legge come un tappo. Il numero che NON e' cambiato e' `ALTA` in
+`ccd_camera.gd`, che resta 0,111: non e' l'altezza dell'oggetto, e' di quanto si
+arretra per montarla - il centimetro e mezzo di differenza e' il pezzo di naso che
+sta DENTRO il portaoculare, che e' come si avvita davvero. Il collisore invece
+segue l'ingombro e passa a 0,127.
+
+**MISURATO.** 617 facce in cinque pezzi (il tetto e' 3.000), e le tre prove che
+toccano questo oggetto passano: `prova_ccd` - montata, resta al fuoco dopo un GOTO,
+smontata cade e si riavvita - piu' `prova_mani` e `prova_prop`.
+
+### E POI, IN PARTITA: «non mi sembra attaccata bene»
+
+Il modello era giusto e il montaggio no. Avviato il gioco, la camera stava
+appiccicata al FIANCO del tubo invece che avvitata al focheggiatore, e la
+sequenza per cui questo e' arrivato fino a li' vale piu' del difetto:
+
+**UNA CONVENZIONE DATA PER BUONA.** `ccd_camera.gd` posava la camera lungo il -Z
+del nodo `Fuoco`, «che e' la convenzione di Godot per dove guarda un nodo». Vero
+per i nodi che scrive Godot: il `Fuoco` pero' lo esporta Blender, dove `perno()`
+allinea al verso del focheggiatore il proprio **+Z** - e il +Z di Blender,
+attraversato il glTF, diventa il **+Y** di Godot. La camera finiva quindi
+spostata di undici centimetri in una direzione perpendicolare a quella giusta, e
+girata di conseguenza.
+
+**E LA PROVA DICEVA OK, perche' misurava la cosa sbagliata.** `prova_ccd.gd`
+controllava lo SCARTO dalla bocca - 0,111 m - e lo scarto di una camera montata
+di traverso e' identico a quello di una montata dritta. E' D-176 un'altra volta:
+un controllo che tace non perche' sia debole, ma perche' guarda un numero che il
+difetto non cambia.
+
+**«FUORI DAL TUBO» ORA SI MISURA, NON SI DICHIARA.** La Mira sta sull'asse ottico
+del tubo, il Fuoco sulla bocca del focheggiatore: la componente della bocca
+perpendicolare all'asse E' la direzione in cui si monta, e non dipende da nessuna
+convenzione. La prova adesso chiede due cose che prima non chiedeva:
+
+                                        prima         adesso
+    retro fuori dalla bocca            -0,009 m      +0,106 m
+    naso che guarda dentro (1 = dritto) -0,08         +0,95
+
+Lo 0,95 e non 1,00 e' giusto: il focheggiatore di un newtoniano non esce
+esattamente perpendicolare all'asse ottico, e il modello del telescopio lo
+accetta fino a quindici gradi di obliquita'.
+
+**LA LEZIONE E' LA STESSA DEL PROVINO, un piano piu' su.** Il provino mentiva per
+l'inquadratura, la prova taceva per la grandezza misurata: in tutti e due i casi
+il difetto era visibile a chiunque avviasse il gioco, e nessuno aveva avviato il
+gioco. La costante `POSA` adesso sta scritta una volta sola e la usano tutti e
+due i rami, quello vero e quello col difetto rimesso.
+
+### E ANCORA: «non mi sembra della dimensione giusta»
+
+Montata dritta, la camera continuava a non convincere. Aveva ragione, e la causa
+non era la camera:
+
+    la camera CCD, misurata in scena     0,125 x 0,126 x 0,125 m, scala 1,00
+    il tubo del telescopio, all'apertura 0,54 m di diametro
+    quanto dovrebbe essere              ~0,35 m (il Newton da 30 cm del GDD)
+
+**IL TELESCOPIO E' UN QUARTO PIU' GROSSO DEL SUO NOME.** Il modello e' un asset
+Sketchfab scalato perche' il tubo sia lungo 1,50 m - la quota del GDD, quella che
+deve passare nel pozzo della passerella - ma il modello di partenza e' tozzo, e
+con quella scala il diametro viene 54 cm invece di 35. Su un tubo cosi', un
+oggetto in scala VERA sembra piccolo: il rapporto giusto e' 1 a 2,8, li' era 1 a
+4,3.
+
+**RIDURRE TUTTO IL TELESCOPIO NON SI POTEVA** senza perdere l'altra quota: il
+modello e' sproporzionato, e portandolo a 35 cm di diametro il tubo scenderebbe a
+un metro scarso di lunghezza. Nessuna scala uniforme lo rende un 30 cm f/5.
+
+**SI E' RIDOTTO IL SOLO FOCHEGGIATORE**, i pezzi `Scope1..5`, PRIMA che il
+modellatore li fonda e prima che calcoli la bocca - cosi' il nodo `Fuoco` si
+sposta da solo e la camera lo segue senza che nessuna quota sia scritta due volte.
+Tubo, montatura, collisioni e pozzo della passerella non si muovono.
+
+**E IL NUMERO NON L'HA SCELTO LO SBRACCIO, L'HA SCELTO IL DIAMETRO.** La
+contrazione e' uniforme, quindi accorciare assottiglia: a 22 cm di sbraccio il
+focheggiatore restava piu' LARGO della camera avvitata in cima, che e' il
+contrario di qualunque fotografia vera - la camera e' il pezzo grosso, il
+focheggiatore quello che ci si infila dentro. A 16 cm il porta-oculare viene sugli
+otto centimetri, cioe' un due pollici, e il rapporto si ribalta nel verso giusto.
+E' un numero deciso GUARDANDO, non calcolando.
+
+**UNA MISURA SBAGLIATA, DETTA COM'E' ANDATA.** Il primo conto diceva che il
+focheggiatore sporgeva 82 cm: era la distanza della bocca dal nodo `Mira`, presa
+per distanza dall'asse del tubo. Ma su una montatura alla tedesca il tubo e'
+appeso DI LATO alla barra di declinazione, e la Mira sta sull'asse ottico che
+passa per quel perno, mezzo metro sotto l'asse vero del tubo. La misura onesta e'
+la lunghezza della catena `Scope1..5`, che il modellatore stampa: **32 cm**,
+ridotti a 16. Il difetto era reale e il rimedio e' lo stesso, ma il numero da cui
+ero partito no.
+
+**MISURATO**: `prova_ccd`, `prova_fuoco`, `prova_puntamento` e `prova_slew`
+passano tutte dopo il cambio. I due provini d'assieme stanno in
+`_confronto/13d_ccd_sul_telescopio.png` e `13e_ccd_al_fuoco.png`.
+
+### «era la versione vecchia, non hai cambiato nulla no?»
+
+Aveva ragione lui. Il focheggiatore era stato ridotto, le prove passavano, i
+provini in Blender lo mostravano corto - e in partita il telescopio era ancora
+quello di prima.
+
+**IL GIOCO NON CARICA `telescopio.glb`.** Lo carica dentro `osservatorio.glb`:
+`osservatorio_blender.py` importa il telescopio e la cupola e li ESPORTA DENTRO il
+proprio .glb, e la scena istanzia solo quello (`ExtResource("2_modello")`).
+Rigenerare il telescopio senza rigenerare l'osservatorio lascia in partita una
+copia del vecchio, e nessuno se ne accorge: i due file esistono tutti e due, hanno
+entrambi il nodo `Fuoco`, e tutte le prove passano - perche' passano su una
+geometria coerente con se stessa, solo che e' quella sbagliata.
+
+**IL CONTROLLO C'ERA GIA', E AVREBBE PARLATO.** `gen_blockout.py` ha in cima
+proprio questa regola - «chi incorpora chi»: se `telescopio.glb` e' piu' nuovo di
+`osservatorio.glb`, stampa MODELLO VECCHIO. Non ha taciuto: non l'ho RICHIAMATO.
+L'avevo eseguito prima di toccare il telescopio, per il collisore della camera, e
+poi non piu'. Un controllo che si esegue una volta sola all'inizio del lavoro e'
+un controllo che verifica lo stato in cui il lavoro e' cominciato.
+
+**E LE DATE DICEVANO CHE ERA TUTTO A POSTO.**
+
+    assets/models/telescopio.glb              09:50:47
+    .godot/imported/telescopio.glb-....scn    09:51:25   piu' recente: importato
+    assets/models/osservatorio.glb            del giorno prima   <- il file vero
+
+Guardando le date del file che avevo cambiato, la catena sembrava perfetta. Era il
+file sbagliato.
+
+**QUELLO CHE HA SVELATO IL TRUCCO E' UNA MISURA FATTA DUE VOLTE**: la stessa
+distanza `Mira`-`Fuoco`, presa nel .glb con Blender e nella scena con Godot.
+
+                          prima          dopo aver rifatto l'osservatorio
+    Blender (il .glb)     0,9691 m       0,9691 m
+    Godot (il gioco)      1,1150 m       0,9691 m
+
+Una data dice quando un file e' stato scritto, non che cosa contiene ne' chi lo
+legge. Due misure della stessa grandezza in due posti diversi dicono se i due
+posti hanno la stessa cosa - ed e' l'unico modo che ho trovato per rispondere a
+«ma l'hai davvero cambiato?» senza chiedere di fidarsi.
+
+**MISURATO** dopo la rigenerazione: `prova_ccd`, `prova_puntamento`, `prova_slew`
+e `prova_appoggi` passano, e `gen_blockout.py` non segnala piu' la coppia
+telescopio/osservatorio (restano i sei modelli piu' vecchi di `geometria.py`, che
+sono di un'altra storia).
+
+### Il focheggiatore ridotto e' stato RIMESSO COM'ERA
+
+Visto in partita con il modello finalmente aggiornato, il giudizio e' stato
+«peggio di prima», e la riduzione e' stata annullata su richiesta:
+`telescopio_blender.py` e' tornato alla sua versione, il telescopio e
+l'osservatorio sono stati rigenerati, e in gioco `Mira`-`Fuoco` e' di nuovo
+1,1150 m.
+
+**LA RIDUZIONE CURAVA IL SINTOMO SBAGLIATO.** Il focheggiatore accorciato avvicina
+la camera al tubo, ma quello che non torna sta un piano sopra: il tubo e' largo 54
+cm dove un Newton da 30 ne vuole 35, e su un tubo cosi' la camera CCD - che e'
+giusta al millimetro, 12,5 cm - vale un quarto del diametro invece di un terzo.
+Accorciare il focheggiatore sposta la camera senza cambiare quel rapporto: prima
+sembrava lontana, dopo sembrava piccola e appiccicata. Il difetto non era dove lo
+stavo curando.
+
+**LA CAUSA VERA HA UNA MANOPOLA SOLA**, `L_TUBO` in `telescopio_blender.py`: la
+scala dell'intero strumento esce da li' (`SCALA = L_TUBO / lungo_tubo`), e il
+pilastro e' l'unico pezzo che modelliamo noi, quindi si puo' rimpicciolire il
+telescopio e ALZARE il pilastro per lasciare il fuoco alla stessa quota - che e'
+poi come si dimensiona il pilastro di un osservatorio vero. E il GDD lo
+permetterebbe: il suo vincolo sul pozzo della passerella («un 40 cm f/4,5 non ci
+passerebbe») e' un MASSIMO, non una misura da rispettare.
+
+**NON SI FA ORA, ED E' UNA SCELTA SUA.** Fra rimpicciolire lo strumento e lasciare
+tutto com'e' ha scelto di lasciare: il telescopio grosso resta, e resta scritto
+qui che cosa lo renderebbe giusto, se un giorno tornera' a dare fastidio. Quello
+che resta fatto e' la camera - modellata sulle sue fotografie, montata dritta - e
+la prova che adesso guarda anche il verso.
+
+### Alla fine: il focheggiatore SI STRINGE, e non si accorcia
+
+«Non puoi solo restringere il focheggiatore?» - ed era la domanda giusta, quella
+che io non avevo fatto. Accorciarlo avvicinava la camera al tubo e perdeva il
+fatto che una camera CCD sta in fondo a un braccio; stringerlo lascia tutto dov'e'
+e cambia l'unica cosa che non tornava.
+
+**IL NUMERO CHE NON TORNAVA ERA IL DIAMETRO.** Misurato sul .glb: il porta-oculare
+di questo modello e' un tubo da 11-13 cm, e la camera CCD che ci si avvita in cima
+ne misura 12,5. Sono LA STESSA COSA - ed e' per questo che la camera non leggeva
+come una camera ma come un tappo in fondo a un tubo largo uguale. Su uno strumento
+vero il rapporto e' il doppio: un focheggiatore da due pollici sta sui sette
+centimetri. Stretto in sezione per 0,62, il rapporto si ribalta nel verso giusto e
+la camera torna a essere il pezzo grosso dei due.
+
+**TRE MODI SBAGLIATI DI SCALARE ATTORNO A UN ASSE.** La scala non uniforme attorno
+a una retta obliqua si scrive `T(c) R S R-1 T(-c)`, ed e' esattamente li' che ho
+sbagliato due volte di fila:
+
+    con to_track_quat("Z","Y")   il focheggiatore esce lungo Y, e passare "Y"
+                                 come «in su» e' il caso degenere: la rotazione
+                                 che torna e' arbitraria
+    con una base a mano          misurato: il raggio massimo passava da 8,8 cm a
+                                 72,7 - non stringeva, ALLARGAVA
+    spostando i vertici          per ogni vertice, la parte lungo l'asse resta e
+                                 la perpendicolare si moltiplica. 8,8 -> 5,5 cm,
+                                 baricentro immobile
+
+Cinque righe che si leggono battono una matrice elegante che non si riesce a
+verificare a occhio. E la verifica non e' stata guardare il codice: e' stato
+stampare il raggio massimo prima e dopo.
+
+**E C'ERA GIA' UN CONTROLLO CHE GRIDAVA.** Con le due versioni sbagliate il
+telescopio non scendeva piu' sotto i 44 gradi senza toccare la passerella (contro
+i 25 di sempre): il modellatore lo dice da solo, ed era il sintomo dello
+spostamento, non un caso. Con la stretta giusta e' tornato a 25 gradi. Un
+controllo che urla per una ragione diversa da quella che stai cercando resta un
+controllo che ha ragione.
+
+**MISURATO**: fuoco a 2,45 m e a 90 gradi dall'asse ottico come prima della
+stretta, passerella libera sopra 25 gradi, e `prova_ccd`, `prova_puntamento`,
+`prova_mani`, `prova_appoggi` e `prova_prop` passano tutte.
+
+---
+
+## D-207 Il muro invisibile sulle porte era la fotografia di un'anta chiusa
+
+Federico, mentre guardava il telescopio: «ho provato a prendere in mano la
+borraccia nello studio ma letteralmente non puo' uscire dalla porta a causa di un
+muro invisibile».
+
+**LE DUE COLLISIONI SI SONO SFASATE.** Da D-205 questo mondo ne ha due: gli
+INGOMBRI, blocchi grezzi su cui cammina il giocatore, e gli APPOGGI, la geometria
+vera a triangoli con cui collide la roba che si prende in mano. La corazza degli
+appoggi si costruiva mettendo tutte le forme sotto UN corpo statico e copiando la
+`global_transform` di ogni mesh AL MOMENTO DELL'AVVIO. Per un muro va benissimo.
+Per un'ANTA no: all'avvio le porte sono chiuse, e da li' in poi nel vano restava
+la sagoma dell'anta chiusa, ferma per tutta la partita, mentre l'anta vera girava
+via.
+
+**E IL DIFETTO ERA CIECO PER CHI CAMMINA.** Il giocatore attraversa il vano
+perche' lui sta sugli ingombri, dove il buco c'e'; la borraccia che tiene in mano
+sta sugli appoggi, e sbatteva contro una porta che sullo schermo era spalancata.
+Un difetto che si vede solo tenendo qualcosa in mano, e solo passando una porta.
+
+**MISURATO** (`tools/prova_varchi.gd`, nuovo): si apre ogni porta e si tira un
+raggio nel centro esatto del vano - centro preso PRIMA di aprire, dalla mesh
+dell'anta chiusa, che e' per definizione il buco che l'anta riempie - su tutti e
+due i mondi.
+
+                            ingombri      appoggi
+    prima, 7 porte su 7     liberi        OSTRUITI
+    dopo,  7 porte su 7     liberi        liberi
+
+**LA CURA E' UNA RIGA DI PARENTELA.** Ogni forma non sta piu' sotto un corpo
+unico: sta appesa alla PROPRIA MESH, dentro uno `StaticBody3D` figlio a
+trasformata identita'. Cosi' eredita le trasformazioni di chi la porta - l'anta
+gira e la sua sagoma gira con lei - e non c'e' niente da aggiornare a mano.
+Costa 233 corpi statici invece di uno; nel BVH e' la stessa cosa.
+
+**E NON RIGUARDAVA SOLO LE PORTE.** Con la corazza congelata all'avvio, ogni cosa
+che si muove lasciava una crosta dov'era: la cupola che ruota, i portelli, il
+telescopio che insegue. Nessuno ci aveva ancora sbattuto contro perche' l'unica
+cosa che tocca gli appoggi e' la roba che si porta in giro, e la si porta in giro
+al piano terra.
+
+**IL DIFETTO SI RIMETTE** con `CORAZZA_FERMA=1`, che riporta la corazza al corpo
+unico. Non e' un vezzo: senza, `prova_varchi` direbbe «va bene» anche in un mondo
+dove il raggio non colpisce niente perche' la corazza non e' stata costruita - ed
+e' successo davvero, alla prima sonda che ho scritto. Girava con `--script`, dove
+gli autoload non esistono, `corazza.gd` non compilava (`Log` mancante), il layer
+degli appoggi era VUOTO e ogni vano risultava libero. La sonda diceva «tutto a
+posto» misurando un mondo senza corazza. Col difetto rimesso la prova pretende di
+trovare 7 vani murati su 7: se non li trova, dichiara se stessa cieca.
+
+---
+
+## D-208 Il pilastro stava sotto il punto sbagliato
+
+Federico, guardando la sala dall'alto: «tutta la base del telescopio e' shiftata
+fuori dal pilastro». Ed era vero: la colonna della montatura appoggiava sul BORDO
+del pilastro, con mezzo piede nel vuoto.
+
+**LA PREMESSA ERA GIUSTA E LA CONCLUSIONE NO.** Il file lo dichiarava a chiare
+lettere: «IL PILASTRO VA SOTTO L'INCROCIO DEGLI ASSI, non sotto la colonna della
+montatura», e il motivo scritto accanto era corretto - su una equatoriale tedesca
+l'asse polare e' inclinato, e il punto attorno a cui gira tutta la testa sta
+ventun centimetri di lato rispetto alla colonna. Se si centra la COLONNA sotto la
+cupola, quel punto finisce scentrato e tutto cio' che ruota spazza un cerchio
+storto.
+
+Ma da «l'incrocio degli assi va al centro della cupola» non segue «il pilastro va
+sotto l'incrocio». Un pilastro regge quello che ha sopra: sta sotto la COLONNA, e
+l'incrocio degli assi gli passa di fianco - e' cosi' in ogni osservatorio, ed e'
+il motivo per cui i pilastri veri hanno la testa sfalsata rispetto al fusto. Le
+due cose non erano mai state in conflitto: si centra il TELESCOPIO sull'incrocio,
+come si faceva, e poi si sposta il PILASTRO sotto il piede.
+
+**DOVE APPOGGIA DAVVERO, misurato invece che dichiarato:** il centro in pianta
+dei vertici piu' bassi dei pezzi FISSI, cioe' del piede della colonna. Non il
+baricentro della montatura, che e' una L e ha il centro per aria; non l'origine,
+che e' l'incrocio degli assi.
+
+    spostamento del pilastro          0,20 m
+    raggio del piede della montatura  0,18 m
+    raggio del pilastro               0,25 m   -> il piede ci sta dentro tutto
+
+**E ORA C'E' UN CONTROLLO CHE LO DICE**: se il piede della montatura ha raggio
+maggiore del pilastro, il modellatore grida «la base sporge nel vuoto» invece di
+lasciarlo vedere a chi gioca. Era esattamente il difetto che nessuno misurava.
+
+**MISURATO**: `prova_ccd`, `prova_puntamento`, `prova_slew` e `prova_varchi`
+passano, e la passerella resta libera sopra i 25 gradi come prima dello
+spostamento.
+
+---
+
+## D-209 La borraccia sul carrello: si posava dove si vede, e da li' non si riprendeva
+
+Federico, giocando: «ho preso la borraccia dalla stanza di controllo, l'ho messa
+sul carrello dove c'e' il proiettore, e non potevo piu' prendere la borraccia».
+Non era caduta e non era sparita: si vedeva li' sul ripiano, e il prompt non
+compariva.
+
+**E' IL SEGUITO ESATTO DI D-205, dall'altro capo.** Quella decisione ha dato al
+mondo due collisioni: gli INGOMBRI - un blocco pieno per mobile, alto quanto il
+suo pezzo piu' alto - su cui cammina il giocatore, e la GEOMETRIA VERA su cui si
+posano le cose. Da allora un oggetto si posa dove si vede. Ma la MIRA era rimasta
+sugli ingombri, e le due copie del mondo non dicono la stessa cosa proprio dove
+serve:
+
+    carrello del proiettore   ingombro alto 1,05
+                              ripiano vero      0,72
+                              una cosa posata li' sta 33 cm DENTRO il blocco pieno
+
+Cadendo l'ingombro non lo vede, quindi ci arriva; il raggio della mira invece si',
+e si ferma sulla faccia del blocco a settanta centimetri dall'occhio. Misurato con
+una sonda: da 0,7 / 0,9 / 1,2 / 1,6 metri il primo corpo colpito e' sempre
+`Proiettore_1`, mai il termos che sta a un metro e mezzo.
+
+**LA CURA E' RIFARE LA DOMANDA ALL'ALTRA COPIA DEL MONDO.** Se davanti non c'e'
+niente di utile, si richiede cosa c'e' lungo lo stesso raggio ai SOLI interagibili
+- che l'ingombro non ce l'hanno - e a quello che si trova si chiede l'unica cosa
+che conta: **si vede?** cioe', fra l'occhio e il punto colpito c'e' geometria vera?
+Se non c'e', prenderlo e' il gesto giusto; se c'e' - un muro, un'anta chiusa, il
+fianco del carrello - resta dov'e', e la borraccia in fondo al corridoio non si
+raccoglie attraverso la parete.
+
+Non sono «due raycast che possono divergere», il difetto contro cui `player.gd`
+metteva in guardia: il secondo raggio non e' una seconda risposta alla stessa
+domanda, e' la stessa domanda rifatta dietro un ostacolo che si e' gia' deciso di
+scavalcare. Il primo raggio comanda sempre, e si arriva al secondo solo quando la
+prima risposta e' «niente». Costa un'interrogazione in piu' guardando un occlusore,
+due se dietro c'e' davvero qualcosa da prendere.
+
+**LA SONDA FA DUE DOMANDE INVECE DI UNA.** `tools/prova_appoggi.gd` gia' cercava i
+blocchi con la cima finta e ci lasciava cadere un oggetto: adesso, appena quello e'
+fermo, gli gira intorno e prova a mirarlo con il raggio DEL GIOCATORE - non con uno
+suo, che e' l'errore che aveva reso cieca la prima sonda del quadro della cupola.
+Un posto conta solo se il giocatore ci sta in piedi, se da li' l'oggetto e' dentro
+la portata (1,20 m dall'occhio, che sta a 1,65) e se da li' l'oggetto SI VEDE: una
+scatola rotolata sotto una sedia non e' un caso di mira sbagliata, e' roba per
+terra, che si prende accovacciandosi. Il difetto si rimette con
+`MIRA_SUGLI_INGOMBRI=1`, e con quello acceso la sonda accusa di nuovo il carrello
+e il bidet.
+
+---
+
+## D-210 Sul letto la roba restava a mezz'aria, e la colpa era del volume di mira
+
+Trovato dalla sonda mentre si provava D-209, non da una fotografia: una scatola
+lasciata cadere sul letto si fermava a **1,05 m** invece che sul materasso a
+**0,58**. Mezzo metro sopra le coperte.
+
+**IL VOLUME DEL LETTO E' PIU' ALTO DEL LETTO, ED E' VOLUTO.** `bed.tscn` lo
+dichiara: la collisione arriva all'altezza della testiera perche' il raggio
+dell'occhio possa trovarlo - un letto alto 54 cm sta tutto sotto la linea di mira,
+e il primo letto costruito qui non si poteva usare. Quel volume serve a essere
+MIRATO, e non e' la forma della cosa.
+
+Il difetto era che gli oggetti ci si appoggiavano sopra: `carryable.gd` teneva
+`LAYER_INTERACTABLE` nella propria maschera, cioe' cadeva anche sui volumi
+d'interazione. Adesso cade sulla sola geometria vera - la corazza, che copre ogni
+mesh visibile, monitor e ante comprese - e gli oggetti si urtano fra loro perche'
+stanno anche loro su quel layer: una tazza sopra un'altra sta sopra, come prima.
+
+**E LA MIRA GUARDA OLTRE I VOLUMI, per la stessa ragione.** Una tazza posata sul
+materasso sta DENTRO il volume del letto: fermandosi al primo corpo trovato si
+mirerebbe sempre il letto e mai la tazza. Il raggio degli interagibili attraversa
+fino a quattro corpi prima di arrendersi - quanti se ne possono infilare fra
+l'occhio e una cosa a mezzo metro - e la verifica «si vede?» resta a decidere.
+
+---
+
+## D-211 Il piede di un modello non e' il suo punto piu' basso
+
+Federico, con una fotografia della consolle: «il telefono fluttua». E fluttuava,
+di **75 millimetri**.
+
+**NON ERA UN NUMERO SBAGLIATO, ERA LA DOMANDA SBAGLIATA.** `modellare.posa_modello`
+appoggia un modello di fuori sul minimo del suo ingombro, che per quasi tutti e' la
+base. Per questo telefono no: sotto la base scendono sette centimetri e mezzo di
+FILO A SPIRALE, e appoggiando quello il telefono resta per aria con l'ombra
+staccata.
+
+    fascia piu' bassa del modello   vertici sparsi su 13 x 29 mm
+    l'apparecchio                   300 x 320 mm
+
+**QUINDI SI CERCA IL PIEDE, MISURANDOLO:** si guarda il modello per fasce di cinque
+millimetri dal basso e si prende la prima che ha un'impronta vera - un rettangolo in
+pianta grande almeno un decimo di quello del modello intero. Le quattro gambe di una
+sedia lo hanno, un filo che pende no. Quello che resta sotto affonda nel piano, ed e'
+la cosa giusta: il filo sparisce dentro il legno e sotto la consolle non c'e' luce,
+un telefono sospeso lo vede subito chiunque.
+
+**MA NON SI APPLICA DA SOLA, E IL LAVABO SPIEGA PERCHE'.** Con la regola accesa su
+tutto, il lavabo a semicolonna del bagno si abbassava di **745 mm** - la sua colonna
+e' stretta, quindi passa per appendice - e sarebbe finito dentro il pavimento. Un
+piede stretto e' comunque un piede, e nessuna soglia sa distinguere una colonna da un
+cavo guardando solo l'impronta. Quindi il modellatore MISURA sempre e stampa il
+sospetto («appoggia N mm sopra il suo punto piu' basso»), e a spostare il modello e'
+chi lo posa, con `piede=True`, dopo aver guardato. La misura e' automatica, la
+decisione no.
+
+I quattro sospetti stampati oggi: telefono 75 mm (corretto), termosifone 50,
+distributore di carta 35, portarotolo 20 - questi tre sono a muro, e vanno guardati
+in partita prima di toccarli.
+
+---
+
+## D-212 Si guarda dentro il telescopio, e si vede dove punta
+
+Federico: «se uno toglie la camera sarebbe bello poter guardare nel telescopio e
+vedere cosa sta puntando». E' il gesto che chiude il cerchio del focheggiatore: la
+camera CCD si smontava gia' (D-206), e smontarla non serviva a niente.
+
+**AL FUOCO CI STA UNA COSA SOLA.** Con la CCD avvitata il prompt non compare
+nemmeno: e' la regola vera di un focheggiatore, ed e' anche l'unico modo in cui il
+giocatore scopre che smontare la camera ha un senso.
+
+**L'OCCHIO VA DOVE ENTRA LA LUCE.** La vista non e' sul nodo `Fuoco` - la bocca del
+portaoculare, dove si avvita la camera - ma su `Mira`, l'empty che il modellatore
+appende sull'ASSE OTTICO misurandolo sui vertici (D-198). Appesa li' dentro, la
+vista insegue il tubo da sola: quando la montatura si muove il campo scorre, che e'
+meta' di quello che c'era da vedere. La sonda lo prova spostando la montatura di
+trenta gradi e guardando se la vista ci va insieme.
+
+**E SI VEDE QUELLO CHE C'E', non un poster.** Nessun oggetto celeste disegnato:
+c'e' il cielo procedurale, ed e' il cielo dalla direzione in cui il tubo sta
+guardando adesso. A cupola chiusa, o con la fessura girata da un'altra parte, si
+vede il buio della calotta - ed e' la risposta giusta, perche' e' quello che si
+vedrebbe davvero. Misurato: con la fessura a 0,6 gradi dal telescopio il campo e'
+pieno di stelle; con la cupola chiusa e' nero.
+
+**IL CAMPO E' LARGO DODICI GRADI, che e' venti volte il vero, ed e' dichiarato.**
+Le stelle di `cielo.gdshader` sono dischetti dentro celle di direzione, cioe' hanno
+una dimensione ANGOLARE fissa: al mezzo grado di un oculare vero diventerebbero
+palle, e il cielo si leggerebbe come un difetto invece che come un cielo. Dodici
+gradi e' il campo di un CERCATORE, ed e' il compromesso fra la fisica e quello che
+questo cielo sa disegnare. Il numero si tara guardando, come `TRACK_RATE`.
+
+**IL VELO NERO E IL MIRINO.** Il cerchio che chiude il campo e' uno shader di due
+righe invece di una texture - il mondo vive dentro un `SubViewport` da 640x360 poi
+stirato, e un PNG andrebbe rifatto a ogni misura. E il puntino del mirino si spegne
+entrando: `crosshair.gd` lo disegna anche a controllo spento, e in mezzo al campo di
+un telescopio diventa una stella che non c'e', ferma al centro esatto - la prima
+cosa che uno crede di aver trovato.
+
+---
+
+## D-213 I faldoni e il proiettore: cosa si e' scelto, e cosa manca
+
+Due richieste di Federico nello stesso momento: «cerchiamo dei modelli per i faldoni
+di carta» e, sul proiettore della sala divulgazione, «secondo me va cambiato, forse
+e' un po' troppo old style, servirebbe uno con le diapositive».
+
+**I FALDONI.** Sopra lo schedario della sala di controllo c'e' una pila di TRE
+SCATOLE di materiale «Carta», e da un metro sono tre scatole. Un faldone ha la costa
+rigida, l'etichetta, il buco per il dito e gli anelli: sono quelle quattro cose a
+dirlo. Su Poly Haven non ci sono - interrogata l'API sui 521 modelli: c'e'
+`binder_notebook`, che e' un'agenda di pelle. Su Sketchfab si', CC-BY:
+
+    Several Folders   janexx   5.130 tri   cinque faldoni in fila, per un ripiano
+    Ring Binder       Jura       300 tri   uno solo, per le pile sfalsate
+
+**IL PROIETTORE: la richiesta e' storicamente giusta, non estetica.** Nel 1999, in
+una sala divulgativa di un osservatorio, la serata la si faceva con le DIAPOSITIVE;
+il proiettore a pellicola 8 mm era gia' roba da cineteca. La scelta precedente
+(`filmstrip_projector_8mm`) l'aveva perfino scritto nel proprio commento - «si
+facevano ancora con la pellicola E LE DIAPOSITIVE» - e fra le due ha preso quella
+sbagliata. Scelto il **Diaprex B-11** dei Virtual Museums of Malopolska, CC0, perche'
+ha il CARICATORE A SLITTA in vista: e' l'unica cosa che distingue a colpo d'occhio un
+proiettore per diapositive da uno per pellicola, cioe' tutto il motivo per cui lo si
+cambia. Il gemello «Narcyz», stesso museo, e' piu' leggero (397 mila triangoli contro
+692 mila) ma non mostra il caricatore.
+
+**COSA MANCA, ED E' A MANO.** Sketchfab consegna i file solo a un account
+autenticato: le tre voci sono dichiarate in `tools/prendi_modello.py` con autore,
+licenza e credito, e gli zip vanno scaricati da un browser con la sessione aperta e
+lasciati in `assets/models/esterni/_da_scaricare`. Le due scansioni museali vanno
+anche decimate prima di entrare in scena - `modellare.py` non ha ancora una
+decimazione, e sara' la prima cosa da scrivere quando i file ci saranno.
+
+---
+
+## D-214 La tazza incastrata nel monitor: le mesh dei prop stavano quindici centimetri piu' in la'
+
+Federico, giocando: «c'e' una tazza incastrata nel monitor». E c'era, dall'avvio -
+non l'aveva messa lui.
+
+**LE PRIME DUE IPOTESI ERANO SBAGLIATE, ed e' la parte che vale la pena scrivere.**
+La prima: «la mano la spinge dentro». Misurata: la mano puntata al centro della
+cassa ce la porta davvero, ma nessun giocatore puo' puntare li' - il corpo si ferma
+sulla consolle a 1,36 m e la tazza arriva al massimo a 30 cm dal centro. La cura
+scritta per quel caso - la mano che si ferma sulla prima geometria che incontra -
+e' stata TOLTA: un raycast per oggetto per tick che curava un difetto che non
+esisteva.
+
+La seconda: «gli oggetti collidono male con le superfici a triangoli». Provata sul
+banco delle mani, con un mobile a triangoli, con la massa e il collisore della
+tazza vera: il difetto non si riproduce, nemmeno rimettendo la mano che attraversa.
+
+**LA CAUSA VERA, misurata mesh contro collisore:** i modelli dei prop si vedono
+dove NON stanno.
+
+    tazza        15 cm fuori asse       bottiglia    21 cm
+    piattino     40 cm                  bottiglione  41 cm
+
+`prop_blender.origine_alla_base()` metteva l'origine sotto il pezzo ma lasciava
+l'oggetto dov'era nella scena di Blender - cioe' dove capitava di trovarlo dentro
+il set da cui era stato preso - e quella posizione finiva nel `.glb` come
+trasformata del nodo. In Godot il corpo rigido sta dove dice il generatore, la mesh
+quindici centimetri piu' in la': dentro la cassa del monitor, che e' proprio li'. E
+siccome il COLLISORE stava al posto giusto, la fisica non aveva niente da
+correggere - era un difetto puramente visivo, invisibile a ogni sonda che misuri
+posizioni.
+
+**Si vedeva anche altrove, e nessuno l'aveva collegato:** la tazza e il piattino
+della cucina, posati dal generatore nello STESSO punto, in partita stavano a un
+quarto di metro l'uno dall'altro.
+
+**LA CURA:** dopo aver centrato la mesh, l'oggetto torna sull'origine del mondo -
+e ci torna portandosi dentro anche la rotazione e la scala che il pezzo aveva nel
+set, o un modello importato storto avrebbe il centro nel posto sbagliato. Poi la
+tazza della consolle e' stata spostata di cinque centimetri: la cassa del monitor
+comincia a z=1,785 e una tazza col manico e' larga tredici, quindi a 1,73 ci
+finiva dentro comunque - adesso e' a 1,68, e la quota si e' potuta scrivere
+guardando i numeri invece del render.
+
+---
+
+## D-215 Le scritte del quadro d'avvio si sovrapponevano: le quote erano scritte, non impilate
+
+Federico, in partita: «le scritte si overlappano». Nel quadro dell'accensione
+l'ultima riga del registro finiva sopra il messaggio, e le due righe dei comandi si
+toccavano.
+
+**IL PASSO ERA PIU' STRETTO DELL'ALTEZZA DEL FONT.** Le quote erano numeri fissi -
+registro a 124 con passo 11, messaggio a 164, comandi a 176 e 188 - e il font di
+sistema a 11 pixel ne e' alto 12, a 12 ne e' alto 13. Con quattro righe di registro
+mancavano cinque pixel, e cinque pixel su un quadro alto 192 sono una riga.
+
+**ADESSO I BLOCCHI SI IMPILANO DAL BASSO** misurando `get_height`, `get_ascent` e
+`get_descent` invece di indovinarli: i comandi stanno sull'ultima riga utile, il
+messaggio sopra di loro, il registro riempie quello che resta. E quello che non ci
+sta non si disegna: il registro non sale mai sopra la tabella degli apparecchi -
+se lo spazio manca, le righe piu' vecchie restano fuori, che e' quello che fa una
+telescrivente quando finisce la carta. La tabella e' stata compattata da 18 a 16
+pixel di passo e alzata di quattro: quei quattro pixel sono l'aria fra l'ultima
+riga della tabella e la prima del registro.
+
+**E ADESSO SI GUARDA**: `tools/prova_schermi.gd` monta anche il quadro dell'avvio,
+nel caso piu' pieno - tre apparecchi, quattro righe di registro, il messaggio lungo
+- e lo salva in un secondo scatto, perche' a due volte il vero tre pannelli non
+stanno in una finestra da 1280x720.
+
+---
+
+## D-216 Il computer fisso sotto la consolle, e i cavi
+
+Federico: «mi puoi fare anche dei cavi e sotto al tavolo un computer fisso?». Ed
+era il pezzo che mancava per davvero: sul piano c'erano un monitor, una tastiera e
+un mouse collegati a niente, e un monitor collegato a niente e' un televisore.
+
+**LE MISURE SONO DI UN MIDI-TOWER ATX**, non stimate: 19 x 43 x 40 cm e' l'ingombro
+di serie di un case del 1999, e i vani del frontale sono standard di specifica - il
+5,25 pollici e' 146 x 41,3 mm, il 3,5 e' 101,6 x 25,4. Due vani grandi (il lettore
+e un coperchio cieco, come uscivano), uno piccolo col floppy e il suo tasto di
+espulsione, il pulsante di accensione, il reset, le due spie e la griglia di
+aerazione.
+
+**STA FUORI DAL VANO GAMBE**, nella campata fra il fianco di testa e il posto dove
+si siede: un case in mezzo ai piedi lo si prende a calci tutte le sere, ed e' il
+motivo per cui in un ufficio vero sta di lato. Il fronte guarda chi si siede,
+perche' e' da li' che si infila un floppy.
+
+**I CAVI SONO TRE E PENDONO.** Prima ce n'era uno solo, un cilindro dritto dal
+piano al pavimento dietro il monitor - e un cavo dritto legge come un tubo. Adesso
+scendono dal bordo del piano e risalgono al retro della torre (video, tastiera,
+corrente), piu' la matassa che avanza arrotolata per terra: e' il percorso vero,
+perche' sotto una scrivania addossata al muro i cavi non passano dentro il piano,
+girano dal bordo.
+
+`modellare.cavo()` li disegna come PARABOLE e non come catenarie, dichiarato: per
+un filo che scende meno di un quinto della propria luce le due curve si scostano di
+meno del raggio del cavo stesso, e la catenaria vera per un abbassamento dato vuole
+un'equazione trascendente da invertire a ogni cavo.
+
+**IL CONTROLLO DELLE IMPRONTE HA FATTO IL SUO MESTIERE**: la prima matassa era
+disposta di fianco alla torre e usciva dall'impronta della consolle - 64 vertici
+oltre il bordo, cioe' un cavo che in partita passa attraverso il fianco. Ora le
+anse stanno fra la torre e il muro.
+
+---
+
+## D-217 La camera CCD non si puo' perdere: un blocco alla mano e una rete sotto
+
+Federico, dopo aver smontato la camera davanti al telescopio: «se a uno cade la
+camera che toglie dal telescopio, gli cade dentro il cerchio del telescopio,
+rischia che non si possa mai piu' utilizzare. E' una situazione terrificante».
+
+**NON ERA UNA PAURA, ERA UN FATTO.** Misurato con una sonda che lascia cadere la
+camera dalle pose in cui uno la smonterebbe:
+
+    dentro la bocca del tubo   -> si ferma a y=0,05   PERSA
+    sopra la bocca             -> si ferma a y=0,05   PERSA
+    sopra il pilastro          -> si ferma a y=0,06   PERSA
+    di fianco al tubo          -> si ferma a y=0,06   PERSA
+    al fuoco, mollata          -> si ferma a y=0,65   raggiungibile (la passerella)
+
+Il fuoco sta sopra il POZZO del pilastro, dentro l'anello della passerella: quello
+che cade li' finisce sul pavimento della sala telescopio, un metro e sessanta piu'
+giu', oltre un parapetto, e non c'e' modo di scendere. Il tubo per giunta e' aperto
+e cavo - un raggio calato dalla bocca non incontra niente fino a terra.
+
+**E NON E' UN OGGETTO QUALSIASI.** Senza camera non si fotografa piu': non e' una
+cosa smarrita, e' una partita che non puo' piu' finire. E' l'unico oggetto del
+gioco per cui valga la pena scrivere una regola apposta.
+
+**IL BLOCCO: la mano non la lascia andare sul vuoto.** Con la camera in mano, se
+sotto non c'e' un piano entro mezzo metro, `posa()` non fa niente e il prompt lo
+dice - «Qui sotto non c'e' dove posare la camera». E' il gesto di chi appoggia una
+cosa da un chilo e mezzo, non di chi la butta; chi vuole liberarsene la rimette al
+fuoco, che e' dove sta quando non e' in mano.
+
+**LA RETE: se ci finisce lo stesso, torna al fuoco.** Il blocco copre il gesto, non
+l'incidente: la camera puo' essere strappata dalla mano contro uno stipite (vedi
+`Carryable.STRAPPO`) o spinta da un urto. Appena e' ferma - e una volta sola, che il
+conto costa una trentina di interrogazioni allo spazio - si chiede se esista un
+posto da cui un giocatore la potrebbe riprendere: ci si sta in piedi con la sua
+capsula, la si vede senza geometria in mezzo, ed e' dentro la portata da in piedi o
+accovacciati. Se quel posto non esiste, la camera torna al fuoco e il registro lo
+scrive.
+
+**SI CHIEDE AL MONDO invece di elencare i posti brutti.** Il pozzo del pilastro e'
+quello che ha fatto nascere la regola, ma un domani ci sara' un armadio, una
+fessura dietro un mobile, un tetto: «da qualche parte ci si arriva?» copre anche
+quelli e non invecchia con la pianta dell'edificio.
+
+**L'ALTRA STRADA E' STATA SCARTATA.** Federico ne aveva proposte due - il blocco
+oppure «che si possa raccogliere da piu' lontano» - e la seconda non basta:
+allungare la portata dell'interazione la allunga per TUTTO (ADR-003 la vuole corta
+apposta, sei gia' davanti alla cosa che stai usando), e comunque non arriverebbe a
+un metro e sessanta sotto il parapetto.
+
+**IL DIFETTO SI RIMETTE** con `CAMERA_SI_PERDE=1`, e con quello acceso la sonda
+accusa tutti e due i controlli: la camera si molla sul pozzo, e dieci secondi dopo
+e' ferma sul pavimento della sala dove nessuno la puo' raccogliere.
+
+---
+
+## D-218 Il divieto era peggio del pericolo: si toglie il divieto e si tappa il buco
+
+Federico, dopo aver giocato con la cura di D-217: «non hai risolto il problema,
+adesso sono bloccato con la camera in mano... soltanto sul tavolo posso posare la
+camera? Ma che discorso e' fare un prompt che dice qui sotto non c'e' dove posare
+la camera, uno impazzisce. Si ritrova questa roba in mano e non sa mai come
+usarla». E ha detto anche cosa voleva: «metti un muro invisibile che sta sotto nel
+buco del telescopio, in maniera tale che non si possa fisicamente droppare la
+telecamera li'».
+
+**AVEVA RAGIONE DUE VOLTE.** Un divieto che non dice dove SI puo' e' una punizione,
+non una regola; e questo per giunta lasciava addosso l'oggetto che si stava
+cercando di mettere giu' - il caso peggiore fra tutti quelli possibili, perche' chi
+tiene in mano una cosa che non riesce a posare non sta giocando, sta combattendo
+col gioco. La lezione e' vecchia e la avevo scritta io stesso in D-209: il prompt
+non deve mentire. Ma un prompt che dice la verita' e non offre una via d'uscita e'
+lo stesso difetto visto dall'altra parte.
+
+**IL BUCO, MISURATO.** Sotto l'anello della passerella ci sono 59 cm di vuoto: il
+pozzo del pilastro dentro (raggio 0,875), la luce dell'impalcato fuori (fino a
+1,925). Il giocatore cammina sul calpestio a 0,59 e nel pozzo non entra - lo chiude
+l'ottagono della montatura - quindi una cosa caduta li' sta a 5 cm dal pavimento
+con l'occhio piu' basso possibile (accovacciato, 1,05) un metro e sessanta piu' su:
+oltre la portata dell'interazione (1,20) da qualunque parte la si guardi.
+
+**LA CURA E' UN CILINDRO INVISIBILE**, `FondoPasserella` in `gen_blockout.py`:
+raggio 1,925, alto dal pavimento al calpestio, sul solo layer degli APPOGGI e con
+maschera zero. Quello che cade dentro l'anello si ferma a filo del piano su cui si
+cammina, dove si vede e si raccoglie; quello che rotola verso la passerella non ci
+si infila sotto. **E vale per tutto**, non per la sola camera: anche un termos o una
+tazza lasciati cadere li' erano persi, e nessuno ci aveva pensato.
+
+**PIENO E NON ANULARE**, apposta: sotto l'impalcato non deve entrare niente piu' di
+quanto debba cadere nel pozzo, e una forma sola costa una collisione invece di
+ventiquattro conci.
+
+**LA PARTE CHE VALE E' QUELLA CHE NON SI VEDEVA.** Tolto il divieto, la sola difesa
+rimasta e' la RETE di D-217 - se la camera si ferma dove nessuno la raggiunge,
+torna al fuoco - e appena il fondo ha smesso di far cadere le cose nel pozzo la
+rete ha cominciato a sbagliare. Tre difetti dentro `si_riesce_a_prendere()`, tutti
+misurati, nessuno visibile prima:
+
+    la capsula di prova appoggiata A FILO del punto colpito dal raggio
+      -> tocca il pavimento che l'ha fermata, `intersect_shape` dice «occupato»
+      -> 8 pose su 11 irraggiungibili: la funzione stava dicendo che in questa
+         casa non si puo' raccogliere niente da terra. Adesso 5 cm di franco.
+
+    il raggio della vista puntato su `global_position`
+      -> ma la camera ha l'origine sulla BASE (il collisore e' alzato di 6,35 cm),
+         quindi si mirava al punto in cui la camera TOCCA il piano: il raggio
+         arrivava sul calpestio un attimo prima di lei, la vista risultava
+         ostruita, e una camera posata bene in mezzo alla passerella veniva
+         dichiarata persa. IN PARTITA SI SAREBBE VISTA COME SPARIZIONE: la rete
+         se la riprendeva e la rimetteva al fuoco sotto gli occhi di chi l'aveva
+         appena appoggiata. Adesso si chiede al collisore dov'e' il suo centro.
+
+    i piedi cercati sul PRIMO corpo trovato scendendo
+      -> sotto la cupola il primo corpo e' la cima dell'ottagono della montatura,
+         a 2,60: la funzione concludeva che per prendere la camera bisognerebbe
+         stare in piedi lassu'. Adesso si scende di piano in piano (tre) e ci si
+         ferma sul primo in cui una persona ci sta davvero.
+
+E il giro dei posti da cui provare a raggiungerla si e' allungato da 0,85 a 1,15 m:
+una camera appoggiata SOPRA qualcosa - il tubo, il pilastro - si raccoglie stando
+lontani, perche' la distanza da coprire e' quasi tutta orizzontale.
+
+**LA CAPSULA E' QUELLA GIUSTA, ADESSO**: in piedi si guarda con l'occhio in piedi e
+l'ingombro in piedi (1,80), accovacciati con tutti e due accovacciati (1,10). Prima
+si misurava la testa bassa e il corpo alto, e ogni posto sotto qualcosa - il bordo
+della passerella, un ripiano - risultava inagibile.
+
+**LA SONDA HA CAMBIATO DOMANDA, ed e' il punto.** `tools/prova_ccd.gd` non chiede
+piu' «la mano si rifiuta?» - controllava che il divieto ci fosse, cioe' misurava la
+cura sbagliata - ma «posandola dove capita attorno al telescopio, la si ritrova
+sempre?». Un giro di pose intorno al fuoco (8 direzioni, 60 e 90 cm, saltando
+quelle dentro il tubo), e per ognuna due domande: posarla si puo'? e da qualche
+parte ci si arriva?
+
+    con la cura        10 pose provate, 0 perse
+    difetto rimesso    10 pose provate, 2 perse (y = 0,05: il pavimento della sala)
+
+**IL DIFETTO SI RIMETTE CON `CAMERA_SI_PERDE=1`, che adesso toglie DUE cose**: la
+rete e il `FondoPasserella` (spegnendogli il layer). Senza la seconda meta' il
+pozzo resterebbe tappato e la sonda direbbe «ok» misurando la cura invece del
+difetto - la trappola in cui cade ogni banco che prova solo il codice e non il
+mondo in cui gira.
+
+## D-219 La ringhiera della passerella era montata di traverso: un quarto di giro, e nessun controllo poteva vederlo
+
+Federico, giocando: «le hitbox della passerella, quella tonda, sono terribili: mi ci
+incastro sempre e si vedono i poligoni fatti in maniera molto sloppy. E'
+incomprensibile dove si puo' toccare, e tante volte senti che stai scattando quando
+tocchi la passerella. Parlo della ringhiera».
+
+**COS'ERA, ed e' una riga.** In `geometria.py` ogni concio dell'anello si girava di
+`-(ang + pi/2)` — l'angolo della TANGENTE — con accanto scritto «X locale radiale:
+la tangente e' l'angolo + 90 gradi». La frase e' vera e il numero e' quello
+sbagliato: `rot_y` dice dove va a finire la X LOCALE, e la X locale di un concio
+anulare e' il RAGGIO. Ogni pezzo si montava ruotato di novanta gradi.
+
+**COSA VOLEVA DIRE**, misurato in gioco con la capsula vera del giocatore:
+
+    l'impalcato       calpestabile per 43 cm su 105 che se ne vedono
+    il parapetto      21 ALETTE alte un metro piantate di traverso sul bordo,
+                      sporgenti 27 cm dentro il passaggio, con mezzo metro di
+                      niente fra l'una e l'altra
+    il muro sentito   a 1,52-1,53 dal centro invece che a 1,59, e ondeggiante
+
+Cioe': ci si incastrava nelle alette, e in mezzo si passava attraverso una ringhiera
+che si vede continua. «Incomprensibile dove si puo' toccare» e' la descrizione esatta
+di quella geometria, non un'impressione.
+
+**PERCHE' NESSUN CONTROLLO L'AVEVA VISTO.** `verifica_passerella` percorreva la sola
+MEZZERIA dell'anello — e un concio girato copre la mezzeria lo stesso. Il controllo
+della larghezza libera prendeva `min(sx, sz)/2` come semispessore, cioe' PRESUMEVA
+l'orientamento che avrebbe dovuto verificare. Un controllo che guarda una riga sola
+approva qualunque cosa passi per quella riga.
+
+Adesso quel controllo fa tre cose: chiede che la X locale di ogni concio guardi il
+centro della cupola (l'invariante, che il quarto di giro violava); percorre TUTTA la
+larghezza dell'impalcato, non la mezzeria; e misura le distanze dai rettangoli veri,
+comunque siano girati. Il primo dei tre ha subito trovato anche un secondo buco che
+nessuno cercava: la corda dei conci era tagliata sulla mezzeria, ma un concio e' un
+rettangolo e l'anello no, quindi all'orlo esterno restava un triangolino scoperto a
+ogni giunto — 36 punti su 540.
+
+**UN ANELLO SOLO, NON DUE.** Il numero di lati e il varco della scala erano scritti a
+mano in due file: 72 lati nel modello e 24 nella collisione, varco di 40 gradi contro
+uno di 45, con due regole diverse per decidere quali campate saltare. Adesso
+`N_ANELLO`, `VARCO_ANG`, `VARCO_MEZZO` e `fuori_dal_varco()` stanno in `geometria.py`
+e `osservatorio_blender.py` li importa: il tratto che si vede e il tratto che si tocca
+sono lo stesso tratto. Il modello non cambia di un vertice — le campate saltate sono
+identiche — ma adesso non possono piu' divergere. Restavano otto centimetri per parte
+di ringhiera visibile e attraversabile, proprio a fianco della scala.
+
+**E POI IL SECONDO DIFETTO, che il primo teneva nascosto.** Rimessa a posto la
+geometria, camminare appoggiati alla ringhiera continuava a dare gli scatti. Con
+`TRACCIA=1` si vede cos'e': a ogni fermata i contatti sono DUE conci consecutivi,
+normali a cinque gradi l'una dall'altra, mezzo millimetro di compenetrazione — la
+capsula incuneata nel giunto, e `move_and_slide()` che le azzera la velocita' di
+netto. Non e' un difetto della passerella: e' il `safe_margin` del corpo, un
+millimetro di fabbrica, e questa scena e' fatta tutta di scatole affiancate, cioe' di
+giunti. La ringhiera e' solo il posto dove ce ne sono settantadue in fila.
+
+    safe_margin   passi per il giro (ne bastano 246)   velocita' azzerate
+    0,001                            345                       37
+    0,010                            247                        0
+    0,040                            242                        0
+    0,080                            237                        0
+
+Si prende 0,02: il doppio di quanto serve, e due centimetri non si vedono — la
+capsula ne misura sessanta e il vano piu' stretto della casa, la porta del magazzino,
+novanta. Il numero vive in `world/player/player.tscn` con il conto accanto.
+
+**LA SONDA E' `tools/prova_ringhiera.gd`**, e fa le tre domande nell'ordine in cui si
+presentano a chi gioca: il muro si tocca sempre allo stesso raggio? dalla scala si
+arriva sull'impalcato? il giro si fa appoggiati senza impuntarsi? Due difetti si
+rimettono, uno per causa — `CONCI_GIRATI=1` rigira i conci di novanta gradi,
+`MARGINE_MILLIMETRO=1` riporta il margine a quello di fabbrica — e con ognuno dei due
+la sonda torna a dire di no. Senza quel confronto un referto che dice «si cammina»
+non distingue il merito della cura dal fatto che nessuno abbia provato a camminarci.
+
+    con la cura              onda 0,0 mm, giro in 246 passi su 246, 0 impuntate
+    conci girati             muro a 1,524 invece di 1,590, onda 7 mm
+    margine di fabbrica      giro in 345 passi, 37 impuntate
+
+## D-220 Niente si fermava mai: il solutore lasciava affondare un centimetro, e da li' non usciva piu'
+
+Federico: «ho appoggiato la borraccia e la camera CCD su un plico di fogli e trema
+moltissimo».
+
+**NON ERANO I FOGLI, ed e' stata la prima cosa da escludere.** Il plico e' fatto
+davvero male - tre facce orizzontali alla stessa identica quota, di cui due fogli a
+SPESSORE ZERO posati sulla cima del blocco - e sembrava la spiegazione. Misurato
+spegnendo la corazza dei due fogli: il tremito non cambia di niente (0,043 m/s
+contro 0,043). Ed era uguale anche sulla consolle nuda, a mezzo metro da li'. Il
+plico non c'entrava: c'entrava che Federico ci aveva posato qualcosa.
+
+**COS'ERA.** `contact_max_allowed_penetration` di Godot vale UN CENTIMETRO: il
+solutore lascia affondare un corpo appoggiato fino a li' e da li' in poi lo
+respinge. Due conseguenze, e la seconda e' quella che si vede:
+
+    tutto sta un centimetro DENTRO il piano su cui e' appoggiato. Un plico di
+    fogli e' spesso dieci millimetri esatti: la roba posata sui fogli non
+    affondava "un po'", li attraversava tutti e andava a vibrare sul legno.
+
+    e non si ferma mai, perche' si assesta PROPRIO SU QUELLA SOGLIA. Con
+    `TRACCIA=1` si legge il ciclo limite a due tick, dentro-fuori-dentro-fuori a
+    trenta hertz:
+
+        tick 0   y 0.74992   v 0.0346   w 0.2204
+        tick 1   y 0.75008   v 0.0024   w 0.0149
+        tick 2   y 0.74999   v 0.0292   w 0.1866
+        tick 3   y 0.75006   v 0.0046   w 0.0298
+
+Un quarto di radiante al secondo che cambia verso a ogni fotogramma, su un termos
+alto trenta centimetri, e' la punta che vibra. E sopra la soglia di sonno - otto
+gradi al secondo - il motore non lo lascia mai dormire: non finisce da solo.
+
+**LA CURA E' UN NUMERO, POI DUE.** Portata la penetrazione ammessa a un
+millimetro, la roba smette di affondare e sul plico si addormenta. Ma sui mobili
+GRANDI continuava: la consolle e' una mesh sola da migliaia di triangoli, il
+cilindro ci tocca in punti che il solutore ricalcola a ogni tick, e se non li
+riconosce come gli stessi il contatto riparte da capo ogni volta. Il secondo numero
+e' `contact_recycle_radius`, cioe' quanto lontano puo' spostarsi un punto di
+contatto restando "lo stesso punto". Spazzato con `MANOPOLE=1`:
+
+    riciclo   sul piano                  su una pila
+    0,02      sveglia 90/90, 0,26 mm     dorme
+    0,03      sveglia 90/90, 0,26 mm     dorme
+    0,04      dorme, 0,00 mm             dorme
+    0,05      dorme, 0,00 mm             dorme
+    0,08      dorme, 0,00 mm             dorme
+
+La soglia sta fra 0,03 e 0,04; si prende 0,05, sopra la soglia con margine e non
+oltre `contact_max_separation`. Le altre manopole sono state provate e non servono:
+il bias del contatto (0,2 e 0,05), le iterazioni del solutore (64), la separazione
+massima, e lo smorzamento angolare del `Carryable` portato a 8, 12 e 20 - nessuna
+sposta il ciclo limite di un millesimo. Alzare la soglia di sonno lo avrebbe
+nascosto invece che tolto, ed e' stato scartato per questo.
+
+**IL REFERTO.**
+
+                             affonda      dorme    sale e scende
+    prima (Godot di serie)   10,0 mm      mai         0,26 mm
+    dopo                      1,0 mm      sempre      0,00 mm
+
+E la casa com'e': sette oggetti posati - termos, tazza, piattino, bottiglie,
+radiolina - e dopo tre secondi dormono tutti e sette. Prima ne restavano svegli
+tre, con il termos ancora a 1,2 cm al secondo.
+
+**LA SONDA E' `tools/prova_tremore.gd`** e prova tre posti, perche' uno solo
+avrebbe detto la cosa sbagliata: la consolle nuda (un piano solo), il plico di
+fogli (tre facce coincidenti, il posto che Federico ha trovato) e una cosa sopra
+un'altra cosa - che e' il caso in cui un margine troppo stretto farebbe danno
+invece che bene, ed e' la ragione per cui il millimetro non e' un decimo.
+`PENETRAZIONE_DI_FABBRICA=1` rimette il difetto e la sonda torna a dire di no in
+sei punti.
+
+**RESTA APERTO, e non e' un difetto di adesso**: i due fogli `a4_a` e `a4_b` del
+modello sono superfici a spessore zero, e nella corazza diventano collisione a
+spessore zero appoggiata esattamente sulla cima del blocco. Adesso non fa danno -
+misurato - ma e' una cosa da sapere il giorno che si toccheranno quei modelli.
+
+## D-221 I faldoni si fanno in casa: quattro cose, non due modelli da scaricare
+
+Federico: «aggiusta un po' anche i modelli dei faldoni di carta nella sala di
+divulgazione». Sul ripiano basso del carrello del proiettore c'erano TRE SCATOLE
+color carta, impilate e sfalsate di un centimetro l'una sull'altra. Da mezzo metro
+- che e' la distanza a cui uno ci passa davanti - sono un blocco di cartone.
+
+**IL D-213 AVEVA GIA' DETTO COS'E' UN FALDONE** e non l'aveva fatto: «un faldone ha
+la costa rigida, l'etichetta, il buco per il dito e gli anelli: sono quelle quattro
+cose a dirlo». Poi aveva cercato due modelli su Sketchfab, che li consegna solo a un
+browser autenticato, e li aveva lasciati in attesa in `prendi_modello.py`. Non sono
+mai arrivati, e la pila di scatole e' rimasta li' - in due posti, perche' identica
+sopra lo schedario della sala di controllo.
+
+**QUATTRO COSE SI FANNO.** `modellare.faldone()` costruisce un registratore da
+quattordici scatole, 168 triangoli, con le misure vere e non inventate: 315 mm di
+altezza per 285 di profondita' - i due centimetri in piu' del foglio A4, cosi' la
+carta non sporge - costa da 50 mm, etichetta nel terzo alto, foro per il dito a
+cinque centimetri dal piede, cantonale di metallo sotto la costa.
+
+**IL FORO E' UN FORO VERO**, e non un disco nero appiccicato sulla costa: la costa
+e' fatta di quattro bande che gli girano intorno piu' quattro spicchi a
+quarantacinque gradi che ne smussano gli angoli, e nell'apertura ottagonale si vede
+il buio di dentro. Un disco incollato si smaschera con la luce radente, e in questa
+casa la luce radente c'e' sempre.
+
+**TRE COSE VISTE SOLO GUARDANDO IL RENDER**, e sono la ragione per cui la posa si
+controlla invece di dedurla:
+
+    le coste guardavano il muro. Alla prima posa i cinque raccoglitori del
+      carrello mostravano la COPERTINA, che e' la faccia liscia: cinque libroni.
+      Un raccoglitore lo si riconosce dalla costa, quindi la costa va dove
+      qualcuno passa - qui il corridoio fra le sedie e le teche, e sopra lo
+      schedario il lato della porta.
+
+    gli spicchi del foro sbordavano. Lunghi quattro centimetri su una costa da
+      cinque, girati di quarantacinque gradi, sporgevano di un centimetro per
+      parte: cinque alette appuntite in fila sotto il carrello.
+
+    ed erano girati sulla diagonale sbagliata. `Matrix.Rotation(g, 4, "Y")` porta
+      l'asse sottile su (cos g, 0, -sin g): per stare perpendicolare alla
+      diagonale dell'angolo (+,+) il segno e' l'opposto di quello che verrebbe da
+      scrivere. Con il segno sbagliato due angoli restavano aperti e il foro
+      diventava un papillon.
+
+**E LA CARTA DENTRO STA INDIETRO.** A filo della costa, dal foro si vedeva la carta
+illuminata e il foro leggeva come una seconda etichetta; a filo della copertina, un
+raccoglitore coricato sembrava un panino. Nel raccoglitore vero i fogli sono appesi
+agli anelli: un centimetro e mezzo dietro la costa, e quasi tre dentro il bordo
+aperto.
+
+**DUE POSTI, NON UNO.** La richiesta era per la sala di divulgazione - cinque
+raccoglitori in piedi in fila sul ripiano del carrello, gli ultimi due che pendono
+come pende sempre l'ultimo di una fila che non arriva in fondo, e due coricati di
+piatto nello spazio che avanza. Ma sopra lo schedario della sala di controllo c'era
+la stessa identica pila di scatole, ed e' il caso che il D-213 aveva lasciato
+aperto: tre raccoglitori coricati e storti, come si posano tornando dalla cupola.
+
+Restano scatole di cartone quelle della cucina (`cucina_blender.py`, sopra il
+pensile): sono scatoloni, non raccoglitori, e non sono state toccate.
+
+I due modelli Sketchfab restano dichiarati in `prendi_modello.py` con autore,
+licenza e credito: se un giorno arrivano, sostituiscono questo - ma il posto adesso
+non e' vuoto in attesa.
+
+## D-222 Il pieno centrale della cupola era un ottagono dentro un cerchio: venti centimetri di muro invisibile e otto spigoli
+
+Federico, in partita, con una foto scattata dalla passerella verso il telescopio:
+«altre hitbox qui non vanno bene». E' il secondo tempo del D-219: sistemato il bordo
+di fuori, restava quello di dentro.
+
+**COS'ERA.** Il vuoto centrale — il pozzo del pilastro, piu' tutto lo spazio dello
+strumento fin sopra la testa — e' tappato da un volume in cui non si entra, e quel
+volume era fatto di DUE SCATOLE girate di 45 gradi l'una sull'altra: un ottagono,
+inscritto nel cerchio da 0,875 su cui finisce l'impalcato che si vede. Un ottagono
+inscritto tocca il cerchio negli otto vertici e rientra a mezza faccia — qui di venti
+centimetri.
+
+**COSA VOLEVA DIRE**, misurato in gioco con `tools/prova_montatura.gd`:
+
+    il muro sentito   ondeggiava di 182 mm fra 0,998 e 1,179 dal centro
+    lo scarto         fino a 176 mm prima che finisse il pavimento che si vede
+    il giro           280 passi di fisica invece di 204, con 11 punti
+                      in cui ci si impunta, a quattro spigoli dell'ottagono
+
+Cioe': camminando lungo il bordo interno ci si fermava contro niente, a venti
+centimetri dal bordo, e in otto punti ci si infilava in uno spigolo. E quei venti
+centimetri sono i peggiori che ci siano da perdere: li' c'e' il pozzo aperto e in
+fondo il telescopio, cioe' la cosa per cui la stanza esiste.
+
+**PERCHE' NESSUN CONTROLLO L'AVEVA VISTO.** `verifica_passerella` misura la LUCE fra
+parapetto e pieno centrale — quanto passaggio resta — e un ottagono largo il giusto
+lascia passare benissimo: un metro e un centimetro contro una capsula da sessanta.
+La domanda che non faceva nessuno non e' «quanto e' largo il passaggio» ma «dove
+finisce il muro, rispetto a dove finisce il pavimento che si vede». Ed e' la stessa
+lezione del D-219 in un'altra forma: un controllo che guarda la larghezza approva
+qualunque cosa sia larga.
+
+**IL RIMEDIO: UN CILINDRO, E IL RAGGIO E' IL BORDO CHE SI VEDE.** `R_PIENO` vale
+`R_PASS - W_PASS/2`, cioe' esattamente il bordo interno dell'impalcato, e non e' un
+numero scelto: e' l'unico posto in cui fermarsi non ha bisogno di essere spiegato,
+perche' li' finisce il pavimento. Onda 0,0 mm, scarto -4 mm — il muro sta quattro
+millimetri OLTRE il bordo, che e' il mezzo lato del settantaduegono dell'impalcato —
+giro in 251 passi e nessun punto in cui ci si impunta.
+
+**LA FORMA LA SCRIVE `gen_blockout.py`, NON `blocchi_edificio()`**, e non e' un
+capriccio: li' si fanno scatole, e un cerchio fatto di scatole e' un altro poligono.
+E' la stessa ragione per cui il `FondoPasserella` sta li', e adesso i due tappi della
+cupola sono vicini di casa. In `geometria.py` restano i due numeri, che e' quello che
+`geometria.py` deve tenere.
+
+**E SI ARRIVA ANCORA ALL'OCULARE**, che e' la cosa che questa cura poteva rovinare:
+sui mezzi lati dell'ottagono ci si avvicinava sette centimetri di piu', e la portata
+dell'interazione e' 1,20 m contati dall'occhio. Misurato: l'oculare sta a 0,30 m
+dall'occhio di chi e' fermo contro il cilindro — quattro volte dentro la portata — e
+il gioco lo mette a fuoco. La sonda lo chiede al gioco e non a se stessa: smonta la
+camera CCD come la smonta chi gioca, perche' al fuoco ci sta una cosa sola.
+
+**IL DIFETTO SI RIMETTE**, `OTTAGONO=1`: spegne il cilindro e rimonta in memoria le
+due scatole di prima. Rimesse, la sonda ristampa gli stessi numeri misurati sulla
+geometria vera — 182 mm, 176 mm, 280 passi, 11 impuntate — che e' il modo di sapere
+che l'interruttore non mente.
+
+**IL FONDO DELLA PASSERELLA VA ESCLUSO DALLA MISURA**, e trovarlo e' costato una
+lettura sbagliata. Per chiedere «dove finisce il pavimento che si VEDE» la sonda tasta
+la corazza (D-205), ma sullo stesso layer c'e' anche `FondoPasserella` (D-218), che
+e' un tappo invisibile con la faccia a filo del calpestio: senza escluderlo il raggio trova
+pavimento dappertutto, e la prima misura diceva che il bordo non esisteva.
+
+## D-223 «L'ho persa per sempre»: la camera era salva, e la sparizione silenziosa e' lo stesso difetto
+
+Federico, in partita, con la foto dell'angolo fra la cassettiera della stampante e il
+rack della sala di controllo: «mi e' caduta la camera qui e l'ho persa per sempre».
+
+Il registro della sua partita diceva un'altra cosa:
+
+    INFO [ccd] la camera era finita dove non ci si arriva (8.09, -0.00, 0.17):
+               rimessa al fuoco
+
+**AVEVANO RAGIONE TUTTI E DUE, ed e' il punto.** La rete del D-217 aveva funzionato:
+misurato, quell'angolo e' davvero irraggiungibile - il corpo del giocatore e' largo
+sessanta e il solo posto in cui ci starebbe e' sulla diagonale a 135 gradi, che il
+giro a dodici direzioni non prova mai. Ma la camera se n'era andata al telescopio
+senza dire niente, e un oggetto che sparisce da sotto gli occhi si gioca esattamente
+come un oggetto perduto.
+
+**E IL BUCO NON ERA UNO.** Misurato con `tools/prova_smarrimenti.gd`, che passa tutto
+il pavimento a maglia di quindici centimetri e chiede al gioco - non a una copia
+della regola - se da li' una cosa si riprenderebbe:
+
+    dieci metri quadri, in quarantadue pozze, di pavimento da cui una cosa
+    a terra non si riprende E in cui una cosa a terra ci puo' arrivare
+    rotolando da dove si cammina
+
+Non sono voragini: sono le fessure fra un mobile e il muro e fra due mobili
+affiancati. Il giocatore e' largo sessanta e il braccio arriva a 1,20; una borraccia
+e' larga dieci e rotola dove capita. La camera aveva una rete tutta sua perche' senza
+di lei la partita non finisce; il termos, la tazza e la bottiglia non avevano niente,
+e in quelle quarantadue pozze si perdevano davvero.
+
+**LA RETE SALE IN `Carryable`, E CAMBIA RISPOSTA.** Non piu' «torna a casa» - una
+borraccia non ha una casa - ma **si sposta nel posto piu' vicino da cui la si puo'
+prendere**. Misurato: quindici centimetri, cioe' un palmo; il peggio e' cinquantatre,
+dietro la pattumiera della cucina, dove il primo posto buono e' di la' dal secchio.
+Non e' un teletrasporto: e' la cosa che non ci stava, nella fessura in cui era
+rotolata.
+
+Nell'angolo di Federico la camera adesso resta per terra a trentacinque centimetri da
+dov'e' caduta, e si raccoglie.
+
+**PERCHE' NON SI TAPPANO I BUCHI.** Sono quarantadue, e tapparli vorrebbe dire
+quarantadue volumi invisibili scritti a mano, da rifare a ogni mobile che si sposta.
+`FondoPasserella` (D-218) esiste perche' li' il buco e' UNO e profondo un metro e
+sessanta; qui i buchi sono tanti e profondi zero.
+
+**TRE COSE TROVATE STRADA FACENDO**, e nessuna si vedeva leggendo il codice:
+
+  - **la vista si chiedeva alla CORAZZA invece che al layer del mondo.** Sono due
+    cose diverse: sotto una scrivania la corazza lascia passare - li' sotto c'e'
+    aria - mentre l'ingombro e' una scatola piena, ed e' contro l'ingombro che
+    sbatte il raggio del giocatore. Una cosa sotto una scrivania risultava
+    prendibile e non lo era. Adesso la rete chiede quello che chiede il raggio.
+  - **dodici direzioni non bastano**: nell'angolo del rack l'unico posto in cui il
+    corpo ci sta e' a 135 gradi, e con il passo di trenta quella diagonale non si
+    prova. Sedici.
+  - **il centimetro di stacco**, che e' lo stesso inciampo del `FRANCO_SUOLO` della
+    capsula: provando se la cosa ci sta, posata esattamente sul punto colpito dal
+    raggio, la forma TOCCA il pavimento che l'ha fermata e `intersect_shape`
+    risponde «occupato» per ogni posto della casa. Senza quel centimetro la rete non
+    trovava un posto buono da nessuna parte e ogni cosa restava dichiarata perduta.
+
+**E LA BOTTIGLIA ERA MURATA.** La rete nuova, appena accesa, ha cominciato a dire
+«qui non ci si arriva» su un oggetto che nessuno aveva lasciato cadere: la bottiglia
+della sala di controllo, che nasce a x 5,18 - dentro il parapetto della vetrata, che
+occupa 5,10..5,30, con la consolle addossata dall'altra parte. Una trimesh non ha un
+dentro: la bottiglia non toccava nessuna faccia, non veniva spinta fuori, e restava
+murata in un parapetto alto novanta dove non si vede. Spostata di testa alla
+consolle, dove il fianco c'e' davvero.
+
+**LA CAMERA TIENE LA SUA ULTIMA SPIAGGIA.** Se un posto buono non esiste da nessuna
+parte, lei - e solo lei - torna al fuoco: e' l'unico oggetto senza il quale la
+partita non puo' piu' finire. In questa casa non succede mai, e la sonda lo misura;
+resta per il giorno in cui la pianta cambia.
+
+**IL DIFETTO SI RIMETTE** con `SI_PERDE=1`, che spegne la rete su tutto quello che si
+prende in mano: con quello acceso la sonda accusa sette pozze su otto piu' l'angolo
+del registro, cioe' la casa torna quella in cui la camera si perde.
+
+## D-224 La rete diceva di si' e non era vero: un posto libero non e' un posto dove si puo' andare
+
+Federico, il giorno dopo il D-223, con la foto della passerella della cupola e il
+pavimento sotto: «anche qui mi sa che e' persa per sempre».
+
+**E STAVOLTA IL REGISTRO NON DICEVA NIENTE.** Nessuna riga `[presa]`: la rete aveva
+guardato e aveva risposto che da li' la si prende. Si sbagliava.
+
+**COS'ERA.** La rete cercava «esiste un punto in cui il corpo del giocatore ci sta?»,
+che non e' la domanda «ci si puo' andare?». Nella cupola le due danno risposte
+opposte, e si misura:
+
+    fra la passerella e i muri della sala restano 47 cm a nord e 57 a est
+    e a ovest; il corpo del giocatore ne misura 60
+
+Quindi il pavimento attorno alla passerella non si cammina. Ma NEGLI ANGOLI della
+sala, dove il cerchio si allontana dal rettangolo, di spazio ce n'e': quattro ISOLE
+da un terzo di metro quadro l'una - 1,44 in tutto - in cui un corpo ci starebbe
+benissimo e in cui non si entrera' mai, perche' per arrivarci bisogna passare da un
+collo di cinquanta. La rete vedeva l'isola e diceva di si'.
+
+**IL RIMEDIO: si allaga.** Passato l'esame del corpo e quello della vista, un posto
+ne ha un terzo: si allaga il pavimento camminabile a partire dai piedi, a maglia di
+venti centimetri, e ci si ferma appena il conto supera **un metro quadro**. Se il
+pezzo finisce prima, non e' una stanza, e' un buco. Un metro quadro sta comodamente
+sopra le isole misurate e sotto il pavimento libero della stanza piu' piccola della
+casa. Costa: una domanda «si prende?» vale mezzo millisecondo.
+
+**MA LA CURA VERA E' PIU' IN SU, e si chiama fermapiede.** La ringhiera della
+passerella e' due correnti tonde a mezzo metro e a un metro: sotto quella bassa
+restano cinquanta centimetri d'aria. Per il giocatore non e' un buco - il parapetto,
+per lui, e' un ingombro pieno - ma per una borraccia che rotola si', e di la' si
+finisce nell'anello di pavimento che nessuno cammina.
+
+Ogni passerella a grigliato ha una lamiera di dieci-quindici centimetri sul filo del
+bordo, messa esattamente perche' gli attrezzi non cadano di sotto. Questa non ce
+l'aveva. Dodici centimetri, tre di spessore, sul bordo esterno (salvo il varco della
+scala, dove un fermapiede sarebbe la cosa in cui si inciampa) **e su quello interno**.
+
+**IL BORDO INTERNO NON E' SIMMETRIA, E' UNA MISURA.** Con il solo fermapiede esterno
+`prova_ccd.gd` e' passato da zero pose perse a due: la camera rimbalzava indietro,
+scavalcava il bordo di dentro e si fermava sul fondo invisibile della passerella -
+sospesa a filo del calpestio, dentro l'anello - dove non la prende nessuno perche'
+fra l'occhio e la cosa c'e' il pieno centrale del D-222.
+
+**E LA COLLISIONE ARRIVA DA SE'.** Non c'e' una riga di collisione nuova: gli oggetti
+cadono sulla geometria che si VEDE (D-205), quindi basta che il fermapiede ci sia nel
+modello. Il parapetto, per il giocatore, era gia' pieno.
+
+**TERZA COSA, e non si vedeva leggendo il codice: «ferma» non voleva dire ferma.** La
+rete guarda quando la velocita' scende sotto i cinque centimetri al secondo, e una
+cosa che striscia a quattro per due secondi se ne va di otto - abbastanza da passare
+dal calpestio al pozzo. Guardata una volta sola, la rete rispondeva sulla posizione
+di prima. Adesso, se si e' spostata di piu' di cinque centimetri da dove la si era
+guardata, la si riguarda.
+
+**LE MISURE, prima e dopo:**
+
+    la mappa            42 pozze e 10,08 m2 misurati con la rete che mentiva;
+                        38 pozze e 15,82 m2 misurati onestamente
+    le otto piu' grandi tutte ripescate, tutte prendibili
+    l'angolo del D-223  la camera resta per terra a 35 cm, e si prende
+    la passerella       spinta contro la ringhiera da sei direzioni, non cade mai
+
+**I DIFETTI SI RIMETTONO.** `SI_PERDE=1` spegne la rete su tutto. `SOPRA_IL_FERMAPIEDE=1`
+fa partire la cosa da sopra la lamiera e a un palmo dal bordo, cosi' non fa in tempo a
+ricadere sull'impalcato: scavalca e cade in tre direzioni su sei - e due di quelle tre
+finiscono esattamente nelle isole di nord-ovest e nord-est, cioe' dove Federico ha
+perso la camera.
+
+## D-225 Il letto se ne va dal magazzino: la notte finisce dove dice il GDD, cioe' in macchina
+
+Federico: «puoi rimuovere il letto dal magazzino, non serve».
+
+**AVEVA RAGIONE DUE VOLTE.** La prima e' il buonsenso: una branda fra gli scaffali di
+un magazzino e' la soluzione di chi non sapeva dove metterla, e infatti il commento
+che la giustificava diceva esattamente quello - la sala di controllo l'aveva
+rifiutata per due misure, e il magazzino era il posto che restava.
+
+La seconda sta scritta nel GDD da sempre, e nessuno l'aveva letta fino in fondo
+(`docs/idea/idea.md`): «ogni notte il giocatore arriva all'osservatorio, lavora fino
+all'alba, POI RISALE IN MACCHINA E TORNA A CASA A DORMIRE». Il turnista
+all'osservatorio non ci dorme. Ci arriva e se ne va.
+
+**MA IL LETTO ERA L'UNICO MODO DI ARRIVARE ALLA NOTTE DOPO.** `main.gd` lo cercava
+per gruppo e lo accendeva all'alba; tolto e basta, il giocatore avrebbe girato per
+sempre dentro un'alba che non finisce - e senza un errore, perche' non c'e' niente
+di rotto in un mondo in cui non si puo' andare a casa. Il gesto si sposta, non si
+toglie.
+
+**SULL'AUTO, che c'era gia' ed era muta.** Nel parcheggio c'e' una scatola grigia
+4,20 x 1,50 x 1,80 da quando esiste il blockout, messa li' perche' «ci si arriva in
+macchina» e mai toccata. Adesso e' `world/interactables/macchina.gd`, prompt «Torna
+a casa», e si accende all'alba con la stessa regola del letto: andarsene con una posa
+in corso chiuderebbe la notte a meta'.
+
+**E SMETTE DI ESSERE UN BLOCCO**, che e' la regola che il letto aveva gia': un
+interagibile si porta dietro la propria collisione, e lasciarlo anche fra i blocchi
+vorrebbe dire due solidi nello stesso posto - uno che risponde al raggio e uno muto -
+con angoli da cui non compare nessun prompt. Mesh e forma stanno nel nodo.
+
+**VENTI METRI DI PRATO, e sono il punto e non un pedaggio.** Dalla porta al
+parcheggio si rifa' al contrario la strada dell'arrivo, con l'osservatorio che si
+spegne alle spalle. ADR-003 dice che i passaggi sono GESTI: ci si siede al monitor
+perche' si e' camminati fin li', e si va a casa perche' si e' usciti.
+
+**LA SONDA CAMBIA OGGETTO E CAMBIA METODO.** `prova_letto.gd` diventa
+`prova_macchina.gd` e fa le stesse tre domande - nasce spenta, il prompt compare da
+un posto in cui ci si sta in piedi, ci si arriva. Ma la terza ha dovuto cambiare
+attrezzo: la prima stesura CAMMINAVA, puntando l'auto e tenendo premuto avanti, e
+diceva «non ci si arriva» perche' il giocatore nasce DENTRO l'edificio e la linea
+retta verso il parcheggio passa dentro il muro sud e dentro la teca dei meteoriti.
+Misurava la propria rotta, non il mondo. Adesso allaga il pavimento camminabile a
+partire da dove il giocatore nasce e guarda se l'onda tocca il parcheggio: 7537
+caselle da trenta centimetri, e lo tocca. Le ante sono escluse dall'allagamento -
+una porta chiusa non e' un muro, si apre.
+
+**DUE CODE, trovate perche' il magazzino vuoto ha spostato le misure:**
+
+  - **la mappa degli smarrimenti contava i muri.** Un raggio che scende dentro un
+    muro trova il pavimento lo stesso: una trimesh non ha un dentro, e il raggio
+    esce dalla faccia inferiore a quota zero. `prova_smarrimenti.gd` contava come
+    pavimento anche lo spessore dei muri e la pancia dei mobili, e una pozza intera
+    - quella del corridoio del magazzino - era il muro. Adesso ogni punto deve
+    avere lo spazio per una pallina da otto centimetri. La mappa onesta e' 10,42 m2
+    in 53 pozze.
+  - **la rete faceva la spola.** Nelle fessure peggiori il posto buono piu' vicino
+    e' esso stesso stretto: la cosa ci rotola dentro, la rete la riguarda, e senza
+    un tetto le due si rimpallano tutta la notte. Sei tentativi, poi si passa a
+    `_perduta()` - che per la camera CCD vuol dire tornarsene al fuoco. Misurato:
+    due mosse bastano quasi sempre, e le poche che ne chiedono di piu' sono quelle
+    in cui la cosa scivola mentre la si sposta.
+
+
+## D-226 Il cielo non girava: tutto il gioco diceva che gira, e la fenditura mostrava un fondale dipinto
+
+Federico: «hai messo la rotazione del cielo?». No. `cielo.gdshader` era una funzione
+della sola direzione dello sguardo, e le stelle stavano inchiodate all'edificio.
+
+**E IL RESTO DEL GIOCO IL CIELO LO FACEVA GIRARE DA SEMPRE.** `HonestCatalog` ricava
+l'angolo orario dall'ora a un quarto di grado al minuto; `HonestPointing` ha la
+costante gemella; `DomeAzimuth` esiste perché la fessura va riportata «mentre il
+cielo gira»; `TelescopeMount.partenza_gradi` è tarata sul fatto che «il cielo deriva
+di un sesto di grado al secondo», e `banda_morta_gradi` è stata portata a zero perché
+«una montatura equatoriale insegue il cielo di continuo». Due tarature scritte per un
+moto che non c'era, e un pannello che diceva una cosa che dalla fenditura non si
+vedeva.
+
+**TRE PEZZI, E DUE ERANO GIÀ IN CASA.**
+
+  - `world/tempo_siderale.gd` (nuovo): converte i minuti della notte in gradi di
+    cielo e li scrive nel materiale. Non possiede il tempo — `elapsed_min` vive in
+    `NightRun`, lo fa scorrere `NightClock` — e non possiede la latitudine, che
+    arriva da `geometria.py` per mano di `gen_blockout.py`, la stessa riga da cui il
+    modellatore inclina l'asse polare del telescopio.
+  - lo shader: due uniform (`polo_celeste`, `giro`) e una rotazione di Rodrigues.
+    **Il fondo NON gira**, ed è la riga che tiene separate le due cose: il chiarore
+    dell'orizzonte è l'inquinamento luminoso della valle e sta con il prato, mentre
+    stelle e Via Lattea stanno fra loro. Girare tutto — che è quello che farebbe
+    `Environment.sky_rotation` — avrebbe fatto ruotare anche il chiarore della valle.
+  - `TelescopeMount` insegue: l'angolo orario voluto è il comando più quanto il cielo
+    ha girato da quando il comando è arrivato. **Non si accumula per fotogramma**, si
+    ricalcola da due numeri: un integratore su nove ore porta via da solo.
+
+**LA CUPOLA NON È STATA TOCCATA, e adesso fa quello che il suo commento promette.**
+`GIOCO` (quattro gradi di errore prima che il motore riparta) era scritto per non
+inseguire «la deriva del cielo con micro-scatti continui». Misurato ora che una
+deriva c'è: su un soggetto a declinazione venti la calotta parte **ventisei volte in
+quattro ore** — una ogni nove minuti di gioco — gira di 107 gradi in tutto e fra due
+partenze non supera mai il gioco. È il rumore che si sente durante una posa.
+
+**E ALLO ZENIT NON CE LA FA, misurato: 175 gradi di ritardo.** Su un soggetto che
+culmina a 88,9 gradi l'azimut d'uscita fa mezzo giro in pochi minuti, e un motore da
+otto gradi al secondo non lo insegue. Non è un difetto del motore, è la geometria di
+una sfera — vicino al polo di una sfera l'azimut non vuol più dire niente — e le
+cupole vere la chiamano zona cieca dello zenit. Sta scritto perché il giorno che
+qualcuno decida di farci qualcosa (rifiutare quei bersagli nel planetario, o un
+motore più svelto) parta da un numero.
+
+**IL FINECORSA, che serve perché l'inseguimento non finisce da solo.** Il cielo gira
+di 135 gradi in una notte: un tubo lasciato su un soggetto dalle 21 alle 6 arriverebbe
+a un angolo orario che nessuna montatura può fare, e `_scrivi()` lo ruoterebbe lo
+stesso — dentro il pilastro, sotto il pavimento, senza che nulla protesti. A 120 gradi
+i motori si fermano e aspettano: il ribaltamento al meridiano è un gesto, e questo
+progetto non ha ancora deciso quale.
+
+**LA SCOPERTA: il disallineamento polare non esisteva, ed era scritto da due anni.**
+`AR_ZERO` dichiarava «otto decimi di grado di disallineamento polare, che il
+modellatore crede di aver raddrizzato e non ha raddrizzato», misurati leggendo dove
+guardava il tubo a declinazione 90. Quindi l'inseguimento avrebbe dovuto perdere la
+stella di un grado e mezzo per notte. Non la perde: **zero**.
+
+`prova_rotazione.gd` misura l'asse come BISETTRICE fra due puntamenti opposti — dec 90
+con l'ascensione a 0 e a 180 — invece che da una posa sola:
+
+    asse della montatura      43,900 gradi d'altezza, azimut 0,000
+    polo celeste              43,900 gradi d'altezza, azimut 0,000
+    scarto                    0,000
+    il tubo, a dec 90         0,951 gradi FUORI dal proprio asse
+
+L'asse è perfetto; **è il tubo che è storto**, e girando l'ascensione descrive un cono
+invece di stare fermo. Le tre righe della vecchia tabella erano tre punti di quel
+cono, ed è per questo che davano tre altezze diverse. Sono due guasti opposti: un asse
+storto rovina l'INSEGUIMENTO e l'unica cura è raddrizzare il treppiede; un tubo storto
+sposta il PUNTAMENTO — si va sempre un grado più in là di dove si è chiesto — e si
+azzera sincronizzandosi su una stella nota. Che è la fase 3, che quindi non è una fase
+inventata per far scena.
+
+**LA SONDA MISURA I RAPPORTI, non le ore.** `tools/prova_rotazione.gd`, prima stesura:
+metteva le ore a mano dentro `Game.run.elapsed_min`. Funzionava per il cielo — che è
+una funzione dell'ora e basta — e mentiva su tutto il resto, perché i motori si muovono
+a gradi al SECONDO: spostando l'ora di un'ora in un fotogramma si misura la velocità
+del motore, non l'inseguimento. Adesso accelera il tempo con `Engine.time_scale` (lo
+stesso attrezzo di `F1`-`F4`) e **fissa `Engine.max_fps`**: senza, in headless il gioco
+gira a migliaia di fotogrammi al secondo, i motori si muovono a passi minuscoli e
+l'errore massimo della fessura ballava fra 8,8 e 13,1 gradi da un lancio all'altro —
+cioè la soglia non voleva dire niente. A sessanta fotogrammi il picco è 4,0 esatti, che
+è il gioco.
+
+E una seconda coda della stessa specie: **si comincia a contare quando la calotta ha
+finito col GOTO.** Un puntamento manda la fessura in mezzo giro, che è una partenza
+vera ma è la partenza del puntamento; contandola insieme alle altre la sonda trovava
+novanta gradi d'errore che non c'entravano niente, e sembrava un motore che non ce la fa.
+
+**DA CHE PARTE GIRA, e perché è l'unica domanda che il confronto non chiude.** Tutte
+le altre misure confrontano il cielo col telescopio, e due cose capovolte nello stesso
+modo sono d'accordo: col verso al rovescio la stella resterebbe nell'oculare tutta la
+notte e la sonda direbbe ok. Nemmeno un'immagine lo dice — una traccia non ha una
+freccia. Lo dice l'orizzonte: il punto di cielo a est, all'orizzonte, mezz'ora dopo sta
+a **5,40 gradi d'altezza**. A est si sorge.
+
+**E L'IMMAGINE CHE DICE L'ASSE.** `tools/scatta_cielo.gd` sovrappone trenta fotogrammi
+tenendo il pixel più luminoso: due ore di posa finta, e le stelle lasciano archi.
+Guardando ad azimut 0 e altezza 43,9 gli archi sono cerchi concentrici **centrati nel
+mezzo dell'inquadratura** (`cielo-strisciate-polo.png`), che è la prova che si guarda
+invece di leggerla. La prima stesura salvava due fotogrammi a due ore di distanza: fra
+due campi di rumore uniforme spostati di trenta gradi un occhio non vede niente, ed era
+un referto che sembrava una prova.
+
+**PREZZO SUL FOTOGRAMMA: nessuno misurabile.** Il fondo del cielo si disegna comunque a
+ogni fotogramma; la rotazione aggiunge una Rodrigues per pixel del solo sfondo.
+`prova_cielo.gd` — che misura il tremolio delle stelle girando la testa di un ventesimo
+di grado — passa da 0,31% a 0,347%, contro una soglia di 0,5%: il cielo che gira non fa
+sfarfallare le stelle.
+
+Trenta sonde più il banco: tutte a zero guasti.

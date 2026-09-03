@@ -291,6 +291,69 @@ A_MANO = {
         "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
         "Telefono da tavolo beige con la cornetta e il filo a spirale",
     ),
+    # I FALDONI. Sopra lo schedario della sala di controllo c'e' una PILA DI TRE
+    # SCATOLE di materiale "Carta" (vedi arredi_blender.schedario), e da un metro
+    # sono tre scatole: un faldone non e' un parallelepipedo - ha la costa
+    # rigida, l'etichetta, il buco per il dito e gli anelli dentro, e sono quelle
+    # quattro cose a dirlo. E' anche l'arredo che un osservatorio ha per forza:
+    # i log delle osservazioni, prima di stare su un floppy, stavano li'.
+    #
+    # SU POLY HAVEN NON CI SONO (interrogata l'API sui 521 modelli: c'e' un
+    # `binder_notebook`, che e' un'agenda di pelle, e `office_notepads`, che sono
+    # i blocchi che gia' usiamo). Su Sketchfab si', CC-BY, e sono due modelli
+    # perche' i due posti vogliono due cose diverse.
+    "faldoni_fila": (
+        "faldoni_fila.zip",
+        "https://sketchfab.com/3d-models/several-folders-1a493b49ef954985ab8057ca66c387d5",
+        "janexx", "CC-BY-4.0",
+        'This work is based on "Several Folders" '
+        "(https://sketchfab.com/3d-models/several-folders-1a493b49ef954985ab8057ca66c387d5) "
+        "by janexx (https://sketchfab.com/janexx) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "Cinque faldoni ad anelli in fila, neri, con l'etichetta sulla costa e il"
+        " foro per il dito: e' il raccoglitore da ufficio italiano, quello che sta"
+        " in piedi su uno scaffale. 5.130 triangoli per cinque pezzi - meno di"
+        " milleduecento l'uno - ed e' quello che serve per riempire un ripiano"
+        " senza pagarlo."),
+    "faldone": (
+        "faldone.zip",
+        "https://sketchfab.com/3d-models/ring-binder-a0026e7d1b244b9a9223daf4223c9372",
+        "Jura", "CC-BY-4.0",
+        'This work is based on "Ring Binder" '
+        "(https://sketchfab.com/3d-models/ring-binder-a0026e7d1b244b9a9223daf4223c9372) "
+        "by Jura (https://sketchfab.com/Jurassik94) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "Un faldone solo, nero, con l'etichetta scritta a mano. Trecento triangoli:"
+        " e' il pezzo per le PILE - sopra lo schedario, sopra un armadio, di"
+        " traverso su una consolle - dove ne servono tre o quattro sfalsati e"
+        " nessuno li guarda da vicino."),
+    # IL PROIETTORE A DIAPOSITIVE, e sostituisce quello a pellicola.
+    #
+    # LA RICHIESTA, DA FEDERICO: «il proiettore secondo me va cambiato, forse e'
+    # un po' troppo old style, servirebbe uno con le diapositive». Ha ragione, e
+    # la ragione e' storica prima che estetica: nel 1999, in una sala divulgativa
+    # di un osservatorio, la serata la si faceva con le DIAPOSITIVE - il cielo,
+    # le nebulose, le foto dei soci - e il proiettore a pellicola 8 mm era gia'
+    # roba da cineteca. La scelta precedente (`filmstrip_projector_8mm`, Poly
+    # Haven) l'aveva scritto anche nel proprio commento - «le proiezioni
+    # divulgative si facevano ancora con la pellicola E LE DIAPOSITIVE» - e fra le
+    # due ha preso quella sbagliata.
+    #
+    # E' UNA SCANSIONE DA MUSEO, quindi ha la forma vera e la sporcizia vera, e in
+    # cambio pesa: 692.583 triangoli da decimare prima di portarli in scena. Il
+    # gemello e' il «Narcyz» dello stesso museo (397.252 triangoli, sempre CC0):
+    # piu' leggero, con la maniglia e il cavo, ma il caricatore non si vede. Qui
+    # il caricatore SI DEVE VEDERE - e' l'unica cosa che distingue a colpo
+    # d'occhio un proiettore per diapositive da uno per pellicola, cioe' tutto il
+    # motivo per cui lo si sta cambiando.
+    "proiettore_diapositive": (
+        "proiettore_diapositive.zip",
+        "https://sketchfab.com/3d-models/diaprex-b-11-slide-projector-0b107065c28f4972a72d5053d3f24591",
+        "Virtual Museums of Malopolska", "CC0",
+        "",
+        "Proiettore per diapositive Diaprex B-11 con il CARICATORE A SLITTA che"
+        " sporge di fianco, obiettivo e carter di lamiera. E' l'apparecchio delle"
+        " serate divulgative, e la slitta e' il pezzo che lo dice."),
 }
 
 # Le texture arrivano a 4096: dentro il .glb della stanza sarebbero ventidue megabyte

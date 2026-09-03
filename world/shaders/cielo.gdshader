@@ -73,7 +73,31 @@ uniform float antialias : hint_range(0.0, 1.0) = 1.0;
 // e non deve esserlo (D-171: non si dichiara quello che non si e' modellato) - e'
 // solo un'inclinazione che non coincide con nessun asse della scena, cosi' la fascia
 // non sembra allineata all'edificio.
+//
+// SI LEGGE NEL SISTEMA DELLE STELLE, da quando il cielo gira: la Via Lattea sta
+// FRA le stelle, non fra gli alberi, e deve attraversare la fenditura insieme a
+// loro. Il valore non e' cambiato, quindi a inizio notte la fascia sta dove stava:
+// e' l'unico istante in cui il vecchio significato e il nuovo coincidono.
 uniform vec3 polo_galattico = vec3(0.42, 0.78, -0.46);
+
+// L'ASSE ATTORNO A CUI GIRA TUTTO IL CIELO: il polo celeste nord, in coordinate del
+// mondo. La sua ALTEZZA SULL'ORIZZONTE VALE LA LATITUDINE - 43,9 gradi, Montegrimano
+// - e il suo azimut e' il nord, che in questo modello sta verso +Z. Non e' un numero
+// scelto qui: lo scrive `gen_blockout.py` leggendo `LATITUDINE` da `geometria.py`,
+// che e' la stessa riga da cui il modellatore inclina l'asse polare del telescopio.
+//
+// E' DICHIARATO COME VETTORE e non come due angoli perche' cosi' lo shader non ha
+// convenzioni da rispettare: gli arriva una direzione, e ci gira attorno.
+uniform vec3 polo_celeste = vec3(0.0, 0.6934, 0.7206);
+
+// DI QUANTO IL CIELO HA GIRATO da inizio notte, in radianti. Lo scrive
+// `world/tempo_siderale.gd` a ogni fotogramma: quindici gradi per ogni ora di gioco,
+// che e' la sola velocita' che il cielo abbia.
+//
+// ZERO E' IL CIELO DI SEMPRE, ed e' voluto: a inizio notte questo shader disegna
+// esattamente quello che disegnava prima che la rotazione esistesse.
+uniform float giro = 0.0;
+
 
 
 // Tre numeri pseudocasuali da una cella. Hash intero-in-virgola classico: economico
@@ -104,6 +128,15 @@ float rumore(vec3 p) {
 		}
 	}
 	return n;
+}
+
+
+// Ruota `v` attorno all'asse unitario `k` di `a` radianti. E' la formula di
+// Rodrigues, tre prodotti e una somma: girare il cielo costa questo, per pixel del
+// solo fondo, e non c'e' modo piu' economico di girare una sfera.
+vec3 ruota(vec3 v, vec3 k, float a) {
+	float c = cos(a);
+	return v * c + cross(k, v) * sin(a) + k * dot(k, v) * (1.0 - c);
 }
 
 
@@ -155,6 +188,19 @@ vec3 strato(vec3 dir, float scala, float densita, float pixel) {
 void sky() {
 	vec3 dir = normalize(EYEDIR);
 
+	// IL CIELO GIRA E IL PAESAGGIO NO, e questa e' la riga che tiene separate le due
+	// cose. `dir` e' dove si sta guardando RISPETTO ALLA TERRA: sotto sta il prato,
+	// su sta lo zenit, e non cambiano mai. `fisso` e' la stessa direzione letta
+	// nel sistema DELLE STELLE, che gira attorno al polo celeste di quindici gradi
+	// l'ora - e nel sistema delle stelle una stella sta ferma per sempre.
+	//
+	// SI GIRA ALL'INDIETRO, e non e' un segno da aggiustare a occhio: il cielo che
+	// gira di `giro` in avanti e' lo stesso che guardarlo da un sistema girato di
+	// `giro` all'indietro. Il verso e' misurato, non dedotto - `tools/prova_rotazione.gd`
+	// lo verifica facendo inseguire una stella al telescopio, e con il segno
+	// sbagliato il tubo la perde al doppio della velocita' invece di tenerla.
+	vec3 fisso = ruota(dir, normalize(polo_celeste), -giro);
+
 	// Il fondo. `dir.y` va da -1 (sotto) a 1 (zenit); sotto l'orizzonte non c'e'
 	// niente da vedere perche' c'e' il prato, ma il colore ci sta lo stesso -
 	// dalla vetrata si vede il cielo BASSO, ed e' li' che il gradiente conta.
@@ -162,9 +208,9 @@ void sky() {
 	vec3 fondo = mix(orizzonte, zenit, pow(su, 1.0 / caduta_orizzonte));
 
 	// La Via Lattea: la distanza angolare dal piano galattico, screziata.
-	float dal_piano = abs(dot(dir, normalize(polo_galattico)));
+	float dal_piano = abs(dot(fisso, normalize(polo_galattico)));
 	float fascia = exp(-dal_piano * dal_piano * 26.0);
-	fascia *= 0.45 + 0.55 * rumore(dir * 9.0);
+	fascia *= 0.45 + 0.55 * rumore(fisso * 9.0);
 	fondo += vec3(0.85, 0.88, 1.00) * fascia * via_lattea * 0.010;
 
 	// QUANTO CIELO STA IN UN PIXEL, in radianti. Si misura invece di dichiararlo:
@@ -174,8 +220,8 @@ void sky() {
 	// domanda.
 	float pixel = 0.5 * (length(dFdx(dir)) + length(dFdy(dir)));
 
-	vec3 stelle = strato(dir, scala_a, densita_a, pixel)
-			+ strato(dir, scala_b, densita_b, pixel);
+	vec3 stelle = strato(fisso, scala_a, densita_a, pixel)
+			+ strato(fisso, scala_b, densita_b, pixel);
 
 	// LE STELLE SI SPENGONO SULL'ORIZZONTE, e non e' un vezzo: l'aria che si
 	// attraversa guardando basso e' molte volte quella che si attraversa guardando

@@ -60,20 +60,47 @@ func _ready() -> void:
 	_costruisci.call_deferred()
 
 
+## OGNI COLLISIONE STA APPESA ALLA PROPRIA MESH, e non a un corpo unico.
+##
+## LA PRIMA STESURA LE METTEVA TUTTE INSIEME sotto uno `StaticBody3D` solo,
+## copiando la `global_transform` di ogni mesh al momento della costruzione. Per
+## un muro va bene: un muro sta fermo. Per un'ANTA no — e le ante di questa casa
+## sono dieci. La corazza si costruisce all'avvio, quando le porte sono chiuse:
+## da lì in poi la sagoma dell'anta chiusa restava piantata nel vano per tutta la
+## partita, mentre l'anta vera girava via.
+##
+## E IL DIFETTO ERA INVISIBILE A CHI CAMMINA. Il giocatore collide con gli
+## INGOMBRI, dove il vano è aperto, e passa; l'oggetto che ha in mano collide con
+## QUESTA copia, e sbatteva contro l'anta che non c'è più. Federico ha provato a
+## portare fuori una borraccia dallo studio e non passava dalla porta: «un muro
+## invisibile». Era la fotografia di un'anta chiusa.
+##
+## MISURATO, con un raggio nel centro di ogni vano a porta spalancata: tutte e
+## dieci ostruite su questo layer, tutte e dieci libere sugli ingombri.
+##
+## Appendendo la forma alla mesh, la collisione eredita le trasformazioni di chi
+## la porta: l'anta gira e la sua sagoma gira con lei, la cupola ruota e il
+## telescopio insegue senza lasciare croste dietro di sé. Costa un corpo statico
+## per mesh invece di uno solo — nel BVH è la stessa cosa, cambia solo chi tiene
+## il pennello.
+##
+## IL DIFETTO SI RIMETTE: `CORAZZA_FERMA=1` torna al corpo unico con le forme
+## congelate dove le mesh stavano all'avvio. Serve a `tools/prova_varchi.gd`, che
+## senza di questo non potrebbe dimostrare di saper vedere il muro invisibile.
 func _costruisci() -> void:
 	var quando := Time.get_ticks_msec()
-	var corpo := StaticBody3D.new()
-	corpo.name = "Triangoli"
-	# LAYER SÌ, MASCHERA NO: questa copia del mondo deve poter essere COLPITA e
-	# non deve cercare niente. Una maschera diversa da zero la farebbe partecipare
-	# a collisioni che il mondo vero sta già risolvendo, due volte.
-	corpo.collision_layer = LAYER_APPOGGI
-	corpo.collision_mask = 0
-	add_child(corpo)
-
+	var ferma := OS.get_environment("CORAZZA_FERMA") == "1"
+	var unico: StaticBody3D = null
+	if ferma:
+		unico = StaticBody3D.new()
+		unico.name = "Triangoli"
+		unico.collision_layer = LAYER_APPOGGI
+		unico.collision_mask = 0
+		add_child(unico)
 	var mesh: Array[MeshInstance3D] = []
 	_raccogli(get_tree().root, mesh)
 	var facce := 0
+	var corpi := 0
 	for m in mesh:
 		if m.mesh == null:
 			continue
@@ -82,13 +109,31 @@ func _costruisci() -> void:
 			continue
 		var nodo := CollisionShape3D.new()
 		nodo.shape = forma
-		corpo.add_child(nodo)
-		# DOPO `add_child`, non prima: `global_transform` su un nodo fuori
-		# dall'albero non fa niente e non lo dice.
-		nodo.global_transform = m.global_transform
-		facce += forma.get_faces().size() / 3
-	Log.info("corazza", "%d mesh, %d triangoli di collisione in %d ms"
-		% [mesh.size(), facce, Time.get_ticks_msec() - quando])
+		if ferma:
+			unico.add_child(nodo)
+			# DOPO `add_child`, non prima: `global_transform` su un nodo fuori
+			# dall'albero non fa niente e non lo dice.
+			nodo.global_transform = m.global_transform
+		else:
+			var corpo := StaticBody3D.new()
+			corpo.name = "Corazza"
+			# LAYER SÌ, MASCHERA NO: questa copia del mondo deve poter essere
+			# COLPITA e non deve cercare niente. Una maschera diversa da zero la
+			# farebbe partecipare a collisioni che il mondo vero sta già
+			# risolvendo, due volte.
+			corpo.collision_layer = LAYER_APPOGGI
+			corpo.collision_mask = 0
+			corpo.add_child(nodo)
+			# FIGLIO DELLA MESH, a trasformata identità: così la forma sta dove
+			# sta la mesh adesso E dove starà dopo, senza che nessuno debba
+			# aggiornarla.
+			m.add_child(corpo)
+			corpi += 1
+		facce += int(forma.get_faces().size() / 3.0)
+	Log.info("corazza", "%d mesh, %d triangoli di collisione in %s, in %d ms"
+		% [mesh.size(), facce,
+		   "un corpo solo FERMO (difetto rimesso)" if ferma else "%d corpi" % corpi,
+		   Time.get_ticks_msec() - quando])
 
 
 ## Ogni mesh visibile dell'albero, TRANNE quelle che stanno dentro un oggetto che

@@ -153,6 +153,62 @@ DISL_RAMPA = H_PASS + SP_PASS / 2       # si sale al PIANO DI CALPESTIO, non all
 # comunque a un metro dal muro della sala.
 LUNGO_RAMPA = 1.10
 
+# IL PIENO CENTRALE: il volume in cui, dalla passerella, non si entra. Riempie il
+# pozzo del pilastro e sale sopra la testa, e risponde a due difetti insieme - il
+# tubo del telescopio passa proprio all'altezza di chi sta sull'anello, e nel
+# pozzo, alto ottantuno centimetri, chi cadeva non risaliva.
+#
+# E' UN CILINDRO, E IL RAGGIO E' QUELLO DEL BORDO CHE SI VEDE. Era un ottagono -
+# due scatole a 45 gradi l'una dall'altra - inscritto nello stesso cerchio: lo
+# toccava negli otto vertici e rientrava di venti centimetri a mezza faccia.
+# Camminando lungo il bordo interno il muro invisibile andava avanti e indietro
+# di venti centimetri, con otto spigoli in cui infilarsi, e quei venti centimetri
+# non si vedevano: li' c'e' il pozzo aperto e in fondo il telescopio. Federico,
+# con la foto: «altre hitbox qui non vanno bene».
+#
+# MISURATO da `tools/prova_montatura.gd`: l'ottagono ondeggiava di 182 mm, si
+# fermava fino a 18 cm prima che finisse il pavimento, e il giro dell'anello
+# appoggiati al bordo interno costava 280 passi di fisica invece di 204 con
+# undici punti in cui ci si impunta. Col cilindro il muro sta dove finisce
+# l'impalcato, e non c'e' piu' niente da indovinare.
+#
+# LA FORMA LA SCRIVE `gen_blockout.py`, non `blocchi_edificio()`: qui si fanno
+# scatole, e un cerchio fatto di scatole sarebbe un altro poligono. E' la stessa
+# ragione per cui ci sta il `FondoPasserella`, che gli e' pure vicino di casa.
+R_PIENO = R_PASS - W_PASS / 2      # il bordo interno dell'impalcato, cioe' dove finisce il pavimento
+H_PIENO = 2.60                     # dal pavimento della sala a sopra la testa di chi sta sull'anello
+
+# QUANTI LATI HA L'ANELLO. Uno solo, e lo leggono tutti e due gli anelli che
+# esistono: quello che si VEDE (osservatorio_blender.py) e quello che si TOCCA
+# (blocchi_edificio, qui sotto). Erano due numeri scritti a mano in due file -
+# 72 nel modello, 24 nella collisione - e la differenza si sentiva camminando:
+# la ringhiera si vedeva tonda e si toccava a scatti, un dente ogni quindici
+# gradi. Un anello con due conteggi diversi non e' un anello, sono due.
+N_ANELLO = 72
+
+# DOVE ARRIVA LA SCALA, e quanto largo e' il varco che le si lascia nella
+# ringhiera. Ribattuti anche questi, e diversi: 18 gradi nella collisione, 16 nel
+# modello, con due regole diverse per decidere quali conci saltare. Restavano
+# otto centimetri di ringhiera per parte che si vedevano e non si toccavano -
+# proprio a fianco della scala, cioe' dove uno si appoggia salendo.
+VARCO_ANG = math.pi / 2
+VARCO_MEZZO = math.radians(16.0)
+
+
+def fuori_dal_varco(a0, a1):
+    """Il concio fra gli angoli `a0` e `a1` sta fuori dal varco della scala?
+
+    Ci vogliono TUTTI E DUE gli estremi fuori: e' la regola con cui il modello
+    salta le sue campate, e adesso e' anche quella con cui la collisione salta i
+    suoi conci, perche' e' letteralmente la stessa funzione. Finche' erano due
+    regole scritte a parte, il varco toccato e il varco visto avevano confini
+    diversi e nessuno dei due file poteva accorgersene.
+    """
+    for a in (a0, a1):
+        if abs(math.atan2(math.sin(a - VARCO_ANG), math.cos(a - VARCO_ANG))) <= VARCO_MEZZO:
+            return False
+    return True
+
 
 def scalati():
     """Le stesse liste in metri reali. Le larghezze delle aperture restano invariate."""
@@ -313,12 +369,11 @@ def verifica_trappole(statura=1.80):
     # protestare per un pozzo che non esiste piu'.
     interni = [b for b in blocchi if b[6].startswith("ParapettoInt")]
     if not interni:
-        pieno = [b for b in blocchi if b[6].startswith("Montatura")]
-        # il raggio libero peggiore: sul mezzo faccia dell'ottagono, non sui vertici
-        libero = R_PASS - W_PASS / 2.0
-        for b in pieno:
-            mezzo = min(b[3], b[5]) / 2.0
-            libero = min(libero, (R_PASS - W_PASS / 2.0) - mezzo)
+        # IL PIENO CENTRALE NON E' UNA SCATOLA e non sta in `blocchi`: e' il
+        # cilindro `PienoCentrale`, e il raggio libero che lascia e' quello che
+        # avanza fra il suo bordo e il bordo interno dell'impalcato. Prima qui si
+        # misurava il mezzo faccia dell'ottagono, che era proprio il difetto.
+        libero = (R_PASS - W_PASS / 2.0) - R_PIENO
         if libero >= CAPSULA:
             problemi.append("  TRAPPOLA          il vuoto centrale (%.2f m di luce) non ha "
                             "parapetto e resta aperto per %.2f m" % (luce_sotto, libero))
@@ -478,18 +533,38 @@ def blocchi_edificio():
     import math
     CX, CZ = 5.2 * K, 5.0 * K
     # L'IMPALCATO E' FATTO DI CONCI TANGENTI, non di scatole allineate agli assi.
-    # Ogni settore e' largo W_PASS in senso radiale (X locale) e lungo la corda in
-    # senso tangenziale (Z locale), e il blocco si gira di rot_y. Ventiquattro
-    # settori: la freccia dell'arco resta sotto il centimetro, quindi il calpestio
-    # e' piano davvero e non a scodella.
-    N = 24
-    corda = 2 * math.pi * R_PASS / N
+    # Ogni concio e' largo W_PASS in senso RADIALE (X locale) e lungo la corda in
+    # senso TANGENZIALE (Z locale), e `rot_y` lo gira in pianta.
+    #
+    # `rot_y` E' L'ANGOLO DEL RAGGIO, NON QUELLO DELLA TANGENTE. Qui c'era scritto
+    # `-(ang + pi/2)` con accanto il commento «la tangente e' l'angolo + 90
+    # gradi»: vero, e per questo il numero da passare NON e' quello. `rot_y` dice
+    # dove va a finire la X locale, e la X locale e' il raggio. Con il novanta di
+    # troppo ogni concio si e' montato girato di un quarto di giro, e nessuno dei
+    # controlli poteva vederlo perche' tutti guardavano la mezzeria - dove un
+    # concio girato passa lo stesso.
+    #
+    # COSA VOLEVA DIRE, misurato in gioco con `tools/prova_ringhiera.gd`:
+    # l'impalcato calpestabile era un nastro di 43 cm invece che di 105, in mezzo
+    # a un pavimento che se ne vedeva 105; e i ventuno conci del parapetto, invece
+    # di stare in fila sul bordo, erano ventuno ALETTE alte un metro piantate di
+    # traverso, ognuna sporgente 27 cm dentro il passaggio e con mezzo metro di
+    # niente fra l'una e l'altra. Federico: «mi ci incastro sempre, e si vedono i
+    # poligoni; e' incomprensibile dove si puo' toccare».
+    #
+    # LA CORDA SI MISURA SUL BORDO ESTERNO, non sulla mezzeria. Un concio e' un
+    # rettangolo, quindi e' lungo uguale a tutti i raggi; l'anello no, e all'orlo
+    # esterno la campata e' piu' larga che in mezzo. Tagliando sulla mezzeria
+    # restava un triangolino scoperto a ogni giunto, sul filo del pavimento:
+    # trentasei punti su cinquecentoquaranta, trovati dal controllo qui sotto.
+    N = N_ANELLO
+    passo = 2 * math.pi / N
+    corda = 2 * (R_PASS + W_PASS / 2) * math.sin(passo / 2)
     for k in range(N):
-        ang = 2 * math.pi * k / N
-        # X locale radiale: la tangente e' l'angolo + 90 gradi
+        ang = passo * (k + 0.5)         # la mezzeria della campata, come nel modello
         aggiungi(CX + R_PASS * math.cos(ang), H_PASS, CZ + R_PASS * math.sin(ang),
-                 W_PASS, SP_PASS, corda + 0.06, "Pass%d" % k,
-                 rot_y=-(ang + math.pi / 2.0))
+                 W_PASS, SP_PASS, corda + 0.02, "Pass%d" % k,
+                 rot_y=ang)
 
     # IL PARAPETTO HA UNA COLLISIONE, e non e' un dettaglio di comodo.
     # Senza, si attraversa la ringhiera e si cade nel vuoto centrale: li' sotto
@@ -497,45 +572,29 @@ def blocchi_edificio():
     # servirebbe scavalcare un bordo di 99 cm, che un CharacterBody3D non fa.
     # E' una trappola senza uscita, e il modo di non averla e' non poterci cadere.
     calpestio = H_PASS + SP_PASS / 2
-    VARCO_ANG, VARCO_MEZZO = math.pi / 2, math.radians(18.0)   # dove arriva la scala
-    N_PAR = 24
-    for k in range(N_PAR):
-        ang = 2 * math.pi * k / N_PAR
-        scarto = math.atan2(math.sin(ang - VARCO_ANG), math.cos(ang - VARCO_ANG))
-        if abs(scarto) <= VARCO_MEZZO:
-            continue          # il varco della scala resta aperto, o non si sale
-        passo = 2 * math.pi / N_PAR
+    for k in range(N):
+        a0, a1 = passo * k, passo * (k + 1)
+        # il varco della scala resta aperto, o non si sale - e lo decide
+        # `fuori_dal_varco`, cioe' la stessa funzione che apre il varco nel
+        # modello: il tratto che si vede e il tratto che si tocca sono lo stesso
+        if not fuori_dal_varco(a0, a1):
+            continue
+        ang = (a0 + a1) / 2.0
         # IL PARAPETTO INTERNO NON C'E' PIU', e non e' un taglio per far posto:
         # non ha piu' niente da proteggere. Serviva contro il pozzo centrale - 81
         # cm di altezza libera da cui non si risaliva - e quel pozzo adesso e'
         # pieno fino a filo del calpestio dall'ottagono della montatura. Una
         # ringhiera davanti a un muro e' solo una cosa contro cui incastrarsi.
-        for raggio, nome in ((R_PASS + W_PASS / 2, "ParapettoEst"),):
-            # TANGENTE ANCHE QUESTO. Prima la scatola si allineava "grossolanamente"
-            # all'arco allargandosi sui due assi: sui settori a 45 gradi diventava
-            # un quadrato che sporgeva sul calpestio da una parte e lasciava il
-            # vuoto dall'altra. Con rot_y la sezione e' quella vera, sei centimetri.
-            aggiungi(CX + raggio * math.cos(ang), calpestio + 0.50,
-                     CZ + raggio * math.sin(ang),
-                     0.07, 1.00, raggio * passo + 0.04, nome,
-                     rot_y=-(ang + math.pi / 2.0))
+        raggio = R_PASS + W_PASS / 2
+        aggiungi(CX + raggio * math.cos(ang), calpestio + 0.50,
+                 CZ + raggio * math.sin(ang),
+                 0.07, 1.00, 2 * (raggio + 0.035) * math.sin(passo / 2) + 0.02,
+                 "ParapettoEst", rot_y=ang)
 
-    # IL VUOTO CENTRALE SI RIEMPIE, ed e' la risposta a due difetti insieme.
-    # Con la sola scatola della montatura si camminava DENTRO il tubo - che e'
-    # inclinato e passa proprio all'altezza di chi sta sulla passerella - e
-    # entrandoci lo si vedeva da dentro. E sotto restava il pozzo centrale, alto
-    # ottantuno centimetri: chi ci cadeva non ne usciva.
-    # Un ottagono (due scatole a 45 gradi l'una dall'altra) riempie il cerchio
-    # interno fino a filo del calpestio: dalla passerella lo strumento si guarda,
-    # non ci si entra.
-    # Il lato del quadrato inscritto vale il raggio per radice di due: cosi'
-    # l'ottagono tocca il bordo interno del calpestio negli otto vertici e rientra
-    # di ventotto centimetri a meta' faccia - una rientranza in cui una capsula da
-    # sessanta non entra.
-    _r_int = R_PASS - W_PASS / 2
-    _lato = _r_int * math.sqrt(2.0)
-    for _g in (0.0, math.pi / 4.0):
-        aggiungi(CX, 1.30, CZ, _lato, 2.60, _lato, "Montatura", rot_y=_g)
+    # IL VUOTO CENTRALE SI RIEMPIE, e qui non c'e' perche' non e' una scatola:
+    # e' il cilindro `PienoCentrale`, che scrive `gen_blockout.py` leggendo
+    # R_PIENO e H_PIENO. Il perche' sta lassu', dove vivono i due numeri.
+    #
     # montatura fissa: pilastro nel pavimento + tubo del telescopio.
     # Erano un nodo scritto a mano che pescava la mesh con idx[dims[0]], cioe' "la prima
     # dimensione della lista": si prendeva il blocco piu' sottile esistente - il recinto,
@@ -1230,13 +1289,13 @@ SALA_DIVULGAZIONE = [
 #
 # Netto fra i muri: x 3,45..4,80 (1,35), z 6,60..9,40 (2,80).
 SALA_MAGAZZINO = [(3.45, 6.60, 4.80, 9.40)]
-ARREDI_MAGAZZINO = [
-    # La branda contro il muro est, la testiera al muro sud. 92 x 202: l'ingombro
-    # di `world/interactables/bed.tscn`, ricopiato qui perche' e' l'unico modo di
-    # farlo guardare dai controlli - che sono cinque, e nessuno di loro sa aprire
-    # una scena di Godot.
-    ("Letto", 3.88, 7.35, 4.80, 9.37, 1.05),
-]
+# IL MAGAZZINO E' VUOTO, e la branda che ci stava se n'e' andata. Federico: «puoi
+# rimuovere il letto dal magazzino, non serve». Il GDD lo diceva da sempre e
+# nessuno l'aveva letto fino in fondo: il turnista «risale in macchina e torna a
+# casa a dormire» (`docs/idea/idea.md`), quindi all'osservatorio non ci dorme, e
+# una branda fra gli scaffali era la soluzione di chi non sapeva dove metterla.
+# Il gesto di finire la notte sta sull'auto: vedi `world/interactables/macchina.gd`.
+ARREDI_MAGAZZINO = []
 
 STANZE_ARREDATE = [
     ("controllo pc", SALA_PC, ARREDI_PC),
@@ -1600,24 +1659,6 @@ SEDILE_MONITOR = (0.42, 0.172)
 # dall'inizio del bancone, la lampada a settanta centimetri dalla fine.
 _BANCONE = [_a for _a in ARREDI_CUCINA if _a[0] == "CucinaBase"][0]
 
-# Il letto, come lo vuole Godot: il centro della sua impronta.
-#
-# LA TESTIERA GUARDA LA PORTA, e non e' arredamento: e' l'unica cosa che rende il
-# letto usabile. Il raggio dell'interazione e' corto (1,2 m da un occhio a 1,65) e
-# `bed.tscn` ha una sola superficie alta abbastanza da essere inquadrata - la
-# spalliera, a 1,05. Nel magazzino il letto occupa il muro est per intero e lascia
-# libero solo il pezzo davanti alla porta: con la testiera in fondo alla stanza
-# resterebbe a due metri da qualunque punto in cui si possa stare in piedi, e il
-# prompt non comparirebbe mai. Girato cosi', chi entra ce l'ha davanti.
-#
-# Il centro della COLLISIONE non coincide con quello del telaio - la scatola di
-# `bed.tscn` sta quattro centimetri piu' in la' - quindi l'origine si sposta di
-# altrettanto, o il letto sfonda nel muro e nessuno se ne accorge finche' non ci si
-# cammina dentro.
-_LETTO = [_a for _a in ARREDI_MAGAZZINO if _a[0] == "Letto"][0]
-SCARTO_LETTO = 0.04
-LETTO = ((_LETTO[1] + _LETTO[3]) / 2, (_LETTO[2] + _LETTO[4]) / 2 + SCARTO_LETTO)
-
 # La cupola come volume: dove sta il giocatore quando "sta a guardare".
 # Raggio piu' corto di quello della calotta, per non toccare i muri.
 # IL COMANDO DELLA CUPOLA: due pulsanti, APRE e CHIUDE.
@@ -1949,21 +1990,62 @@ def luci_senza_comando():
     return [n for n in tutte if n not in comandate and n not in SEMPRE_ACCESE]
 
 
-def verifica_passerella(passo_gradi=2.0, franco=0.12):
-    """L'anello si cammina tutto, senza buchi e senza scalini.
+def _in_pianta(px, pz, b):
+    """Il punto (px, pz) nel sistema del blocco `b`: (radiale, tangenziale).
 
-    E' il controllo che mancava, e il difetto lo si sentiva solo camminandoci: la
-    passerella era fatta di scatole ALLINEATE AGLI ASSI messe su una
-    circonferenza, quindi copriva l'anello dove l'arco era orizzontale o
-    verticale e lo lasciava scoperto in diagonale. Qui si percorre la mezzeria
-    ogni due gradi e si chiede che ogni punto stia dentro almeno un concio, con
-    `franco` di margine dal bordo - il piede non cammina sullo spigolo.
+    `rot_y` porta la X LOCALE su (cos ry, 0, sin ry) e la Z locale su
+    (-sin ry, 0, cos ry) — e' la base che `gen_blockout._base()` scrive nella
+    scena. La riga vale solo se quella convenzione e' quella vera, e non e' una
+    cosa da dedurre: la misura in gioco la fa `tools/prova_ringhiera.gd`, che
+    tasta con la capsula del giocatore i raggi che qui si calcolano a mano.
+    """
+    dx, dz = px - b[0], pz - b[2]
+    c, sn = math.cos(b[9]), math.sin(b[9])
+    return (dx * c + dz * sn, -dx * sn + dz * c)
+
+
+def _distanze(px, pz, b):
+    """Quanto dista il punto (px, pz) dal blocco `b` in pianta, al minimo e al
+    massimo. Esatte: si porta il punto nel sistema del blocco e si misura dal
+    rettangolo, non dagli otto spigoli."""
+    u, v = _in_pianta(px, pz, b)
+    hx, hz = b[3] / 2.0, b[5] / 2.0
+    vicino = math.hypot(max(abs(u) - hx, 0.0), max(abs(v) - hz, 0.0))
+    lontano = math.hypot(abs(u) + hx, abs(v) + hz)
+    return vicino, lontano
+
+
+def verifica_passerella(passo_gradi=2.0, franco=0.12):
+    """L'anello si cammina TUTTO — per tutta la sua larghezza — senza buchi,
+    senza scalini e senza niente piantato di traverso in mezzo.
+
+    TRE CONTROLLI, E IL PRIMO E' NUOVO PERCHE' MANCAVA IL DIFETTO PIU' GROSSO.
+    La versione di prima percorreva la sola MEZZERIA dell'anello: un concio
+    girato di novanta gradi copre la mezzeria lo stesso, quindi il controllo
+    passava mentre l'impalcato calpestabile era un nastro di 43 cm dentro un
+    pavimento che se ne vedeva 105, e il parapetto era una fila di alette messe
+    di traverso. Un controllo che guarda una riga sola approva qualunque cosa
+    passi per quella riga.
+
+      1. LA X LOCALE GUARDA IL CENTRO. E' l'invariante, ed e' quello che il
+         quarto di giro violava: `rot_y` dice dove va a finire la X del blocco,
+         e per un concio anulare la X e' il raggio. Un grado di scarto qui vale
+         piu' di qualunque campionamento.
+      2. TUTTA LA LARGHEZZA SI CALPESTA: si percorre l'anello per raggi, non per
+         una riga, con `franco` di margine dai due bordi — il piede non cammina
+         sullo spigolo.
+      3. CI SI PASSA: fra il parapetto e il pieno centrale deve restare la
+         capsula piu' trenta centimetri, e le distanze si misurano dai
+         rettangoli veri, comunque siano girati.
 
     Si controlla anche che tutti i conci abbiano lo stesso calpestio: uno di
     quota diversa e' uno scalino, e un CharacterBody3D non fa step-up.
     """
     import math as _m
-    conci = [b for b in blocchi_edificio() if b[6].startswith("Pass")]
+    tutti = blocchi_edificio()
+    conci = [b for b in tutti if b[6].startswith("Pass")]
+    ostacoli = [b for b in tutti if b[6].startswith("Parapetto")]
+    pieno = [b for b in tutti if b[6] == "Pilastro"]
     problemi = []
     if not conci:
         return ["  PASSERELLA ASSENTE       nessun concio di impalcato"]
@@ -1972,41 +2054,61 @@ def verifica_passerella(passo_gradi=2.0, franco=0.12):
         problemi.append("  IMPALCATO A SCALINI      calpestii diversi: %s"
                         % sorted(quote))
     CXp, CZp = 5.2 * K, 5.0 * K
+
+    # 1. la X locale di ogni concio guarda il centro della cupola
+    storti = []
+    for b in conci + ostacoli:
+        rx, rz = b[0] - CXp, b[2] - CZp
+        lung = _m.hypot(rx, rz)
+        if lung < 1e-6:
+            continue
+        scarto = _m.degrees(_m.acos(max(-1.0, min(1.0,
+            (rx * _m.cos(b[9]) + rz * _m.sin(b[9])) / lung))))
+        if scarto > 0.5:
+            storti.append((b[6], scarto))
+    if storti:
+        problemi.append("  CONCI GIRATI             %d conci hanno la X locale fuori dal "
+                        "raggio, fino a %.0f gradi (%s...)"
+                        % (len(storti), max(s for _n, s in storti), storti[0][0]))
+
+    # 2. tutta la larghezza dell'anello poggia su qualcosa
     passi = int(360.0 / passo_gradi)
+    raggi = [R_PASS - W_PASS / 2 + franco, R_PASS, R_PASS + W_PASS / 2 - franco]
     scoperti = 0
     for i in range(passi):
         ang = 2 * _m.pi * i / passi
-        px = CXp + R_PASS * _m.cos(ang)
-        pz = CZp + R_PASS * _m.sin(ang)
-        coperto = False
-        for (cx, cy, cz, sx, sy, sz, _n, _rx, _rz, ry) in conci:
-            # nel sistema del concio: si disfa la rotazione attorno a Y
-            dx, dz = px - cx, pz - cz
-            c, sn = _m.cos(-ry), _m.sin(-ry)
-            lx = dx * c + dz * sn
-            lz = -dx * sn + dz * c
-            if abs(lx) <= sx / 2 - franco and abs(lz) <= sz / 2 - franco:
-                coperto = True
-                break
-        if not coperto:
-            scoperti += 1
+        for r in raggi:
+            px = CXp + r * _m.cos(ang)
+            pz = CZp + r * _m.sin(ang)
+            coperto = False
+            for b in conci:
+                u, v = _in_pianta(px, pz, b)
+                # IL FRANCO SOLO SUL RAGGIO: in senso tangenziale i conci si
+                # accavallano apposta, e chiedere margine anche li' segnalerebbe
+                # un buco a ogni giunto - dove buchi non ce ne sono.
+                if abs(u) <= b[3] / 2 and abs(v) <= b[5] / 2:
+                    coperto = True
+                    break
+            if not coperto:
+                scoperti += 1
     if scoperti:
-        problemi.append("  BUCHI NELL'ANELLO        %d punti su %d della mezzeria "
-                        "non poggiano su nessun concio" % (scoperti, passi))
-    # E CI SI DEVE PASSARE. La larghezza che conta non e' quella dell'impalcato ma
-    # quella che resta fra gli ostacoli: parapetti da una parte, il pieno centrale
-    # dall'altra. La capsula del giocatore e' larga 0,60, e sotto i venti
+        problemi.append("  BUCHI NELL'ANELLO        %d punti su %d dell'impalcato "
+                        "non poggiano su nessun concio" % (scoperti, passi * len(raggi)))
+
+    # 3. E CI SI DEVE PASSARE. La larghezza che conta non e' quella dell'impalcato
+    # ma quella che resta fra gli ostacoli: il parapetto da una parte, il pieno
+    # centrale dall'altra. La capsula del giocatore e' larga 0,60, e sotto i venti
     # centimetri di gioco camminare diventa incastrarsi.
-    ostacoli = [b for b in blocchi_edificio() if b[6].startswith("Parapetto")]
-    dentro = R_PASS - W_PASS / 2.0
     fuori_r = R_PASS + W_PASS / 2.0
     for b in ostacoli:
-        r = _m.hypot(b[0] - CXp, b[2] - CZp)
-        mezzo = b[3] / 2.0 if b[3] < b[5] else b[5] / 2.0
-        if r > R_PASS:
-            fuori_r = min(fuori_r, r - mezzo)
-        else:
-            dentro = max(dentro, r + mezzo)
+        fuori_r = min(fuori_r, _distanze(CXp, CZp, b)[0])
+    # IL PIENO CENTRALE E' IL CILINDRO, e il suo raggio e' la sua distanza
+    # massima dal centro: un cilindro non ha vertici che sporgano piu' in la'.
+    # Gli altri pieni - il pilastro - restano scatole, e di quelle si guarda lo
+    # spigolo lontano.
+    dentro = R_PIENO
+    for b in pieno:
+        dentro = max(dentro, _distanze(CXp, CZp, b)[1])
     netto = fuori_r - dentro
     # TRENTA CENTIMETRI DI GIOCO, non venti. Con venti la configurazione vecchia -
     # 0,85 di impalcato e un parapetto per lato - passava per un centimetro, e

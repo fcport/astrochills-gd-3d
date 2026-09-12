@@ -7226,3 +7226,218 @@ di grado — passa da 0,31% a 0,347%, contro una soglia di 0,5%: il cielo che gi
 sfarfallare le stelle.
 
 Trenta sonde più il banco: tutte a zero guasti.
+
+---
+
+## D-227 Svitare la camera durante la posa non faceva niente, e la posa contava i frame di una camera che avevi in mano
+
+Federico: «se qualcuno stacca la camera mentre fa le riprese deve essere rifatto quel
+collegamento e le immagini sono andate perse». È vero fuori dal gioco — la camera è
+appesa al PC da un cavo, e portandola via il cavo se ne va con lei — ed era falso
+dentro: la posa gira in background APPOSTA, la strada che porta via dalla postazione
+porta in cupola, e in cupola la camera si smonta con lo stesso tasto con cui si
+raccoglie un termos. Si poteva svitarla a metà sequenza, andare in cucina, e guardare
+`FRAME 7/20` diventare `FRAME 8/20`.
+
+**IL FATTO ERA GIÀ DICHIARATO, E NON POTEVA ASCOLTARLO NESSUNO.** `CcdCamera` aveva un
+`signal montaggio_cambiato(montata)` col commento «chi vuole saperlo — un domani la
+fase che pretende la camera al suo posto — lo ascolta». Quel domani non poteva
+arrivare: l'unico interessato è la posa, che vive in `phases/`, e un signal diretto
+vuole un ascoltatore capace di raggiungere l'emettitore — `phases/` non conosce
+`world/` e non ha modo di trovare quel nodo. Non era una dimenticanza, era una porta
+murata. Adesso il fatto esce da `Events.camera_mounted_changed(mounted)`, come
+`mains_changed` e `telescope_slewing_changed`: il mondo lo dice ad alta voce e non sa
+chi lo sente.
+
+**LA POSA MUORE, E I FRAME SONO PERSI TUTTI.** Non c'è mezza foto da salvare — quello
+che c'era stava dentro la camera che adesso qualcuno tiene in mano — e la sequenza non
+riprende da dove si era interrotta. La fase si chiude con `ok = false`, punteggio zero
+e **payload vuoto**, che è il pezzo che conta: senza esposizione né conteggio frame nel
+payload l'orchestratore non conia nessuna foto, e non c'è niente da impilare, rivelare
+o vendere. Ed emette `sequence_ended`, così il telescopio smette di inseguire: una posa
+morta non è una posa che continua a ronzare.
+
+**MA NON SPARISCE IN SILENZIO, ed è la metà che si dimentica.** Chi ha svitato la
+camera è in cupola, non alla postazione: se la fase si chiudesse da sola troverebbe al
+ritorno un vetro nero, o peggio il pannello successivo, senza sapere perché la sequenza
+non c'è più. Il guasto resta sul CRT — `CAMERA NOT RESPONDING / link lost - sequence
+aborted / 5/20 FRAMES LOST` — e la fase si chiude solo quando qualcuno lo legge e preme
+ENTER. È anche quello che fa un software vero: una finestra d'errore che aspetta un OK.
+
+**FIN DOVE SI TORNA INDIETRO: solo la posa.** L'alternativa era il rientro nel setup
+completo — svitando la camera si perdono davvero anche il freddo e il fuoco, e sarebbe
+stato il più fedele dei due — e Federico ha scelto il meno punitivo: il collegamento si
+rifà **riavvitando la camera**, e da lì si riparte dal menu post-foto senza ripercorrere
+la notte. Coerenza col resto: finché la camera non è al suo posto il pannello di
+configurazione non offre START, mostra `NO CAMERA - REFIT IT TO THE FOCUSER`. Un tasto
+che non fa niente e non spiega insegnerebbe che il pannello mente, ed e' la stessa
+regola per cui l'interruttore della cupola dice quello che fa.
+
+**E LA NOTTE NON FINISCE CON LA POSA.** Un ciclo foto che si esaurisce senza foto
+portava allo schermo vuoto e al giocatore in piedi: dopo un guasto sarebbe stato un
+vicolo cieco, con le ore che restano e nessun modo di rifare lo scatto. Adesso
+`night_session` guarda `PhaseResult.ok` dell'ultima fase del ciclo — `ok`, non il nome
+di una fase: ADR-002 regge — e apre il menu post-foto, che è già il posto dove si
+decide quanto rifare.
+
+**IL BUCO CHE RESTA, detto invece che sottinteso.** Un signal non si riascolta dopo: una
+camera smontata PRIMA che il modulo della posa esista — durante il puntamento, per dire
+— non viene sentita, e la sequenza partirebbe come se la camera fosse al suo posto. Per
+chiuderlo servirebbe uno stato del collegamento su `NightRun`, cioè la strada del
+«rientro nel setup» che è stata scartata. Sta in `deferred-work.md`.
+
+**MISURATO, non dedotto.** `tools/prova_staccata.gd`, quattro atti in un lancio:
+
+    a 10.0 minuti di posa: 5/20 frame          <- a metà sequenza, non ai bordi
+    smontata: is_working=false, sequence_ended 1, finished 0   <- muore e ASPETTA
+    ENTER: ok=false punteggio=0 payload={  }   <- nessuna foto coniata
+    senza camera START non parte; riavvitata riparte
+    dopo il guasto: menu aperti 1, piano esaurito 0
+
+E il difetto rimesso, che è la sola cosa che dice se la sonda misura qualcosa:
+`POSA_SORDA=1` stacca la fase dal bus — cioè rimette il gioco di prima — e la sonda
+tira su quattro guasti, il primo dei quali è «la sequenza sta ancora lavorando con la
+camera in mano». Il pannello del guasto è stato anche GUARDATO, girando con una
+finestra (`user://staccata.png`): headless `_draw()` non gira, e una chiamata sbagliata
+dentro un pannello nuovo non se ne accorgerebbe nessuno.
+
+---
+
+## D-228 La luna ha una data, e la data si vede
+
+Federico: «aggiungi la luna nel cielo che fa la luce di fondo, in base al calendario deve
+esserci la luna della dimensione giusta». Sono due richieste che stanno in piedi solo
+insieme — una luna che si vede piena e illumina come una falce sarebbe peggio di nessuna
+delle due — e quello che mancava era il pezzo che le tiene: **una data**.
+
+**Il gioco non aveva un giorno.** `night_index` contava le notti e basta. Adesso la notte
+1 è il **16 novembre 1999** e ogni notte è il giorno dopo. Novembre non è un gusto: la
+notte va dalle 21:00 alle 06:00, e nove ore di buio a 43,9 gradi di latitudine esistono
+solo d'inverno — l'orologio del gioco aveva già scelto la stagione, mancava solo di
+scriverla. Il sedici perché è il giorno dopo il primo quarto: la prima notte si apre con
+una mezza luna a sud-ovest che tramonta dopo mezzanotte, cioè mostra subito tutte e due
+le cose che questo lavoro produce — la luna che c'è e la luna che se ne va. Cominciare al
+novilunio avrebbe fatto sembrare rotta la funzione appena scritta.
+
+**L'astronomia è vera, ed è verificata contro un almanacco.** `core/luna.gd` è il modello
+a bassa precisione di Meeus troncato ai termini che contano — non un contatore modulo
+29,53, che sbaglierebbe fino a **mezza giornata** perché la Luna corre su un'ellisse.
+`tools/prova_luna.gd` lo confronta con sei date lunari pubblicate del 1999, fra cui il
+novilunio dell'eclissi totale dell'11 agosto:
+
+    novilunio  11 ago 1999 11:09 UT (eclissi totale)   scarto 0.09 gradi (10 min)
+    plenilunio 23 nov 1999 07:04 UT                    scarto 0.33 gradi (39 min)
+    plenilunio 22 dic 1999 17:31 UT                    scarto 0.20 gradi (24 min)
+
+e trova anche la **superluna** del 22 dicembre — 357 mila chilometri, disco del 7,8% più
+grande della media — che un modello senza l'ellisse non potrebbe avere. Un modello lunare
+che nessuno confronta con un almanacco è un generatore di numeri plausibili: qualunque
+formula produce una palla che cresce e cala in un mese, e sembra giusta a chiunque la
+guardi, compreso a chi l'ha scritta.
+
+**E il ciclo non è programmato da nessuna parte: esce dal calendario.** Notti 7-8 luna
+piena tutta la notte, e il cielo profondo non si fotografa; dalla 13 la luna sorge sempre
+più tardi; dalla 20 alla 27 non c'è affatto, perché sta in cielo di giorno. Un
+astrofotografo guarda il calendario prima del meteo, e adesso il gioco lo può dire senza
+scriverlo da nessuna parte: con la luna alta il fondo del cielo si fa lattiginoso e
+restano solo le stelle più forti.
+
+**D-078 non è stata disfatta, è stata ripresa.** Quella decisione fissava la luna a 0,22
+«perché di notte da una finestra si vede attraverso solo se dall'altra parte c'è qualcosa
+da vedere». Con un calendario vero, un terzo delle notti è senza luna, e le vetrate
+sarebbero tornate lastre nere: il difetto che D-078 aveva chiuso, riaperto dal calendario.
+Il fondo adesso si chiama `ENERGIA_CIELO`, vale 0,07 e ha una ragione fisica prima che di
+gioco — airglow, stelle, il chiarore della valle che lo shader del cielo dichiara già come
+inquinamento luminoso. Sopra ci si somma la Luna, fino a 0,44 nella piena alta del 23
+novembre: il doppio di ieri, ed è voluto.
+
+**Due bugie dichiarate, perché scritte in chiaro valgono più che nascoste.**
+
+- **Il disco è disegnato quattro volte più grande del vero.** Il mondo si disegna in un
+  SubViewport da 640×360 a 75 gradi di campo: mezzo grado di Luna sono **due pixel e
+  mezzo**, e in due pixel e mezzo non esiste nessuna fase. Il fattore è costante, quindi
+  il rapporto resta vero — la superluna resta più grande di ogni altra luna dell'anno.
+- **La frazione illuminata entra lineare nell'energia.** La curva di fase vera è
+  ripidissima: una mezza luna manda un *decimo* della luce di una piena, non la metà. Al
+  rapporto vero, venti notti su ventinove sarebbero indistinguibili dal novilunio e il
+  calendario — la cosa che questo lavoro rende leggibile — tornerebbe un interruttore fra
+  luna e buio.
+
+**Tre difetti trovati dagli attrezzi, non dalla lettura.** E sono tre generi diversi, il
+che è il motivo per cui gli attrezzi sono due:
+
+1. **La direzione della luce era pesata sull'energia.** Con la mezza luna a ventiquattro
+   gradi, il fondo del cielo valeva quasi metà del totale e tirava la direzione di
+   **ventotto gradi verso l'alto**: in cielo la luna a sud-ovest, per terra le ombre di
+   una luce quasi allo zenit. Adesso il peso è l'**altezza**: finché la Luna sta in cielo
+   la luce è la sua, per fioca che sia — è comunque l'unica cosa lassù che faccia
+   un'ombra netta.
+2. **L'angolo di fase non era ripiegato su 0..180.** Dalla luna piena in poi restava sopra
+   180, e il nome della fase diceva «novilunio» per venti notti di fila, compresa quella
+   col disco illuminato al cento per cento. Sulla luce non si vedeva niente — il coseno
+   non distingue 200 gradi da 160 — era un guasto che esisteva solo nelle parole.
+3. **Le fasi uscivano tutte complementari**, per un segno nella normale della sfera:
+   `luna_dir` va da chi guarda verso la Luna, la normale del centro del disco va dalla
+   parte opposta. Luna piena disegnata come falce e falce come piena, con l'ora, la data,
+   la fase e l'energia **tutte giuste**. Nessuna prova numerica poteva vederlo.
+
+Il terzo è la ragione per cui `tools/scatta_luna.gd` non si limita a salvare un provino
+delle dodici fasi: di ogni cella **conta i pixel accesi** e li confronta con la frazione
+illuminata dichiarata dalle effemeridi. Misurato, dopo la correzione:
+
+    notte 28  illuminata 0.29, misurata 0.28      notte  9  illuminata 0.96, misurata 0.96
+    notte  1  illuminata 0.55, misurata 0.56      notte 15  illuminata 0.37, misurata 0.39
+    notte  7  illuminata 1.00, misurata 1.00      notte 18  illuminata 0.12, misurata 0.14
+
+Il provino salva anche `luna-in-gioco.png` — campo visivo vero, dieci pixel di disco — e
+le due immagini servono insieme: la seconda è quella onesta.
+
+**Il difetto si rimette**, come per il cielo che gira: `FISSA=1` riporta la luna alla posa
+scritta a mano di ieri, e `tools/prova_luna.gd` deve trovare tutto immobile — stessa
+direzione a ogni ora, stessa energia in tutte le notti del mese. Se non cambiasse niente,
+quella sonda non starebbe misurando quello che crede.
+
+## D-229 La faccia della Luna è quella vera, e ha rivelato che il cielo è allo specchio
+
+Federico: «puoi mettere i crateri?». **Non inventati**: la faccia è il mosaico LROC del
+Lunar Reconnaissance Orbiter e il rilievo viene dalle quote dell'altimetro LOLA, dal CGI
+Moon Kit della NASA (pubblico dominio, credito in `CREDITI.md`). La Luna è l'unico oggetto
+del cielo che tutti riconoscono, e una palla con dei buchi a caso non sarebbe la Luna.
+
+**Il rilievo non è esagerato.** La mappa a 8 bit del kit non dice quanti metri valga un
+livello di grigio; quella a 16 bit sì (mezzi metri, più ventimila). `tools/prendi_luna.py`
+ne ricava le pendenze vere — media 3,8 gradi, il 99% sotto i 16,6 — e la luce le usa con
+la legge di **Lommel-Seeliger**, la fotometria della regolite: alla luna piena il disco
+resta piatto e i crateri spariscono, al terminatore il Sole è radente e ogni pendenza
+conta. È esattamente dove, al telescopio, i crateri si vedono davvero
+(`luna-da-vicino.png`).
+
+**La faccia gira nel corso della notte**, perché il nord della Luna è il suo asse vero nel
+cielo di quell'istante (il polo dell'eclittica, a un grado e mezzo per le leggi di
+Cassini), non «l'alto dello schermo».
+
+**Il disco è sceso da 2,4 a 1,3 volte l'albedo media**: con la faccia vera, a 2,4 mari e
+altipiani finivano entrambi nella spalla della curva ACES e la Luna sembrava una foto
+sovraesposta. La media si misura sul file, non si ricopia: la NASA ha rifatto il mosaico
+nel dicembre 2025. Le fasi misurate sul provino restano entro 0,05 della frazione
+illuminata.
+
+**LO SPECCHIO.** Per girare la faccia serve un prodotto vettoriale, e un prodotto
+vettoriale dà un verso in un mondo e l'opposto nel suo specchio. Misurandolo è venuto fuori
+che il cielo di questo gioco **è allo specchio**: con l'alto a +Y, il nord a +Z e l'est a
++X, guardando il polo l'est cade a *sinistra*. Le stelle girano in senso orario attorno al
+polo invece che antiorario, e la luna crescente è illuminata a sinistra (una «C») invece
+che a destra (la «D» del proverbio: *la luna è bugiarda*). Con le stelle procedurali non si
+vedeva; la tabella della montatura in `telescope_mount.gd` lo conferma (angolo orario −90
+all'azimut 89, cioè +X).
+
+La Luna **non corregge lo specchio da sola** — girerebbe al contrario delle stelle e il
+telescopio non la inseguirebbe — ma lo **misura** (`Luna.chiralita()`) e si orienta di
+conseguenza: faccia e luce sono sempre coerenti fra loro, e il banco lo verifica con un
+invariante che non dipende dagli assi (finché cresce, il Sole sta sull'est della Luna, dalla
+parte di Mare Crisium). Oggi quindi la faccia è coerente e **specchiata** rispetto al cielo
+vero; il giorno che la convenzione venisse raddrizzata, la Luna seguirebbe senza toccare una
+riga.
+
+**Nota di numerazione**: la voce precedente era uscita come D-102, che esisteva già (le
+porte). È stata rinumerata D-228.

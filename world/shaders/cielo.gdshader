@@ -99,6 +99,82 @@ uniform vec3 polo_celeste = vec3(0.0, 0.6934, 0.7206);
 uniform float giro = 0.0;
 
 
+// --- LA LUNA -----------------------------------------------------------------
+//
+// NON GIRA CON LE STELLE, e per questo si disegna su `dir` e non su `fisso`. Nel
+// sistema delle stelle una stella sta ferma per sempre; la Luna no - percorre
+// tredici gradi al giorno fra le stelle, mezzo grado all'ora, cioe' il proprio
+// diametro. Chi glielo ricalcola a ogni fotogramma e' `world/luce_di_luna.gd`,
+// che sa che notte e' e legge le effemeridi vere di quella data.
+//
+// E LA FASE NON ARRIVA COME NUMERO, arriva come GEOMETRIA: qui ci sono due
+// direzioni - dov'e' la Luna e dov'e' il Sole - e da che parte sia illuminata lo
+// decide un prodotto scalare, esattamente come lo decide il sistema solare. Un
+// uniform `fase` sarebbe la seconda verita' sulla stessa cosa, e il giorno che
+// divergesse si vedrebbe una falce che guarda dalla parte sbagliata mentre tutti
+// i conti tornano.
+
+// Dove sta la Luna, in coordinate del mondo. Il default guarda sotto i piedi,
+// cioe' la Luna e' tramontata: un cielo che si aprisse senza nessuno a scrivere
+// questo parametro non deve mostrare una luna inventata allo zenit.
+uniform vec3 luna_dir = vec3(0.0, -1.0, 0.0);
+
+// Dove sta il Sole. Di notte e' sotto l'orizzonte e non illumina niente di
+// quello che si vede: serve SOLO a dire da che parte cade la luce sulla Luna.
+uniform vec3 sole_dir = vec3(0.0, -1.0, 0.0);
+
+// Il raggio del disco COME SI DISEGNA, in radianti. Il default e' il vero:
+// mezzo grado di diametro, 0,00452 di raggio, ed e' il numero che quasi tutti
+// sbagliano - disegnata come la si ricorda, la Luna verrebbe cinque volte
+// troppo grande.
+//
+// MA CHI LO SCRIVE LO INGRANDISCE, ed e' una bugia dichiarata: il mondo si
+// disegna in un SubViewport da 640x360 con un campo visivo di 75 gradi, dove
+// mezzo grado sono DUE PIXEL E MEZZO. In due pixel e mezzo non esiste nessuna
+// fase - non c'e' differenza fra una falce e una luna piena - e questo intero
+// lavoro esiste per far vedere quella differenza. Il fattore e il conto stanno
+// in `world/luce_di_luna.gd`, dove sta anche il motivo.
+//
+// QUELLO CHE RESTA VERO E' IL RAPPORTO: il fattore e' costante, quindi il
+// cinque per cento di differenza fra perigeo e apogeo - la superluna - passa
+// intatto, e una luna piena di dicembre resta piu' grande di una di giugno.
+uniform float luna_raggio = 0.00452;
+
+// Quanto si vede il disco: 0 sotto l'orizzonte, 1 alta e limpida. E' l'aria di
+// mezzo, non la fase - la parte illuminata di una falce e' luminosa quanto una
+// luna piena, e' soltanto piu' piccola.
+uniform float luna_luce = 0.0;
+
+// Quanto chiaro fa la Luna sul resto del cielo: frazione illuminata per seno
+// dell'altezza. E' LO STESSO NUMERO che comanda l'energia della direzionale -
+// il fondo che si schiarisce, le stelle che spariscono e la luce che entra
+// dalla finestra devono crescere insieme o si smentiscono a vicenda.
+uniform float luna_chiarore = 0.0;
+
+// COME E' GIRATA LA FACCIA: il nord e l'est della Luna sul disco, in coordinate
+// del mondo. Li scrive `world/luce_di_luna.gd` da `core/luna.gd`, che li ricava
+// dall'asse vero della Luna nel cielo di quell'istante - la faccia ruota nel
+// corso della notte, e al telescopio si vede.
+uniform vec3 luna_nord = vec3(0.0, 1.0, 0.0);
+uniform vec3 luna_est = vec3(1.0, 0.0, 0.0);
+
+// LA LUNA VERA: il mosaico della camera del Lunar Reconnaissance Orbiter e le
+// pendenze dall'altimetro laser dello stesso satellite (NASA, pubblico dominio -
+// `tools/prendi_luna.py`). Mappe cilindriche centrate sulla longitudine zero.
+// Senza file restano i default - bianco e piatto - e `luna_mappe` a zero: la
+// Luna liscia di prima, con la fase giusta.
+uniform sampler2D luna_colore : source_color, hint_default_white, filter_linear_mipmap, repeat_enable;
+uniform sampler2D luna_rilievo : hint_normal, filter_linear_mipmap, repeat_enable;
+
+// La luminosita' media della faccia visibile, che si divide via: la mappa dice
+// dove la Luna e' chiara e dove scura, non quanto e' chiara in tutto. La misura
+// `LuceDiLuna.albedo_media()` sul file.
+uniform float luna_albedo_media = 1.0;
+
+// 1 se le mappe ci sono, 0 se no.
+uniform float luna_mappe = 0.0;
+
+
 
 // Tre numeri pseudocasuali da una cella. Hash intero-in-virgola classico: economico
 // e senza texture di rumore da caricare.
@@ -185,6 +261,127 @@ vec3 strato(vec3 dir, float scala, float densita, float pixel) {
 }
 
 
+// LA LUNA: il disco piu' l'alone che l'aria le fa attorno. Torna gia' colorata.
+//
+// SI DISEGNA PER GEOMETRIA, non per maschera: si prende il punto del disco che
+// si sta guardando, si ricava la NORMALE della sfera li' sopra, e la si
+// illumina col Sole. Ne esce la fase giusta, orientata come la orienta il cielo,
+// senza che nessuno debba dire quale sia.
+vec3 luna(vec3 dir, float pixel) {
+	// Tramontata: non c'e' niente da disegnare, e nemmeno da calcolare. E' il
+	// caso di un terzo delle notti del mese, e di tutte le ore in cui la Luna
+	// sta dall'altra parte della Terra.
+	if (luna_luce <= 0.0) {
+		return vec3(0.0);
+	}
+	float cd = dot(dir, luna_dir);
+	float ang = acos(clamp(cd, -1.0, 1.0));
+
+	// LA FRAZIONE ILLUMINATA, ricavata invece che ricevuta. L'angolo di fase e'
+	// l'angolo Sole-Luna-Terra: `-dot(sole, luna)` ne e' il coseno, e la formula
+	// classica (1 + cos i)/2 diventa questa. Serve alla luce cenere.
+	float k = 0.5 * (1.0 - dot(sole_dir, luna_dir));
+
+	// L'ALONE, e non e' decorazione: e' la ragione per cui una notte di luna si
+	// riconosce senza guardare la Luna. L'aria diffonde la sua luce in una
+	// macchia larga decine di gradi, e mezzo grado di disco su tutto il cielo
+	// non basterebbe a leggere come «c'e' la luna». Due esponenziali: una
+	// stretta attorno al disco, una larga che muore in una trentina di gradi.
+	float vicino = exp(-ang * 26.0);
+	float largo = exp(-ang * ang * 5.0);
+	vec3 alone = vec3(0.72, 0.80, 1.00) * (vicino * 0.050 + largo * 0.013) * k;
+
+	// FUORI DAL DISCO C'E' SOLO L'ALONE, e tutto quello che segue - due letture di
+	// texture e un po' di trigonometria - si fa solo dove serve. La Luna occupa
+	// una frazione minuscola del cielo, lo shader gira su tutto il fondo.
+	if (ang > luna_raggio * 1.5) {
+		return alone * luna_luce;
+	}
+
+	// LA NORMALE DELLA SUPERFICIE nel punto che si sta guardando. La Luna e' una
+	// sfera lontana: il punto a distanza `u` dal centro del disco (in raggi) ha
+	// la normale che esce dal piano del disco di sqrt(1 - u*u). Al centro `u` e'
+	// zero e la direzione radiale non esiste - per questo e' moltiplicata per
+	// `u`, e per questo il vettore nullo si sostituisce invece di normalizzarlo.
+	//
+	// E IL SEGNO E' MENO, che e' l'errore che il provino ha trovato al primo
+	// scatto. `luna_dir` va DA CHI GUARDA VERSO la Luna; la normale del punto che
+	// sta al centro del disco va dalla Luna VERSO CHI GUARDA, cioe' dalla parte
+	// opposta. Con il piu' le fasi uscivano tutte complementari - luna piena
+	// disegnata come falce e falce come piena - e sarebbe stato invisibile a ogni
+	// prova numerica, perche' l'angolo di fase, la data, la luce e l'energia
+	// erano tutti giusti: sbagliava solo il disegno.
+	vec3 o = dir - luna_dir * cd;
+	float lo = length(o);
+	vec3 radiale = lo > 1e-7 ? o / lo : vec3(0.0);
+	float u = clamp(ang / luna_raggio, 0.0, 1.0);
+	vec3 n = normalize(-luna_dir * sqrt(max(0.0, 1.0 - u * u)) + radiale * u);
+
+	// DOVE SI STA GUARDANDO, SULLA LUNA: latitudine e longitudine selenografiche
+	// del punto, dalla normale e dalla cornice della faccia. Il centro del disco
+	// e' (0, 0) - le librazioni non ci sono, ed e' dichiarato in `core/luna.gd`.
+	vec3 terra = -luna_dir;
+	float lat = asin(clamp(dot(n, luna_nord), -1.0, 1.0));
+	float lon = atan(dot(n, luna_est), dot(n, terra));
+	vec2 uv = vec2(0.5 + lon / TAU, 0.5 - lat / PI);
+
+	// IL RILIEVO: la mappa porta la pendenza vera del suolo nel riferimento
+	// locale (est, nord, su) di quel punto, e qui la si gira nel mondo. Le due
+	// tangenti sono le derivate della sfera in longitudine e in latitudine: si
+	// ricavano dalla stessa cornice della faccia, quindi seguono l'est della
+	// Luna qualunque sia il verso del mondo.
+	vec3 t_est = -sin(lon) * terra + cos(lon) * luna_est;
+	vec3 t_nord = -sin(lat) * (cos(lon) * terra + sin(lon) * luna_est) + cos(lat) * luna_nord;
+	vec3 pendenza = texture(luna_rilievo, uv).rgb * 2.0 - 1.0;
+	vec3 nr = normalize(mix(n, normalize(n * pendenza.z + t_est * pendenza.x + t_nord * pendenza.y),
+			luna_mappe));
+
+	// LA LUCE SULLA REGOLITE: la legge di Lommel-Seeliger, 2·μ0/(μ0 + μ), con μ0
+	// il coseno verso il Sole e μ quello verso chi guarda. E' la fotometria dei
+	// corpi coperti di polvere, e fa due cose che una lambertiana non fa: a luna
+	// piena μ0 e μ coincidono e il disco resta PIATTO fino al bordo - l'effetto
+	// che si vede a occhio nudo - e al terminatore la luce muore gradualmente,
+	// cosi' che le pendenze del rilievo contano esattamente dove i crateri si
+	// vedono davvero. Lontano dal terminatore il rilievo sparisce, come alla
+	// luna piena, dove al telescopio non c'e' un'ombra.
+	//
+	// Il minimo su μ evita la divisione per zero al bordo, dove la normale del
+	// disco e' perpendicolare alla vista.
+	float mu0 = max(dot(nr, sole_dir), 0.0);
+	float mu = max(dot(nr, terra), 0.02);
+	float acceso = 2.0 * mu0 / (mu0 + mu);
+
+	// La faccia: il colore del mosaico diviso per la sua media, cosi' che i mari
+	// siano piu' scuri e gli altipiani piu' chiari senza che il disco intero cambi
+	// luminosita' rispetto a quella gia' tarata.
+	vec3 suolo = mix(vec3(1.00, 0.97, 0.91),
+			texture(luna_colore, uv).rgb / max(luna_albedo_media, 1e-3), luna_mappe);
+
+	// LA LUCE CENERE: la parte in ombra non e' nera. La illumina la TERRA, che
+	// vista da lassu' e' piena quando la Luna e' nuova - «la luna vecchia in
+	// braccio alla nuova», ed e' il motivo per cui di una falce sottile si vede
+	// comunque tutto il tondo.
+	float cenere = 0.020 * (1.0 - k);
+
+	// IL BORDO ANTIALIASATO, con la stessa misura che tiene ferme le stelle:
+	// `pixel` dice quanto cielo sta in un pixel. Senza, a questa risoluzione il
+	// disco avrebbe la scaletta e le cornerebbe la falce.
+	float bordo = max(pixel, 1e-5);
+	float dentro = 1.0 - smoothstep(luna_raggio - bordo, luna_raggio + bordo, ang);
+
+	// 1,3 VOLTE L'ALBEDO MEDIA: gli altipiani passano l'unita' e il tonemapping li
+	// porta quasi al bianco, i mari restano sotto e si leggono grigi. Era 2,4 finche'
+	// il disco era liscio, e con la faccia vera a 2,4 bruciava tutto: altipiani e
+	// mari finivano entrambi nella spalla della curva ACES, e la faccia si vedeva
+	// appena, come in una foto sovraesposta. A occhio nudo i mari si vedono
+	// benissimo - sono la cosa che tutti chiamano «la faccia» - e questa e' la
+	// luminosita' a cui si vedono. Il resto del cielo sta comunque sotto i
+	// centesimi: la Luna resta di gran lunga la cosa piu' chiara lassu'.
+	vec3 disco = suolo * (acceso + cenere) * dentro * 1.3;
+	return (disco + alone) * luna_luce;
+}
+
+
 void sky() {
 	vec3 dir = normalize(EYEDIR);
 
@@ -230,5 +427,18 @@ void sky() {
 	// brillanti proprio dove nella realta' non se ne vede quasi nessuna.
 	stelle *= smoothstep(-0.02, 0.28, dir.y);
 
-	COLOR = fondo + stelle * luminosita;
+	// E SI SPENGONO ANCHE PER LA LUNA, che e' la cosa che questo cielo non sapeva
+	// fare e che decide se stanotte si lavora. Con la luna piena alta il fondo del
+	// cielo diventa lattiginoso e restano solo le stelle piu' forti: e' il motivo
+	// per cui un astrofotografo guarda il calendario prima del meteo, ed e' anche
+	// il modo in cui il gioco lo puo' dire senza scriverlo da nessuna parte.
+	//
+	// DUE TERZI E NON TUTTE: alla luna piena vera, a occhio nudo, di stelle ne
+	// restano una manciata. Qui il cielo e' gia' tarato basso per un occhio
+	// adattato al buio (`luminosita` vale uno), e spegnerlo del tutto lascerebbe
+	// una fenditura vuota invece di un cielo lavato.
+	stelle *= mix(1.0, 0.35, clamp(luna_chiarore, 0.0, 1.0));
+	fondo += vec3(0.42, 0.52, 0.86) * luna_chiarore * 0.008;
+
+	COLOR = fondo + stelle * luminosita + luna(dir, pixel);
 }

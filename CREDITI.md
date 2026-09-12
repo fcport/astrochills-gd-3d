@@ -183,3 +183,17 @@ si riparta da dove si era guardato, invece che da capo.
   Scatola verniciata grigio-verde con targa e triangolo di pericolo: è
   esattamente quello che starebbe sul muro di una cupola italiana del 1985. La
   targa in cirillico è la ragione per cui è un riferimento e non un asset.
+
+## Mappe
+
+**CGI Moon Kit** — la faccia e il rilievo della Luna in cielo e all'oculare.
+Autori: NASA's Scientific Visualization Studio (visualizzazione di Ernie Wright, USRA;
+scienziato Noah Petro, NASA/GSFC), dai dati della camera LROC e dell'altimetro LOLA del
+Lunar Reconnaissance Orbiter.
+Fonte: <https://svs.gsfc.nasa.gov/4720/>
+Licenza: pubblico dominio (NASA), con la richiesta di citare la fonte.
+
+> Moon maps courtesy of NASA's Scientific Visualization Studio.
+
+Le scarica `tools/prendi_luna.py`; la mappa del rilievo è ricavata dalle quote LOLA, senza
+esagerazione.

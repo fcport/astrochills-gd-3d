@@ -122,6 +122,8 @@ func _ready() -> void:
 	print("")
 	_check_forum()
 	print("")
+	_check_luna()
+	print("")
 	print("=== fine ===")
 	get_tree().quit()
 
@@ -964,9 +966,10 @@ func _report_sale(p: PhotoPayout, base: int, mult: float, fulfill: bool, expecte
 ## Il filtro del catalogo (3.2): per categoria, SOLO gli implementati.
 ##
 ## SI CARICA IL CATALOGO VERO (`_load_source`), non un array a mano: è il `.tres` che il
-## terminale legge davvero. moka e lampadina sono implementate; stufetta e
-## lubrificare_cupola no — sono nel file apposta per provare che il filtro fa qualcosa.
-## Se il filtro fosse rotto e mostrasse tutto, questo check lo stamperebbe.
+## terminale legge davvero. Oggi solo la moka è implementata; lampadina, stufetta e
+## lubrificare_cupola no — e stanno nel file apposta, perché un filtro senza niente da
+## escludere non prova di essere un filtro. Se fosse rotto e mostrasse tutto, questo
+## check lo stamperebbe.
 func _check_item_catalog() -> void:
 	print("-- ItemCatalog.for_category(): solo gli implementati per categoria (3.2)")
 	var catalog := _load_source(ITEM_CATALOG_PATH) as ItemCatalog
@@ -974,17 +977,17 @@ func _check_item_catalog() -> void:
 		return
 	print("   dal .tres: %d articoli totali" % catalog.items.size())
 
-	# NESSUNO, AL MOMENTO, ED È UNA CONSEGUENZA VOLUTA. Moka e lampadina erano gli
-	# unici due implementati, e i loro oggetti sono usciti dal mondo: erano scatole
-	# segnaposto, e la lampada faceva per giunta una luce che attraversava il muro
-	# della cucina (D-181). `implemented` significa «esiste davvero là fuori», non
-	# «il codice c'è»: con l'oggetto fuori scena l'articolo non si vende, o si
-	# venderebbe una cosa che non compare da nessuna parte.
+	# LA MOKA È TORNATA, LA LAMPADA NO, E LA DIFFERENZA È UN MODELLO. `implemented`
+	# significa «esiste davvero là fuori», non «il codice c'è»: con l'oggetto fuori
+	# scena l'articolo si venderebbe come una cosa che non compare da nessuna parte,
+	# ed è per questo che erano usciti tutti e due — erano scatole segnaposto, e la
+	# lampada faceva per giunta una luce che attraversava il muro della cucina (D-181).
 	#
-	# QUINDI IL TERMINALE ADESSO NON VENDE NIENTE, e sta scritto qui perché sia una
-	# decisione visibile invece di una scoperta. Torna a vendere quando la moka e la
-	# lampada avranno un modello da posare.
-	_report_category(catalog, &"personal", PackedStringArray([]),
+	# La moka adesso ha un corpo vero — `assets/models/moka.glb`, posato da
+	# `tools/moka_blender.py` — quindi torna in vendita, e questa riga è ciò che
+	# tiene l'attesa del banco allineata a quel fatto invece che alla storia di come
+	# ci si è arrivati. La lampada resta fuori finché non avrà la stessa cosa.
+	_report_category(catalog, &"personal", PackedStringArray(["moka"]),
 		"personal implementati")
 	_report_category(catalog, &"facilities", PackedStringArray([]),
 		"facilities implementati")
@@ -2137,3 +2140,86 @@ func _check_honest_peltier() -> void:
 	print("   dall'ambiente a %+.0f gradi: %.1f s%s"
 		% [bersaglio, secondi,
 			"   <-- nota: piu' di un minuto e mezzo di attesa" if lunga else ""])
+
+
+## LA LUNA DEL CALENDARIO: le copie che `core/luna.gd` è costretta a tenere, e
+## l'almanacco che dice se il modello è un modello.
+##
+## PERCHÉ QUI E NON SOLO NELLA SONDA. `tools/prova_luna.gd` fa tutto questo e di
+## più, ma ha bisogno di montare `main.tscn`; queste sono funzioni STATICHE e pure
+## — nessun SceneTree, nessun autoload — ed è esattamente la roba che questo banco
+## esiste per collaudare. Le tre copie qui sotto sono dichiarate come copie nei
+## commenti di `core/luna.gd`, con la promessa che il banco le confronti: questa è
+## quella promessa.
+##
+## `core/` NON PUÒ DIPENDERE DA NIENTE (tabella dei confini), quindi la Luna
+## ricopia l'ora d'inizio della notte da `NightClock` e la latitudine e la
+## trigonometria sferica da `SkyGeometry`. Se divergessero, il gioco avrebbe una
+## Luna che sorge a un'ora che l'orologio non ha, vista da un osservatorio che non
+## è quello dove il planetario cerca le stelle — e ciascuno dei due file
+## continuerebbe ad avere ragione da solo.
+func _check_luna() -> void:
+	print("-- Luna: il calendario, le copie e l'almanacco del 1999")
+	print("   ora d'inizio: Luna %d, NightClock %d%s"
+		% [Luna.ORA_INIZIO, CLOCK.NIGHT_START_HOUR,
+			"" if Luna.ORA_INIZIO == CLOCK.NIGHT_START_HOUR
+			else "   <-- ATTESO: uguali, la Luna sorge sull'orologio del gioco"])
+	print("   latitudine:   Luna %.2f, SkyGeometry %.2f%s"
+		% [Luna.LATITUDINE, SkyGeometry.LATITUDINE,
+			"" if is_equal_approx(Luna.LATITUDINE, SkyGeometry.LATITUDINE)
+			else "   <-- ATTESO: uguali, e' lo stesso osservatorio"])
+
+	# LE DUE TRIGONOMETRIE SFERICHE, confrontate su un campione che copre tutto il
+	# cielo raggiungibile: da est a ovest, da sotto l'equatore al circumpolare.
+	var peggio := 0.0
+	for ha in [-120.0, -90.0, -45.0, 0.0, 45.0, 90.0, 120.0]:
+		for dec in [-25.0, -5.0, 20.0, 40.0, 60.0, 80.0]:
+			peggio = maxf(peggio, absf(Luna.alt_az(ha, dec).x - SkyGeometry.altezza(ha, dec)))
+	print("   altezza sull'orizzonte: scarto massimo fra le due copie %.6f gradi%s"
+		% [peggio, "" if peggio < 0.0001
+			else "   <-- ATTESO: zero, e' la stessa formula scritta due volte"])
+
+	# IL CALENDARIO: una notte, un giorno. La prima e la trentesima.
+	print("   notte 1 = %s, notte 30 = %s"
+		% [Luna.data_scritta(1), Luna.data_scritta(30)])
+	if Luna.data(1) != Vector3i(1999, 11, 16):
+		print("   la prima notte non e' il 16 novembre 1999  <-- il calendario e' scivolato")
+	if Luna.data(30) != Vector3i(1999, 12, 15):
+		print("   trenta notti non fanno ventinove giorni  <-- l'aritmetica giuliana e' rotta")
+
+	# L'ALMANACCO, due date su sei: la sonda le fa tutte, qui bastano gli estremi
+	# del ciclo. Sono valori PUBBLICATI, non prodotti da questo codice — ed e' la
+	# sola differenza fra collaudare un modello e ammirarlo.
+	_report_luna("novilunio  8 nov 1999 03:53 UT", 1999, 11, 8, 3.88, 180.0)
+	_report_luna("plenilunio 23 nov 1999 07:04 UT", 1999, 11, 23, 7.07, 0.0)
+
+	# LA FACCIA GIRATA DALLA PARTE DELLA LUCE. È un invariante fisico che non
+	# dipende da come sono orientati gli assi del mondo: finché la Luna cresce, sul
+	# suo lato visibile è mattina, e il Sole sta a EST della Luna — dalla parte di
+	# Mare Crisium, che è infatti la prima cosa che la falce giovane mostra. Quando
+	# cala, sta a ovest. Se il segno della cornice fosse sbagliato, la faccia
+	# uscirebbe girata al contrario della propria luce e i crateri illuminati
+	# sarebbero quelli sbagliati, con la fase perfettamente giusta.
+	var cresce := Luna.effemeridi(Luna.istante(1, 0.0))
+	var cala := Luna.effemeridi(Luna.istante(13, 480.0))
+	var d_cresce := Vector3(cresce[&"luna_est"]).dot(Vector3(cresce[&"sole_dir"]))
+	var d_cala := Vector3(cala[&"luna_est"]).dot(Vector3(cala[&"sole_dir"]))
+	print("   il Sole sull'est della Luna: crescente %+.2f, calante %+.2f%s"
+		% [d_cresce, d_cala, "" if d_cresce > 0.0 and d_cala < 0.0
+			else "   <-- ATTESO: + e -, altrimenti la faccia e' girata contro la luce"])
+	print("   verso del mondo: %+.0f%s" % [Luna.chiralita(), "" if Luna.chiralita() > 0.0
+		else "   <-- nota: la convenzione est = +X e' specchiata rispetto al cielo vero"])
+
+
+## Una data d'almanacco: l'angolo di fase che il modello ci trova, contro quello
+## che ci deve essere. Dodici gradi di fase al giorno, quindi lo scarto in gradi
+## si legge anche in minuti d'orologio — che e' l'unita' in cui un errore qui
+## diventa «la luna piena e' il giorno sbagliato».
+func _report_luna(label: String, anno: int, mese: int, giorno: int,
+		ora_ut: float, atteso: float) -> void:
+	var jd := float(Luna.giuliano_di(anno, mese, giorno)) - 0.5 + ora_ut / 24.0
+	var e := Luna.effemeridi(jd)
+	var scarto := absf(fposmod(float(e[&"fase"]) - atteso + 180.0, 360.0) - 180.0)
+	print("   %-32s fase %6.2f (attesa %.0f), scarto %.2f gradi = %.0f minuti%s"
+		% [label, e[&"fase"], atteso, scarto, scarto / 12.19 * 1440.0,
+			"" if scarto < 0.5 else "   <-- ATTESO: sotto mezzo grado, cioe' sotto l'ora"])

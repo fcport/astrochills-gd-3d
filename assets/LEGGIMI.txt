@@ -9,6 +9,10 @@ quest'ordine, e ci vogliono un paio di minuti.
 
        python tools/prendi_texture.py
 
+   E la faccia della Luna (NASA, pubblico dominio - credito in CREDITI.md):
+
+       python tools/prendi_luna.py
+
 2. I modelli presi da fuori (Poly Haven e OpenGameArt, CC0):
 
        python tools/prendi_modello.py

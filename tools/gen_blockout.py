@@ -21,7 +21,7 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        H_APPLIQUE, NOME_LOCALE, LUCE_MONITOR, SEMPRE_ACCESE,
                        H_INTERRUTTORE, L_PLACCA, A_PLACCA, SP_PLACCA,
                        ATTIVITA_CUPOLA, CUPOLA, SALA_TELESCOPIO,
-                       AR_RIPOSO_GRADI, DEC_RIPOSO_GRADI, LATITUDINE,
+                       AR_RIPOSO_GRADI, DEC_RIPOSO_GRADI, LATITUDINE, MOKA,
                        CASSA_MONITOR, VETRO_MONITOR, SEDILE_MONITOR,
                        BOMBATURA_MONITOR, FRANCO_VETRO,
                        PULSANTIERA_STAFFA, PULSANTIERA_TASTI,
@@ -185,6 +185,8 @@ def tscn():
              '[ext_resource type="Script" path="res://world/telescope_mount.gd" id="40_montatura"]',
              '[ext_resource type="Script" path="res://world/dome_azimuth.gd" id="41_azimut"]',
              '[ext_resource type="Script" path="res://world/tempo_siderale.gd" id="57_siderale"]',
+             '[ext_resource type="Script" path="res://world/luce_di_luna.gd" id="59_luna"]',
+             '[ext_resource type="PackedScene" path="res://world/interactables/moka.tscn" id="58_moka"]',
              '[ext_resource type="PackedScene" path="res://assets/models/quadro_elettrico.glb" id="42_quadro"]',
              '[ext_resource type="Script" path="res://world/mains.gd" id="43_rete"]',
              '[ext_resource type="Script" path="res://world/interactables/panel_door.gd" id="44_anta"]',
@@ -413,7 +415,19 @@ def tscn():
               'shader_parameter/polo_celeste = Vector3(%.4f, %.4f, %.4f)' % POLO_CELESTE,
               # A che punto e' il giro, in radianti. Zero e' il cielo di inizio
               # notte; a scriverlo fotogramma per fotogramma e' `TempoSiderale`.
-              'shader_parameter/giro = 0.0', '',
+              'shader_parameter/giro = 0.0',
+              # LA LUNA. I default sono quelli della LUNA TRAMONTATA - direzione
+              # sotto i piedi, luce a zero - e non e' una posa qualunque: a
+              # scrivere questi cinque parametri e' `world/luce_di_luna.gd` a
+              # ogni fotogramma, e il giorno che quel nodo non ci fosse il cielo
+              # deve restare quello di prima invece di mostrare una luna
+              # inventata allo zenit. Il perche' di ciascuno sta nello shader,
+              # accanto al suo `uniform`.
+              'shader_parameter/luna_dir = Vector3(0, -1, 0)',
+              'shader_parameter/sole_dir = Vector3(0, -1, 0)',
+              'shader_parameter/luna_raggio = 0.00452',
+              'shader_parameter/luna_luce = 0.0',
+              'shader_parameter/luna_chiarore = 0.0', '',
               '[sub_resource type="Sky" id="cielo"]',
               # NIENTE MEZZA RISOLUZIONE: `Sky` la userebbe volentieri, e su un cielo
               # fatto di puntini larghi due pixel il dimezzamento non ammorbidisce, fa
@@ -832,14 +846,36 @@ def tscn():
               # passando dal tetto, e si vedeva una luce che non veniva da nessuna
               # parte. Lo specular quasi a zero perche' faceva un riflesso bianco
               # sul terrazzo, una macchia che seguiva il giocatore.
+              #
+              # E ADESSO E' LA LUNA VERA DI QUELLA NOTTE. Fin qui questo nodo aveva
+              # una posa scritta a mano - quarantatre' gradi d'altezza ad azimut
+              # trenta, cioe' a NORD-EST, dove da questa latitudine la Luna non
+              # arriva mai - e un'energia fissa, uguale in tutte le notti e ferma
+              # per tutte e nove le ore. Adesso `world/luce_di_luna.gd` chiede a
+              # `core/luna.gd` dov'e' la Luna alla data della notte in corso, ci
+              # punta la lampada, ne segue la fase e disegna il disco in cielo.
+              #
+              # LA POSA SCRITTA QUI E' QUELLA DEL NOVILUNIO: luce dallo zenit,
+              # energia bassa. Non e' una posa qualunque - e' esattamente quello
+              # che il nodo produce quando la Luna non c'e', ed e' quello che deve
+              # restare se un giorno il copione non ci fosse. La riscrive `_ready`.
               '[node name="Luna" type="DirectionalLight3D" parent="."]',
-              'transform = Transform3D(0.86, -0.35, 0.37, 0, 0.73, 0.68, -0.51, -0.59, 0.63, 19, 12, 9)',
+              'transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 19, 12, 9)',
               # DALLA FINESTRA SI DEVE VEDERE FUORI. A 0,018 il prato era nero e i
               # vetri sembravano lastre opache: di notte si vede attraverso un vetro
-              # solo se dall'altra parte c'e' qualcosa da vedere.
-              'light_energy = 0.22', 'light_color = Color(0.60, 0.68, 0.96, 1)',
+              # solo se dall'altra parte c'e' qualcosa da vedere. E' D-078, e non e'
+              # stata disfatta: adesso quel fondo si chiama `ENERGIA_CIELO` e vale
+              # 0,07, con la Luna che ci si somma sopra - misurato, fino a 0,44
+              # nella piena alta del 23 novembre.
+              'light_energy = 0.07', 'light_color = Color(0.60, 0.68, 0.96, 1)',
               'light_specular = 0.02', 'shadow_enabled = true',
-              'directional_shadow_normal_bias = 0.2', '',
+              'directional_shadow_normal_bias = 0.2',
+              'script = ExtResource("59_luna")',
+              # Lo stesso ambiente che legge `TempoSiderale`, e per la stessa
+              # ragione: e' li' dentro che sta il materiale del cielo su cui si
+              # scrive. Due nodi, due strade per arrivarci, nessuna dipendenza
+              # fra loro.
+              'ambiente = NodePath("../WorldEnvironment")', '',
               # LA LUCE DEL CIELO CHE SCENDE DALLA FENDITURA. Il perche' sta tutto in
               # `world/sky_light.gd`; qui c'e' solo dove sta e quanto e' larga.
               #
@@ -1655,15 +1691,32 @@ def tscn():
               'material_override = SubResource("mat_auto")', '',
               '[node name="Col" type="CollisionShape3D" parent="Macchina"]',
               'shape = SubResource("s_auto")', '',
-              # LA MOKA E LA LAMPADA NON SI POSANO PIU', e non e' una bocciatura
-              # del loro codice: e' che tre scatole grigie su un bancone non sono
-              # un segnaposto, sono un oggetto brutto in mezzo alla stanza. Fra un
-              # posto vuoto e un posto occupato male, vuoto legge meglio - e questo
-              # e' un edificio che deve leggere come abbandonato a meta'.
-              # `moka.tscn` e `lamp.tscn` restano dove sono, con dentro la loro
-              # logica intera, e i due articoli del catalogo tornano
-              # `implemented = false`: si vende solo quello che esiste. Il giorno
-              # che c'e' un modello vero, qui tornano due righe.
+              # --- LA MOKA, e con lei il negozio smette di essere vuoto --------
+              #
+              # ERA STATA TOLTA DA D-183, e la riga diceva perche': tre scatole
+              # grigie su un bancone non sono un segnaposto, sono un oggetto brutto
+              # in mezzo alla stanza - «fra un posto vuoto e un posto occupato male,
+              # vuoto legge meglio». Diceva anche come sarebbe tornata: «il giorno
+              # che c'e' un modello vero, qui tornano due righe». Eccole.
+              #
+              # E RIMETTE IN VENDITA IL SUO ARTICOLO. Il terminale mostra solo gli
+              # articoli con `implemented = true`, e quel filtro non e' una svista:
+              # e' la regola per cui si vende solo quello che esiste. La moka non
+              # esisteva perche' non c'era il modello, non perche' mancasse il
+              # codice - `moka.gd` e' scritto per intero da mesi, rituale, timer e
+              # borbottio compresi.
+              #
+              # NASCE INVISIBILE E SPENTA, e non la accende nessuno da qui: legge
+              # da sola `Game.profile.owns(&"moka")` in `_ready()` e ascolta
+              # `Events.item_purchased`. E' l'unico interagibile della scena che non
+              # dipenda ne' dalla notte ne' da `main.gd`.
+              #
+              # DOVE STA LO DICE IL MOBILE: `MOKA` in `geometria.py` e' derivata dal
+              # bancone della cucina - mezzo metro dall'inizio del piano - cosi'
+              # spostare il bancone sposta la moka invece di lasciarla in aria.
+              '[node name="Moka" parent="." instance=ExtResource("58_moka")]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, '
+              '%.3f, %.3f, %.3f)' % MOKA, '',
               # Il campanello di fine sequenza sta al monitor, come nel vecchio
               # mondo: la sua taratura - unit_size, max_distance - e' fatta su
               # QUELLA distanza, e spostarlo vorrebbe dire rifarla a orecchio.
@@ -2332,6 +2385,14 @@ _attesi = [("ambient_light_energy = 0.035", "la luce ambientale della notte"),
            # una mancanza che salta all'occhio come un errore: sembra solo notte fonda.
            ('sky = SubResource("cielo")', "il cielo con le stelle"),
            ('script = ExtResource("57_siderale")', "il cielo che gira sopra la cupola"),
+           # LA LUNA E' DUE COSE CHE SI PERDONO SEPARATAMENTE, e nessuna delle due
+           # da' errore se sparisce: senza il copione la lampada torna una posa
+           # fissa - notte identica a tutte le altre, che e' esattamente il difetto
+           # da cui si e' partiti - e senza i parametri del cielo la luce arriva ma
+           # in cielo non c'e' niente da cui possa arrivare.
+           ('script = ExtResource("59_luna")', "la luna che segue il calendario"),
+           ("shader_parameter/luna_dir", "il disco della luna nel cielo"),
+           ('instance=ExtResource("58_moka")', "la moka sul bancone della cucina"),
            ('script = ExtResource("38_lucecielo")', "la luce del cielo in cupola"),
            # Senza l'elenco delle lampade l'adattamento al buio non si spegne quando
            # si accende la luce rossa, e il patto - «lo hai perche' stai al buio» -

@@ -291,72 +291,16 @@ aim_sync={
 ]
 }
 
-[physics]
-
-; QUANTO PUO' AFFONDARE UN OGGETTO POSATO, in metri. Di fabbrica un centimetro,
-; e un centimetro e' quello che affondava: un termos appoggiato sulla consolle
-; stava con il fondo dieci millimetri DENTRO il piano, e un plico di fogli e'
-; spesso dieci millimetri esatti - quindi la roba posata sui fogli si vedeva
-; attraversarli e appoggiarsi al legno.
-;
-; E NON E' SOLO BRUTTO DA VEDERE: e' il motivo per cui niente si fermava mai.
-; Il solutore lascia affondare fino a questo valore e da li' in poi respinge, e
-; a regime il corpo si assesta PROPRIO SU QUELLA SOGLIA - cioe' in un ciclo
-; limite a due tick, dentro-fuori-dentro-fuori a trenta hertz. Federico: «ho
-; appoggiato la borraccia e la camera CCD su un plico di fogli e trema
-; moltissimo».
-;
-; MISURATO con `tools/prova_tremore.gd`, cilindro da un chilo posato sulla
-; consolle e lasciato assestare quattro secondi:
-;
-;   penetrazione   si ferma a      rotazione residua   dorme
-;   0,01 (fabbrica)  10,0 mm sotto      0,27 rad/s      mai
-;   0,001             1,1 mm sotto      0,12 rad/s      sempre
-;   0,0001            0,1 mm sotto      0,10 rad/s      sempre
-;
-; La rotazione residua e' quella che si vede: su un termos alto trenta
-; centimetri, un quarto di radiante al secondo che cambia verso ogni tick e' la
-; punta che vibra. Sopra la soglia di sonno (8 gradi al secondo) il motore non
-; lo lascia mai dormire, quindi non finisce piu'.
-;
-; UN MILLIMETRO E NON UN DECIMO: con un millimetro l'oggetto sta gia' sopra il
-; piano, e un margine cosi' stretto da sfiorare lo zero toglie al solutore il
-; gioco che gli serve quando le cose si impilano o arrivano di corsa.
-3d/solver/contact_max_allowed_penetration=0.001
-
-; QUANTO LONTANO PUO' SPOSTARSI UN PUNTO DI CONTATTO restando "lo stesso punto",
-; in metri. Di fabbrica un centimetro, ed e' quello che teneva sveglia la roba
-; posata sui mobili grandi.
-;
-; Un cilindro appoggiato su una mesh a triangoli tocca in punti che il solutore
-; ricalcola a ogni tick; se non li riconosce come gli stessi, il contatto
-; ricomincia da capo ogni volta - e da contatti che saltano nasce una coppia che
-; non si spegne mai. Sulla consolle la sonda restava sveglia per tutti e novanta
-; i passi dell'osservazione, con la punta che vibrava.
-;
-; MISURATO con `MANOPOLE=1 tools/prova_tremore.gd`, che spazza il valore e riposa
-; la sonda su un piano e su una pila:
-;
-;   riciclo   sul piano                        su una pila
-;   0,02      sveglia 90/90, 0,26 mm           dorme
-;   0,03      sveglia 90/90, 0,26 mm           dorme
-;   0,04      dorme, 0,00 mm                   dorme
-;   0,05      dorme, 0,00 mm                   dorme
-;   0,08      dorme, 0,00 mm                   dorme
-;
-; La soglia sta fra 0,03 e 0,04. Si prende 0,05: sopra la soglia con margine, e
-; non oltre `contact_max_separation`, che vale 0,05 di fabbrica - un contatto non
-; deve sopravvivere piu' a lungo di quanto il motore consideri i corpi vicini.
-;
-; IL DIFETTO SI RIMETTE con `PENETRAZIONE_DI_FABBRICA=1`, che riporta tutti e due
-; i numeri a quelli di Godot.
-3d/solver/contact_recycle_radius=0.05
-
 [layer_names]
 
 3d_physics/layer_1="mondo"
 3d_physics/layer_2="giocatore"
 3d_physics/layer_3="interagibili"
+
+[physics]
+
+3d/solver/contact_recycle_radius=0.05
+3d/solver/contact_max_allowed_penetration=0.001
 
 [rendering]
 

@@ -63,7 +63,12 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, DESIGN_SIZE), BG)
 	_text(Vector2(MARGIN, 15), "IMAGING / SEQUENCE", FG, 12)
 
-	if bool(_state.get(&"running", false)):
+	# IL GUASTO VINCE SU TUTTO, e va guardato per primo: la posa persa arriva con
+	# `running` ancora vero — è morta mentre girava — e senza questo ordine si
+	# disegnerebbe la barra di una sequenza che non esiste più.
+	if bool(_state.get(&"lost", false)):
+		_draw_lost()
+	elif bool(_state.get(&"running", false)):
 		_draw_run()
 	else:
 		_draw_config()
@@ -110,7 +115,14 @@ func _draw_config() -> void:
 		DIM, 10)
 
 	_text(Vector2(MARGIN, 168), "UP/DOWN FIELD  LEFT/RIGHT VALUE", DIM, 10)
-	_text(Vector2(MARGIN, 184), "ENTER START", DIM, 12)
+
+	# IL FOOTER DICE QUELLO CHE SI PUÒ FARE, e senza camera non si può partire: al
+	# posto di START ci va il motivo. Un «ENTER START» che non avvia niente
+	# insegnerebbe che il pannello mente.
+	if _state.get(&"camera", true):
+		_text(Vector2(MARGIN, 184), "ENTER START", DIM, 12)
+	else:
+		_text(Vector2(MARGIN, 184), "NO CAMERA - REFIT IT TO THE FOCUSER", FG, 10)
 
 
 func _field_row(y: int, active: bool, label: String, value: String) -> void:
@@ -155,6 +167,32 @@ func _draw_run() -> void:
 		_text(Vector2(MARGIN, 120), "working...", DIM, 12)
 
 	_text(Vector2(MARGIN, 184), "YOU CAN WALK AWAY", DIM, 10)
+
+
+## Il pannello del guasto: la camera non risponde più.
+##
+## TRE COSE E BASTA — che il collegamento non c'è più, quanto lavoro se n'è andato
+## con lui, e come si esce da questa schermata. È la finestra d'errore di un
+## software vero, disegnata col fosforo del resto: chi torna dalla cupola con la
+## camera in mano trova scritto perché la sequenza non c'è più.
+##
+## IL CONTEGGIO DEI FRAME PERSI STA IN `DIM` e non in `FG`: la riga che deve saltare
+## agli occhi è una sola, ed è la prima.
+func _draw_lost() -> void:
+	var target: String = _state.get(&"target", "")
+	_text(Vector2(MARGIN, 33), "TARGET  %s" % (target if not target.is_empty() else "-"), DIM, 12)
+
+	_text(Vector2(MARGIN, 66), "CAMERA NOT RESPONDING", FG, 14)
+	_text(Vector2(MARGIN, 88), "link lost - sequence aborted", DIM, 12)
+
+	var done: int = _state.get(&"frames_done", 0)
+	var total: int = _state.get(&"frames_total", 0)
+	_text(Vector2(MARGIN, 112), "%d/%d FRAMES LOST" % [done, total], DIM, 12)
+
+	_text(Vector2(MARGIN, 140), "refit the camera to the focuser", FAINT, 10)
+	_text(Vector2(MARGIN, 152), "to connect it again", FAINT, 10)
+
+	_text(Vector2(MARGIN, 184), "ENTER OK", DIM, 12)
 
 
 func _text(pos: Vector2, s: String, color: Color, px: int) -> void:

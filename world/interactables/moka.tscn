@@ -9,8 +9,13 @@
 ; differenza del letto — perche' la sua comparsa dipende solo dal possesso, non dalla
 ; notte.
 ;
-; SEGNAPOSTO fino al pack di texture: geometria grezza (corpo + serbatoio + beccuccio +
-; manico), ShaderMaterial ps1 condivisi come il resto dell'arredo. Nessuna rifinitura.
+; LA GEOMETRIA NON E' PIU' SEGNAPOSTO. Erano tre scatole grigie, ed e' per quelle che
+; D-183 ha tolto la moka dalla cucina: «fra un posto vuoto e un posto occupato male,
+; vuoto legge meglio». Adesso il corpo arriva da `assets/models/moka.glb`, che
+; `tools/moka_blender.py` posa da un modello scaricato: una caffettiera conica di
+; alluminio segnato, venti centimetri col pomello, CC-BY di "ninja of stealth" (il
+; credito sta in `assets/models/esterni/moka/FONTE.txt`, ed e' obbligatorio). Il
+; modello porta i propri materiali: niente `material_override`.
 ;
 ; L'ORIGINE E' ALLA BASE, appoggiata sul piano: chi la colloca in scena scrive la quota
 ; del piano (0,9 m, il top del Counter di kitchen.tscn) e non deve sottrarre mezza
@@ -22,36 +27,19 @@
 ; visibile (come il monitor: collider = scocca): non piu' alto della cosa piu' alta che
 ; la moka ha davvero, cosi' non c'e' volume sopra qualcosa che non si vede e il prompt
 ; non compare da lontano. La quota esatta si tara GUARDANDO — verifica d'operatore.
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://world/interactables/moka.gd" id="1_moka"]
-[ext_resource type="Shader" path="res://world/shaders/ps1.gdshader" id="2_ps1"]
+[ext_resource type="PackedScene" path="res://assets/models/moka.glb" id="2_modello"]
 
-[sub_resource type="ShaderMaterial" id="MatBody"]
-shader = ExtResource("2_ps1")
-shader_parameter/albedo = Color(0.55, 0.55, 0.58, 1)
-shader_parameter/snap_resolution = 665.0
-
-[sub_resource type="ShaderMaterial" id="MatHandle"]
-shader = ExtResource("2_ps1")
-shader_parameter/albedo = Color(0.12, 0.11, 0.1, 1)
-shader_parameter/snap_resolution = 665.0
-
-; Il serbatoio inferiore (ottagono-ish reso a box) e la camera superiore: una moka e'
-; due tronchi di piramide sovrapposti, ma qui e' segnaposto — due box bastano a leggerla.
-[sub_resource type="BoxMesh" id="BoxBase"]
-size = Vector3(0.16, 0.11, 0.16)
-
-[sub_resource type="BoxMesh" id="BoxTop"]
-size = Vector3(0.13, 0.13, 0.13)
-
-[sub_resource type="BoxMesh" id="BoxHandle"]
-size = Vector3(0.03, 0.1, 0.03)
-
-; Il collider ricalca la silhouette: 0,25 m d'altezza, base a terra, top a 0,25 m locale
-; (cioe' ~1,15 m nel mondo, sul piano a 0,9 m). Mirabile da davanti al piano, non oltre.
+; IL COLLIDER RICALCA IL CORPO, NON L'INGOMBRO. Le quote le MISURA
+; `tools/moka_blender.py` e le stampa: il corpo e' 8,9 cm in pianta e 20 alto col
+; pomello, l'ingombro con manico e becco arriva a 11,4. Questa scatola e' il corpo.
+; Il MANICO resta fuori - e' la stessa scelta dell'antenna della radiolina, scritta
+; li' per esteso: dargli un volume vorrebbe dire un prompt largo il doppio della
+; cosa che si vede, e una moka che non si appoggia perche' il manico tocca prima.
 [sub_resource type="BoxShape3D" id="ShapeMoka"]
-size = Vector3(0.18, 0.25, 0.18)
+size = Vector3(0.092, 0.20, 0.092)
 
 ; Nessun `prompt_text` qui: il prompt e' CODE-DRIVEN — moka.gd fa override di `prompt()`
 ; per restituire `prompt_for(_step)`, e la riga cambia a ogni tempo del rituale. Un
@@ -61,30 +49,19 @@ collision_mask = 0
 script = ExtResource("1_moka")
 enabled = false
 
-[node name="Base" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.055, 0)
-material_override = SubResource("MatBody")
-mesh = SubResource("BoxBase")
-
-[node name="Top" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.175, 0)
-material_override = SubResource("MatBody")
-mesh = SubResource("BoxTop")
-
-[node name="Handle" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.09, 0.175, 0)
-material_override = SubResource("MatHandle")
-mesh = SubResource("BoxHandle")
+; Il modello vero. L'origine del .glb sta SOTTO E AL CENTRO IN PIANTA, come per tutto
+; quello che si posa su un piano: qui non serve nessuna trasformata.
+[node name="Modello" parent="." instance=ExtResource("2_modello")]
 
 [node name="Collision" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.125, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.100, 0)
 shape = SubResource("ShapeMoka")
 
 ; Il suono posizionale del borbottio: stream sintetizzato in codice da moka.gd (nessun
 ; asset). Posizionale (AudioStreamPlayer3D) cosi' chi si allontana lo sente attenuarsi —
 ; l'attesa si sente da vicino, non riempie la casa.
 [node name="Sound" type="AudioStreamPlayer3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.18, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.09, 0)
 unit_size = 3.0
 max_distance = 8.0
 

@@ -811,3 +811,21 @@ source_spec: `spec-3-6-la-telemetria-trasformare-limpressione-in-prova.md`
 severity: medium
 reason: `tests/test_bench.gd::_check_telemetry` chiama solo le statiche `TELEMETRY.merge_intervals` / `idle_segments` / `build_report` / `uncovered_min` (preload dello script, non l'autoload): nessuna connessione a `Events`, nessuna scrittura su disco, nessuna notifica di chiusura. Rompere una `.connect` in `_ready`, il conteggio in `_on_menu_opened`, la chiusura della posa aperta in `_write`, o il gate `_active` lascerebbe il banco verde. È la stessa classe di gap accettata per moka (DW-15), lampada (DW-16) e cupola (spec 3.5): la convenzione del banco è logica pura (NFR19). Il file su disco, il secondo momento di scrittura (`quit_mid_pose`, la cui notifica in headless non arriva) e la leggibilità della riga F12 sono verifiche d'operatore.
 status: open
+
+## Deferred da D-227 — la camera svitata durante la posa (2026-09-08)
+
+### DW-20: Una camera smontata PRIMA che il modulo della posa esista non viene sentita, e la sequenza parte come se fosse al suo posto.
+origin: D-227
+location: phases/imaging/phase_imaging.gd (`_camera`, `_su_camera`) ; autoloads/events.gd (`camera_mounted_changed`)
+source_spec: `decision-log.md` D-227
+severity: low
+reason: `PhaseImaging` impara lo stato del collegamento ASCOLTANDO `Events.camera_mounted_changed`, e un signal non si riascolta dopo: la fase nasce con `_camera = true` e sente solo i cambi avvenuti mentre è viva. Chi svita la camera durante il puntamento, il fuoco o la scelta del target arriva alla posa con `_camera` ancora vero e può premere START. La copertura di oggi (`tools/prova_staccata.gd`) prova i due casi che il modulo può vedere — smontata a sequenza avviata, smontata a pannello aperto — e non questo. Chiuderlo vuol dire mettere lo stato del collegamento su `NightRun`, scritto da chi la notte ce l'ha in mano: è la stessa infrastruttura che servirebbe al «rientro nel setup» scartato in D-227, e senza quella decisione sarebbe uno stato in più senza un padrone.
+status: open
+
+### DW-21: Il rientro nel menu post-foto dopo un ciclo foto fallito è coperto da una sonda, non dal banco.
+origin: D-227
+location: night/night_session.gd (`_photo_cycle_failed`, `_finish_photo_cycle`)
+source_spec: `decision-log.md` D-227
+severity: low
+reason: `tools/prova_staccata.gd` monta una notte vera con un piano di una riga e verifica che dopo la posa persa arrivi il menu (`photo_menu_opened` 1, `plan_exhausted` 0). È glue stateful, e la convenzione del banco è logica pura (NFR19): la stessa classe di gap accettata per moka (DW-15), lampada (DW-16) e telemetria (DW-19). Rompere l'assegnazione di `_photo_cycle_failed` lascerebbe il banco verde; la sonda no.
+status: open

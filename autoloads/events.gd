@@ -145,3 +145,21 @@ signal telescope_slewing_changed(moving: bool)
 ## oggi non lo ascolta ancora. Sta sul bus e non è un signal diretto proprio per
 ## questo: gli ascoltatori saranno più di uno e non si conoscono fra loro.
 signal mains_changed(on: bool)
+
+
+## LA CAMERA CCD È AVVITATA AL FUOCO, o qualcuno l'ha staccata.
+##
+## PERCHÉ SUL BUS E NON SUL NODO. L'unico che ha bisogno di saperlo è il software
+## di ripresa, che vive in `phases/`; la camera vive in `world/`, e le due cartelle
+## non si nominano a vicenda. Un signal diretto vuole un ascoltatore capace di
+## raggiungere l'emettitore, e questo non ce l'ha: il fatto è nato dichiarato sul
+## nodo, e non ha mai potuto ascoltarlo nessuno.
+##
+## PERCHÉ QUALCUNO DEVE SAPERLO. Svitare la camera dal focheggiatore porta via il
+## cavo insieme alla camera: il collegamento si rompe, la posa in corso muore, e i
+## frame acquisiti se ne vanno con lei. Finché il fatto non usciva da `world/` si
+## poteva smontare la camera a metà sequenza, portarsela in cucina, e guardare lo
+## schermo contare i frame di una camera che si aveva in mano.
+##
+## SOLO QUANDO CAMBIA, come gli altri fatti del mondo.
+signal camera_mounted_changed(mounted: bool)

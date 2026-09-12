@@ -27,6 +27,17 @@
 ## fase: vive nel mondo (`world/`) e ascolta `Events.phase_finished` filtrando su
 ## `&"imaging"` — è il luogo che possiede il suono, non la fase.
 ##
+## E ASCOLTA UN FATTO SOLO: se la camera è ancora avvitata al fuoco
+## (`Events.camera_mounted_changed`). Svitarla porta via il cavo, e senza cavo non
+## c'è più niente da cui scaricare i frame: la sequenza muore, e quello che aveva
+## acquisito muore con lei. Il collegamento si rifà riavvitandola.
+##
+## NON SI SPARISCE IN SILENZIO. Chi smonta la camera è in cupola, non alla
+## postazione: il guasto resta sul vetro finché non lo si legge da seduti, che è
+## anche quello che fa un software vero — una finestra d'errore che aspetta un OK.
+## Un pannello tornato al menu da solo direbbe che la posa non c'è più senza dire
+## perché.
+##
 ## QUESTA FASE ANNUNCIA DUE FATTI SUL BUS, e non li annunciava: `sequence_started`
 ## quando il giocatore preme START, `sequence_ended` quando la sequenza si conclude o
 ## quando la fase viene smontata a sequenza in corso. Il montaggio della fase NON è
@@ -97,6 +108,25 @@ var _start_min: float = 0.0
 
 var _done := false
 
+## Se la camera è avvitata al fuoco.
+##
+## NASCE VERA E NON SI CHIEDE A NESSUNO: questa fase non può raggiungere il
+## telescopio — `phases/` non conosce `world/` — e tutto quello che sa del ferro le
+## arriva da `Events.camera_mounted_changed`. Chi la smonta mentre il modulo è
+## aperto lo dice al bus, e da lì in poi il valore è vero.
+##
+## IL BUCO CHE RESTA, detto invece che sottinteso: una camera smontata PRIMA che
+## questo modulo esista — durante il puntamento, per dire — non si sente, perché un
+## signal non si riascolta dopo. La posa partirebbe come se la camera ci fosse.
+var _camera := true
+
+## La posa è morta perché la camera se n'è andata.
+##
+## NON È `_done`, che dice soltanto «non c'è più niente da far avanzare». Questo
+## dice PERCHÉ, e tiene il guasto sul vetro — e la fase in vita — finché qualcuno
+## non lo legge.
+var _persa := false
+
 
 func key() -> StringName:
 	return &"imaging"
@@ -149,6 +179,10 @@ func _ready() -> void:
 		push_error("[imaging] truth source non iniettata")
 		assert(false, "phase senza truth source")
 		return
+	# IL FERRO PARLA DA QUI IN POI. Il collegamento con la camera è l'unica cosa del
+	# mondo che questa fase ascolta, e la ascolta dal bus: `phases/` non conosce
+	# `world/`, e il nodo della camera non è raggiungibile da qui nemmeno volendo.
+	Events.camera_mounted_changed.connect(_su_camera)
 	# All'ingresso si mostra il pannello di configurazione: nessun frame ancora.
 	if is_instance_valid(_screen):
 		_screen.set_readout(_config_readout())
@@ -188,6 +222,16 @@ func _process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# LA POSA PERSA HA UN COMANDO SOLO: preso atto. Sta PRIMA della guardia su
+	# `_done` — che è già vero, perché non c'è più niente da far avanzare — proprio
+	# perché la fase è rimasta a schermo apposta, e questo tasto è la sua unica
+	# uscita. Lo stesso ENTER che avvia la sequenza: chi è seduto ne conosce già uno.
+	if _persa:
+		if event.is_action_pressed(&"imaging_start"):
+			get_viewport().set_input_as_handled()
+			_arrenditi()
+		return
+
 	# `truth == null` va guardato anche qui. In release gli assert spariscono:
 	# `_process` esce subito, ma senza questa riga ENTER avvierebbe comunque la
 	# sequenza, e un errore di configurazione diventerebbe uno stato plausibile.
@@ -220,6 +264,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		_screen.set_readout(_config_readout())
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"imaging_start"):
+		# SENZA CAMERA NON SI ESPONE. Un avvio concesso adesso conterebbe i frame di
+		# una camera che non c'è: il pannello lo rifiuta e dice cosa fare — riavvitarla
+		# rifà il collegamento, e START torna a funzionare da sé.
+		if not _camera:
+			_screen.set_readout(_config_readout())
+			get_viewport().set_input_as_handled()
+			return
 		_start()
 		get_viewport().set_input_as_handled()
 
@@ -294,6 +345,44 @@ func _start() -> void:
 	Events.sequence_started.emit()
 
 
+## LA CAMERA SE N'È ANDATA — o è tornata al suo posto.
+##
+## SVITARLA PORTA VIA IL CAVO, e un cavo che se ne va è un collegamento che si
+## rompe: il software non ha più nessuno a cui chiedere i frame. Se la sequenza
+## stava lavorando, muore lì; se stava ancora configurando, non parte finché la
+## camera non torna avvitata (vedi `_unhandled_input`).
+##
+## I FRAME SONO PERSI, tutti. Non c'è mezza foto da salvare — quello che c'era
+## stava dentro la camera che adesso qualcuno tiene in mano — e la sequenza non
+## riprende da dove si era interrotta: si rifà da capo.
+##
+## `_done` PRIMA DI TUTTO: ferma `_process` e disarma `_exit_tree`, che altrimenti
+## emetterebbe un secondo `sequence_ended` quando l'orchestratore libera la fase.
+func _su_camera(montata: bool) -> void:
+	_camera = montata
+	if montata or not is_working():
+		return
+	_done = true
+	_persa = true
+	# IL FATTO CHE IL MONDO ASPETTA: il telescopio smette di inseguire, la cupola
+	# chiude il suo gate. Una posa morta non è una posa che continua a girare.
+	Events.sequence_ended.emit()
+	if is_instance_valid(_screen):
+		_screen.set_readout(_lost_readout())
+
+
+## Il guasto è stato letto: la fase si chiude e la notte prosegue.
+##
+## `ok = false` E PAYLOAD VUOTO, ed è tutto il «le immagini sono andate perse»:
+## senza esposizione né conteggio frame nel payload l'orchestratore non conia
+## nessuna foto — non c'è niente da impilare, niente da rivelare, niente da vendere.
+## Punteggio zero: una posa che non ha consegnato un frame non vale niente.
+## `reason` è canale 2 e non entra nel log; quello che il giocatore legge l'ha già
+## letto sul vetro.
+func _arrenditi() -> void:
+	finished.emit(PhaseResult.new(false, "camera scollegata", 0, {}))
+
+
 ## LA POSA SMONTATA A META'. L'alba durante una sequenza, o *rifai setup*, liberano
 ## questa fase senza che `_finish()` sia mai passato: `phase_finished` non viene emesso
 ## da nessuno, e prima di questa riga il telescopio restava a inseguire e a ronzare per
@@ -323,7 +412,24 @@ func _config_readout() -> Dictionary:
 		&"total_min": total_min(),
 		&"min_exp": _min_exp,
 		&"score": exposure_score(total_min(), _min_exp),
+		# Se si può premere START. Il pannello lo dice al posto del footer dei
+		# comandi: un tasto che non fa niente e non spiega è peggio di un tasto che
+		# manca.
+		&"camera": _camera,
 	}
+
+
+## Il pannello del guasto. Riusa `_state` — l'ultimo campione buono — perché il
+## conteggio dei frame perduti è quello, e inventarlo qui vorrebbe dire calcolare
+## uno stato osservabile fuori da `truth` (ADR-001). `lost` è ciò che la vista
+## guarda per prima: vince su `running`.
+func _lost_readout() -> Dictionary:
+	var out := _state.duplicate()
+	out[&"running"] = true
+	out[&"lost"] = true
+	out[&"target"] = String(_target_id)
+	out[&"frames_total"] = _frames_total
+	return out
 
 
 func _run_readout() -> Dictionary:

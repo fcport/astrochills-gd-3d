@@ -122,6 +122,19 @@ var _ctx: Dictionary = {}
 ## «c'è una foto nuova» da «`_ctx` contiene ancora le chiavi di quella di prima».
 var _photo_pending := false
 
+## L'ultima fase del CICLO FOTO si è conclusa con `ok = false`.
+##
+## PERCHÉ SERVE. Un ciclo foto che finisce senza foto era, fino a qui, la fine del
+## lavoro della notte: schermo vuoto e giocatore in piedi. Va bene quando non c'è
+## niente da fare, non va bene quando qualcosa è ANDATO STORTO — una posa persa
+## perché la camera è stata svitata dal fuoco lascerebbe il giocatore davanti a un
+## vetro nero senza un modo di rifare lo scatto, con la notte ancora lunga.
+##
+## `ok` E NON IL NOME DI UNA FASE (ADR-002): qui non si sa quale fase sia fallita né
+## perché — il perché l'ha già scritto lei sul suo schermo. Si sa solo che il ciclo
+## si è chiuso male, e che dopo un guasto si deve poter ridecidere.
+var _photo_cycle_failed := false
+
 ## I `process_mode` che la fase e il suo `Control` avevano quando sono nati.
 ## Sospendere li sostituisce, riprendere li rimette: imporre `INHERIT` alla
 ## ripresa cancellerebbe in silenzio un `PROCESS_MODE_ALWAYS` dichiarato dalla
@@ -471,6 +484,17 @@ func _finish_photo_cycle() -> void:
 
 	if _photo_pending and Photo.is_photo(_ctx):
 		_enter_stacking()
+		return
+
+	# IL CICLO È FINITO MALE, E LA NOTTE NON È FINITA CON LUI. Senza foto da rivelare
+	# la strada normale è lo schermo vuoto e il giocatore in piedi: dopo un guasto
+	# sarebbe un vicolo cieco: la posa non c'è più, nessuno spiega come rifarla, e le
+	# ore che restano non servono a niente. Il menu post-foto è già il posto dove si
+	# decide quanto rifare — *scatta ancora*, *cambia target*, *rifai setup* — e qui
+	# fa esattamente il suo mestiere. Si riarma perché il guasto vale una volta sola.
+	if _photo_cycle_failed:
+		_photo_cycle_failed = false
+		_enter_menu()
 		return
 
 	_crt.show_control(null)
@@ -841,6 +865,12 @@ func _on_phase_finished(result: PhaseResult, phase: Phase) -> void:
 	# per `key()`, MAI `name` (FR18) — ed è esattamente ciò che *rifai setup* cancella.
 	if _in_setup:
 		_setup_phase_keys[phase.key()] = true
+	else:
+		# COM'È FINITO IL CICLO FOTO, e vale l'ultima parola: ogni fase del ciclo
+		# riscrive questo, così un guasto vecchio non decide il giro nuovo. Lo legge
+		# `_finish_photo_cycle` per non lasciare il giocatore davanti a un vetro
+		# nero dopo una posa persa.
+		_photo_cycle_failed = not result.ok
 
 	# Ciò che questa fase lascia a quelle dopo di lei. È il canale di FR12.
 	_ctx.merge(result.payload, true)

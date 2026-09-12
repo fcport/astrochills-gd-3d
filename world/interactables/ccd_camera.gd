@@ -75,10 +75,17 @@ const POSA := Transform3D(Basis(Vector3.RIGHT, PI), Vector3(0.0, ALTA, 0.0))
 ## per la sola camera. Qui resta la sola cosa che di questa camera è speciale:
 ## dove va a finire quando un posto buono non c'è (vedi `_perduta()`).
 
-## Emesso quando la camera viene montata o smontata. È un FATTO del mondo, non un
-## comando: chi vuole saperlo — un domani la fase che pretende la camera al suo
-## posto — lo ascolta.
-signal montaggio_cambiato(montata: bool)
+## IL MONTAGGIO SI ANNUNCIA SUL BUS, e qui c'era invece un `montaggio_cambiato`
+## dichiarato su questo nodo.
+##
+## Non l'ha mai potuto ascoltare nessuno, e non era una dimenticanza: era
+## impossibile. L'unico interessato è il software di ripresa — la posa, che deve
+## morire se la camera se ne va — e vive in `phases/`, che non conosce `world/` e
+## non ha modo di arrivare a questo nodo. Un signal diretto vuole un ascoltatore
+## capace di trovare l'emettitore; questo fatto non ne ha nessuno.
+##
+## Adesso esce da `Events.camera_mounted_changed`, dove chiunque lo sente senza
+## sapere chi sia questo nodo.
 
 ## Il nodo `Fuoco` del telescopio: la bocca del focheggiatore, con il proprio -Z
 ## rivolto fuori dal tubo. Lo scrive il generatore della scena.
@@ -229,11 +236,11 @@ func _monta() -> void:
 	freeze = true
 	if appoggiata_e_basta:
 		global_transform = _fuoco.global_transform * POSA
-		montaggio_cambiato.emit(true)
+		Events.camera_mounted_changed.emit(true)
 		return
 	reparent(_fuoco, false)
 	transform = POSA
-	montaggio_cambiato.emit(true)
+	Events.camera_mounted_changed.emit(true)
 
 
 func _smonta() -> void:
@@ -244,5 +251,5 @@ func _smonta() -> void:
 	reparent(_casa, false)
 	global_transform = dove
 	freeze = false
-	montaggio_cambiato.emit(false)
+	Events.camera_mounted_changed.emit(false)
 

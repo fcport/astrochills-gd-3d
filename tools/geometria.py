@@ -1659,6 +1659,13 @@ SEDILE_MONITOR = (0.42, 0.172)
 # dall'inizio del bancone, la lampada a settanta centimetri dalla fine.
 _BANCONE = [_a for _a in ARREDI_CUCINA if _a[0] == "CucinaBase"][0]
 
+# LA MOKA TORNA SUL BANCONE, perche' adesso c'e' un modello da posare:
+# `tools/moka_blender.py` fa la Bialetti sulle quote del costruttore, e con quella
+# la ragione per cui era stata tolta non c'e' piu'. Le coordinate sono le stesse di
+# allora, e sono ancora derivate dal mobile invece che battute a mano: mezzo metro
+# dall'inizio del piano, al centro in profondita', appoggiata sul top.
+MOKA = (_BANCONE[1] + 0.50, _BANCONE[5], (_BANCONE[2] + _BANCONE[4]) / 2.0)
+
 # La cupola come volume: dove sta il giocatore quando "sta a guardare".
 # Raggio piu' corto di quello della calotta, per non toccare i muri.
 # IL COMANDO DELLA CUPOLA: due pulsanti, APRE e CHIUDE.

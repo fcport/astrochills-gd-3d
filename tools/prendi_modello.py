@@ -135,6 +135,46 @@ A_MANO = {
     # codice XACA271 - di cui il CAD quotato sta su TraceParts, ed e' quattro
     # volumi. Vedi `tools/pulsantiera_blender.py`. Il riferimento dimensionale:
     # https://www.traceparts.com/en/product/schneider-electric-harmony-xac-pendant-control-station-plastic-yellow-2-push-buttons-with-1-no?PartNumber=XACA271
+    # LA MOKA: cercata su Poly Haven prima, come vuole l'ordine di questo file, e
+    # li' non c'e' - 521 modelli, e in cucina hanno bollitori elettrici e vasi di
+    # ottone. Su Sketchfab invece ce ne sono ventiquattro, e la scelta si e' fatta
+    # guardandole: scartata quella a licenza NonCommercial (Rocco Giandomenico) e
+    # quella a Free Standard di Sketchfab, che non sono licenze con cui si spedisce
+    # un gioco; scartate le tre da duecentomila triangoli, che sono modelli da
+    # rendering; scartata la conica di "ninja of stealth", bellissima e VESUVIANA -
+    # e' una napoletana, non una Moka Express, e la sagoma che il giocatore
+    # riconosce e' l'ottagono.
+    #
+    # RESTAVANO DUE BIALETTI QUASI PARI - quella di Samize (2134 facce), lucida da
+    # negozio, e quella di shaqsh (2001), con la caldaia annerita dal fuoco - e si era
+    # scelta la seconda. POI HA SCELTO FEDERICO, e ha scelto la CONICA: «ho sbagliato,
+    # metti la old moka». E' una scelta che vale la pena avere scritta, perche' va
+    # contro la ragione per cui l'avevo scartata io.
+    #
+    # LA MIA RAGIONE ERA: non e' una Moka Express, e' una napoletana - la sagoma che
+    # si riconosce e' l'ottagono. E' vera come regola generale e sbagliata per QUESTA
+    # cucina. In un osservatorio di provincia mezzo abbandonato non c'e' l'oggetto di
+    # design che sta al MoMA: c'e' la caffettiera che qualcuno ha lasciato li' vent'anni
+    # fa, ammaccata, senza marca, con l'alluminio opaco e le colature. Riconoscibile e'
+    # un criterio da vetrina; questa stanza chiede l'altro criterio - vissuto.
+    #
+    # SOSTITUISCE UNA MOKA FATTA IN CASA. `tools/moka_blender.py` ne aveva costruita
+    # una a ottagoni sulle quote del costruttore, e funzionava; ma il progetto scarica
+    # quando puo' e modella quando deve (vedi la pulsantiera, qui sopra), e
+    # milleseicento facce texturizzate battono novantotto facce a tinta piatta.
+    "moka": (
+        ("old_moka_pot.zip", "moka.zip"),
+        "https://sketchfab.com/3d-models/old-moka-pot-5c860efa0cfa4566b21309d5bc4b1577",
+        "ninja of stealth", "CC-BY-4.0",
+        'This work is based on "Old moka pot" '
+        "(https://sketchfab.com/3d-models/old-moka-pot-5c860efa0cfa4566b21309d5bc4b1577) "
+        "by ninja of stealth (https://sketchfab.com/ninjaofstealth) licensed under "
+        "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "Caffettiera conica di alluminio, 1622 facce e cinque mappe. Non e' una"
+        " Bialetti: e' la forma piu' vecchia, quella a tronco di cono col coperchio a"
+        " cupola e il manico di bachelite - e l'alluminio e' segnato, opaco, con le"
+        " colature. E' l'oggetto del registro FARE dell'attesa: la si mette sul fuoco"
+        " e si aspetta che borbotti, un'attesa piccola dentro l'attesa grande."),
     "telescopio_riflettore": (
         "reflector_telescope.zip",
         "https://sketchfab.com/3d-models/reflector-telescope-62549e8c60d24ee5adb2a01a2c226a03",

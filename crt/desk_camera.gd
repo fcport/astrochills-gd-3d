@@ -15,7 +15,7 @@ signal seated()
 signal left()
 
 const TRANSITION := 0.5
-const SEATED_FOV := 42.0
+const SEATED_FOV := 33.0
 
 ## Da seduti ci si guarda intorno, e la sedia gira.
 ##
@@ -140,14 +140,30 @@ func _sit() -> void:
 	# IL CASO DEL CRT, coi numeri: `crt_screen.tscn` nasceva col `Seat` a +11,50°
 	# attorno a X, mentre la direzione dal sedile `(0, 0.09, 0.44)` all'origine
 	# del vetro è −11,56°. Modulo giusto, segno sbagliato — e in Godot un
-	# `rotation.x` positivo ALZA lo sguardo. Da seduti, con FOV verticale 42° e
-	# vetro alto 0,24 m a 0,44 m di distanza, lo schermo occupa da −25,51° a
-	# +3,90° rispetto all'orizzonte:
+	# `rotation.x` positivo ALZA lo sguardo. Con vetro alto 0,24 m a 0,44 m di
+	# distanza lo schermo occupa da −25,51° a +3,90° rispetto all'orizzonte:
 	#     asse a +11,50° → inquadra [−9,50°, +32,50°] → si vede il 46% dello
 	#                      schermo, la sola parte alta;
-	#     asse a −11,50° → inquadra [−32,50°, +9,50°] → schermo intero, con
-	#                      margine sopra e sotto.
+	#     asse a −11,50° → inquadra [−32,50°, +9,50°] → schermo intero.
 	# Verificato guardando, non solo calcolando (storia 1.3).
+	#
+	# IL FOV SEDUTO È 33 E NON PIÙ 42, ed è passato prima da 30 — che era un grado
+	# di troppo. Il vetro occupa [−25,51°, +3,90°]: con 30° l'asse a −11,56°
+	# inquadra [−26,56°, +3,44°] e il bordo ALTO resta fuori di mezzo grado. Con le
+	# finestre piccole non se ne accorgeva nessuno; con una a tutto schermo quel
+	# mezzo grado è esattamente dove sta la barra del titolo, e si perdevano il nome
+	# della finestra e i suoi pulsanti. A 33° l'inquadratura è [−28,06°, +4,94°] e
+	# il vetro ci sta INTERO, con un grado di margine sopra e due e mezzo sotto.
+	# Verificato con uno scatto a finestra massimizzata, non solo calcolando.
+	#
+	# E resta il guadagno per cui si era sceso da 42: lì il monitor prendeva due
+	# terzi dell'altezza e il software si leggeva stringendo gli occhi. Scendere
+	# sotto i 30 — 24° è stato provato — toglie la cornice del tubo, e con la
+	# cornice se ne va la sensazione di essere seduti davanti a un oggetto.
+	#
+	# ALZANDOSI SI TORNA COM'ERA DA SÉ: `_standing_fov` è salvato qui sotto prima
+	# della transizione e rimesso da `_leave()`. Non c'è un secondo numero da
+	# tenere allineato a questo.
 	var t := create_tween().set_parallel().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 	t.tween_property(_player, "global_transform", target, TRANSITION)
 	t.tween_property(_cam, "rotation:x", euler.x, TRANSITION)

@@ -173,6 +173,16 @@ trasparente perché tre di quelle sono il coperchio acrilico: `opacizza_il_pieno
 `tools/modellare.py` rimette piene le altre undici. Il modulo continuo non ce l'ha, e
 resta fatto a mano da `tools/arredi_blender.py`.
 
+## Immagini
+
+**Le foto delle stampe**: `assets/stampe/*.png`, le pagine che escono dalla stampante
+della sala di controllo (D-239). Le compone `tools/stampe_foto.py` a partire dalle PNG del
+prototipo Phaser (`phaser_astrochill/public/assets/photos`): M8, M13, M31, M42, M45 e M57,
+tre versioni ciascuna.
+**Fonte e licenza: non documentate.** Sono astrofotografie vere, e il prototipo le usa
+senza dire da dove vengono. Prima di distribuire il gioco vanno rintracciati autore e
+licenza di ognuna, e scritti qui.
+
 ## Tutto il resto
 
 Gli altri modelli e tutte le texture sono **CC0**: nessuna attribuzione richiesta.

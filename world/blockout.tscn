@@ -40,6 +40,7 @@
 [ext_resource type="Script" path="res://world/luce_di_luna.gd" id="59_luna"]
 [ext_resource type="Script" path="res://world/pianeti_in_cielo.gd" id="60_pianeti"]
 [ext_resource type="PackedScene" path="res://world/interactables/moka.tscn" id="58_moka"]
+[ext_resource type="Script" path="res://world/stampante.gd" id="61_stampante"]
 [ext_resource type="PackedScene" path="res://assets/models/quadro_elettrico.glb" id="42_quadro"]
 [ext_resource type="Script" path="res://world/mains.gd" id="43_rete"]
 [ext_resource type="Script" path="res://world/interactables/panel_door.gd" id="44_anta"]
@@ -4368,6 +4369,10 @@ shape = SubResource("s_auto")
 
 [node name="Moka" parent="." instance=ExtResource("58_moka")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.850, 0.900, 1.900)
+
+[node name="Stampante" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.460, 0.850, 0.315)
+script = ExtResource("61_stampante")
 
 [node name="SequenceChime" parent="." instance=ExtResource("31_chime")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.550, 1.100, 2.000)

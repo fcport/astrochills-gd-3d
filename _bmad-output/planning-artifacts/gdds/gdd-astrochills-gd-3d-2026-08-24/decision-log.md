@@ -7657,3 +7657,40 @@ da fare (`_refresh_affordances`), quindi fra il piano esaurito e l'alba non ci s
 e Photos e la BBS restano irraggiungibili proprio nell'attesa. È una scelta di design della
 2.x sull'attesa vuota, e cambiarla non è stato fatto di sbieco. Le liste non scorrono. Il
 terminale è ancora l'interfaccia MS-DOS dentro una finestra.
+
+## D-239 Le foto escono dalla stampante, e si appendono dove si vuole
+
+Federico, il 6 settembre: «quando una foto finisce di essere renderizzata in automatico parte
+una stampa e puoi appenderla ai muri». Scelto allora: **dove vuoi, su qualsiasi muro** — non a
+chiodi già decisi, non in una pila sulla scrivania. Poi la richiesta si è persa dietro la moka
+senza lasciare traccia qui, e il 13 l'ha cercata nel gioco e non c'era.
+
+**A COLORI, E LA ML320 NON LO SA FARE.** La stampante della sala ha nove aghi e un nastro nero
+(D-230): nel 1999 una foto da lì usciva retinata in bianco e nero. Messo davanti alla scelta,
+Federico ha preso le foto com'erano. Resta il modulo continuo con i fori del trattore, che è la
+carta che quella macchina tira e dice da dove arriva il foglio.
+
+**LE FOTO SONO QUELLE DEL PROTOTIPO PHASER**, tre per soggetto, e il livello lo decidono le soglie
+del prototipo: sotto 50 la più rovinata, da 80 la più pulita (`Photo.image_tier`). Non è lo
+scaglione del pagamento, che ha cinque gradini tarabili e decide le lire. Le pagine le compone
+`tools/stampe_foto.py` in `assets/stampe/`, un pixel per millimetro. **Da dove il prototipo le
+abbia prese non è scritto da nessuna parte**: `CREDITI.md` lo dice, e va chiarito prima di
+distribuire il gioco.
+
+**PARTE A FOTO EMERSA, non a foto registrata.** `Events.photo_revealed` lo emette la notte quando
+la rivelazione ha finito: prima, sul monitor c'è ancora rumore, e la stampante stamperebbe una
+foto che nessuno ha visto. Una pagina esce in venti secondi; due foto di fila fanno due stampe in
+fila, e la seconda spinge giù la prima se nessuno l'ha strappata.
+
+**«QUALSIASI MURO» È UNA DOMANDA AL MONDO**, non un elenco di posti: sulla geometria che si vede
+(la corazza, non gli ingombri), verticale entro dieci gradi, piatta sotto tutto il foglio — nove
+punti entro un centimetro e mezzo — e con tre centimetri liberi davanti. Da 160 posti e direzioni
+della sala di controllo, guardando dritto, 19 dicono sì, sui muri e sui vetri. Il pavimento, una
+mensola e una stampa già appesa dicono no (`tools/prova_stampa.gd`).
+
+**APPESA È FIGLIA DI CIÒ SU CUI STA**: un'anta aperta si porta via la foto, la cupola la fa girare.
+Il registro (`PlayerProfile.photo_prints`) la ricorda in coordinate di quella cosa, e dopo un
+riavvio torna allo stesso posto: misurato, a 0,00 mm.
+
+**Da verificare giocando:** i venti secondi di stampa; quanto copre il foglio tenuto in mano; e se
+appendere sui vetri delle finestre va bene o va tolto — «ai muri» diceva la richiesta.

@@ -33,6 +33,29 @@ const CTX_FRAMES := &"frame_count"
 ## sparsa: le chiavi vivono in un posto solo.
 const CTX_TARGET := &"target_id"
 
+## Le soglie del LIVELLO DELL'IMMAGINE: sotto 50 la foto è la più rovinata delle tre, da 80
+## in su la più pulita. Sono quelle del prototipo Phaser (`src/util/photos.js`,
+## `stackTier`), che ha fatto le tre versioni di ogni soggetto su queste soglie:
+## cambiarle qui vorrebbe dire usare le immagini con un criterio diverso da quello con
+## cui sono state fatte.
+const IMAGE_TIER_2 := 50
+const IMAGE_TIER_3 := 80
+
+
+## Quale delle tre immagini di un soggetto corrisponde a una qualità: 1, 2 o 3.
+##
+## NON È LO SCAGLIONE DEL PAGAMENTO, e la confusione è facile perché in inglese si
+## chiamano tutti e due «tier». `Tuning.payout_tiers` ha cinque gradini tarabili e decide
+## le lire; questo ne ha tre fissi e decide quale pagina esce dalla stampante (D-239).
+## Vive qui perché «score → tier» è di `photo/` (tabella dei confini), e il mondo che
+## stampa non può leggerlo: glielo si passa già deciso.
+static func image_tier(quality: int) -> int:
+	if quality >= IMAGE_TIER_3:
+		return 3
+	if quality >= IMAGE_TIER_2:
+		return 2
+	return 1
+
 
 ## Vero se nel `ctx` c'è una foto scattata: servono ESPOSIZIONE e CONTEGGIO FRAME.
 ##

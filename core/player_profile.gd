@@ -88,6 +88,19 @@ const CURRENT_VERSION := 1
 ## stato iniziale» non cambia il formato: non serve `migrate()`.
 @export var forum_read: Array[StringName] = []
 
+## Le stampe delle foto in giro per l'osservatorio (D-239): appese a un muro o posate da
+## qualche parte, e restano dove le si è lasciate — dopo il sonno e dopo il riavvio. Sono
+## del GIOCATORE come `owned_items`: una foto appesa stanotte è ancora lì domani.
+##
+## OGNI VOCE LA SCRIVE E LA LEGGE `world/stampante.gd`, l'unico a sapere cosa ci sia dentro
+## (soggetto, livello, dove sta e a cosa è appesa). Qui la si tiene soltanto: il profilo
+## non sa cosa sia un muro.
+##
+## DEFAULT `[]`, E NESSUN BUMP DI `CURRENT_VERSION`: stessa contabilita' di `owned_items`.
+## Un save vecchio senza il campo torna vuoto, cioè «nessuna stampa», che è lo stato
+## iniziale giusto.
+@export var photo_prints: Array[Dictionary] = []
+
 ## Se il giocatore possiede l'articolo `id`. Lo legge il terminale (per mostrare
 ## `OWNED`) e lo leggeranno 3.3/3.4 (per far comparire la moka/la lampadina).
 func owns(id: StringName) -> bool:

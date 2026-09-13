@@ -59,6 +59,16 @@ _SX0, _SZ0, _SX1, _SZ1 = (v * K for v in SALA_TELESCOPIO)
 CUCINA = [_a for _a in ARREDI_CUCINA if _a[0] == "CucinaBase"][0][1:]
 TAVOLO_CUCINA = [_a for _a in ARREDI_CUCINA if _a[0] == "Tavolo"][0][1:]
 
+# LA CARROZZA DELLA STAMPANTE, da cui escono le foto (D-239): il centro dell'impronta in
+# cui `arredi_blender.mobile_e_stampante` posa la ML320 - da x0+0,18 a x0+0,54, da
+# z0+0,05 a z0+0,38 - sul piano del mobile. GLI SCARTI SONO RICOPIATI DA LA', e vanno
+# spostati insieme: cambiarli in uno solo dei due file stacca la fessura dalla macchina.
+# L'altezza della fessura non c'e': la misura `world/stampante.gd` guardando la stampante.
+# Importato qui e non nell'elenco in testa, che e' la riga che tutti toccano.
+from geometria import ARREDI_PC as _ARREDI_PC
+_MOBILE = [_a for _a in _ARREDI_PC if _a[0] == "Mobile"][0]
+STAMPANTE = (_MOBILE[1] + 0.36, _MOBILE[5], _MOBILE[2] + 0.215)
+
 blocchi = []   # (cx, cy, cz, sx, sy, sz, nome, rot_x)
 
 def aggiungi(cx, cy, cz, sx, sy, sz, nome, rot_x=0.0, rot_z=0.0, rot_y=0.0):
@@ -188,6 +198,7 @@ def tscn():
              '[ext_resource type="Script" path="res://world/luce_di_luna.gd" id="59_luna"]',
              '[ext_resource type="Script" path="res://world/pianeti_in_cielo.gd" id="60_pianeti"]',
              '[ext_resource type="PackedScene" path="res://world/interactables/moka.tscn" id="58_moka"]',
+             '[ext_resource type="Script" path="res://world/stampante.gd" id="61_stampante"]',
              '[ext_resource type="PackedScene" path="res://assets/models/quadro_elettrico.glb" id="42_quadro"]',
              '[ext_resource type="Script" path="res://world/mains.gd" id="43_rete"]',
              '[ext_resource type="Script" path="res://world/interactables/panel_door.gd" id="44_anta"]',
@@ -1746,6 +1757,17 @@ def tscn():
               '[node name="Moka" parent="." instance=ExtResource("58_moka")]',
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, '
               '%.3f, %.3f, %.3f)' % MOKA, '',
+              # --- LA STAMPANTE, cioe' la fessura da cui escono le foto ---------
+              #
+              # NON E' LA MACCHINA: la Okidata sta dentro `controllo_pc.glb`. Questo
+              # nodo e' il punto da cui esce la carta e il registro delle stampe in
+              # giro per l'osservatorio (D-239, `world/stampante.gd`). Sta al centro
+              # della carrozza, a quota del piano del mobile; quanto sia alta la
+              # fessura lo misura lui, guardando la stampante.
+              '[node name="Stampante" type="Node3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
+              % STAMPANTE,
+              'script = ExtResource("61_stampante")', '',
               # Il campanello di fine sequenza sta al monitor, come nel vecchio
               # mondo: la sua taratura - unit_size, max_distance - e' fatta su
               # QUELLA distanza, e spostarlo vorrebbe dire rifarla a orecchio.

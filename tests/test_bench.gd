@@ -130,6 +130,8 @@ func _ready() -> void:
 	print("")
 	_check_desktop_window()
 	print("")
+	_check_prints()
+	print("")
 	print("=== fine ===")
 	get_tree().quit()
 
@@ -2015,6 +2017,51 @@ func _check_save_manager() -> void:
 				DirAccess.remove_absolute(bench_dir.path_join(name))
 			name = d.get_next()
 		d.list_dir_end()
+	DirAccess.remove_absolute(bench_dir)
+
+
+## Le stampe delle foto (D-239): quale immagine esce, e se il registro attraversa il disco.
+##
+## IL LIVELLO DELL'IMMAGINE NON È LO SCAGLIONE DEL PAGAMENTO: tre gradini fissi contro i
+## cinque tarabili di `payout_tiers`. Si stampano i bordi, dove un `>` al posto di `>=`
+## cambia foto.
+##
+## IL REGISTRO porta un `Transform3D` e chiavi `StringName`: si prova che il `.tres` li
+## restituisca com'erano, perché una stampa che torna ruotata di un grado è storta sul muro.
+func _check_prints() -> void:
+	print("-- Le stampe: quale foto esce, e se il registro sopravvive al disco (D-239)")
+	for caso: Array in [[0, 1], [49, 1], [50, 2], [79, 2], [80, 3], [100, 3]]:
+		var t := Photo.image_tier(caso[0])
+		print("   qualità %d -> immagine t%d" % [caso[0], t])
+		if t != caso[1]:
+			print("   <-- ATTESO: t%d" % caso[1])
+
+	print("   un profilo nuovo ha %d stampe" % PlayerProfile.new().photo_prints.size())
+	if not PlayerProfile.new().photo_prints.is_empty():
+		print("   <-- ATTESO: si comincia senza stampe in giro")
+
+	var bench_dir := "user://saves/_bench_stampe"
+	var via := "%s/profile.tres" % bench_dir
+	DirAccess.make_dir_recursive_absolute(bench_dir)
+	var dove := Transform3D(Basis(Vector3.UP, 0.7), Vector3(6.2, 1.4, 0.11))
+	var voci: Array[Dictionary] = [{
+		&"target": &"m42", &"livello": 2, &"notte": 3, &"foto": 1,
+		&"appesa": true, &"xf": dove, &"su": "Osservatorio/Muro", &"xf_su": dove,
+	}]
+	var p := PlayerProfile.new()
+	p.photo_prints = voci
+	var saves := SaveManager.new()
+	saves.save_profile(p, via)
+	var back := saves.load_profile(via)
+	var v: Dictionary = back.photo_prints[0] if back.photo_prints.size() == 1 else {}
+	var xf_back: Transform3D = v.get(&"xf", Transform3D())
+	var xf_ok := xf_back.is_equal_approx(dove)
+	var soggetto_ok: bool = v.get(&"target") is StringName and v.get(&"target") == &"m42"
+	print("   round-trip: %d stampe, trasformata intatta %s, soggetto StringName %s, appesa %s" % [
+		back.photo_prints.size(), xf_ok, soggetto_ok, v.get(&"appesa", false)])
+	if back.photo_prints.size() != 1 or not xf_ok or not soggetto_ok or not v.get(&"appesa", false):
+		print("   <-- ATTESO: una stampa, appesa, al millimetro e col soggetto StringName")
+	DirAccess.remove_absolute(via)
 	DirAccess.remove_absolute(bench_dir)
 
 

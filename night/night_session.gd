@@ -611,6 +611,12 @@ func _enter_sale(quality: int, photo_id: int) -> void:
 		_stacking.queue_free()
 		_stacking = null
 
+	# LA FOTO È EMERSA, e da qui parte la stampa (D-239). Si annuncia adesso e non in
+	# `_enter_stacking`: là sullo schermo c'è ancora rumore, e una stampante che partisse
+	# prima dell'immagine stamperebbe una foto che il giocatore non ha ancora visto.
+	Events.photo_revealed.emit(photo_id,
+		StringName(String(_ctx.get(Photo.CTX_TARGET, ""))), Photo.image_tier(quality))
+
 	# LA CURVA È UN DATO, letta SEMPRE da `Tuning.payout_tiers` (mai `load()` diretto):
 	# se è vuota `tier_payout` torna 0, come `quality` su vuoto — non si inventa un
 	# numero (I/O matrix, riga «curva assente»).

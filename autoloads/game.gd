@@ -134,6 +134,17 @@ func mark_forum_read(id: StringName) -> void:
 	_saves.save_profile(profile)
 
 
+## Riscrive il registro delle stampe (D-239) e SALVA. Come `mark_forum_read`: la persistenza
+## resta di `Game`, e la stampante nel mondo non tocca mai `SaveManager`.
+##
+## SI RISCRIVE INTERO, non si aggiunge una voce: a sapere dove sta ogni stampa adesso è la
+## stampante, che le ha tutte sotto gli occhi, e una lista aggiornata a pezzi qui
+## divergerebbe alla prima stampa spostata.
+func save_prints(records: Array[Dictionary]) -> void:
+	profile.photo_prints = records
+	_saves.save_profile(profile)
+
+
 ## Chiude la notte e VERSA al giocatore quanto ha guadagnato.
 ##
 ## È l'unico punto in cui `profile.wallet_lire` cresce: chi vende accredita su

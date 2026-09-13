@@ -20,6 +20,20 @@ signal dawn_reached()
 
 signal photo_sold(photo_id: StringName, lire: int)
 
+## LA FOTO È EMERSA DALLO STACK: sul monitor il rumore si è fatto immagine.
+##
+## È IL FATTO CHE FA PARTIRE LA STAMPA (D-239), e sta sul bus per la ragione dei confini:
+## la rivelazione vive in `night/`, la stampante in `world/`, e le due cartelle non si
+## nominano. La notte dice che la foto c'è; chi nel mondo ha una stampante la stampa.
+##
+## PORTA IL LIVELLO DELL'IMMAGINE E NON LA QUALITÀ: da un numero da 0 a 100 a quale delle
+## tre pagine esce è una regola di `photo/` (`Photo.image_tier`), che `world/` non può
+## leggere. Gliela si passa già decisa.
+##
+## `photo_id` È UN `int`, com'è nel record: `photo_sold` lo converte in `StringName`, ed è
+## una conversione che qui non serve a nessuno.
+signal photo_revealed(photo_id: int, target_id: StringName, image_tier: int)
+
 ## Attività durante la posa: è ciò con cui si misura l'ipotesi dell'MVP.
 ##
 ## Due signal e non uno con un argomento «inizio/fine», per tre ragioni:

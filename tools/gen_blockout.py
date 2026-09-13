@@ -186,6 +186,7 @@ def tscn():
              '[ext_resource type="Script" path="res://world/dome_azimuth.gd" id="41_azimut"]',
              '[ext_resource type="Script" path="res://world/tempo_siderale.gd" id="57_siderale"]',
              '[ext_resource type="Script" path="res://world/luce_di_luna.gd" id="59_luna"]',
+             '[ext_resource type="Script" path="res://world/pianeti_in_cielo.gd" id="60_pianeti"]',
              '[ext_resource type="PackedScene" path="res://world/interactables/moka.tscn" id="58_moka"]',
              '[ext_resource type="PackedScene" path="res://assets/models/quadro_elettrico.glb" id="42_quadro"]',
              '[ext_resource type="Script" path="res://world/mains.gd" id="43_rete"]',
@@ -427,7 +428,21 @@ def tscn():
               'shader_parameter/sole_dir = Vector3(0, -1, 0)',
               'shader_parameter/luna_raggio = 0.00452',
               'shader_parameter/luna_luce = 0.0',
-              'shader_parameter/luna_chiarore = 0.0', '',
+              'shader_parameter/luna_chiarore = 0.0',
+              # I PIANETI, e i default sono quelli dei pianeti TRAMONTATI: cinque
+              # direzioni sotto i piedi e cinque luci a zero, cioe' un cielo in cui
+              # non se ne disegna nessuno. Stessa scelta della luna qui sopra e
+              # stesso perche': a scrivere questi tre array e' `world/pianeti_in_cielo.gd`
+              # a ogni fotogramma, e il giorno che quel nodo non ci fosse il cielo
+              # deve restare quello di prima invece di mostrare cinque puntini
+              # inventati. Il colore di ciascuno lo scrive il nodo una volta sola,
+              # perche' e' li' che sta l'ordine dei cinque.
+              'shader_parameter/pianeta_dir = PackedVector3Array(0, -1, 0, 0, -1, 0, '
+              '0, -1, 0, 0, -1, 0, 0, -1, 0)',
+              'shader_parameter/pianeta_tinta = PackedVector3Array(1, 1, 1, 1, 1, 1, '
+              '1, 1, 1, 1, 1, 1, 1, 1, 1)',
+              'shader_parameter/pianeta_luce = PackedFloat32Array(0, 0, 0, 0, 0)',
+              'shader_parameter/pianeta_raggio = 1.0', '',
               '[sub_resource type="Sky" id="cielo"]',
               # NIENTE MEZZA RISOLUZIONE: `Sky` la userebbe volentieri, e su un cielo
               # fatto di puntini larghi due pixel il dimezzamento non ammorbidisce, fa
@@ -875,6 +890,20 @@ def tscn():
               # ragione: e' li' dentro che sta il materiale del cielo su cui si
               # scrive. Due nodi, due strade per arrivarci, nessuna dipendenza
               # fra loro.
+              'ambiente = NodePath("../WorldEnvironment")', '',
+              # I PIANETI, e stanno ATTACCATI ALLA LUNA perche' sono l'altra meta'
+              # della stessa cosa: il cielo di QUESTA notte, alla data del
+              # calendario. La Luna e' anche una lampada e per questo e' una
+              # `DirectionalLight3D`; i pianeti non illuminano niente - Venere al
+              # massimo splendore fa un'ombra su una spiaggia deserta e nient'altro
+              # - quindi qui c'e' un `Node` e basta, che scrive in cielo e non
+              # tocca la scena.
+              #
+              # LEGGE IL CHIARO DI LUNA DAL NODO QUI SOPRA, per gruppo: con la luna
+              # piena il cielo si lava e restano solo i pianeti forti, esattamente
+              # come restano solo le stelle forti.
+              '[node name="Pianeti" type="Node" parent="."]',
+              'script = ExtResource("60_pianeti")',
               'ambiente = NodePath("../WorldEnvironment")', '',
               # LA LUCE DEL CIELO CHE SCENDE DALLA FENDITURA. Il perche' sta tutto in
               # `world/sky_light.gd`; qui c'e' solo dove sta e quanto e' larga.
@@ -2392,6 +2421,12 @@ _attesi = [("ambient_light_energy = 0.035", "la luce ambientale della notte"),
            # in cielo non c'e' niente da cui possa arrivare.
            ('script = ExtResource("59_luna")', "la luna che segue il calendario"),
            ("shader_parameter/luna_dir", "il disco della luna nel cielo"),
+           # I PIANETI SI PERDONO ESATTAMENTE COME LA LUNA, e anche piu' in
+           # silenzio: senza il nodo restano cinque luci a zero, cioe' un cielo
+           # senza pianeti - che assomiglia moltissimo a un cielo normale, ed e'
+           # il motivo per cui la mancanza va cercata qui e non a occhio.
+           ('script = ExtResource("60_pianeti")', "i pianeti che seguono il calendario"),
+           ("shader_parameter/pianeta_luce", "i pianeti nel cielo"),
            ('instance=ExtResource("58_moka")', "la moka sul bancone della cucina"),
            ('script = ExtResource("38_lucecielo")', "la luce del cielo in cupola"),
            # Senza l'elenco delle lampade l'adattamento al buio non si spegne quando

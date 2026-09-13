@@ -175,6 +175,77 @@ uniform float luna_albedo_media = 1.0;
 uniform float luna_mappe = 0.0;
 
 
+// --- I PIANETI ---------------------------------------------------------------
+//
+// CINQUE PUNTI CHE NON SONO STELLE, e sono l'unica cosa di questo cielo che si
+// possa chiamare per nome. Le stelle qui sono procedurali: un campo plausibile in
+// cui non c'e' niente da riconoscere. Mercurio, Venere, Marte, Giove e Saturno
+// invece sono OGGETTI - stanno in un posto preciso a un'ora precisa, sono piu'
+// luminosi di quasi tutte le stelle, e chi alza gli occhi da un osservatorio li
+// riconosce prima di qualunque costellazione.
+//
+// NON GIRANO CON LE STELLE, e quindi si disegnano su `dir` e non su `fisso`,
+// esattamente come la Luna e per la stessa ragione: un pianeta si sposta fra le
+// stelle - e' il suo nome che lo dice - e chi glielo ricalcola a ogni fotogramma
+// e' `world/pianeti_in_cielo.gd`, che sa che notte e' e a che ora.
+//
+// TRE ARRAY E NESSUN NOME, ed e' voluto: lo shader non sa quale sia Giove. Sa che
+// ci sono cinque cose, dove stanno, di che colore sono e quanto fanno luce. Chi
+// decide tutto il resto - compreso se una di queste cinque stanotte si veda o no
+// - e' il nodo, in un posto solo.
+//
+// LE DIMENSIONI SONO CINQUE E RESTANO CINQUE: i pianeti a occhio nudo sono
+// questi. Urano e' al limite dell'occhio e in un cielo disegnato non si
+// distinguerebbe da una stella; Nettuno non si vede affatto.
+
+// Dove stanno, in coordinate del mondo. Il default sarebbe «sotto i piedi»,
+// cioe' tramontati - la stessa posa della Luna assente - MA QUI NON SI PUO'
+// SCRIVERE: il linguaggio degli shader di Godot non ammette valori di default
+// sugli array di uniform («Setting default values to uniform arrays is not
+// supported»). Percio' il valore di partenza sta NEL .tscn, dove lo scrive
+// `gen_blockout.py` e dove il suo controllo sul file lo va a cercare: senza,
+// questi array partono da zero, e un array di direzioni nulle vuol dire cinque
+// pianeti allo zenit con `acos(0)` - cioe' esattamente i pianeti inventati che
+// il default serviva a evitare. E' un vincolo del motore dichiarato qui perche'
+// la riga che lo compensa e' in un altro file.
+uniform vec3 pianeta_dir[5];
+
+// Il colore di ciascuno a occhio nudo. Poco saturo, come sono: l'arancione di
+// Marte e il giallo paglia di Saturno si notano, il resto e' quasi bianco. Li
+// scrive il nodo una volta sola, in `_ready`: non cambiano con l'ora.
+//
+// `source_color` qui e' una dichiarazione d'intenzione e non una conversione:
+// Godot non converte gli ARRAY di uniform, e va bene cosi' - il colore di un
+// astro e' un rapporto fra flussi, cioe' un numero lineare.
+uniform vec3 pianeta_tinta[5] : source_color;
+
+// QUANTO FA LUCE CIASCUNO, e ZERO VUOL DIRE NON DISEGNARLO. Non e' la magnitudine
+// - quella e' un numero che cresce all'incontrario e vale meno di zero per i piu'
+// luminosi - e' gia' la luce da mettere sullo schermo, con dentro l'aria che il
+// pianeta deve attraversare e il chiaro di luna che gli sta attorno. Il conto,
+// con i suoi perche', sta in `world/pianeti_in_cielo.gd`.
+//
+// UN PIANETA BASSO NON E' UN PIANETA SPENTO: a un grado sull'orizzonte l'aria si
+// mangia nove magnitudini, cioe' quattromila volte la luce, e Venere - che e' la
+// cosa piu' luminosa del cielo dopo la Luna - sparisce. E' lo stesso motivo per
+// cui le stelle qui sotto si spengono guardando basso, ma qui il conto e' vero e
+// per ciascuno, non una sfumatura sull'altezza.
+uniform float pianeta_luce[5];
+
+// QUANTO E' LARGO IL PUNTO, IN PIXEL. E' un numero in PIXEL e non in gradi, ed e'
+// la differenza fra un pianeta e la Luna: la Luna ha una dimensione vera - mezzo
+// grado - e si disegna grande quanto e'; un pianeta a occhio nudo non ha
+// dimensione, e' un punto, e quello che se ne vede e' quanto lo allarga l'occhio
+// (o qui, il pixel). Disegnarlo grande come il suo disco vero - Giove misura
+// quaranta secondi d'arco, un ventesimo di pixel - vorrebbe dire non disegnarlo.
+//
+// E' LA LARGHEZZA DELLA GAUSSIANA, cioe' il raggio a cui il punto vale il
+// sessanta per cento: uno vuol dire un nucleo di due pixel e mezzo. Vedi
+// `pianeti()` per il motivo per cui e' una gaussiana e non il profilo delle
+// stelle - e' un difetto vero, trovato dal provino.
+uniform float pianeta_raggio : hint_range(0.5, 4.0) = 1.0;
+
+
 
 // Tre numeri pseudocasuali da una cella. Hash intero-in-virgola classico: economico
 // e senza texture di rumore da caricare.
@@ -382,6 +453,64 @@ vec3 luna(vec3 dir, float pixel) {
 }
 
 
+// I PIANETI: cinque punti, ciascuno col suo colore e la sua luce. Torna gia'
+// colorato, come `strato` e `luna`.
+//
+// SI ESCE SUBITO PER QUELLI CHE NON CI SONO, e nella notte tipica sono tre su
+// cinque: un confronto e via, prima di qualunque trigonometria. Questo ciclo gira
+// per ogni pixel del fondo.
+//
+// IL PROFILO E' UNA GAUSSIANA, E LA PRIMA STESURA AVEVA QUELLO DELLE STELLE -
+// nucleo pieno e caduta al cubo su poco piu' di un pixel. Sembrava la scelta
+// ovvia: un pianeta a occhio nudo e' un punto come una stella. E il provino
+// (`tools/scatta_pianeti.gd`) ha trovato SATURNO SPARITO: luce dichiarata 1,28,
+// misurata sullo schermo ZERO. Il motivo e' che un profilo appuntito su un
+// pixel vale quasi tutto solo nel suo centro esatto, e un pianeta cade dove
+// capita DENTRO il pixel: mezzo pixel fuori centro, e di quel nucleo ne resta un
+// sesto. Non era Saturno a essere debole, era Saturno a essere caduto male.
+//
+// UNA GAUSSIANA LARGA UN PIXEL E' PIATTA DOVE SERVE: fra il centro di un pixel e
+// il suo angolo perde il ventidue per cento e non il cinque sesti, quindi un
+// pianeta vale quanto deve valere ovunque cada, e girando la testa non pulsa.
+// E' lo stesso problema che `strato()` risolve allargando le stelle - un punto
+// piu' piccolo di un pixel si accende e si spegne - ma qui non si puo'
+// «conservare la luce» dividendo per l'area: una stella in meno non la nota
+// nessuno, un PIANETA che si spegne e' la cosa che il giocatore stava cercando.
+//
+// L'ALONE INVECE E' FISICO: la luce forte sborda, nell'aria e nell'occhio.
+// Siccome e' moltiplicato per la stessa `luce` del nucleo, Venere se lo porta
+// dietro largo e Saturno quasi per niente - e non c'e' nessuna regola che dica
+// «i pianeti luminosi brillano di piu'», viene fuori da sola.
+//
+// QUATTRO CENTESIMI SU DUE RAGGI E MEZZO, E PRIMA ERANO DIECI SU QUATTRO: cosi'
+// larghi i pianeti diventavano PALLE. Misurato sul provino, a 0,10 Giove veniva
+// 0,75 gradi a meta' luce e un grado e mezzo contando l'alone - a schermo intero
+// quasi tre volte la Luna, che di gradi ne misura mezzo - e in cielo sembravano
+// due lampioni. A 0,04 restano 0,53 e 0,76, cioe' un punto che sfavilla.
+//
+// E IL NUCLEO NON SI TOCCA. La tentazione era stringere `pianeta_raggio`: a 0,5 i
+// pianeti sono davvero puntini (0,26 gradi), ma torna il difetto che la gaussiana
+// larga era li' per risolvere - un nucleo piu' stretto del pixel si accende e si
+// spegne a seconda di dove cade dentro di esso, e Saturno sparisce girando la
+// testa. La dimensione la fa l'alone, che e' la parte che l'occhio aggiunge; il
+// nucleo e' la parte che tiene il pianeta acceso.
+vec3 pianeti(vec3 dir, float pixel) {
+	vec3 somma = vec3(0.0);
+	for (int i = 0; i < 5; i++) {
+		if (pianeta_luce[i] <= 0.0) {
+			continue;
+		}
+		float ang = acos(clamp(dot(dir, pianeta_dir[i]), -1.0, 1.0));
+		float r = max(pixel, 1e-5) * pianeta_raggio;
+		float dist = ang / r;
+		float nucleo = exp(-0.5 * dist * dist);
+		float alone = exp(-ang / (r * 2.5)) * 0.04;
+		somma += pianeta_tinta[i] * (nucleo + alone) * pianeta_luce[i];
+	}
+	return somma;
+}
+
+
 void sky() {
 	vec3 dir = normalize(EYEDIR);
 
@@ -440,5 +569,10 @@ void sky() {
 	stelle *= mix(1.0, 0.35, clamp(luna_chiarore, 0.0, 1.0));
 	fondo += vec3(0.42, 0.52, 0.86) * luna_chiarore * 0.008;
 
-	COLOR = fondo + stelle * luminosita + luna(dir, pixel);
+	// I PIANETI SI SOMMANO E NON SI OCCLUDONO, ed e' una semplificazione
+	// dichiarata: un pianeta che passasse dietro il disco della Luna si vedrebbe
+	// attraverso. Succede un paio di volte l'anno in tutto il cielo, dura
+	// un'ora, e per vederla in questo gioco bisognerebbe che capitasse in una
+	// delle trenta notti del calendario.
+	COLOR = fondo + stelle * luminosita + luna(dir, pixel) + pianeti(dir, pixel);
 }

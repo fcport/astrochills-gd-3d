@@ -256,8 +256,8 @@ static func effemeridi(jd: float) -> Dictionary:
 	# 200 da 160: era un guasto che si vedeva solo nelle parole.
 	var fase := 360.0 - fase_giro if fase_giro > 180.0 else fase_giro
 
-	var eq := _eclittiche_in_equatoriali(lambda_l, beta)
-	var ha := _angolo_orario(eq.x, jd)
+	var eq := eclittiche_in_equatoriali(lambda_l, beta)
+	var ha := angolo_orario(eq.x, jd)
 	var aa := alt_az(ha, eq.y)
 
 	# IL SOLE, e serve solo a dire da che parte cade la luce sulla Luna. Modello
@@ -267,15 +267,15 @@ static func effemeridi(jd: float) -> Dictionary:
 	var ms_s := 357.529 + 0.98560028 * d_giorni
 	var lambda_s := (280.459 + 0.98564736 * d_giorni
 		+ 1.915 * _sin(ms_s) + 0.020 * _sin(2.0 * ms_s))
-	var eq_s := _eclittiche_in_equatoriali(lambda_s, 0.0)
-	var aa_s := alt_az(_angolo_orario(eq_s.x, jd), eq_s.y)
+	var eq_s := eclittiche_in_equatoriali(lambda_s, 0.0)
+	var aa_s := alt_az(angolo_orario(eq_s.x, jd), eq_s.y)
 
 	# L'ASSE DELLA LUNA nel cielo di adesso, e da lì come è girata la faccia. Il
 	# nord della Luna non è «in alto sullo schermo»: la Luna che sorge a est ha
 	# il nord inclinato da una parte, quella che tramonta dall'altra, e in una
 	# notte la faccia ruota di decine di gradi. Chi la guarda al telescopio tutta
 	# la notte lo vede.
-	var aa_asse := alt_az(_angolo_orario(POLO_ECLITTICA_AR, jd), POLO_ECLITTICA_DEC)
+	var aa_asse := alt_az(angolo_orario(POLO_ECLITTICA_AR, jd), POLO_ECLITTICA_DEC)
 	var dir_l := direzione(aa.x, aa.y)
 	var faccia := cornice(dir_l, direzione(aa_asse.x, aa_asse.y))
 
@@ -416,7 +416,13 @@ static func _data_da_giuliano(jdn: int) -> Vector3i:
 
 ## Da eclittiche (longitudine, latitudine) a equatoriali (AR, declinazione), in
 ## gradi. È la rotazione dell'obliquità, e nient'altro.
-static func _eclittiche_in_equatoriali(lambda_g: float, beta_g: float) -> Vector2:
+##
+## PUBBLICA DA QUANDO CI SONO I PIANETI, e per la stessa ragione per cui è
+## pubblica `alt_az`: `core/pianeti.gd` guarda lo STESSO cielo dalla STESSA
+## latitudine, e una seconda copia di questa rotazione — tre righe, facilissime
+## da riscrivere — avrebbe messo i pianeti su un'eclittica e la Luna su un'altra
+## il giorno che una delle due venisse corretta.
+static func eclittiche_in_equatoriali(lambda_g: float, beta_g: float) -> Vector2:
 	var l := deg_to_rad(lambda_g)
 	var b := deg_to_rad(beta_g)
 	var e := deg_to_rad(OBLIQUITA)
@@ -433,7 +439,10 @@ static func _eclittiche_in_equatoriali(lambda_g: float, beta_g: float) -> Vector
 ## diametro della Luna, quindi le stelle dello shader e questa Luna non si
 ## contraddicono — ma il numero giusto costa lo stesso e vale in tutte le date,
 ## mentre l'approssimazione tonda si accumula di un grado alla settimana.
-static func _angolo_orario(ar_gradi: float, jd: float) -> float:
+##
+## PUBBLICA, come `eclittiche_in_equatoriali` qui sopra: è l'ora del cielo di
+## questo osservatorio, e i pianeti la leggono da qui invece di ricopiarla.
+static func angolo_orario(ar_gradi: float, jd: float) -> float:
 	var gmst := 280.46061837 + 360.98564736629 * (jd - 2451545.0)
 	var ha := fposmod(gmst + LONGITUDINE - ar_gradi, 360.0)
 	return ha - 360.0 if ha > 180.0 else ha

@@ -197,3 +197,16 @@ Licenza: pubblico dominio (NASA), con la richiesta di citare la fonte.
 
 Le scarica `tools/prendi_luna.py`; la mappa del rilievo è ricavata dalle quote LOLA, senza
 esagerazione.
+
+## Effemeridi
+
+**Keplerian Elements for Approximate Positions of the Major Planets** — le orbite dei
+cinque pianeti che si vedono in cielo.
+Autore: E. M. Standish, Jet Propulsion Laboratory (NASA/Caltech).
+Fonte: <https://ssd.jpl.nasa.gov/planets/approx_pos.html>
+Licenza: pubblico dominio (NASA).
+
+Sono i sei elementi orbitali di ciascun pianeta e le loro derive per secolo, adattati ai
+minimi quadrati sulle effemeridi DE405 per l'intervallo 1800-2050. Non è un file scaricato:
+la tabella sta in chiaro dentro `core/pianeti.gd`, che è il posto giusto per trenta numeri
+che non cambieranno mai e senza i quali quel file non calcola niente.

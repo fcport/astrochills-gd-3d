@@ -7441,3 +7441,96 @@ riga.
 
 **Nota di numerazione**: la voce precedente era uscita come D-102, che esisteva già (le
 porte). È stata rinumerata D-228.
+
+## D-231 In cielo ci sono i pianeti, e non si vedono mai tutti
+
+Federico: «vorrei che nel cielo mettessimo anche cose più base da vedere come i pianeti, ma
+deve essere fatto in modo logico, non sempre si vede tutto». Le due metà della richiesta
+sono una sola cosa, e la seconda è quella che decide come si fa la prima.
+
+**Perché i pianeti e non altre stelle.** Il cielo di questo gioco è procedurale (D-184, D-194): un campo di puntini plausibile e *anonimo*, in cui non c'è niente da riconoscere e
+niente da nominare. I pianeti sono l'esatto contrario — sono cinque, si chiamano per nome,
+sono più luminosi di quasi tutte le stelle, e chi alza gli occhi da un osservatorio li
+riconosce prima di qualunque costellazione. Aggiungere altre stelle avrebbe aggiunto
+rumore; questi aggiungono **oggetti**.
+
+**«Non sempre si vede tutto» non è una regola: è la conseguenza.** Non esiste da nessuna
+parte una riga che dica «Giove sì, Mercurio no». Ci sono un'orbita, una magnitudine e tre
+condizioni — l'orizzonte, l'aria, il fondo del cielo — e l'elenco di stanotte esce da lì. È
+lo stesso patto della Luna (D-228): decide il calendario, non il programmatore.
+
+**L'astronomia è quella vera, e si verifica.** Gli elementi orbitali sono quelli pubblicati
+da JPL per le posizioni approssimate dei pianeti maggiori (Standish, 1800-2050, pubblico
+dominio, credito in `CREDITI.md`), risolti con l'equazione di Keplero; le magnitudini sono
+le formule dell'Astronomical Almanac, anello di Saturno compreso. `tools/prova_pianeti.gd`
+le confronta con le configurazioni **pubblicate** del 1999 e le ritrova cercandole:
+
+    opposizione di Giove, 23 ottobre 1999      trovata a +22 ore
+    opposizione di Saturno, 6 novembre 1999    trovata a +11 ore
+    massima elong. di Venere, 30 ottobre       trovata a +24 ore, 46,49 gradi (pubblicato 46,5)
+
+più i due invarianti che nessun modello sbagliato rispetta — su vent'anni, Mercurio non si
+stacca dal Sole più di 27,83 gradi e Venere più di 47,13.
+
+**Il Sole calcolato due volte.** `core/luna.gd` lo ricava dalla serie di Meeus,
+`core/pianeti.gd` dalla posizione della Terra nella sua orbita: due modelli scritti in due
+momenti diversi per due scopi diversi. Concordano entro **0,0072 gradi**, e il banco li
+confronta a ogni giro. È la verifica che non costa niente e che non ha bisogno di un libro:
+se divergessero, la Luna sarebbe illuminata da una parte e le fasi di Venere dall'altra, e
+ciascuno dei due file avrebbe ragione da solo.
+
+**La visibilità è ottica, non gusto.** Un pianeta si vede se è sopra l'orizzonte, se l'aria
+non se lo mangia e se il cielo attorno non è più chiaro di lui. L'aria è la formula di
+Kasten e Young — trentotto masse d'aria all'orizzonte, 0,25 magnitudini ciascuna: **nove
+magnitudini a un grado di altezza**, che è il motivo per cui un pianeta si spegne *prima* di
+toccare il profilo delle colline. Il fondo è lo stesso `contributo` della Luna che già
+comanda l'energia della lampada e quante stelle restano accese, e non spegne un pianeta:
+**alza il pavimento**. Con la luna piena Giove si vede uguale, e un pianeta debole tramonta
+cinque gradi più in alto.
+
+**Il mese di lavoro, misurato.** Su novanta momenti (trenta notti a tre ore): Saturno 71
+volte, Giove 60, Venere 30, Marte e Mercurio **zero**. La notte 1: Giove e Saturno già a
+cinquanta gradi quando comincia il turno — erano all'opposizione da poche settimane — e
+tramontano alle 4:50 e alle 6:08; Venere sorge alle 3:07 e *si vede* dalle quattro, perché
+la prima ora la passa nell'aria spessa; Marte tramonta alle 20:32, **mezz'ora prima che il
+turno cominci**, e quindi non si vede mai; Mercurio non si stacca mai abbastanza dal Sole.
+Tre insiemi diversi in una notte sola, e nessuno l'ha deciso.
+
+**La compressione delle luminosità è una bugia dichiarata**, come la frazione illuminata
+della Luna. Fra Venere e Saturno ci sono quattro magnitudini e mezzo, cioè sessanta volte la
+luce: disegnate al rapporto vero, Venere è una macchia e Saturno non esiste. A 0,30 di
+esponente le stesse quattro magnitudini e mezzo diventano un fattore quattro — che è la
+compressione che fa l'occhio, ed è l'unico modo perché si vedano tutti e due.
+
+**IL PROVINO HA TROVATO SATURNO SPARITO.** La prima stesura disegnava i pianeti col profilo
+delle stelle — nucleo pieno e caduta al cubo su poco più di un pixel — e sembrava la scelta
+ovvia: un pianeta a occhio nudo *è* un punto come una stella. `tools/scatta_pianeti.gd`
+misura la luce del quadratino centrale di ogni cella e la confronta con quella dichiarata, e
+ha trovato Saturno con **luce 1,28 dichiarata e 0,00 misurata**: un profilo appuntito su un
+pixel vale quasi tutto solo nel suo centro esatto, e un pianeta cade dove capita *dentro* il
+pixel — mezzo pixel fuori centro, e di quel nucleo ne resta un sesto. Non era Saturno a
+essere debole: era Saturno caduto male. Con una gaussiana larga un pixel la perdita fra
+centro e angolo è il ventidue per cento invece dei cinque sesti, e il pianeta vale quanto
+deve valere ovunque cada. Nessuna prova numerica poteva vederlo — le cinque luci erano
+esatte — e a occhio sarebbe sembrato «Saturno è poco luminoso».
+
+**Il difetto si rimette**, come per il cielo che gira e per la Luna: `TUTTI=1` disegna tutti
+e cinque sempre, orizzonte e aria ignorati, e la sonda deve trovare cinque luci accese di
+cui tre sotto i piedi. Se con l'interruttore non cambiasse niente, vorrebbe dire che la
+selezione non sta selezionando.
+
+**Quello che non c'è**, dichiarato: Urano e Nettuno (in un cielo disegnato non si
+distinguerebbero da una stella), il tempo-luce e l'aberrazione (un decimo di primo d'arco),
+la rifrazione, la parallasse, le occultazioni — un pianeta che passasse dietro la Luna si
+vedrebbe attraverso. E il crepuscolo: il Sole non entra nel conto della visibilità perché
+nelle nove ore del turno sta sempre sotto i venticinque gradi di depressione, e scrivere una
+regola per una condizione che non capita mai vorrebbe dire scrivere codice mai provato.
+
+**ERANO PALLE, E L'HA DETTO FEDERICO A OCCHIO** («i pianeti non sono così tanto grandi»).
+Misurato sul provino: Giove veniva **0,75°** a metà luce e **1,47°** contando l'alone —
+quasi tre volte la Luna. Il colpevole era l'alone, `0,10` di ampiezza su quattro raggi:
+portato a **0,04 su due e mezzo** Giove torna a 0,53° / 0,76°, un punto che sfavilla, e il
+provino continua a dire «nessun guasto». Il nucleo non si è toccato apposta: a
+`pianeta_raggio` 0,5 i pianeti sono puntini veri (0,26°), ma torna il difetto di Saturno
+caduto male fra due pixel. La dimensione la fa l'alone, che è la parte che aggiunge
+l'occhio; il nucleo è quella che tiene il pianeta acceso.

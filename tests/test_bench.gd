@@ -124,6 +124,8 @@ func _ready() -> void:
 	print("")
 	_check_luna()
 	print("")
+	_check_pianeti()
+	print("")
 	print("=== fine ===")
 	get_tree().quit()
 
@@ -2223,3 +2225,103 @@ func _report_luna(label: String, anno: int, mese: int, giorno: int,
 	print("   %-32s fase %6.2f (attesa %.0f), scarto %.2f gradi = %.0f minuti%s"
 		% [label, e[&"fase"], atteso, scarto, scarto / 12.19 * 1440.0,
 			"" if scarto < 0.5 else "   <-- ATTESO: sotto mezzo grado, cioe' sotto l'ora"])
+
+## I PIANETI: il Sole calcolato due volte, l'almanacco del 1999 e la regola che
+## decide chi si vede.
+##
+## PERCHÉ QUI E NON SOLO NELLA SONDA. `tools/prova_pianeti.gd` fa tutto questo e
+## di più, ma ha bisogno di montare `main.tscn` per arrivare al materiale del
+## cielo; queste sono funzioni STATICHE e pure — effemeridi e visibilità — ed è
+## esattamente la roba che questo banco esiste per collaudare.
+##
+## IL SOLE DUE VOLTE È LA PROVA CHE NON COSTA NIENTE. `core/luna.gd` lo calcola
+## con la serie di Meeus, `core/pianeti.gd` lo ricava dall'orbita della Terra:
+## due modelli scritti in due momenti diversi per due scopi diversi, che devono
+## dare lo stesso Sole. Se divergessero, la Luna sarebbe illuminata da una parte
+## e le fasi di Venere dall'altra, e ciascuno dei due file continuerebbe ad avere
+## ragione da solo — che è lo stesso guasto delle copie della Luna, scoperto con
+## lo stesso metodo.
+func _check_pianeti() -> void:
+	print("-- Pianeti: il Sole due volte, l'almanacco del 1999, chi si vede")
+
+	# I DUE SOLI, su quattro istanti del mese di lavoro.
+	var peggio := 0.0
+	for notte in [1, 15, 30]:
+		for minuti in [0.0, 240.0, 480.0]:
+			var jd := Luna.istante(notte, minuti)
+			peggio = maxf(peggio, rad_to_deg(Vector3(Luna.effemeridi(jd)[&"sole_dir"])
+				.angle_to(Vector3(Pianeti.sole(jd)[&"dir"]))))
+	print("   il Sole: Luna contro Pianeti, scarto massimo %.4f gradi%s"
+		% [peggio, "" if peggio < 0.05
+			else "   <-- ATTESO: sotto il ventesimo di grado, e' lo stesso Sole"])
+
+	# L'ALMANACCO: le due opposizioni del 1999, cercate come massimo
+	# dell'elongazione in una finestra di cinque giorni. Sono date PUBBLICATE.
+	_report_opposizione("Giove all'opposizione, 23 ottobre 1999", &"giove", 1999, 10, 23)
+	_report_opposizione("Saturno all'opposizione, 6 novembre 1999", &"saturno", 1999, 11, 6)
+
+	# GLI INVARIANTI DEI DUE INTERNI: quanto si staccano dal Sole. Cinque anni
+	# sono venti congiunzioni di Mercurio, abbastanza perché il massimo ci capiti
+	# dentro. Un pianeta interno con l'orbita sbagliata sfonda questi numeri
+	# subito, e nessun'altra prova se ne accorgerebbe.
+	var inizio := float(Luna.giuliano_di(1996, 1, 1)) - 0.5
+	var massimi := {&"mercurio": 0.0, &"venere": 0.0}
+	for giorno in 1825:
+		for e in Pianeti.effemeridi(inizio + float(giorno)):
+			if massimi.has(e[&"nome"]):
+				massimi[e[&"nome"]] = maxf(massimi[e[&"nome"]], float(e[&"elongazione"]))
+	print("   massima elongazione dal Sole: Mercurio %.2f (attesa 26,5-28,5), Venere %.2f (45-48)%s"
+		% [massimi[&"mercurio"], massimi[&"venere"],
+			"" if massimi[&"mercurio"] > 26.5 and massimi[&"mercurio"] < 28.5
+				and massimi[&"venere"] > 45.0 and massimi[&"venere"] < 48.0
+			else "   <-- ATTESO: dentro, o l'orbita di un interno e' sbagliata"])
+
+	# CHI SI VEDE: la regola, sulla funzione pura. Un pianeta tramontato non si
+	# disegna; uno basso vale molto meno di uno alto; con la luna piena il debole
+	# in basso sparisce e Venere no.
+	var sotto := PianetiInCielo.luce_di({&"alt": -1.0, &"magnitudine": -4.3}, 0.0)
+	var alto := PianetiInCielo.luce_di({&"alt": 60.0, &"magnitudine": -2.7}, 0.0)
+	var basso := PianetiInCielo.luce_di({&"alt": 1.0, &"magnitudine": -2.7}, 0.0)
+	print("   Giove (mag -2,7): a 60 gradi %.3f, a 1 grado %.3f; Venere tramontata %.3f%s"
+		% [alto, basso, sotto, "" if is_zero_approx(sotto) and basso < alto
+			else "   <-- ATTESO: tramontata zero, e in basso meno che in alto"])
+	var debole_luna := PianetiInCielo.luce_di({&"alt": 5.0, &"magnitudine": 0.2}, 1.0)
+	var venere_luna := PianetiInCielo.luce_di({&"alt": 5.0, &"magnitudine": -4.3}, 1.0)
+	print("   a 5 gradi con la luna piena: mag +0,2 %.3f, mag -4,3 %.3f%s"
+		% [debole_luna, venere_luna,
+			"" if is_zero_approx(debole_luna) and venere_luna > 0.0
+			else "   <-- ATTESO: il debole sparisce, Venere resta"])
+
+	# L'ORDINE È UN PATTO FRA TRE FILE: `Pianeti.ORDINE` decide chi e' l'indice
+	# 3 nell'array dello shader, e i colori devono seguirlo. Un colore mancante
+	# vorrebbe dire un pianeta disegnato nero, cioe' invisibile senza errori.
+	var senza_colore := PackedStringArray()
+	for nome in Pianeti.ORDINE:
+		if not PianetiInCielo.COLORI.has(nome):
+			senza_colore.append(String(nome))
+	print("   i cinque nomi, i cinque colori: %d e %d%s"
+		% [Pianeti.ORDINE.size(), PianetiInCielo.COLORI.size(),
+			"" if senza_colore.is_empty()
+			else "   <-- senza colore: " + ", ".join(senza_colore)])
+
+
+## Un'opposizione d'almanacco: si cerca il massimo dell'elongazione attorno alla
+## data pubblicata e si guarda di quanto scivola. Un giorno di scarto e' il
+## respiro di un massimo piatto; una settimana vorrebbe dire il pianeta
+## dall'altra parte del cielo.
+func _report_opposizione(label: String, nome: StringName, anno: int, mese: int,
+		giorno: int) -> void:
+	var atteso := float(Luna.giuliano_di(anno, mese, giorno)) - 0.5
+	var meglio := -1.0
+	var quando := 0.0
+	for passo in range(-120, 121):
+		var jd := atteso + float(passo) / 24.0
+		for e in Pianeti.effemeridi(jd):
+			if e[&"nome"] == nome and float(e[&"elongazione"]) > meglio:
+				meglio = float(e[&"elongazione"])
+				quando = jd
+	var scarto := quando - atteso
+	print("   %-40s massimo %.2f gradi, a %+.1f ore dalla data pubblicata%s"
+		% [label, meglio, scarto * 24.0, "" if absf(scarto) < 1.5
+			else "   <-- ATTESO: dentro il giorno e mezzo"])
+

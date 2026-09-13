@@ -38,6 +38,7 @@
 [ext_resource type="Script" path="res://world/dome_azimuth.gd" id="41_azimut"]
 [ext_resource type="Script" path="res://world/tempo_siderale.gd" id="57_siderale"]
 [ext_resource type="Script" path="res://world/luce_di_luna.gd" id="59_luna"]
+[ext_resource type="Script" path="res://world/pianeti_in_cielo.gd" id="60_pianeti"]
 [ext_resource type="PackedScene" path="res://world/interactables/moka.tscn" id="58_moka"]
 [ext_resource type="PackedScene" path="res://assets/models/quadro_elettrico.glb" id="42_quadro"]
 [ext_resource type="Script" path="res://world/mains.gd" id="43_rete"]
@@ -1168,6 +1169,10 @@ shader_parameter/sole_dir = Vector3(0, -1, 0)
 shader_parameter/luna_raggio = 0.00452
 shader_parameter/luna_luce = 0.0
 shader_parameter/luna_chiarore = 0.0
+shader_parameter/pianeta_dir = PackedVector3Array(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0)
+shader_parameter/pianeta_tinta = PackedVector3Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+shader_parameter/pianeta_luce = PackedFloat32Array(0, 0, 0, 0, 0)
+shader_parameter/pianeta_raggio = 1.0
 
 [sub_resource type="Sky" id="cielo"]
 radiance_size = 1
@@ -3298,6 +3303,10 @@ light_specular = 0.02
 shadow_enabled = true
 directional_shadow_normal_bias = 0.2
 script = ExtResource("59_luna")
+ambiente = NodePath("../WorldEnvironment")
+
+[node name="Pianeti" type="Node" parent="."]
+script = ExtResource("60_pianeti")
 ambiente = NodePath("../WorldEnvironment")
 
 [node name="LuceCielo" type="SpotLight3D" parent="."]

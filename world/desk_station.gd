@@ -40,7 +40,7 @@
 ##   1. `player.set_enabled(false)` — il controllo si toglie PRIMA di muovere
 ##      qualunque cosa;
 ##   2. `desk.toggle()` — il corpo si aggancia al `Marker3D` e la camera
-##      interpola, mezzo secondo, con il FOV che si stringe a 42°;
+##      interpola, mezzo secondo, con il FOV che si stringe a 33°;
 ##   3. su `seated` — e solo lì — lo schermo comincia a ricevere input.
 ## All'uscita l'inverso, e il controller torna acceso solo su `left`.
 class_name DeskStation

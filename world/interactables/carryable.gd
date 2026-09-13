@@ -60,6 +60,19 @@ const VELOCITA_GIRO := 12.0
 const STRAPPO := 1.1
 const STRAPPO_SECONDI := 0.35
 
+## Metri al secondo con cui parte un oggetto da un chilo lanciato a barra piena (vedi
+## `Player.TEMPO_CARICA`). Sei è il lancio da sotto di chi tira una cosa dall'altra
+## parte della stanza, non una palla da baseball.
+##
+## VA CON LA RADICE DELLA MASSA come la mano (`_velocita_massima()`), e per la
+## stessa ragione: il termos parte più piano della tazza.
+const VELOCITA_LANCIO := 6.0
+
+## Sotto questa massa il braccio non va più veloce. Senza, la tazza da centocinquanta
+## grammi partirebbe a quindici metri al secondo: la radice premia le cose leggere
+## all'infinito, e il braccio che le tira invece pesa sempre uguale.
+const MASSA_BRACCIO := 0.5
+
 
 ## Emesso quando l'oggetto smette di stare in mano, per qualunque ragione — posato
 ## dal giocatore o strappato via da un muro. Chi lo teneva lo ascolta: senza,
@@ -386,10 +399,9 @@ func lascia() -> void:
 	if not _in_mano:
 		return
 	_in_mano = false
-	# LA VELOCITÀ NON SI AZZERA, e questo è il lancio: l'oggetto se ne va con
-	# quella che aveva in mano. Girarsi di scatto e mollare lo scaglia, posarlo
-	# fermo lo posa. Non c'è un comando «lancia» da nessuna parte — c'è la
-	# fisica, che è quello che era stato chiesto.
+	# LA VELOCITÀ NON SI AZZERA: l'oggetto se ne va con quella che aveva in mano.
+	# Girarsi di scatto e mollare lo scaglia, posarlo fermo lo posa. Il lancio
+	# VOLUTO, a barra piena, è un'altra cosa e sta in `lancia()`.
 	gravity_scale = 1.0
 	# E il sonno torna, insieme alla collisione normale: posato su un piano, questo
 	# oggetto deve poter smettere di essere calcolato invece di tremare per tutta
@@ -399,6 +411,20 @@ func lascia() -> void:
 		remove_collision_exception_with(_chi)
 		_chi = null
 	posato.emit()
+
+
+## LANCIATO: mollato con una spinta lungo `verso`. `trascinamento` è la velocità di
+## chi lancia — correndo, la cosa parte anche con quella, come nella vita.
+##
+## PASSA DA `lascia()` E NON LO RIFÀ, perché le sottoclassi lo estendono: la stampa
+## annuncia di essere cambiata, e un lancio che la saltasse lascerebbe il registro
+## delle foto convinto che sia ancora in mano.
+func lancia(verso: Vector3, trascinamento := Vector3.ZERO) -> void:
+	if not _in_mano:
+		return
+	lascia()
+	var v := VELOCITA_LANCIO / sqrt(maxf(mass, MASSA_BRACCIO))
+	linear_velocity = verso.normalized() * v + trascinamento
 
 
 ## Dove la mano lo vuole, adesso. La chiama chi lo tiene, dal proprio

@@ -7658,6 +7658,132 @@ e Photos e la BBS restano irraggiungibili proprio nell'attesa. È una scelta di 
 2.x sull'attesa vuota, e cambiarla non è stato fatto di sbieco. Le liste non scorrono. Il
 terminale è ancora l'interfaccia MS-DOS dentro una finestra.
 
+## D-233 Il quaderno delle procedure sta a sinistra del monitor, al posto del foglio appeso
+
+Federico: «mi piacerebbe di fianco al pc a sinistra, un libro con le istruzioni per giocare e
+fare le varie fasi». Fra tre forme — un raccoglitore d'ufficio, un volume rilegato, un
+organizer di pelle ad anelli — ha scelto l'organizer, e ha deciso che **prende il posto del
+«foglio di procedura appeso al monitor»** del GDD, che non era mai stato fatto.
+
+**IL MODELLO È VERO**: `binder_notebook` di Poly Haven, CC0. Il set ne porta due, aperto e
+chiuso; si tiene il chiuso (17 × 20 × 2,5 cm), decimato a milleduecento facce da
+`prop_blender.py`. L'aperto è largo trentasei centimetri e fra la tastiera e il telefono non
+ci sta.
+
+**IL POSTO È IL VUOTO CHE C'ERA**: il monitor arriva a +0,24 dalla mezzeria della sedia, il
+telefono comincia a +0,69, e in mezzo restano quarantacinque centimetri di piano. `QUADERNO`
+in `geometria.py` è derivato dalla consolle e dalla sedia, avanti a mezzo metro dal muro — da
+in piedi davanti alla consolle ci si arriva con la mano — e girato di nove gradi.
+
+**SI LEGGE NEL VIEWPORT DEL MONDO**, come il velo dell'oculare: la carta passa dal filtro con
+la grana della stanza. Due pagine alla volta, A/D o rotella o clic per sfogliare, E o Esc per
+chiudere. Le pagine stanno in `data/quaderno/quaderno.tres`, e l'a capo lo fa
+`QuadernoData.a_capo()` in colonne: la stessa funzione la usa il banco per dire se una pagina
+esce dal foglio e se ogni fase del piano ha la sua pagina.
+
+**IL CONTENUTO VIENE DAL CODICE, NON DAL GDD**: le otto fasi le ha rilette un agente, tasti,
+numeri e condizioni con il riferimento al file. Quello che ha trovato strada facendo è D-238.
+
+**NON È FIRMATO.** Negli appunti di economia c'è un «G.» che lascia soldi e biglietti e che il
+protagonista non conosce: firmare con quella lettera il manuale di chi ti ha assunto avrebbe
+deciso di sbieco una cosa della trama.
+
+## D-234 Dove c'erano le frecce c'è W A S D
+
+Federico: «dove uno dovrebbe usare le freccette voglio che si usi il wasd». Le azioni delle
+fasi al PC, del menu dopo la foto, della vendita, del terminale e della BBS passano dalle
+frecce a W A S D in `project.godot`, e le righe d'aiuto sugli schermi lo dicono (`W/S SELECT`,
+`WASD CENTRE`, `A/D FOCUSER`).
+
+**CON IL CAMMINARE NON SI SCONTRANO**, per una regola che c'era già: seduti, il controller del
+giocatore è spento (ADR-003), e W non muove nessuno.
+
+**MA C'ERA UN BUCO, e con W A S D si trovava prima.** SOLVE, GOTO e FOCUS leggono i tasti con
+`Input.get_axis` nel `_process`, che legge la tastiera e non il fuoco: con la BBS in primo
+piano, scorrere i messaggi muoveva anche il telescopio — con le frecce succedeva uguale. Adesso
+quelle tre fasi muovono il ferro solo se `is_processing_unhandled_input()`, cioè se
+l'orchestratore ha deciso che ascoltano (`NightSession.set_player_present`).
+
+## D-235 I suoni segnaposto se ne vanno tutti
+
+Federico: «rimuovi i suoni terribili che hai messo fin'ora». Erano onde quadre generate in
+GDScript: il borbottio della moka, il ronzio della montatura e il cigolio della cupola (già
+zittiti il 31 agosto con `ToniSegnaposto`), il beep del terminale e della BBS, la portante del
+modem, e il campanello di fine sequenza (`sequence_done.wav`). Via tutti, con
+`toni_segnaposto.gd` e `sequence_chime`.
+
+**QUELLO CHE SI PERDE, detto**: la fine della posa non si sente più da un'altra stanza, e il
+quaderno non la promette. Il posto per il suono vero resta — `IndoorsVolume` è ancora in scena,
+e il GDD descrive ancora com'è fatto il segnale. Quando arriveranno campioni veri si rimettono
+dei nodi, non della logica: il rituale della moka, i suoi timer e gli eventi della sequenza
+sono rimasti interi.
+
+## D-236 La lampada e la lampadina escono dal gioco
+
+Federico: «lampada e lampadina non li voglio». Fuori dalla scena erano già (D-181, D-183), ma
+il codice c'era tutto: `lamp.gd`, `lamp.tscn`, `lampadina.tres` nel catalogo,
+`PlayerProfile.lamp_fixed`, `Game.mark_lamp_fixed()`, la tavola del banco. Via tutto; nel GDD
+la lampada esce dalle attività del rifugio e dalla cura dell'osservatorio.
+
+**I SALVATAGGI VECCHI** possono avere `lamp_fixed` nel profilo: una proprietà che lo script non
+ha più si ignora caricando, e al primo salvataggio sparisce.
+
+## D-237 M42 e M8 fanno finta di stare appena sopra l'orizzonte
+
+D-192 aveva misurato che questa cupola non vede sotto i 47,7 gradi, e che M42 (culmina a 40,7)
+e M8 (21,7) non si vedono mai — mentre la commessa della prima notte chiede proprio M42. Alzare
+lo strumento di un metro e quaranta l'avrebbe risolto per davvero. Federico: «facciamo finta
+che siano appena sopra l'orizzonte».
+
+**LA FINZIONE STA IN UN NUMERO SOLO**, la declinazione dei due `.tres`: +36 per M42 e +9 per M8.
+Catalogo, GOTO e montatura leggono lo stesso dato e restano coerenti fra loro. Il commento nel
+`.tres` dice che il numero è falso, e qual è quello vero.
+
+**AL PRIMO GIRO ERA FINTO A METÀ.** I numeri erano +4,2 e +3,6, cioè il soggetto CULMINAVA appena
+sopra i 47,7 gradi — e culminare appena sopra vuol dire stare sotto per quasi tutta la notte:
+M42 si poteva puntare solo dalle 23:24 all'1:36. Federico l'ha scelto all'inizio del turno, il
+catalogo lo dava visibile e il GOTO ha risposto BELOW DOME HORIZON: «devo aspettare che arrivi a
+48? che palle». La proprietà giusta è un'altra: **sopra l'orizzonte per TUTTA la finestra che il
+catalogo dichiara**, la stessa che gli altri soggetti avevano già (M45 non scende sotto 53,6
+gradi, M13 sotto 49,9, M57 sotto 50,9). Con +36 M42 non scende sotto 49,7 fra le 21:00 e le
+04:00; con +9 M8 non scende sotto 50 fra le 21:00 e mezzanotte.
+
+**E M31 AVEVA LO STESSO DIFETTO IN PICCOLO**, con la declinazione vera: alle 21:00 e alle 05:00
+stava a 46,7 gradi, cioè per il primo quarto d'ora del turno il catalogo lo dava visibile e il
+GOTO lo rifiutava. Lì non c'è niente da fingere: la finestra si stringe a 21:15-04:45, dove è a
+49,3.
+
+**NON UNA REGOLA NEL CODICE**, del tipo «se è sotto, fai finta che sia sopra»: sarebbe una bugia
+in un posto dove nessuno la cerca, e varrebbe per ogni soggetto che verrà. Così la bugia è di
+due soggetti, e sta scritta accanto a loro.
+
+## D-238 Le incoerenze trovate rileggendo il gioco per scrivere il quaderno
+
+L'agente che ha riletto le fasi per il quaderno ha trovato una decina di punti in cui il codice
+e i commenti, o il GDD, non dicevano la stessa cosa. Federico: «sistema tutto».
+
+**LA CUPOLA GIRA DA SOLA, e va bene così**: a mano si aprono e si chiudono i battenti, la
+rotazione non ha un comando manuale. `dome_azimuth.gd` diceva che la pulsantiera restava come
+comando manuale della rotazione, `desk_camera.gd` che la cupola si apriva dal PC.
+
+**LA CORRENTE GOVERNA LE LUCI E LO SCHERMO DEL MONITOR, e basta**: il GDD diceva «PC, monitor,
+montatura e luci», `events.gd` prometteva che PC e montatura l'avrebbero ascoltata.
+
+**UN GOTO CHE RINUNCIA CHIUDE IL CICLO FOTO.** Prima si andava avanti con fuoco e posa, e si
+fotografava un soggetto che il telescopio non vedeva. Una fase del ciclo che finisce con
+`ok = false` porta l'indice in fondo, e si apre il menu dove si cambia soggetto.
+
+**LA POSA SA COM'È LA CAMERA QUANDO NASCE**: `Events.camera_mounted` tiene l'ultimo stato
+annunciato. Prima una camera smontata durante il puntamento non si sentiva, e `phase_imaging.gd`
+lo dichiarava come buco.
+
+**IL RAFFREDDAMENTO**: `time_constant` valeva 8 di default e 6 nel `.tres` (ora 6 tutti e due);
+`is_saturated` e `saturation` non li usava nessuno (tolti); e il commento parlava di un limite
+al novanta per cento che il codice non ha — la temperatura balla solo chiedendo più del fondo.
+
+**I COMMENTI**: il FOV da seduti è 33 e non 42; la zona di fuoco pieno va da -124 a +124 passi;
+`main.gd` parlava di W A S D solo per la fase polare.
+
 ## D-239 Le foto escono dalla stampante, e si appendono dove si vuole
 
 Federico, il 6 settembre: «quando una foto finisce di essere renderizzata in automatico parte
@@ -7694,3 +7820,85 @@ riavvio torna allo stesso posto: misurato, a 0,00 mm.
 
 **Da verificare giocando:** i venti secondi di stampa; quanto copre il foglio tenuto in mano; e se
 appendere sui vetri delle finestre va bene o va tolto — «ai muri» diceva la richiesta.
+
+
+## D-240 Fuori di notte non si vedeva niente: l'ambiente era tarato per le stanze spente
+
+Federico, il 13 settembre, appena uscito: «non vedo nulla».
+
+**LA FACCIATA GUARDA A NORD, E LA LUNA DA QUI STA SEMPRE A SUD.** Chi esce resta nell'ombra
+dell'edificio per tutta la notte, e in ombra arrivava solo l'ambiente: 0,035, il numero che
+D-078 ha fissato perché una stanza spenta resti spenta. Misurato con `tools/prova_trafila.gd`
+(`VISTA=uscita`, il salvataggio di Federico, notte 34, Luna a 0,38): facciata 0 livelli su
+255, prato 4. Senza Luna tutto l'esterno sta fra 1 e 3.
+
+**FUORI SI FANNO DUE COSE**, in `world/dark_adaptation.gd`, che era già l'unico nodo a
+scrivere l'esposizione:
+
+- **l'occhio si fa il buio** come in cupola: stesso guadagno 2,4, stessi cinquanta secondi;
+- **l'ambiente diventa quello del cielo** nel tempo di passare la porta (due secondi): tutto
+  il fondo `ENERGIA_CIELO` più un terzo della Luna, con un colore più grigio.
+
+**L'AMBIENTE NON SA NIENTE DEI MURI, E ALL'APERTO NON SERVE CHE LO SAPPIA.** È la ragione per
+cui dentro resta basso (D-153, D-181), e dentro resta basso: sale solo con il giocatore fuori
+dal volume `Dentro`. La bugia che rimane è dichiarata nel file: stando fuori, anche le stanze
+che si vedono dalle finestre ricevono il cielo.
+
+**TRE TARATURE SMENTITE DALLE FOTO:**
+
+- **solo l'esposizione**: il prato emerge, la facciata resta nera, perché zero per qualunque
+  guadagno fa zero;
+- **il blu dell'ambiente di dentro**: su un prato verde, in lineare, dà quasi zero. Facciata blu
+  notte, erba nera;
+- **l'ambiente pari a tutta la lampada della Luna**: facciata a 80, un crepuscolo.
+
+Misurato dopo, mediane in livelli su 255:
+
+    caso                                   facciata   prato
+    notte 34, appena usciti (3 s)              11        7
+    notte 34, occhio fatto                     43       22    (verso la macchina: 28)
+    novilunio, occhio fatto (LUNA=0.07)        16        6
+    piena allo zenit (LUNA=0.44)               47       33
+    sala spenta, da dentro                      0        0    ambiente fermo a 0,035
+
+La sonda ha due viste nuove, `uscita` e `nord`, e `LUNA=` per forzare la notte senza aspettare
+il calendario.
+
+**Da verificare giocando:** i cinquanta secondi anche fuori (uscendo si vede poco, poi sempre di
+più); se al novilunio basta per trovare la macchina; il colore della facciata.
+
+
+## D-241 Quello che si ha in mano si lancia, tenendo il sinistro fino a barra piena
+
+Federico, il 13 settembre: «voglio che se hai un oggetto in mano tenendo premuto il pulsante
+sinistro si possa lanciare, una piccola barra che fa vedere che stai caricando e solo se arrivi al
+massimo lanci».
+
+**SOLO A BARRA PIENA, E PARTE AL RILASCIO.** Otto decimi di secondo (`Player.TEMPO_CARICA`);
+mollato prima non succede niente e la barra torna vuota. Non c'è un lancio corto: ogni click
+distratto con la moka in mano la sposterebbe. Piena, la barra resta piena finché si tiene, e
+l'oggetto parte quando si alza il dito: la prima stesura partiva da sola, e Federico ha scelto il
+rilascio.
+
+**LA BARRA STA SOTTO IL MIRINO**, sedici pixel per due nel viewport a 640×360, disegnata come il
+punto (`Crosshair.set_carica`): è dove sta l'occhio mentre si mira. Esiste solo mentre si carica.
+
+**PARTE DALLA MANO E VA DOVE SI GUARDA**, verso un punto quattro metri lungo lo sguardo: la mano
+sta in basso a destra, e un tiro dritto passerebbe sempre ventidue centimetri a destra del mirino.
+Sei metri al secondo per un chilo, con la radice della massa come la mano, ma sotto il mezzo chilo
+non si va più forte (`Carryable.VELOCITA_LANCIO`, `MASSA_BRACCIO`): da 8,5 m/s per le cose leggere
+a 4,9 per quella da un chilo e mezzo. La velocità del corpo si somma.
+
+**PASSA DA `lascia()`**, quindi la stampa lanciata annuncia di essere cambiata come quando la si
+posa. La camera CCD resta tirabile come tutto il resto (scelto da Federico), e lanciata accanto al
+fuoco NON si avvita: si avvita solo posandola con `E`.
+
+Il click che ridà il mouse non carica; la carica si perde posando, con lo strappo e liberando il
+cursore. Nel quaderno, pagina «Come ci si muove»: `SINISTRO  tenuto, lancia`.
+
+**Misurato** con `tools/prova_mani.gd`: mollato a metà (barra a 0,50) la scatola resta in mano;
+tenuto, la barra è piena a 0,80 s e mezzo secondo dopo la scatola è ancora in mano; mollata, parte
+a 6,0 m/s e dopo un secondo sta a 3,04 m. Banco verde.
+
+**Da verificare giocando:** gli otto decimi; se la barra si legge; se sei metri al secondo sono
+troppi dentro casa.

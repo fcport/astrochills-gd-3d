@@ -1,0 +1,208 @@
+[gd_resource type="Resource" script_class="QuadernoData" load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://data/quaderno/quaderno_data.gd" id="1_quaderno"]
+[ext_resource type="Script" path="res://data/quaderno/pagina_quaderno.gd" id="2_pagina"]
+
+[sub_resource type="Resource" id="pagina_01"]
+script = ExtResource("2_pagina")
+titolo = "Procedure del turno di notte"
+testo = "Osservatorio di Montegrimano.
+
+Questo quaderno sta accanto al computer, e lì deve restare. La prima notte nessuno sa niente: va bene così.
+
+Il turno va dalle 21:00 alle 06:00, e il tempo corre anche se stai fermo. L'ora è in basso a destra sullo schermo del computer.
+
+Qui c'è l'ordine del lavoro e, una pagina per volta, come si fa ogni passaggio."
+fase = &""
+
+[sub_resource type="Resource" id="pagina_02"]
+script = ExtResource("2_pagina")
+titolo = "Come ci si muove"
+testo = "  W A S D   cammina
+  SHIFT     corri
+  CTRL      abbassati
+  SPAZIO    salta
+  E         usa, prendi, posa
+  SINISTRO  tenuto, lancia
+  ESC       libera il mouse
+
+Guardando una cosa da vicino, in basso compare cosa ci si può fare.
+
+Al computer: E per sederti e per alzarti. Il mouse muove la freccia, ALT tenuto premuto gira la testa. Nei programmi W e S scelgono, A e D cambiano, INVIO conferma."
+fase = &""
+
+[sub_resource type="Resource" id="pagina_03"]
+script = ExtResource("2_pagina")
+titolo = "L'ordine della notte"
+testo = "Una volta sola, all'inizio:
+  1 cupola      aprirla       DOME
+  2 strumenti   accenderli    BOOT
+  3 camera      raffreddarla  COOL
+  4 puntamento  sincronizzare SOLVE
+
+Per ogni fotografia:
+  5 soggetto    sceglierlo    TARGET
+  6 telescopio  puntarlo      GOTO
+  7 fuoco       regolarlo     FOCUS
+  8 posa        avviarla      SEQ
+
+Al computer si lavora nella finestra di MaxIm DL: le schede in cima dicono a che punto sei."
+fase = &""
+
+[sub_resource type="Resource" id="pagina_04"]
+script = ExtResource("2_pagina")
+titolo = "1. Aprire la cupola"
+testo = "Non si fa al computer, ma in cupola.
+
+Sul muro ovest della sala del telescopio c'è la pulsantiera. Guarda il pulsante «Apri la cupola», premi E e tieni premuto (vale anche il tasto sinistro del mouse): il motore gira solo finché tieni giù il dito.
+
+Bastano pochi secondi. A fessura tutta aperta il passaggio è fatto da solo.
+
+La cupola poi gira da sola dietro al telescopio, e all'alba si richiude."
+fase = &"dome"
+
+[sub_resource type="Resource" id="pagina_05"]
+script = ExtResource("2_pagina")
+titolo = "2. Accendere gli strumenti"
+testo = "Al computer, scheda BOOT.
+
+W e S scelgono la riga, INVIO esegue: su un apparecchio spento lo accende, su uno acceso lo collega.
+
+L'ordine:
+  MOUNT    INVIO, INVIO
+  CAMERA   INVIO, INVIO
+  FILTER   INVIO
+
+La ruota dei filtri prende corrente dalla camera. Collegata prima di accendere la camera resta NONE: selezionala, R libera la porta, e riprova.
+
+Con tutto OK, INVIO per andare avanti."
+fase = &"startup"
+
+[sub_resource type="Resource" id="pagina_06"]
+script = ExtResource("2_pagina")
+titolo = "3. Raffreddare la camera"
+testo = "Al computer, scheda COOL.
+
+Il sensore freddo fa foto pulite. S abbassa la temperatura voluta (SET), W la alza.
+
+La cella scende al massimo di 38 gradi sotto l'aria della cupola: sotto i -32 non ci arriva, e se glielo chiedi balla.
+
+Un buon valore sta fra -25 e -32. Poi aspetta che si calmi: SWING dice quanto oscilla. Sotto 0,15, INVIO.
+
+Mentre scende puoi alzarti."
+fase = &"cooling"
+
+[sub_resource type="Resource" id="pagina_07"]
+script = ExtResource("2_pagina")
+titolo = "4. Sincronizzare"
+testo = "Al computer, scheda SOLVE.
+
+Il telescopio va da solo su una stella nota, il nome è in alto. Aspetta che si fermi.
+
+Sa solo più o meno dove sta guardando. Con W A S D porta la stella dentro il cerchietto al centro: la stella va dalla parte opposta al tasto.
+
+Quando il cerchietto si accende l'errore è piccolo: INVIO.
+
+Fatto male, stanotte ogni puntamento arriverà storto."
+fase = &"sync"
+
+[sub_resource type="Resource" id="pagina_08"]
+script = ExtResource("2_pagina")
+titolo = "5. Scegliere il soggetto"
+testo = "Al computer, scheda TARGET.
+
+W e S scorrono i soggetti, INVIO sceglie. L'asterisco segna quello che vuole il cliente di stanotte.
+
+Leggi la riga sotto il nome:
+  visible now   si può fare
+  not visible   non è la sua ora
+  too low       lo copre la cupola
+
+Sotto la cupola il telescopio vede il muro, non il cielo: scegli un soggetto visibile adesso.
+
+MIN è la posa minima che vuole."
+fase = &"targeting"
+
+[sub_resource type="Resource" id="pagina_09"]
+script = ExtResource("2_pagina")
+titolo = "6. Puntare il telescopio"
+testo = "Al computer, scheda GOTO.
+
+Il telescopio va sul soggetto. Il rettangolo al centro è quello che vede la camera, il puntino è il soggetto.
+
+Aspetta che si fermi. Con W A S D porta il puntino dentro il rettangolo, poi INVIO.
+
+Se compare BELOW DOME HORIZON il soggetto è troppo basso per stanotte: INVIO per rinunciare, e dal menu scegline un altro."
+fase = &"goto"
+
+[sub_resource type="Resource" id="pagina_10"]
+script = ExtResource("2_pagina")
+titolo = "7. Mettere a fuoco"
+testo = "Al computer, scheda FOCUS.
+
+Si parte sempre sfocati. Tieni premuto A o D per muovere il focheggiatore, e guarda HFD: quanto è grossa la stella. Più è basso, meglio è.
+
+Il grafico disegna una V, e il fuoco sta in fondo. Passalo, torna indietro e fermati dove HFD è più basso: sotto 2,7 è perfetto.
+
+STEP non dice dove sia il fuoco. Poi INVIO."
+fase = &"focus"
+
+[sub_resource type="Resource" id="pagina_11"]
+script = ExtResource("2_pagina")
+titolo = "8. La posa"
+testo = "Al computer, scheda SEQ. La camera deve essere avvitata al telescopio.
+
+W e S scelgono il campo, A e D il valore:
+  EXPOSURE   secondi di ogni scatto
+  FRAMES     quanti scatti
+
+Il totale deve arrivare almeno a MIN del soggetto; il doppio dà il massimo. Più è lunga, più notte si mangia.
+
+INVIO avvia, e da lì lavora da sola: puoi andartene. Non svitare la camera finché lavora."
+fase = &"imaging"
+
+[sub_resource type="Resource" id="pagina_12"]
+script = ExtResource("2_pagina")
+titolo = "Dopo la foto"
+testo = "Seduto al computer vedi la foto uscire dal rumore, con la sua qualità.
+
+Poi si vende: FULFILL la dà al cliente che l'aveva chiesta, e paga di più; SELL la vende a chi capita.
+
+Poi si sceglie:
+  SHOOT AGAIN      stesso soggetto
+  CHANGE TARGET    un altro soggetto
+  REDO SETUP       tutto da capo
+  CLOSE & EXPLORE  ti alzi
+
+La qualità è la media di tutti i passaggi della notte: anche la preparazione conta."
+fase = &""
+
+[sub_resource type="Resource" id="pagina_13"]
+script = ExtResource("2_pagina")
+titolo = "Mentre la posa lavora"
+testo = "Non c'è bisogno di guardarla.
+
+  in cucina    la moka, se c'è
+  in cupola    stare a guardare
+  al computer  B apre la BBS
+               T apre il terminale
+               Photos, le foto fatte
+
+Col terminale si compra quello che manca, moka compresa, con i soldi delle foto.
+
+Per sapere quanto manca, torna al computer: la scheda SEQ lo dice."
+fase = &""
+
+[sub_resource type="Resource" id="pagina_14"]
+script = ExtResource("2_pagina")
+titolo = "Alla fine del turno"
+testo = "Alle 06:00 il turno finisce, anche a metà di una posa, e quella posa è persa: guarda l'ora prima di avviarne una lunga.
+
+La cupola si chiude da sola. Sullo schermo resta il conto della notte, e i soldi vanno in cassa.
+
+La macchina è sul prato vicino al cancello: E per tornare a casa. La notte dopo si ricomincia dalla cupola."
+fase = &""
+
+[resource]
+script = ExtResource("1_quaderno")
+pagine = Array[PaginaQuaderno]([SubResource("pagina_01"), SubResource("pagina_02"), SubResource("pagina_03"), SubResource("pagina_04"), SubResource("pagina_05"), SubResource("pagina_06"), SubResource("pagina_07"), SubResource("pagina_08"), SubResource("pagina_09"), SubResource("pagina_10"), SubResource("pagina_11"), SubResource("pagina_12"), SubResource("pagina_13"), SubResource("pagina_14")])

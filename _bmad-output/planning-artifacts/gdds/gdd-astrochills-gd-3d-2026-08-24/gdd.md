@@ -151,8 +151,7 @@ buon senso.
 inquieta nessuno perché non c'era una regola da violare.
 
 **2. L'osservatorio è un rifugio.**
-Te lo rendi tuo, e non ti può fare del male. Il lato attivo: la lampada che smette di
-lampeggiare, la moka, la stufetta, il cigolio della cupola che sparisce quando la
+Te lo rendi tuo, e non ti può fare del male. Il lato attivo: la moka, la stufetta, il cigolio della cupola che sparisce quando la
 lubrifichi. Il lato passivo: non si muore, non si fallisce, la commessa si può rifiutare
 senza conseguenze, la notte si chiude da sola all'alba.
 *Steerizza:* nessuna meccanica introduce fallimento, timer punitivi o perdita di
@@ -289,7 +288,7 @@ tempo**, ed è quello che il pilastro 4 spende.
 ```
   POSA IN CORSO
       |
-      +-- il rifugio       caffè, lampada, cupola, cura dell'osservatorio  (pilastro 2)
+      +-- il rifugio       caffè, cupola, cura dell'osservatorio           (pilastro 2)
       +-- l'edificio       stanze che si aprono, log, lettere, giornali     (esposizione)
       +-- i dintorni       prato, sterrata, bosco                           (esposizione)
       +-- le anomalie      riconfrontare frame, cercare nel catalogo, i forum (esposizione)
@@ -511,8 +510,8 @@ fotomontaggi.
 
 #### Le attività del rifugio
 
-Fuori dalle fasi, e disponibili in ogni momento libero: il caffè alla moka, la lampada che
-lampeggia da sostituire, la cupola in cui stare a guardare, i forum della BBS, e le cure
+Fuori dalle fasi, e disponibili in ogni momento libero: il caffè alla moka, la cupola in cui
+stare a guardare, i forum della BBS, e le cure
 dell'osservatorio che si comprano nel terminale.
 
 **Nessuna di queste dà un bonus meccanico.** Non alzano punteggi, non accorciano fasi, non
@@ -552,8 +551,9 @@ nella stanza computer — ci si avvicina, si preme `E`, e si sceglie cosa aprire
 software di controllo, il negozio online e la BBS. È più scopribile *e* più vero: nel 1999
 si aprivano programmi diversi sullo stesso computer.
 
-Dentro le schermate CRT valgono i controlli della schermata (frecce per muoversi fra i
-campi, `Invio` per confermare, `Esc` per uscire), mostrati dalla schermata stessa.
+Dentro le schermate CRT valgono i controlli della schermata (`W` `A` `S` `D` per muoversi fra i
+campi e cambiare i valori, `Invio` per confermare, `Esc` per uscire — le frecce non
+servono, D-234), mostrati dalla schermata stessa.
 
 #### I tre livelli di scopribilità
 
@@ -571,14 +571,16 @@ modellata.
 - Sono l'**unico elemento non diegetico del gioco**, ed è una deroga consapevole: costa
   meno una deroga che un giocatore che non trova metà del contenuto.
 
-**2. Il foglio di procedura appeso al monitor.** Una checklist delle undici fasi stampata ad
-ago, attaccata di lato al CRT, consultabile in qualsiasi momento. Insegna **la sequenza** —
-cosa viene dopo cosa, e perché quell'ordine — che è ciò che i prompt non possono spiegare.
-Diegetico al cento per cento e storicamente esatto: è ciò che chiunque avrebbe avuto
-appeso lì.
+**2. Il quaderno delle procedure accanto al monitor** (D-233, al posto del foglio appeso al
+CRT che questo documento prevedeva). Un organizer di pelle ad anelli sulla consolle, a
+sinistra del monitor, con i fogli battuti a macchina: l'ordine della notte, una pagina per
+ogni fase e come si fa, i tasti, cosa fare mentre la posa lavora e come finisce il turno.
+Si apre con `E` e si sfoglia. Insegna **la sequenza** — cosa viene dopo cosa, e perché
+quell'ordine — che è ciò che i prompt non possono spiegare. Diegetico e storicamente
+esatto: nel 1999 le procedure di un posto stavano in un raccoglitore accanto al computer.
 
-Il foglio ha una seconda vita: **è un oggetto del mondo che invecchia**. Annotazioni a
-penna, correzioni, una riga aggiunta a mano. È un canale narrativo già in posizione.
+Il quaderno ha una seconda vita: **è un oggetto del mondo che invecchia**. Annotazioni a
+penna, correzioni, una pagina aggiunta a mano. È un canale narrativo già in posizione.
 
 **3. I biglietti della prima notte.** Chi ti ha assunto ti lascia istruzioni scritte: dove
 sono le cose, come si accende, cosa si fa. Introducono **una cosa alla volta** invece di
@@ -805,7 +807,7 @@ il resto**. Nessuno compra tutto senza rinunciare a qualcosa.
 | Categoria | Esempi | Ordine di prezzo | Cosa dà |
 |---|---|---|---|
 | **Comfort personale** | moka, stufetta, mangiacassette, coperta pesante | 30.000 - 150.000 | **nessun bonus meccanico**: cambia come il posto si vede, si sente, si abita |
-| **Cura dell'osservatorio** | lampada, ridipintura, lubrificare la cupola, bagno, recinzione | 20.000 - 150.000 | come sopra, più qualche nota di lore che affiora |
+| **Cura dell'osservatorio** | ridipintura, lubrificare la cupola, bagno, recinzione | 20.000 - 150.000 | come sopra, più qualche nota di lore che affiora |
 | **Aprire la stanza dietro la pannellatura** | — | 250.000 | accesso a una stanza, e un lore drop importante |
 | **Informazione** | catalogo NGC su CD-ROM, abbonamento a *Coelum*, abbonamento BBS | 30.000 - 180.000 | più target, più commesse, più cose da leggere |
 
@@ -981,7 +983,7 @@ dimensionamento di D-022 sopravvive al dimezzamento, con ampio margine.
 
 | Elemento | Dove | Perché esiste |
 |---|---|---|
-| **Contatore della corrente** | in facciata, lato sud | governa PC, monitor, montatura e luci. Nel 1999 si riarma a mano, **e per farlo bisogna uscire al buio**. Si aggancia alla fase 4, ed è un canale già pronto per il pilastro 3: la corrente che salta durante una posa è la cosa più banale e più credibile del mondo |
+| **Contatore della corrente** | in facciata, lato sud | governa le luci e lo schermo del monitor, e basta: PC e montatura restano accesi (D-238). Nel 1999 si riarma a mano, **e per farlo bisogna uscire al buio**. Si aggancia alla fase 4, ed è un canale già pronto per il pilastro 3: la corrente che salta durante una posa è la cosa più banale e più credibile del mondo |
 | **Rampa d'accesso** | davanti alla porta | edificio pubblico a norma che nessuno ha mai visitato: dice l'isolamento senza raccontarlo, e costa un asset |
 | **Piazzola dell'auto** | dentro il recinto, oltre il cancello | ~20 m dall'ingresso. Il turno si apre e si chiude attraversando il prato al buio, quaranta volte in venti notti |
 | **Cancello** | dove arriva la sterrata | si apre dalla macchina all'arrivo. Che una notte sia già aperto è una possibilità che la disposizione lascia lì, gratis |

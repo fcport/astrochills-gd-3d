@@ -165,6 +165,10 @@ func _inquadrato() -> bool:
 
 
 func _muovi(delta: float) -> void:
+	# SI ASCOLTA SOLO A FINESTRA DAVANTI: vedi `phase_sync.gd`, stessa riga e stessa
+	# ragione — la BBS scorre con i tasti che qui muovono il tubo.
+	if not is_processing_unhandled_input():
+		return
 	var dx := Input.get_axis(&"aim_left", &"aim_right")
 	var dy := Input.get_axis(&"aim_down", &"aim_up")
 	if is_zero_approx(dx) and is_zero_approx(dy):

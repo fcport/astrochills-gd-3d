@@ -62,22 +62,10 @@ const CURRENT_VERSION := 1
 ## default «assente = stato iniziale» non cambia il formato: non serve `migrate()`.
 @export var owned_items: Array[StringName] = []
 
-## Se la lampada della cucina è stata cambiata (3.4). È una modifica PERMANENTE del
-## giocatore al suo mondo — come `owned_items` — quindi vive qui e non sulla `NightRun`:
-## una lampada sistemata resta sistemata dopo il sonno e dopo il riavvio. Possedere la
-## `lampadina` ≠ averla installata: si può comprare e non montare, o uscire a metà cambio;
-## serve perciò un bit DISTINTO dal possesso. Lo scrive `Game.mark_lamp_fixed()`.
-##
-## DEFAULT `false`, E NESSUN BUMP DI `CURRENT_VERSION`: stessa contabilità di
-## `owned_items`. `ResourceSaver` omette una proprietà uguale al default, quindi un save
-## vecchio senza il campo non lo scrive — e ricaricato torna `false`, cioè «non riparata»,
-## che è esattamente lo stato iniziale giusto. Aggiungere un campo con default «assente =
-## stato iniziale» non cambia il formato: non serve `migrate()`.
-@export var lamp_fixed: bool = false
 
 ## I messaggi del forum della BBS che il giocatore ha gia' letto (3.7). Un letto una
-## notte resta letto la notte dopo: la distinzione e' del GIOCATORE — come `owned_items`
-## e `lamp_fixed` — quindi vive qui e non sulla `NightRun`, che muore col sonno. Lo
+## notte resta letto la notte dopo: la distinzione e' del GIOCATORE — come `owned_items` —
+## quindi vive qui e non sulla `NightRun`, che muore col sonno. Lo
 ## scrive `Game.mark_forum_read()`; lo legge la BBS per disegnare in `DIM` cio' che e'
 ## gia' stato aperto.
 ##
@@ -102,7 +90,7 @@ const CURRENT_VERSION := 1
 @export var photo_prints: Array[Dictionary] = []
 
 ## Se il giocatore possiede l'articolo `id`. Lo legge il terminale (per mostrare
-## `OWNED`) e lo leggeranno 3.3/3.4 (per far comparire la moka/la lampadina).
+## `OWNED`) e la moka, che compare quando è stata comprata.
 func owns(id: StringName) -> bool:
 	return owned_items.has(id)
 

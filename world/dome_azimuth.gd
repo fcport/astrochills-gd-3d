@@ -33,7 +33,8 @@
 ## già: se una cosa nessuno la farebbe davvero, si cambia il documento. Con scarti
 ## che cambiano di continuo mentre il cielo gira, girare la cupola a mano non è un
 ## rituale, è un metronomo — e nessun osservatorio con un computer che pilota la
-## montatura la gira a mano. La pulsantiera resta come comando manuale.
+## montatura la gira a mano. La pulsantiera in cupola apre e chiude la fessura, e
+## basta: la rotazione non ha un comando manuale, ed è giusto così (D-238).
 ##
 ## IL MOTORE È LENTO, e si deve vedere. Una cupola da cinque metri pesa, e quando
 ## parte lo sanno tutti: otto gradi al secondo sono dieci secondi per un quarto di

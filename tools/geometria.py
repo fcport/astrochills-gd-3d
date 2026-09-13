@@ -1654,7 +1654,7 @@ SEDILE_MONITOR = (0.42, 0.172)
 # loro. Erano due segnaposti a scatole - la lampada faceva anche una luce che
 # attraversava il muro della cucina, vedi D-181 - e fra un bancone vuoto e un
 # bancone con sopra due cose brutte, vuoto legge meglio. Le scene restano
-# (`moka.tscn`, `lamp.tscn`) con dentro la loro logica intera; qui tornano il
+# (`moka.tscn`; la lampada e' uscita dal gioco, D-236) con dentro la loro logica intera; qui tornano il
 # giorno che c'e' un modello da posare. Il calcolo era: la moka a mezzo metro
 # dall'inizio del bancone, la lampada a settanta centimetri dalla fine.
 _BANCONE = [_a for _a in ARREDI_CUCINA if _a[0] == "CucinaBase"][0]
@@ -1665,6 +1665,25 @@ _BANCONE = [_a for _a in ARREDI_CUCINA if _a[0] == "CucinaBase"][0]
 # allora, e sono ancora derivate dal mobile invece che battute a mano: mezzo metro
 # dall'inizio del piano, al centro in profondita', appoggiata sul top.
 MOKA = (_BANCONE[1] + 0.50, _BANCONE[5], (_BANCONE[2] + _BANCONE[4]) / 2.0)
+
+# IL QUADERNO DELLE PROCEDURE, sulla consolle a SINISTRA del monitor. Sinistra per
+# chi siede vuol dire z CRESCENTE: chi si siede guarda la vetrata, verso -X, e la
+# sua destra cade su -Z (e' la stessa regola che ha spostato il mouse, vedi
+# `arredi_blender.minutaglia`).
+#
+# IL POSTO E' IL VUOTO CHE C'ERA, misurato sulle impronte di `arredi_blender.py`:
+# la tastiera finisce a +0,225 dalla mezzeria della sedia, il monitor a +0,24, e il
+# telefono comincia a +0,69. In mezzo restano quarantacinque centimetri di piano, e
+# il quaderno ne occupa ventisei. Sta AVANTI, a mezzo metro dal muro, cioe' dove
+# lo si prende allungando la mano da in piedi davanti alla consolle: piu' indietro,
+# fra il monitor e il telefono, il raggio lo cercherebbe oltre la portata.
+#
+# L'ULTIMO NUMERO SONO I GRADI IN PIANTA: posato dritto sarebbe allineato alla
+# tastiera come in un catalogo, e un quaderno che qualcuno ha appena chiuso non lo e'.
+_CONSOLLE = [_a for _a in ARREDI_PC if _a[0] == "Consolle"][0]
+_SEDIA_PC = [_a for _a in ARREDI_PC if _a[0] == "Sedia1"][0]
+QUADERNO = (_CONSOLLE[1] + 0.52, _CONSOLLE[5],
+            (_SEDIA_PC[2] + _SEDIA_PC[4]) / 2.0 + 0.42, -9.0)
 
 # La cupola come volume: dove sta il giocatore quando "sta a guardare".
 # Raggio piu' corto di quello della calotta, per non toccare i muri.

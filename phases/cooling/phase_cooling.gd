@@ -10,11 +10,11 @@
 ## dettaglio estetico — i dark si scattano alla stessa temperatura delle pose, e
 ## una serie di dark presa mentre il sensore balla non corrisponde più a niente.
 ##
-## COME SI CAPISCE DOV'È IL LIMITE: guardando la percentuale, non la temperatura.
-## Il pannello mostra quanto sta lavorando la cella, ed è l'unica lettura che dice
-## se quello che hai chiesto si può TENERE. Nessuno scrive da nessuna parte che
-## sopra il novanta per cento non si regge: si vede, perché lì la temperatura
-## comincia a ballare. È la stessa diagnosi della fase 2, con un numero al posto di
+## COME SI CAPISCE DOV'È IL LIMITE: guardando la percentuale insieme alla temperatura.
+## Il pannello mostra quanto sta lavorando la cella, e la cella arriva al cento per
+## cento esattamente quando le hai chiesto più di quanto può dare: lì, e solo lì, la
+## temperatura comincia a ballare. Nessuno scrive da nessuna parte dove sia il fondo:
+## si vede. È la stessa diagnosi della fase 2, con un numero al posto di
 ## una porta muta.
 ##
 ## LO STATO OSSERVABILE È LA TEMPERATURA, e viene solo da `truth` (ADR-001): la

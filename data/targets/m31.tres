@@ -11,6 +11,9 @@ type = &"GAL"
 diff = 2
 min_exp = 75
 dec_gradi = 41.27
-vis_from = "21:00"
-vis_to = "05:00"
+; LA FINESTRA E' STRETTA DI UN QUARTO D'ORA PER PARTE (D-237): alle 21:00 e alle 05:00
+; M31 sta a 46,7 gradi, sotto l'orizzonte della cupola, e il catalogo lo dava visibile
+; mentre il GOTO lo rifiutava. Alle 21:15 e alle 04:45 e' a 49,3.
+vis_from = "21:15"
+vis_to = "04:45"
 desc = "La galassia spirale più vicina alla Via Lattea, a 2,5 milioni di anni-luce. Si avvicina a noi a 110 km/s -- collisione fra circa 4,5 miliardi di anni. È l'oggetto più lontano visibile a occhio nudo."

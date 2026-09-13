@@ -160,7 +160,7 @@ func _to_plot(px: float, py: float, x0: float, x1: float, y0: float, y1: float) 
 
 func _draw_footer() -> void:
 	_text(Vector2(MARGIN, 176), "HFD %5.2f   SCORE %3d" % [_hfd, _score], FG, 12)
-	_text(Vector2(MARGIN, 188), "LEFT/RIGHT FOCUSER   ENTER DONE", DIM, 12)
+	_text(Vector2(MARGIN, 188), "A/D FOCUSER   ENTER DONE", DIM, 12)
 
 
 func _width(s: String) -> float:

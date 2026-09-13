@@ -28,7 +28,6 @@
 [ext_resource type="PackedScene" path="res://crt/crt_screen.tscn" id="26_vetro"]
 [ext_resource type="Script" path="res://world/dome_shutter.gd" id="27_cupola"]
 [ext_resource type="Script" path="res://world/interactables/macchina.gd" id="28_auto"]
-[ext_resource type="PackedScene" path="res://world/sequence_chime.tscn" id="31_chime"]
 [ext_resource type="Script" path="res://world/indoors_volume.gd" id="32_dentro"]
 [ext_resource type="Script" path="res://world/dome_activity.gd" id="33_attivita"]
 [ext_resource type="Shader" path="res://world/shaders/cielo.gdshader" id="37_cielo"]
@@ -56,6 +55,8 @@
 [ext_resource type="PackedScene" path="res://assets/models/radiolina.glb" id="54_radio"]
 [ext_resource type="Script" path="res://world/corazza.gd" id="55_corazza"]
 [ext_resource type="Script" path="res://world/interactables/oculare.gd" id="56_oculare"]
+[ext_resource type="Script" path="res://world/interactables/quaderno.gd" id="61_quaderno"]
+[ext_resource type="PackedScene" path="res://assets/models/quaderno.glb" id="62_modquaderno"]
 
 [sub_resource type="BoxMesh" id="m_0"]
 size = Vector3(0.018, 0.018, 0.032)
@@ -1277,6 +1278,9 @@ size = Vector3(0.140, 0.016, 0.140)
 
 [sub_resource type="BoxShape3D" id="s_radio"]
 size = Vector3(0.220, 0.115, 0.090)
+
+[sub_resource type="BoxShape3D" id="s_quaderno"]
+size = Vector3(0.180, 0.040, 0.210)
 
 [node name="Blockout" type="Node3D"]
 script = ExtResource("24_postazione")
@@ -4374,8 +4378,16 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.850, 0.900, 1.900)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.460, 0.850, 0.315)
 script = ExtResource("61_stampante")
 
-[node name="SequenceChime" parent="." instance=ExtResource("31_chime")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.550, 1.100, 2.000)
+[node name="Quaderno" type="StaticBody3D" parent="."]
+transform = Transform3D(0.98769, 0, 0.15643, 0, 1, 0, -0.15643, 0, 0.98769, 5.820, 0.750, 2.420)
+script = ExtResource("61_quaderno")
+prompt_text = "Leggi il quaderno"
+
+[node name="Modello" parent="Quaderno" instance=ExtResource("62_modquaderno")]
+
+[node name="Col" type="CollisionShape3D" parent="Quaderno"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.020, 0)
+shape = SubResource("s_quaderno")
 
 [node name="Corazza" type="Node3D" parent="."]
 script = ExtResource("55_corazza")
@@ -4399,8 +4411,6 @@ script = ExtResource("33_attivita")
 shape = SubResource("s_attivita")
 
 [node name="Dwell" type="Timer" parent="AttivitaCupola"]
-
-[node name="Creak" type="AudioStreamPlayer3D" parent="AttivitaCupola"]
 
 [node name="OcchioAlBuio" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.600, 1.600, 3.250)

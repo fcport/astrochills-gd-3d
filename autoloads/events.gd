@@ -53,8 +53,8 @@ signal wait_activity_ended(what: StringName)
 ## PERCHÉ NON BASTAVA `phase_started(&"imaging")`. Quello lo emette l'orchestratore
 ## quando MONTA la fase, cioè quando compare il pannello di configurazione: da lì al
 ## momento in cui il giocatore preme START passa tutto il tempo che gli serve per
-## scegliere frame ed esposizione. Il telescopio inseguiva e la montatura ronzava per
-## tutto quel tempo, e la cupola contava «sto a guardare la posa» quando nessuna posa
+## scegliere frame ed esposizione. Il telescopio inseguiva per tutto
+## quel tempo, e la cupola contava «sto a guardare la posa» quando nessuna posa
 ## esisteva. Sono due fatti distinti e servono due segnali distinti.
 ##
 ## SENZA CHIAVE, di proposito: chi ascolta non deve più filtrare su `&"imaging"`, e
@@ -63,20 +63,18 @@ signal wait_activity_ended(what: StringName)
 ##
 ## `sequence_ended` arriva SEMPRE, e arriva una volta sola: a sequenza conclusa, e
 ## anche quando la fase viene smontata a sequenza in corso — l'alba durante una posa,
-## o *rifai setup*. Senza quel secondo caso il telescopio resterebbe a ronzare per il
-## resto della partita. NON è il segnale del suono di fine sequenza: quello resta
-## `phase_finished`, perché una posa interrotta non ha finito niente e non deve suonare.
+## o *rifai setup*. Senza quel secondo caso il telescopio resterebbe a inseguire per il
+## resto della partita.
 signal sequence_started()
 signal sequence_ended()
 
 ## Un articolo è stato comprato al terminale. È il SEAM verso 3.3/3.4: il terminale
 ## scala il portafoglio, marca il possesso e salva, poi ANNUNCIA qui — senza sapere
-## chi ascolta. La moka in cucina (3.3) e la lampadina (3.4) nasceranno ascoltando
-## questo segnale e leggendo `Game.profile.owns(id)`. 3.2 consegna il contratto, non
-## il suo consumatore: nessuna moka finta, nessun effetto simulato.
+## chi ascolta. La moka in cucina (3.3) ascolta questo segnale e legge
+## `Game.profile.owns(id)`.
 ##
-## Sul bus e non diretto perché gli ascoltatori saranno più di uno (moka, lampadina,
-## e domani la telemetria degli acquisti) e non si conoscono fra loro. `id` tipizzato
+## Sul bus e non diretto perché gli ascoltatori saranno più di uno (la moka, e domani
+## la telemetria degli acquisti) e non si conoscono fra loro. `id` tipizzato
 ## e al passato, come ogni altro segnale qui.
 signal item_purchased(id: StringName)
 
@@ -154,10 +152,10 @@ signal telescope_slewing_changed(moving: bool)
 ## C'È CORRENTE, o non c'è più.
 ##
 ## Lo dice il quadro in facciata quando qualcuno preme il fungo rosso. Le luci le
-## stacca il quadro stesso, che le ha in elenco; questo segnale è per tutto il
-## RESTO di quello che il GDD affida al contatore — «PC, monitor, montatura» — che
-## oggi non lo ascolta ancora. Sta sul bus e non è un signal diretto proprio per
-## questo: gli ascoltatori saranno più di uno e non si conoscono fra loro.
+## stacca il quadro stesso, che le ha in elenco; questo segnale lo ascolta lo
+## schermo del monitor, che si spegne. PC e montatura NON lo ascoltano, e non è una
+## mancanza: la corrente governa luci e schermo e basta (D-238). Sta sul bus perché
+## chi ascolta e chi stacca non si conoscono.
 signal mains_changed(on: bool)
 
 
@@ -177,3 +175,16 @@ signal mains_changed(on: bool)
 ##
 ## SOLO QUANDO CAMBIA, come gli altri fatti del mondo.
 signal camera_mounted_changed(mounted: bool)
+
+## L'ULTIMO STATO DELLA CAMERA CHE QUALCUNO HA DETTO, per chi arriva dopo (D-238).
+##
+## UN SIGNAL NON SI RIASCOLTA: chi nasce dopo l'annuncio non lo sente. Il software di
+## ripresa nasce a ogni foto, e una camera smontata durante il puntamento non l'avrebbe
+## saputo mai. Lo stato si tiene QUI, accanto al fatto, e si scrive da solo ascoltando
+## il fatto stesso: nessuno deve ricordarsi di aggiornarlo. Nasce vero perché la camera
+## nasce avvitata al fuoco.
+var camera_mounted := true
+
+
+func _ready() -> void:
+	camera_mounted_changed.connect(func(montata: bool) -> void: camera_mounted = montata)

@@ -121,13 +121,13 @@ func _freccia_al_bordo(p: Vector2) -> void:
 func _draw_footer() -> void:
 	var primi := _scarto.length() * 60.0
 	_text(Vector2(MARGIN, 170), "OFF %5.1f'   ALT %4.1f" % [primi, _altezza], FG, 12)
-	var aiuto := "ARROWS CENTRE   ENTER ACCEPT"
+	var aiuto := "WASD CENTRE   ENTER ACCEPT"
 	if _irraggiungibile:
 		aiuto = "ENTER ABORT"
 	elif _in_viaggio:
 		aiuto = "WAIT FOR THE MOUNT"
 	elif not _dentro:
-		aiuto = "ARROWS - GET IT INSIDE THE BOX"
+		aiuto = "WASD - GET IT INSIDE THE BOX"
 	_text(Vector2(MARGIN, 185), aiuto, DIM, 12)
 
 

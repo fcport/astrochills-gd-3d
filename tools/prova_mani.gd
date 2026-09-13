@@ -130,6 +130,15 @@ func _scarto_dalla_mano() -> float:
 	return _p._trasformata_mano().origin.distance_to(_oggetto.global_position)
 
 
+## Il sinistro, come lo consegnerebbe il mouse. Dato al giocatore direttamente: in
+## headless non c'è una finestra da cui farlo passare.
+func _clic(premuto: bool) -> void:
+	var ev := InputEventMouseButton.new()
+	ev.button_index = MOUSE_BUTTON_LEFT
+	ev.pressed = premuto
+	_p._unhandled_input(ev)
+
+
 func _prova() -> void:
 	_monta()
 	await _tick()
@@ -292,6 +301,79 @@ func _prova() -> void:
 		_guasto("allontanandosi di 4 m la scatola resta in mano")
 	if _p._in_mano != null:
 		_guasto("strappata la scatola, il giocatore crede di averla ancora in mano")
+
+	# --- IL LANCIO: SINISTRO TENUTO, E PARTE AL RILASCIO SOLO A BARRA PIENA.
+	#
+	# Federico: «tenendo premuto il pulsante sinistro si possa lanciare, una piccola
+	# barra che fa vedere che stai caricando e solo se arrivi al massimo lanci». La
+	# meta' che si rompe senza che nessuno se ne accorga e' la seconda: mollato a
+	# meta' carica, la scatola deve restare in mano.
+	#
+	# SI LANCIA VERSO +Z, lontano dal muro: a z=-1.6 la scatola ci sbatterebbe dopo
+	# un metro, e la distanza percorsa misurerebbe il muro invece del lancio.
+	for _i in 90:
+		await _tick()
+	_p.global_position = Vector3(3.0, 0.0, 0.0)
+	_p.rotation.y = PI
+	_p.camera().rotation.x = 0.0
+	_oggetto.global_position = _p._trasformata_mano().origin
+	_oggetto.linear_velocity = Vector3.ZERO
+	await _tick()
+	_p._prendi(_oggetto)
+	for _i in 30:
+		await _tick()
+	var mirino: Crosshair = _p._mirino
+	_clic(true)
+	for _i in int(Player.TEMPO_CARICA * 30.0):
+		await _tick()
+	print("[mani] lancio mollato a meta': la barra era a %.2f" % mirino._carica)
+	if mirino._carica <= 0.0:
+		_guasto("tenendo premuto il sinistro la barra non si riempie")
+	_clic(false)
+	await _tick()
+	if not _oggetto.in_mano():
+		_guasto("mollato il sinistro a meta' carica, la scatola e' partita lo stesso")
+	if mirino._carica > 0.0:
+		_guasto("mollato il sinistro la barra resta a %.2f" % mirino._carica)
+	# TENUTO OLTRE LA BARRA PIENA NON PARTE: parte quando si molla (D-241). Mezzo
+	# secondo in più basta a vedere un lancio che scattasse da solo.
+	_clic(true)
+	var tick_pieno := -1
+	for i in int(Player.TEMPO_CARICA * 60.0) + 30:
+		await _tick()
+		if tick_pieno < 0 and mirino._carica >= 1.0:
+			tick_pieno = i + 1
+	print("[mani] tenuto oltre: barra piena dopo %.2f s, e mezzo secondo dopo la scatola %s"
+		% [tick_pieno / 60.0, "e' ancora in mano" if _oggetto.in_mano() else "e' partita"])
+	if not _oggetto.in_mano():
+		_guasto("a barra piena la scatola parte da sola, senza aspettare il rilascio")
+	if tick_pieno < 0:
+		_guasto("tenendo il sinistro la barra non arriva mai in fondo")
+	elif absf(tick_pieno / 60.0 - Player.TEMPO_CARICA) > 0.05:
+		_guasto("la barra si riempie in %.2f s, la carica ne dura %.2f"
+			% [tick_pieno / 60.0, Player.TEMPO_CARICA])
+	_clic(false)
+	await _tick()
+	var partenza := _oggetto.global_position
+	var spinta := _oggetto.linear_velocity
+	print("[mani] mollato a barra piena: parte a %.1f m/s (%.1f in avanti)"
+		% [spinta.length(), spinta.z])
+	if _oggetto.in_mano():
+		_guasto("mollato il sinistro a barra piena la scatola non parte")
+	else:
+		if spinta.z < 4.0:
+			_guasto("la scatola non parte in avanti: %.1f m/s lungo lo sguardo" % spinta.z)
+		if _p._in_mano != null:
+			_guasto("lanciata la scatola, il giocatore crede di averla ancora in mano")
+		if mirino._carica > 0.0:
+			_guasto("lanciata la scatola, la barra resta a %.2f" % mirino._carica)
+	for _i in 60:
+		await _tick()
+	var volo := Vector2(_oggetto.global_position.x - partenza.x,
+		_oggetto.global_position.z - partenza.z).length()
+	print("[mani] lanciata, dopo un secondo sta a %.2f m da dove e' partita" % volo)
+	if volo < 1.5:
+		_guasto("lanciata, la scatola si e' fermata a %.2f m: non e' un lancio" % volo)
 
 	# --- E CI SI CAMMINA SOPRA SENZA DECOLLARE.
 	#

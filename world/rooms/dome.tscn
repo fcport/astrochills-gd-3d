@@ -252,8 +252,8 @@ mesh = SubResource("BoxRoof")
 shape = SubResource("ShapeRoof")
 
 ; Il telescopio segnaposto al centro: tubo inclinato verso la fessura, su treppiede.
-; Dalla 3.5 e' vivo (telescope.gd): il tubo insegue durante l'imaging, la montatura
-; ronza, e il `Body` gli da' fisicita' (DW-12). Non e' un interagibile.
+; Dalla 3.5 e' vivo (telescope.gd): il tubo insegue durante l'imaging, e il `Body` gli
+; da' fisicita' (DW-12). Non e' un interagibile.
 [node name="Telescope" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 script = ExtResource("2_scope")
@@ -263,11 +263,6 @@ transform = Transform3D(1, 0, 0, 0, 0.7071, -0.7071, 0, 0.7071, 0.7071, 0, 1.35,
 material_override = SubResource("MatScope")
 mesh = SubResource("CylScopeTube")
 
-; Il ronzio posizionale della montatura: suona SOLO mentre l'imaging espone (telescope.gd
-; lo avvia/ferma sul bus). Presso il mount, cosi' allontanandosi si attenua — segno che
-; appartiene al luogo, non alla fase. Stream sintetizzato in codice (segnaposto).
-[node name="Hum" type="AudioStreamPlayer3D" parent="Telescope"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
 
 ; La fisicita' del telescopio (DW-12): StaticBody3D su LAYER_WORLD attorno alla colonna
 ; centrale, cosi' il giocatore non ci cammina dentro. La 3.1 lo aveva lasciato senza
@@ -321,6 +316,3 @@ shape = SubResource("ShapeActivity")
 ; valore di rituale, non di layout — stessa scelta del BrewTimer della moka).
 [node name="Dwell" type="Timer" parent="DomeActivity"]
 
-; Il cigolio ambientale della cupola: posizionale, appartiene al posto e NON alla
-; sequenza (a differenza del ronzio della montatura). Stream sintetizzato in codice.
-[node name="Creak" type="AudioStreamPlayer3D" parent="DomeActivity"]

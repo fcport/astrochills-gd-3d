@@ -12,11 +12,11 @@
 ##
 ## SA DELLA SEQUENZA TRAMITE `Events`, MAI INTERROGANDO LA FASE. Che una sequenza sia in
 ## corso passa SOLO da `Events.phase_started`/`phase_finished` filtrati su
-## `key == &"imaging"` — la stessa soft-coupling di `sequence_chime.gd` e del `Telescope`.
+## `key == &"imaging"` — la stessa soft-coupling del `Telescope`.
 ## Questo file NON nomina `phases/`, `night/`, `photo/`: «imaging» compare solo come
 ## chiave di filtro sul bus.
 ##
-## IL GATE E LA SOGLIA SONO PURI; TIMER ED EMISSIONE SONO EFFETTO. Come `Moka`/`Lamp`, la
+## IL GATE E LA SOGLIA SONO PURI; TIMER ED EMISSIONE SONO EFFETTO. Come `Moka`, la
 ## logica di decisione è in funzioni statiche collaudabili sul banco (`is_gate_open`,
 ## `should_emit_started`, `should_emit_ended`): nessuno SceneTree,
 ## nessun autoload, nessun timer. Il nodo tiene lo stato, guida il `Dwell` Timer, e
@@ -26,7 +26,7 @@
 ## nessun contatore, nessun conto alla rovescia, nessun «non letti», nessun fallimento.
 ## Lo «stare» non tocca `Game`/`NightRun` né alcun punteggio, e da nessuna parte è scritto
 ## che potrebbe. L'emissione della coppia è l'unico contratto verso la telemetria, e non
-## produce nulla che il giocatore veda. Il cigolio ambientale `$Creak` appartiene al luogo.
+## produce nulla che il giocatore veda.
 class_name DomeActivity
 extends Area3D
 
@@ -46,17 +46,8 @@ const GROUP := &"dome_activity"
 ## guardando/misurando: è una verifica d'operatore, non un numero da difendere al pixel.
 const DWELL_SECONDS := 4.0
 
-## Il cigolio ambientale della cupola: un tono grave e fioco in loop (onda quadra), come
-## il borbottio della moka e il ronzio della lampada. Ambientale del posto — a differenza
-## del ronzio del `Telescope`, NON è legato alla sequenza: la cupola cigola perché è una
-## cupola. Nessun asset d'arte (segnaposto, coerente con la memoria «asset provvisori»).
-const CREAK_HZ := 55
-const SND_FRAMES := 4410            ## ~200 ms a 22050 Hz, in loop
-const SND_MIX_RATE := 22050
-const CREAK_VOL_DB := -24.0
 
 @onready var _dwell: Timer = $Dwell
-@onready var _creak: AudioStreamPlayer3D = $Creak
 
 ## Le due condizioni del gate, aggiornate dagli eventi. Il giocatore è nella cupola;
 ## una sequenza è in corso. `_reevaluate()` le combina.
@@ -70,7 +61,7 @@ var _watching := false
 
 # --- Logica pura del gate e della soglia: statica, senza SceneTree, sul banco ---------
 #
-# Gemella di `Moka.is_interactive`/`Lamp.is_interactive`. Il nodo la consulta e ci
+# Gemella di `Moka.is_interactive`. Il nodo la consulta e ci
 # appende gli effetti (timer, emissione); la funzione non tocca né l'uno né l'altro.
 
 ## Il gate è aperto quando ENTRAMBE le condizioni valgono: il giocatore è in cupola E una
@@ -127,12 +118,6 @@ func _ready() -> void:
 	_dwell.one_shot = true
 	_dwell.wait_time = DWELL_SECONDS
 	_dwell.timeout.connect(_on_dwell_timeout)
-
-	_install_creak_sound()
-	# Il cigolio è ambientale del posto: parte subito e resta finché la cupola c'è. NON
-	# è legato alla sequenza (a differenza del ronzio del telescopio).
-	if _creak.stream != null and ToniSegnaposto.continui():
-		_creak.play()
 
 
 ## Il giocatore è entrato nella cupola. Solo il suo corpo conta (guardia `body is Player`):
@@ -197,30 +182,6 @@ func _on_dwell_timeout() -> void:
 	if should_emit_started(_watching, gate_open):
 		Events.wait_activity_started.emit(ACTIVITY)
 		_watching = true
-
-
-## Costruisce lo stream del cigolio in codice: nessun asset esterno (provvisorio, coerente
-## con la memoria sugli asset). Un'onda quadra molto grave e fioca in loop — l'ambiente
-## della cupola. Gemello di `Moka._install_brew_sound`.
-func _install_creak_sound() -> void:
-	var wav := AudioStreamWAV.new()
-	wav.format = AudioStreamWAV.FORMAT_8_BITS
-	wav.mix_rate = SND_MIX_RATE
-	wav.stereo = false
-	wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
-	wav.loop_begin = 0
-	wav.loop_end = SND_FRAMES
-	var data := PackedByteArray()
-	data.resize(SND_FRAMES)
-	var period := SND_MIX_RATE / CREAK_HZ      # onda quadra molto grave
-	for i in SND_FRAMES:
-		var high := (i % period) < (period / 2)
-		var amp := 45.0
-		var v := int(amp) if high else int(-amp)
-		data[i] = (v + 256) % 256              # 8-bit signed → byte
-	wav.data = data
-	_creak.stream = wav
-	_creak.volume_db = CREAK_VOL_DB
 
 
 ## Il volume della cupola della scena, o `null` se non ce n'è. Stessa firma di

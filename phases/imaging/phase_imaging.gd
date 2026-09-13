@@ -110,14 +110,14 @@ var _done := false
 
 ## Se la camera è avvitata al fuoco.
 ##
-## NASCE VERA E NON SI CHIEDE A NESSUNO: questa fase non può raggiungere il
+## NASCE DA QUELLO CHE IL BUS HA DETTO PER ULTIMO: questa fase non può raggiungere il
 ## telescopio — `phases/` non conosce `world/` — e tutto quello che sa del ferro le
-## arriva da `Events.camera_mounted_changed`. Chi la smonta mentre il modulo è
-## aperto lo dice al bus, e da lì in poi il valore è vero.
+## arriva da `Events`. Al montaggio legge `Events.camera_mounted`, l'ultimo stato
+## annunciato; da lì in poi ascolta `camera_mounted_changed`.
 ##
-## IL BUCO CHE RESTA, detto invece che sottinteso: una camera smontata PRIMA che
-## questo modulo esista — durante il puntamento, per dire — non si sente, perché un
-## signal non si riascolta dopo. La posa partirebbe come se la camera ci fosse.
+## PRIMA DI D-238 NASCEVA VERA E BASTA, e il buco era dichiarato qui: una camera
+## smontata durante il puntamento non si sentiva, perché un signal non si riascolta
+## dopo, e la posa partiva come se la camera ci fosse.
 var _camera := true
 
 ## La posa è morta perché la camera se n'è andata.
@@ -189,6 +189,7 @@ func _ready() -> void:
 	# mondo che questa fase ascolta, e la ascolta dal bus: `phases/` non conosce
 	# `world/`, e il nodo della camera non è raggiungibile da qui nemmeno volendo.
 	Events.camera_mounted_changed.connect(_su_camera)
+	_camera = Events.camera_mounted
 	# All'ingresso si mostra il pannello di configurazione: nessun frame ancora.
 	if is_instance_valid(_screen):
 		_screen.set_readout(_config_readout())

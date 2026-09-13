@@ -114,7 +114,7 @@ func _draw_config() -> void:
 	_text(Vector2(MARGIN, 148), "the sequence will take %dm of the night" % roundi(total),
 		DIM, 10)
 
-	_text(Vector2(MARGIN, 168), "UP/DOWN FIELD  LEFT/RIGHT VALUE", DIM, 10)
+	_text(Vector2(MARGIN, 168), "W/S FIELD  A/D VALUE", DIM, 10)
 
 	# IL FOOTER DICE QUELLO CHE SI PUÒ FARE, e senza camera non si può partire: al
 	# posto di START ci va il motivo. Un «ENTER START» che non avvia niente

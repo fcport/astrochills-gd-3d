@@ -73,6 +73,16 @@ MODELLI = {
     "tea_set_01": ("1k",
                    "Servizio da te': le tazze sono la cosa piu' ovvia da prendere in mano\n"
                    "e la piu' facile da dimenticare su un piano."),
+    # IL QUADERNO DELLE PROCEDURE, accanto al monitor. Federico l'ha chiesto «con le
+    # istruzioni per giocare e fare le varie fasi», e fra i tre candidati ha scelto
+    # questo: un raccoglitore di pelle ad anelli, consumato, con la cinghietta. Il
+    # set ne porta DUE, uno aperto e uno chiuso - si tiene il chiuso, posato sul
+    # piano. Nel 1999 un organizer ad anelli di pelle e' esattamente la cosa in cui
+    # chi gestisce un posto infila i fogli battuti a macchina per chi viene dopo.
+    "binder_notebook": ("1k",
+                        "Il quaderno di pelle ad anelli con le procedure del turno. Si\n"
+                        "tiene il chiuso dei due: sta sulla consolle, a sinistra del\n"
+                        "monitor, e si legge."),
 }
 
 

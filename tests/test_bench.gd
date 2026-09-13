@@ -33,6 +33,7 @@ const SEQUENCE_PATH := "res://phases/imaging/sources/honest_sequence.tres"
 const ROSTER_PATH := "res://data/clients/roster.tres"
 const ITEM_CATALOG_PATH := "res://data/catalog/catalog.tres"
 const FORUM_PATH := "res://data/forum/forum.tres"
+const QUADERNO_PATH := "res://data/quaderno/quaderno.tres"
 ## La telemetria (3.6): le sue funzioni pure sono STATICHE sullo script. Si preloada lo
 ## script — non l'autoload `Telemetry`, che ha stato per-notte e un `_ready()` che tocca
 ## il disco — per collaudare `merge_intervals`/`idle_segments`/`build_report` senza
@@ -114,13 +115,13 @@ func _ready() -> void:
 	print("")
 	_check_moka_ritual()
 	print("")
-	_check_lamp_repair()
-	print("")
 	_check_dome_presence()
 	print("")
 	_check_telemetry()
 	print("")
 	_check_forum()
+	print("")
+	_check_quaderno()
 	print("")
 	_check_luna()
 	print("")
@@ -459,10 +460,12 @@ func _check_honest_catalog() -> void:
 	#
 	# 21:30 = 30 min: disponibili esattamente {M42, M45, M31, M8}.
 	_assert_availability(src, 30.0, "21:30", PackedStringArray(["M42", "M45", "M31", "M8"]))
-	# 05:00 = 480 min: disponibili esattamente {M13, M57, M31}. M31 ha finestra
-	# fino alle 05:00 = 480, ed è il confine `480<=480` inclusivo — il punto più
-	# facile da rompere.
-	_assert_availability(src, 480.0, "05:00", PackedStringArray(["M13", "M57", "M31"]))
+	# 04:45 = 465 min: disponibili esattamente {M13, M57, M31}. M31 ha finestra
+	# fino alle 04:45 = 465 (stretta di un quarto d'ora per parte da D-237, perché
+	# alle 05:00 era sotto l'orizzonte della cupola), ed è il confine `465<=465`
+	# inclusivo — il punto più facile da rompere. Alle 05:00 M31 non c'è più.
+	_assert_availability(src, 465.0, "04:45", PackedStringArray(["M13", "M57", "M31"]))
+	_assert_availability(src, 480.0, "05:00", PackedStringArray(["M13", "M57"]))
 	# Il confine del wrap di mezzanotte per M8 (`vis_to = "00:00"` -> 180 min): a
 	# 180 deve essere disponibile (confine inclusivo), a 181 no. È la coppia che
 	# distingue `<=` da `<` proprio sul minuto che attraversa le 00:00.
@@ -974,7 +977,7 @@ func _report_sale(p: PhotoPayout, base: int, mult: float, fulfill: bool, expecte
 ## Il filtro del catalogo (3.2): per categoria, SOLO gli implementati.
 ##
 ## SI CARICA IL CATALOGO VERO (`_load_source`), non un array a mano: è il `.tres` che il
-## terminale legge davvero. Oggi solo la moka è implementata; lampadina, stufetta e
+## terminale legge davvero. Oggi solo la moka è implementata; stufetta e
 ## lubrificare_cupola no — e stanno nel file apposta, perché un filtro senza niente da
 ## escludere non prova di essere un filtro. Se fosse rotto e mostrasse tutto, questo
 ## check lo stamperebbe.
@@ -985,16 +988,9 @@ func _check_item_catalog() -> void:
 		return
 	print("   dal .tres: %d articoli totali" % catalog.items.size())
 
-	# LA MOKA È TORNATA, LA LAMPADA NO, E LA DIFFERENZA È UN MODELLO. `implemented`
-	# significa «esiste davvero là fuori», non «il codice c'è»: con l'oggetto fuori
-	# scena l'articolo si venderebbe come una cosa che non compare da nessuna parte,
-	# ed è per questo che erano usciti tutti e due — erano scatole segnaposto, e la
-	# lampada faceva per giunta una luce che attraversava il muro della cucina (D-181).
-	#
-	# La moka adesso ha un corpo vero — `assets/models/moka.glb`, posato da
-	# `tools/moka_blender.py` — quindi torna in vendita, e questa riga è ciò che
-	# tiene l'attesa del banco allineata a quel fatto invece che alla storia di come
-	# ci si è arrivati. La lampada resta fuori finché non avrà la stessa cosa.
+	# `implemented` significa «esiste davvero là fuori», non «il codice c'è». Oggi lo è
+	# solo la moka, che ha un corpo vero (`assets/models/moka.glb`); la lampadina è
+	# uscita dal gioco insieme alla lampada (D-236).
 	_report_category(catalog, &"personal", PackedStringArray(["moka"]),
 		"personal implementati")
 	_report_category(catalog, &"facilities", PackedStringArray([]),
@@ -1008,20 +1004,6 @@ func _check_item_catalog() -> void:
 	var fnote := "" if filters else "   <-- ATTESO: il filtro deve escludere i non implementati"
 	print("   %-40s personal: tutti %d, implementati %d%s" % [
 		"il filtro esclude davvero", all_personal.size(), impl_personal.size(), fnote])
-
-	# Il prezzo della lampadina è 2000 lire (economia §6): dato nel .tres, non nel codice.
-	# SENZA FILTRO, e il `false` è il punto: il prezzo è un dato del `.tres` e non
-	# smette di essere giusto perché l'articolo per ora non si vende. Col filtro
-	# acceso questo controllo troverebbe `null` e tacerebbe — un controllo che si
-	# spegne da solo quando cambia il contorno è il modo peggiore di sbagliare.
-	var bulb := _first_with_id(catalog.for_category(&"facilities", false), &"lampadina")
-	if bulb != null:
-		var pnote := "" if bulb.price == 2000 else "   <-- ATTESO: 2000 (economia §6)"
-		print("   %-40s lampadina price = %d%s" % ["prezzo lampadina dal .tres", bulb.price, pnote])
-		# label EN, blurb IT (NFR10): la label è tutta maiuscole ASCII di software; il
-		# blurb contiene testo — non si asserisce la lingua, si stampa perché si veda.
-		print("   lampadina label EN = \"%s\", blurb IT (primi 40) = \"%s...\"" % [
-			bulb.label, bulb.blurb.substr(0, 40)])
 
 
 func _report_category(
@@ -1057,41 +1039,36 @@ func _check_owned_items() -> void:
 		print("   <-- ATTESO: un profilo nuovo non possiede niente")
 
 	p.mark_owned(&"moka")
-	print("   dopo mark_owned(moka): owns(moka) = %s, owns(lampadina) = %s" % [
-		p.owns(&"moka"), p.owns(&"lampadina")])
-	if not p.owns(&"moka") or p.owns(&"lampadina"):
-		print("   <-- ATTESO: possiede la moka, non la lampadina")
+	print("   dopo mark_owned(moka): owns(moka) = %s, owns(stufetta) = %s" % [
+		p.owns(&"moka"), p.owns(&"stufetta")])
+	if not p.owns(&"moka") or p.owns(&"stufetta"):
+		print("   <-- ATTESO: possiede la moka, non la stufetta")
 
 	# Idempotenza: comprare due volte non duplica.
 	p.mark_owned(&"moka")
 	var dup_note := "" if p.owned_items.size() == 1 else "   <-- ATTESO: mark_owned è idempotente"
 	print("   mark_owned(moka) due volte: owned_items = %s%s" % [p.owned_items, dup_note])
 
-	# Round-trip su disco: il possesso sopravvive al save/load, come il portafoglio. E con
-	# lui `lamp_fixed` (3.4), per parita' col possesso: la riparazione della lampada e' del
-	# GIOCATORE e attraversa il riavvio, esattamente come `owned_items`.
+	# Round-trip su disco: il possesso sopravvive al save/load, come il portafoglio.
 	var bench_dir := "user://saves/_bench_items"
 	var path := "%s/profile.tres" % bench_dir
 	DirAccess.make_dir_recursive_absolute(bench_dir)
 	var saves := SaveManager.new()
-	p.mark_owned(&"lampadina")
+	p.mark_owned(&"stufetta")
 	p.wallet_lire = 3000
-	p.lamp_fixed = true
 	saves.save_profile(p, path)
 	var back := saves.load_profile(path)
-	var round_ok := back.owns(&"moka") and back.owns(&"lampadina") and back.wallet_lire == 3000 and back.lamp_fixed
-	print("   round-trip: owns(moka)=%s owns(lampadina)=%s wallet=%d lamp_fixed=%s" % [
-		back.owns(&"moka"), back.owns(&"lampadina"), back.wallet_lire, back.lamp_fixed])
+	var round_ok := back.owns(&"moka") and back.owns(&"stufetta") and back.wallet_lire == 3000
+	print("   round-trip: owns(moka)=%s owns(stufetta)=%s wallet=%d" % [
+		back.owns(&"moka"), back.owns(&"stufetta"), back.wallet_lire])
 	if not round_ok:
-		print("   <-- ATTESO: possesso, portafoglio e lamp_fixed sopravvivono al .tres")
+		print("   <-- ATTESO: possesso e portafoglio sopravvivono al .tres")
 
-	# Un profilo SENZA i campi (default [] / false) è «niente posseduto, lampada non
-	# riparata», non un errore.
+	# Un profilo SENZA il campo (default []) è «niente posseduto», non un errore.
 	var fresh := PlayerProfile.new()
-	print("   default: owned_items vuoto = %s, lamp_fixed = %s (assente = stato iniziale)" % [
-		fresh.owned_items.is_empty(), fresh.lamp_fixed])
-	if not fresh.owned_items.is_empty() or fresh.lamp_fixed:
-		print("   <-- ATTESO: default [] / false — nessun bump di versione")
+	print("   default: owned_items vuoto = %s (assente = stato iniziale)" % fresh.owned_items.is_empty())
+	if not fresh.owned_items.is_empty():
+		print("   <-- ATTESO: default [] — nessun bump di versione")
 
 	# Ripulire.
 	var d := DirAccess.open(bench_dir)
@@ -1181,9 +1158,9 @@ func _report_afford(amount: int, expected: bool, label: String) -> void:
 
 ## Il rituale della moka (3.3): la logica PURA e STATICA — transizioni, interattivita' per
 ## tempo, prompt, e i punti d'emissione della coppia started/ended. Gemella di
-## `Game.split_spend`: nessuno SceneTree, nessun autoload, nessun timer/suono.
+## `Game.split_spend`: nessuno SceneTree, nessun autoload, nessun timer.
 ##
-## Il timer d'attesa, il suono che sale/borbotta e la raggiungibilita' del volume di
+## Il timer d'attesa e la raggiungibilita' del volume di
 ## collisione NON si collaudano qui: sono effetti e percezione — verifiche d'operatore,
 ## che si camminano nel gioco (come dice lo spec). Il banco legge la tavola.
 func _check_moka_ritual() -> void:
@@ -1197,7 +1174,7 @@ func _check_moka_ritual() -> void:
 	_report_moka_next(Moka.Step.READY, Moka.Step.POURED, "READY + E -> POURED (versa)")
 	_report_moka_next(Moka.Step.POURED, Moka.Step.IDLE, "POURED + E -> IDLE (bevi, ripetibile)")
 
-	# Interattivita' per tempo: falso SOLO in BREWING (si aspetta e si ascolta), vero
+	# Interattivita' per tempo: falso SOLO in BREWING (si aspetta), vero
 	# altrove. E' la condizione che `can_interact()` STRINGE sopra la base.
 	print("   -- is_interactive: falso solo in BREWING")
 	_report_moka_interactive(Moka.Step.IDLE, true, "IDLE interagibile")
@@ -1274,86 +1251,12 @@ func _moka_step_name(step: Moka.Step) -> String:
 		_: return "?"
 
 
-## La riparazione della lampada (3.4): la logica PURA e STATICA — transizioni,
-## interattivita' gated sul possesso della lampadina, prompt, e il punto d'emissione di
-## `started`. Gemella di `_check_moka_ritual`: nessuno SceneTree, nessun autoload, nessun
-## timer/luce/suono.
-##
-## Il timer del cambio, il lampeggio+ronzio, la persistenza runtime di `lamp_fixed` e la
-## raggiungibilita' del volume di collisione NON si collaudano qui: sono effetti e
-## percezione — verifiche d'operatore, che si camminano nel gioco (come dice lo spec). Il
-## round-trip di `lamp_fixed` sul .tres sta in `_check_owned_items`, per parita' col
-## possesso. Il banco legge la tavola.
-func _check_lamp_repair() -> void:
-	print("-- Lampada: cambio a stati, transizioni pure + gating sul possesso (3.4)")
-
-	# La tavola delle transizioni `E`. Solo BROKEN → CHANGING e' una transizione da
-	# interazione; CHANGING/FIXED restano fermi (inerti: la' `is_interactive` e' falso e
-	# l'interazione non arriva nemmeno). CHANGING → FIXED NON e' qui: lo guida il Timer.
-	_report_lamp_next(Lamp.State.BROKEN, Lamp.State.CHANGING, "BROKEN + E -> CHANGING (cambia)")
-	_report_lamp_next(Lamp.State.CHANGING, Lamp.State.CHANGING, "CHANGING + E -> CHANGING (inerte)")
-	_report_lamp_next(Lamp.State.FIXED, Lamp.State.FIXED, "FIXED + E -> FIXED (inerte)")
-
-	# Interattivita' per stato E possesso: la gating con/senza lampadina e' l'AC centrale
-	# della 3.4, e qui e' una riga di tabella perche' `is_interactive` prende `owns_bulb`
-	# come parametro (resta pura). Vero SOLO da BROKEN E possedendo la lampadina.
-	print("   -- is_interactive(state, owns_bulb): vero solo BROKEN + lampadina")
-	_report_lamp_interactive(Lamp.State.BROKEN, false, false, "BROKEN senza lampadina: inerte (nessun invito a comprarla)")
-	_report_lamp_interactive(Lamp.State.BROKEN, true, true, "BROKEN con lampadina: cambiabile")
-	_report_lamp_interactive(Lamp.State.CHANGING, true, false, "CHANGING con lampadina: inerte (si aspetta il Timer)")
-	_report_lamp_interactive(Lamp.State.FIXED, true, false, "FIXED con lampadina: inerte per sempre")
-
-	# Prompt per stato (IT, lo legge il giocatore — NFR10). Solo BROKEN ha un prompt;
-	# CHANGING/FIXED no. Il prompt compare comunque solo quando `can_interact()` e' vero.
-	print("   -- prompt per stato")
-	_report_lamp_prompt(Lamp.State.BROKEN, "Cambia la lampadina")
-	_report_lamp_prompt(Lamp.State.CHANGING, "")
-	_report_lamp_prompt(Lamp.State.FIXED, "")
-
-	# Il punto d'emissione di `started` (C4): SOLO da BROKEN, cioe' all'inizio del cambio.
-	# La fine (`ended`) la emette il Timer, non un'interazione — la sua sede e'
-	# `_on_change_finished`, non una funzione pura, quindi qui si collauda solo `started`.
-	print("   -- punto d'emissione: started SOLO da BROKEN (inizio cambio)")
-	var all_states: Array[Lamp.State] = [Lamp.State.BROKEN, Lamp.State.CHANGING, Lamp.State.FIXED]
-	for state in all_states:
-		var starts := Lamp.starts_activity(state)
-		var exp_start: bool = state == Lamp.State.BROKEN
-		var note := "" if starts == exp_start else "   <-- ATTESO started = %s" % exp_start
-		print("      %-10s started=%s%s" % [_lamp_state_name(state), starts, note])
-
-
-func _report_lamp_next(state: Lamp.State, expected: Lamp.State, label: String) -> void:
-	var got := Lamp.next_on_interact(state)
-	var note := "" if got == expected else "   <-- ATTESO: %s" % _lamp_state_name(expected)
-	print("   %-42s -> %s%s" % [label, _lamp_state_name(got), note])
-
-
-func _report_lamp_interactive(state: Lamp.State, owns_bulb: bool, expected: bool, label: String) -> void:
-	var got := Lamp.is_interactive(state, owns_bulb)
-	var note := "" if got == expected else "   <-- ATTESO: %s" % expected
-	print("      %-54s is_interactive = %s%s" % [label, got, note])
-
-
-func _report_lamp_prompt(state: Lamp.State, expected: String) -> void:
-	var got := Lamp.prompt_for(state)
-	var note := "" if got == expected else "   <-- ATTESO: \"%s\"" % expected
-	print("      %-10s prompt = \"%s\"%s" % [_lamp_state_name(state), got, note])
-
-
-func _lamp_state_name(state: Lamp.State) -> String:
-	match state:
-		Lamp.State.BROKEN: return "BROKEN"
-		Lamp.State.CHANGING: return "CHANGING"
-		Lamp.State.FIXED: return "FIXED"
-		_: return "?"
-
-
 ## Lo «stare a guardare» della cupola (3.5): la logica PURA e STATICA di `DomeActivity` —
 ## il gate (in cupola E posa in corso), i punti d'emissione della coppia started/ended, e
-## il filtro sulla sequenza. Gemella di `_check_moka_ritual`/`_check_lamp_repair`: nessuno
+## il filtro sulla sequenza. Gemella di `_check_moka_ritual`: nessuno
 ## SceneTree, nessun autoload, nessun timer.
 ##
-## Il moto del telescopio, i suoni (ronzio, cigolio), il dwell timer runtime e la
+## Il moto del telescopio, il dwell timer runtime e la
 ## raggiungibilita'/collisione NON si collaudano qui: sono resa, effetto e percezione —
 ## verifiche d'operatore, che si camminano nel gioco (come dice lo spec). Il banco legge
 ## la tavola delle decisioni.
@@ -1597,7 +1500,7 @@ func _report_idle_voice(acts: Array, exp_t: float, exp_dur: float, label: String
 ## I forum della BBS (3.7): la logica PURA e collaudabile — il filtro `available(night)`
 ## per notte, il round-trip di `forum_read` sul save (i letti attraversano le notti), e il
 ## conteggio righe dell'a-capo su un corpo lungo (nessuna perdita di testo). Gemello di
-## `_check_owned_items`/`_check_dome_presence`: nessuno SceneTree, nessun timer, nessun suono.
+## `_check_owned_items`/`_check_dome_presence`: nessuno SceneTree, nessun timer.
 ##
 ## La connessione (handshake), il disegno del vetro, lo scroll esplicito e la
 ## leggibilità a 256x192 NON si collaudano qui: sono effetto e percezione — verifiche
@@ -2465,3 +2368,57 @@ func _check_desktop_window() -> void:
 	var entra := d.work_area().encloses(Rect2(Desktop.WORK_POS, Desktop.WORK_SIZE))
 	print("   finestra di lavoro dentro il vetro 352x264: %s%s" % [entra, "" if entra else "   <-- ATTESO: true"])
 	d.free()
+
+
+## Il quaderno delle procedure (D-233): ogni pagina sta sulla carta, e ogni fase del
+## piano della notte ha la sua pagina.
+##
+## LA CARTA SI MISURA IN COLONNE, non guardando: `QuadernoData.a_capo()` è la stessa
+## funzione con cui il quaderno impagina, quindi una pagina che qui sborda sborda anche
+## in partita. Che si LEGGA lo dice lo scatto di `tools/prova_quaderno.gd`.
+##
+## E LE FASI SI CONTANO DAL PIANO VERO, come `_check_work_tabs`: il giorno che una fase
+## entra nel `.tres` senza la sua pagina, il quaderno smette di dire la verità in
+## silenzio — qui lo si scopre.
+func _check_quaderno() -> void:
+	print("-- Quaderno delle procedure: pagine dentro il foglio, una pagina per fase (D-233)")
+
+	# L'a capo: una riga che ci sta resta com'è, spazi di allineamento compresi; una
+	# lunga va a capo alla parola e tiene il rientro.
+	var tabella := QuadernoData.a_capo("  W A S D   cammina", 20)
+	print("   riga di tabella: \"%s\"%s" % [tabella[0],
+		"" if tabella.size() == 1 and tabella[0] == "  W A S D   cammina" else "   <-- ATTESO: intatta"])
+	var lunga := QuadernoData.a_capo("  una riga lunga che deve andare a capo", 20)
+	var rientro_ok := lunga.size() > 1
+	for r in lunga:
+		rientro_ok = rientro_ok and r.begins_with("  ") and r.length() <= 20
+	print("   riga lunga: %s%s" % [" | ".join(lunga),
+		"" if rientro_ok else "   <-- ATTESO: a capo entro 20, rientro tenuto"])
+
+	var dati := _load_source(QUADERNO_PATH) as QuadernoData
+	if dati == null:
+		return
+	print("   dal .tres: %d pagine, carta da %d colonne per %d righe" % [
+		dati.pagine.size(), QuadernoData.COLONNE, QuadernoData.RIGHE])
+	var sbordano := dati.pagine_che_sbordano()
+	for coppia in sbordano:
+		print("   pagina %d: %d righe   <-- ATTESO: al massimo %d" % [
+			coppia[0] + 1, coppia[1], QuadernoData.RIGHE])
+	if sbordano.is_empty():
+		print("   nessuna pagina esce dal foglio")
+
+	var plan := load("res://data/night_plan.tres") as NightPlan
+	if plan == null:
+		print("   piano assente  <-- ATTESO: data/night_plan.tres")
+		return
+	var spiegate := dati.fasi_spiegate()
+	var mancano := PackedStringArray()
+	for scene in plan.setup_phases + plan.photo_phases:
+		var node: Node = scene.instantiate()
+		var phase := node as Phase
+		if phase != null and not spiegate.has(phase.key()):
+			mancano.append(String(phase.key()))
+		node.free()
+	print("   fasi del piano senza pagina: %s%s" % [
+		"nessuna" if mancano.is_empty() else ", ".join(mancano),
+		"" if mancano.is_empty() else "   <-- ATTESO: una pagina per ogni fase"])

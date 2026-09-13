@@ -35,6 +35,6 @@ extends Resource
 ## descrizione. È contenuto, non interfaccia.
 @export_multiline var blurb: String = ""
 
-## Se l'articolo ha un effetto implementato e quindi si vende. Solo `moka` e
-## `lampadina` sono `true` nell'MVP; gli altri esistono per provare che il filtro è reale.
+## Se l'articolo ha un effetto implementato e quindi si vende. Solo `moka` è
+## `true` nell'MVP; gli altri esistono per provare che il filtro è reale.
 @export var implemented: bool = false

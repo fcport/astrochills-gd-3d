@@ -10,7 +10,11 @@ full = "Nebulosa Laguna"
 type = &"NEB"
 diff = 1
 min_exp = 40
-dec_gradi = -24.38
+; LA DECLINAZIONE E' FINTA (D-237). Quella vera e' -24,38, e da li' M8 culmina a
+; 21,7 gradi: mai sopra l'orizzonte di questa cupola (47,7). Federico: «facciamo finta
+; che sia appena sopra l'orizzonte». A +9 non scende sotto i 50 gradi in tutta la
+; finestra 21:00-00:00. A +3,6, il primo tentativo, lo era solo per due ore scarse.
+dec_gradi = 9.0
 vis_from = "21:00"
 vis_to = "00:00"
 desc = "Vasta nube di formazione stellare nel Sagittario, a 4.100 anni-luce. Visibile a occhio nudo dai cieli bui come una macchia luminosa. Al telescopio rivela la \"laguna\" scura di polvere che la attraversa."

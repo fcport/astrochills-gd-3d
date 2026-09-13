@@ -35,6 +35,28 @@
 ## SALE PIANO E SCENDE DI COLPO. Farsi l'occhio costa, perderlo no, e l'asimmetria è
 ## la sola parte di questo effetto che abbia un insegnamento dentro: accendere la
 ## luce in cupola non è gratis.
+##
+## E FUORI, SEMPRE (D-240). Uscendo di notte non si vedeva niente: la facciata guarda
+## a nord, la Luna da qui sta sempre a sud, e quello che resta in ombra riceveva solo
+## l'ambiente di 0,035 — tarato perché una stanza SPENTA resti spenta. Misurato dalla
+## sonda (`VISTA=uscita`): la facciata a 0 livelli su 255 e il prato a 4; senza Luna,
+## tutto l'esterno fra 1 e 3.
+##
+## FUORI SI FANNO DUE COSE, E HANNO TEMPI DIVERSI:
+##
+##   - L'OCCHIO, come in cupola: l'esposizione sale in cinquanta secondi con lo stesso
+##     guadagno. È il prato illuminato dalla Luna che emerge poco per volta.
+##   - IL CIELO: all'aperto la luce diffusa arriva da tutta la volta, e l'ombra di un
+##     muro non è mai nera. È esattamente quello che la luce ambientale modella, e
+##     all'aperto non sbaglia — il suo difetto, non sapere niente dei muri, conta solo
+##     dentro. Quindi fuori sale, nel tempo di passare la porta, e segue la lampada
+##     della Luna: tutto il fondo del cielo e un terzo della Luna, cioè con la piena
+##     alta quasi il triplo che al novilunio.
+##
+## LA BUGIA CHE RESTA, dichiarata: l'ambiente è uno per tutta la scena, quindi stando
+## fuori anche le stanze che si vedono dalle finestre ricevono quello del cielo. Una
+## stanza spenta vista da fuori è un po' meno nera del vero; da dentro no, e dentro è
+## dove il buio conta.
 class_name DarkAdaptation
 extends Area3D
 
@@ -89,6 +111,35 @@ const DISCESA := 1.5
 ## gioco cambia da solo per non dire niente.
 const APERTA := 0.30
 
+## FUORI, il colore del cielo che fa da ambiente. Più grigio di quello di dentro
+## (0,26 0,32 0,48): quel blu saturo, moltiplicato per un prato verde, dava zero — la
+## facciata diventava blu notte e l'erba in ombra restava nera. Uno più chiaro,
+## (0,40 0,45 0,56), a pari energia faceva già crepuscolo.
+const COLORE_FUORI := Color(0.34, 0.40, 0.54)
+
+## Quanta parte della Luna arriva DA TUTTO IL CIELO invece che dal disco.
+##
+## IL FONDO DEL CIELO È TUTTO DIFFUSO, LA LUNA NO. `LuceDiLuna` somma due cose in una
+## lampada sola: `ENERGIA_CIELO` (airglow, stelle, il chiarore della valle), che per
+## natura viene da ogni direzione, e la Luna, che è un disco e fa ombre nette. Il
+## primo entra nell'ambiente per intero; della seconda solo quello che l'aria sparge.
+##
+## LA PRIMA STESURA LE CONTAVA UGUALI, e l'ha smentita il salvataggio di Federico:
+## notte 34, lampada della Luna a 0,38, e con l'ambiente pari alla lampada la facciata
+## in ombra stava a 80 livelli su 255 — un crepuscolo, non una notte.
+##
+## A 0,35, misurato con `tools/prova_trafila.gd` dopo cinquanta secondi fuori, in
+## livelli su 255 (mediane):
+##
+##     notte 34, Luna a 0,38          facciata 43   prato 22
+##     novilunio (LUNA=0.07)          facciata 16   prato  6
+##     piena allo zenit (LUNA=0.44)   facciata 47   prato 33
+const DIFFUSA_DELLA_LUNA := 0.35
+
+## In quanti secondi l'ambiente passa da quello di dentro a quello di fuori: il tempo
+## di attraversare la porta. Più corto sarebbe uno scatto nella stanza alle spalle.
+const PASSO_PORTA := 2.0
+
 ## Le `Accesa` delle lampade della sala: se una qualsiasi è visibile, niente
 ## adattamento. Arrivano per `NodePath` dal generatore, che è l'unico a sapere quali
 ## lampade stanno in cupola — questo file non deve conoscere la pianta.
@@ -103,6 +154,13 @@ var _giocatore: Node3D
 var _ambiente: Environment
 var _riposo := 1.0
 var _nodi_luce: Array[Node] = []
+
+## Quanto si è fuori, da 0 a 1: segue la porta in `PASSO_PORTA` secondi.
+var _fuori := 0.0
+var _ambiente_riposo := 0.035
+var _colore_riposo := Color(0.26, 0.32, 0.48)
+var _casa: IndoorsVolume
+var _luna: LuceDiLuna
 
 
 func _ready() -> void:
@@ -134,6 +192,8 @@ func _prepara() -> void:
 	if we != null:
 		_ambiente = we.environment
 		_riposo = _ambiente.tonemap_exposure
+		_ambiente_riposo = _ambiente.ambient_light_energy
+		_colore_riposo = _ambiente.ambient_light_color
 
 
 ## SI RIMETTE A POSTO USCENDO, e non è pedanteria da manuale: `Environment` è una
@@ -144,6 +204,8 @@ func _prepara() -> void:
 func _exit_tree() -> void:
 	if _ambiente != null:
 		_ambiente.tonemap_exposure = _riposo
+		_ambiente.ambient_light_energy = _ambiente_riposo
+		_ambiente.ambient_light_color = _colore_riposo
 
 
 func _cerca_ambiente(n: Node) -> WorldEnvironment:
@@ -179,11 +241,18 @@ func _process(delta: float) -> void:
 	if _giocatore == null or not is_instance_valid(_giocatore):
 		_giocatore = Player.find_in(get_tree())
 	_dentro = _giocatore != null and overlaps_body(_giocatore)
-	var bersaglio := 1.0 if (_dentro and _apertura >= APERTA and _al_buio()) else 0.0
+	if _casa == null or not is_instance_valid(_casa):
+		_casa = IndoorsVolume.find_in(get_tree())
+	# IL RIPIEGO È «DENTRO», come per chi usa `IndoorsVolume` per il suono: senza il
+	# volume o senza il giocatore il mondo resta com'era, invece di accendere il cielo
+	# anche nelle stanze.
+	var fuori := _giocatore != null and _casa != null and not _casa.holds(_giocatore)
+	var bersaglio := 1.0 if (fuori or (_dentro and _apertura >= APERTA and _al_buio())) else 0.0
 	if bersaglio > _q:
 		_q = minf(bersaglio, _q + delta / SALITA)
 	else:
 		_q = maxf(bersaglio, _q - delta / DISCESA)
+	_fuori = move_toward(_fuori, 1.0 if fuori else 0.0, delta / PASSO_PORTA)
 	_applica()
 
 
@@ -192,9 +261,21 @@ func _process(delta: float) -> void:
 ## differenza fra le due è sotto la soglia in cui varrebbe la pena discuterne.
 func _applica() -> void:
 	_ambiente.tonemap_exposure = _riposo * lerpf(1.0, GUADAGNO, _q)
+	if _luna == null or not is_instance_valid(_luna):
+		_luna = LuceDiLuna.find_in(get_tree())
+	var cielo := _ambiente_riposo
+	if _luna != null:
+		cielo = LuceDiLuna.ENERGIA_CIELO 				+ (_luna.light_energy - LuceDiLuna.ENERGIA_CIELO) * DIFFUSA_DELLA_LUNA
+	_ambiente.ambient_light_energy = lerpf(_ambiente_riposo, maxf(cielo, _ambiente_riposo), _fuori)
+	_ambiente.ambient_light_color = _colore_riposo.lerp(COLORE_FUORI, _fuori)
 
 
 ## Quanto l'occhio è fatto. Per le sonde: leggere il segnale non prova che il nodo
 ## l'abbia ricevuto, e leggere lo schermo non dice di chi è la colpa.
 func adaptation() -> float:
 	return _q
+
+
+## Quanto l'ambiente è quello di fuori, da 0 a 1. Per le sonde, come sopra.
+func outdoors() -> float:
+	return _fuori

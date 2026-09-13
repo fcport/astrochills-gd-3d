@@ -136,7 +136,7 @@ func _draw_footer() -> void:
 	# I primi sono anche l'unità in cui si parla di errore di puntamento.
 	var primi := _scarto.length() * 60.0
 	_text(Vector2(MARGIN, 170), "ERR %5.1f'   SCORE %3d" % [primi, _score], FG, 12)
-	var aiuto := "ARROWS CENTRE   ENTER SYNC"
+	var aiuto := "WASD CENTRE   ENTER SYNC"
 	if _in_viaggio:
 		aiuto = "WAIT FOR THE MOUNT"
 	_text(Vector2(MARGIN, 185), aiuto, DIM, 12)

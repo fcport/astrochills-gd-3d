@@ -126,7 +126,7 @@ func _draw() -> void:
 	var giu := DESIGN_SIZE.y - 1.0 - _font.get_descent(12)
 	_text(Vector2(MARGIN, giu), "R RESET PORT", DIM, 12)
 	var su := giu - _font.get_ascent(12) - ARIA - _font.get_descent(12)
-	_text(Vector2(MARGIN, su), "UP/DOWN SELECT   ENTER ACT", DIM, 12)
+	_text(Vector2(MARGIN, su), "W/S SELECT   ENTER ACT", DIM, 12)
 
 	var base := su - _font.get_ascent(12) - ARIA
 	if _message != "":

@@ -10,4 +10,3 @@ max_drop = 38.0
 time_constant = 6.0
 wobble = 1.2
 wobble_period = 26.0
-saturation = 0.92

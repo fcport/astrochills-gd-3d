@@ -936,6 +936,14 @@ func _on_phase_finished(result: PhaseResult, phase: Phase) -> void:
 		# `_finish_photo_cycle` per non lasciare il giocatore davanti a un vetro
 		# nero dopo una posa persa.
 		_photo_cycle_failed = not result.ok
+		# UNA FASE DEL CICLO CHE FALLISCE LO CHIUDE LÌ, e le fasi dopo di lei non partono.
+		# Il caso che l'ha fatto scrivere (D-238): il GOTO su un soggetto sotto la cupola
+		# rinuncia («pick another one»), e il ciclo andava avanti lo stesso con fuoco e
+		# posa — si fotografava un soggetto che il telescopio non vedeva. Con l'indice in
+		# fondo `_next_scene` non trova più niente, e `_finish_photo_cycle` apre il menu,
+		# che è il posto dove si cambia soggetto. Nessuna fase è nominata (ADR-002).
+		if not result.ok:
+			_photo_index = plan.photo_phases.size()
 
 	# Ciò che questa fase lascia a quelle dopo di lei. È il canale di FR12.
 	_ctx.merge(result.payload, true)

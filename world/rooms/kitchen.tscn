@@ -21,20 +21,12 @@
 ; 3.2), leggendo `Game.profile.owns` all'avvio e ascoltando `Events.item_purchased` a
 ; runtime — tutto dentro moka.gd.
 ;
-; La lampada (storia 3.4, registro SISTEMARE) e' istanziata sullo stesso piano, lontano
-; dalla moka, e — a differenza della moka — NASCE PRESENTE: e' un elemento fisso, rotto,
-; che lampeggia e ronza dalla prima notte, prima di qualunque acquisto. Comprare la
-; &"lampadina" non la fa comparire (c'e' gia'), la rende CAMBIABILE alla prossima occhiata:
-; lamp.gd rilegge LIVE `Game.profile.owns(&"lampadina")` in `can_interact()`, senza
-; sottoscrizioni. Cambiata, la sua luce diventa stabile per sempre (persistito in
-; `PlayerProfile.lamp_fixed`). Tutto dentro lamp.gd, senza passare da qui ne' da `main.gd`.
 ;
 ; Il posto c'era (questa cucina), ora ci sono gli oggetti.
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Shader" path="res://world/shaders/ps1.gdshader" id="1_ps1"]
 [ext_resource type="PackedScene" path="res://world/interactables/moka.tscn" id="2_moka"]
-[ext_resource type="PackedScene" path="res://world/interactables/lamp.tscn" id="3_lamp"]
 
 [sub_resource type="ShaderMaterial" id="MatFloor"]
 shader = ExtResource("1_ps1")
@@ -150,7 +142,7 @@ mesh = SubResource("BoxWallE")
 shape = SubResource("ShapeWallE")
 
 ; Il piano d'appoggio segnaposto sotto la parete est: 90 cm, l'altezza da cucina, top a
-; y = 0,9. Ci sta sopra la moka (3.3), e ci stara' la lampada (3.4). Qui e' solo il
+; y = 0,9. Ci sta sopra la moka (3.3). Qui e' solo il
 ; mobile — l'oggetto e' l'istanza Moka piu' sotto.
 [node name="Counter" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.7, 0.45, 1.5)
@@ -164,12 +156,8 @@ mesh = SubResource("BoxCounter")
 shape = SubResource("ShapeCounter")
 
 ; Una luce fredda FIOCA, ambient di sicurezza: senza una sorgente le pareti a luce
-; per-vertice resterebbero nere, e quando il lampeggio della lampada (3.4) va scuro la
-; stanza non deve mai diventare nera del tutto (giocabilita'). E' Fill, non key: resta
-; volutamente sotto la luce della lampada, cosi' la lampada che si accende/lampeggia si
-; VEDE davvero cambiare l'illuminazione, invece di essere resa ridondante da questa. Il
-; livello esatto (basso abbastanza da lasciar contare la lampada, alto abbastanza da non
-; annerire mai) si tara guardando — verifica d'operatore.
+; per-vertice resterebbero nere. Il livello esatto si tara guardando — verifica
+; d'operatore.
 [node name="Fill" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 2.5, 1.5)
 light_color = Color(0.7, 0.78, 0.9, 1)
@@ -184,11 +172,3 @@ omni_range = 5.0
 [node name="Moka" parent="." instance=ExtResource("2_moka")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.9, 1.5)
 
-; La lampada sullo stesso piano d'appoggio, verso NORD (z maggiore) e distante dalla moka:
-; origine a (2,6, 0,9, 2,2) — sul top del Counter (y = 0,9), verso il fondo del piano
-; (Counter centrato a z = 1,5, profondo 2,2 → bordo nord a z = 2,6). Nasce PRESENTE e, se
-; non riparata, ROTTA: lampeggia e ronza. lamp.gd la rende cambiabile leggendo il possesso
-; della lampadina. La raggiungibilita' dal davanti al piano si tara guardando (verifica
-; d'operatore).
-[node name="Lamp" parent="." instance=ExtResource("3_lamp")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6, 0.9, 2.2)

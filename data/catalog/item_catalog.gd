@@ -10,7 +10,7 @@
 class_name ItemCatalog
 extends Resource
 
-## Gli articoli, iniettati dal `.tres`. Contiene sia gli implementati (moka, lampadina)
+## Gli articoli, iniettati dal `.tres`. Contiene sia gli implementati (la moka)
 ## sia i non implementati (stufetta, lubrificare cupola): il filtro li separa.
 @export var items: Array[ItemData] = []
 

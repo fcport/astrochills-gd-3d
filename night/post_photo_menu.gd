@@ -134,7 +134,7 @@ func _draw() -> void:
 		_text(Vector2(8, y), "%s%s" % [mark, _options[i]], col, 12)
 		y += 16
 
-	_text(Vector2(8, 182), "up/down choose — enter confirm", DIM, 12)
+	_text(Vector2(8, 182), "w/s choose — enter confirm", DIM, 12)
 
 
 func _text(pos: Vector2, s: String, color: Color, px: int) -> void:

@@ -54,6 +54,12 @@ const VISTE := {
 	"quadro": [Vector3(11.55, 0.0, 10.70), Vector3(11.55, 1.45, 9.60)],
 	# Mirando il fungo rosso, che e' un bersaglio suo e ha un prompt suo.
 	"fungo": [Vector3(11.60, 0.0, 10.55), Vector3(11.597, 1.360, 9.845)],
+	# Sul prato davanti all'ingresso, a sette metri e mezzo, voltati verso la
+	# facciata: e' la vista di chi esce e si gira. La facciata guarda a nord (+Z),
+	# cioe' dalla parte opposta alla Luna per tutta la notte.
+	"uscita": [Vector3(11.00, 0.0, 17.00), Vector3(11.50, 1.80, 9.50)],
+	# Appena fuori dalla porta, lo sguardo verso la macchina: il prato che si attraversa.
+	"nord": [Vector3(10.50, 0.0, 11.00), Vector3(20.00, 0.80, 24.00)],
 }
 
 ## Le lampade che nella fotografia erano spente: la sala e il corridoio. La cucina
@@ -139,6 +145,14 @@ func _process(d: float) -> void:
 			Events.dome_aperture_changed.emit(float(OS.get_environment("APERTURA")))
 			print("[trafila] cupola annunciata aperta a %s, aspetto che i battenti arrivino"
 				% OS.get_environment("APERTURA"))
+		# LUNA=0.07 mette la notte di novilunio senza aspettare il calendario: la lampada
+		# della Luna si ferma allo zenit con quell'energia. 0,07 è il fondo senza Luna,
+		# 0,44 la piena più alta (`LuceDiLuna`).
+		if OS.get_environment("LUNA") != "":
+			var luna := get_tree().root.find_child("Luna", true, false) as DirectionalLight3D
+			luna.set_process(false)
+			luna.light_energy = float(OS.get_environment("LUNA"))
+			luna.global_basis = Basis.looking_at(Vector3.DOWN, Vector3.FORWARD)
 		print("[trafila] vista '%s' da %v verso %v, spente %s"
 			% [quale, _dove, _mira, ", ".join(spente)])
 		return
@@ -171,8 +185,14 @@ func _process(d: float) -> void:
 		get_tree().paused = true
 		_attesa = RESPIRO
 		var occhio := get_tree().root.find_child("OcchioAlBuio", true, false)
-		print("[trafila] %d sorgenti accese, occhio al buio %.2f dopo %.1f s"
-			% [_luci.size(), occhio.adaptation() if occhio != null else -1.0, _t])
+		print("[trafila] %d sorgenti accese, occhio al buio %.2f, fuori %.2f, dopo %.1f s"
+			% [_luci.size(), occhio.adaptation() if occhio != null else -1.0,
+				occhio.outdoors() if occhio != null else -1.0, _t])
+		var we := get_tree().root.find_child("WorldEnvironment", true, false) as WorldEnvironment
+		var lu := get_tree().root.find_child("Luna", true, false) as DirectionalLight3D
+		print("[trafila] luna %.3f, ambiente %.3f, esposizione %.2f, notte %s"
+			% [lu.light_energy, we.environment.ambient_light_energy, we.environment.tonemap_exposure,
+				"%d %.0f min" % [Game.run.night_index, Game.run.elapsed_min] if Game.run != null else "nessuna"])
 		return
 
 	if _attesa > 0:

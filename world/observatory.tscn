@@ -31,14 +31,13 @@
 ; raggio 0,3, quindi da seduto il suo bordo arriva a -1,719 — 3 cm di gioco. Con
 ; il monitor piu' indietro il corpo compenetrerebbe la scrivania.
 ;
-; NON DISTURBARE monitor, chime, letto, player: le loro quote sono contratti di
+; NON DISTURBARE monitor, letto, player: le loro quote sono contratti di
 ; altre storie. La 3.1 aggiunge stanze e ambiente, non sposta l'esistente.
-[gd_scene load_steps=27 format=3]
+[gd_scene load_steps=26 format=3]
 
 [ext_resource type="PackedScene" path="res://world/rooms/computer_room.tscn" id="1_room"]
 [ext_resource type="PackedScene" path="res://world/interactables/crt_monitor.tscn" id="2_monitor"]
 [ext_resource type="PackedScene" path="res://world/player/player.tscn" id="3_player"]
-[ext_resource type="PackedScene" path="res://world/sequence_chime.tscn" id="4_chime"]
 [ext_resource type="PackedScene" path="res://world/rooms/kitchen.tscn" id="6_kitchen"]
 [ext_resource type="PackedScene" path="res://world/rooms/dome.tscn" id="7_dome"]
 [ext_resource type="PackedScene" path="res://world/rooms/exterior.tscn" id="8_exterior"]
@@ -308,14 +307,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, -2.05)
 unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0.8)
 
-; Il suono di fine posa vive QUI, presso il monitor, non nella fase: e' del luogo.
-; Collocato all'altezza del vetro (1,10 m) e alla z del monitor, cosi' allontanandosi
-; nella stanza si attenua ed e' percepibilmente posizionale. Non figlio del CrtMonitor:
-; e' un fatto del mondo, e la storia 3.1 (cucina/cupola) NON lo sposta — la geografia
-; sonora si tara nell'attenuazione (vedi sequence_chime.tscn), non nella posizione.
-[node name="SequenceChime" parent="." instance=ExtResource("4_chime")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, -2.05)
-
 ; IL VOLUME DELL'EDIFICIO, e le sue misure non sono scelte: sono LETTE dalle stanze.
 ;
 ;   x  da -2,15 (parete ovest della stanza computer) a 10,06 (bordo est della cupola)
@@ -325,8 +316,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, -2.05)
 ; parte da terra: copre il giocatore, non il tetto della cupola — chi cammina sta
 ; fra 0 e 1,8 m, e alzare il volume servirebbe solo a farlo intersecare col cielo.
 ;
-; Chi lo interroga e perché: `world/sequence_chime.gd`. Il suo `holds()` risponde
-; alla sola domanda che la distanza non sapeva risolvere — dentro o fuori.
+; Lo interrogava il campanello di fine sequenza, uscito con i suoni segnaposto (D-235).
+; Il suo `holds()` risponde alla domanda che la distanza non sa risolvere: dentro o fuori.
 [node name="Indoors" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.955, 1.5, -1.575)
 script = ExtResource("10_indoors")

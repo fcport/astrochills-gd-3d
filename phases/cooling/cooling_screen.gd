@@ -156,7 +156,7 @@ func _in_plot(x: float, y: float, da: float, alto: float, basso: float) -> Vecto
 
 func _piede() -> void:
 	_text(Vector2(MARGIN, 176), "SCORE %3d" % _score, FG, 12)
-	_text(Vector2(MARGIN, 188), "UP/DOWN SETPOINT   ENTER DONE", DIM, 12)
+	_text(Vector2(MARGIN, 188), "W/S SETPOINT   ENTER DONE", DIM, 12)
 
 
 func _width(s: String, px: int) -> float:

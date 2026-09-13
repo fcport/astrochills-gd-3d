@@ -10,7 +10,12 @@ full = "Nebulosa di Orione"
 type = &"NEB"
 diff = 1
 min_exp = 30
-dec_gradi = -5.39
+; LA DECLINAZIONE E' FINTA (D-237). Quella vera e' -5,39, e da -5,39 M42 culmina a 40,7
+; gradi: sotto l'orizzonte di questa cupola (47,7), cioe' mai fotografabile. Federico:
+; «facciamo finta che sia appena sopra l'orizzonte». A +36 non scende sotto i 49,7 gradi
+; in tutta la finestra 21:00-04:00: si fotografa ogni volta che il catalogo dice che si
+; vede. A +4,2, il primo tentativo, culminava a 50,3 e il resto della finestra era sotto.
+dec_gradi = 36.0
 vis_from = "21:00"
 vis_to = "04:00"
 desc = "La regione di formazione stellare più vicina e luminosa del cielo, a 1.350 anni-luce. Si vede a occhio nudo come una \"stella\" sfocata nella spada di Orione. Al telescopio rivela strutture filamentose di idrogeno illuminate dalle giovani stelle del Trapezio."

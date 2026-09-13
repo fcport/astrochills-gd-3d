@@ -72,6 +72,16 @@ PROP = [
     ("tea_set_01", "tea_set_01_saucer_circular_03", "piattino", 400,
      "il piattino. Da solo non serve a niente, ed e' il punto: una tazza senza "
      "piattino non e' apparecchiata, e' stata usata"),
+    # IL QUADERNO NON SI PRENDE IN MANO - si legge, ed e' `quaderno.gd` - ma e' un
+    # pezzo preso da un set come gli altri, e ha bisogno delle stesse tre cose:
+    # un pezzo solo, poche facce e l'origine sotto. Del set si tiene il CHIUSO: il
+    # quaderno aperto e' largo trentasei centimetri e sulla consolle, fra la
+    # tastiera e il telefono, non ci sta.
+    # MILLEDUECENTO FACCE, piu' della tazza: e' un parallelepipedo, ma la cinghietta
+    # col bottone, gli anelli che sporgono dal dorso e il bordo della carta sono le
+    # tre cose che lo fanno leggere come un organizer e non come una scatola marrone.
+    ("binder_notebook", "binder_notebook_closed", "quaderno", 1200,
+     "il quaderno delle procedure, chiuso, sulla consolle a sinistra del monitor"),
 ]
 
 

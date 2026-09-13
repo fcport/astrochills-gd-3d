@@ -9,15 +9,14 @@
 ## Control e la notte è il punto d'ingresso, l'unico che conosce entrambe le sponde.
 ##
 ## È LO STESSO COMPUTER DEL TERMINALE. Stessa cornice a linea singola, stesso fosforo
-## verde su nero, stesso font monospace, stesso beep sintetizzato in codice. Le costanti
-## estetiche (`BG/FG/DIM/SEL`), il font, il beep, `_wrap`/`_text` si replicano dal
+## verde su nero, stesso font monospace. Le costanti estetiche (`BG/FG/DIM/SEL`), il
+## font, `_wrap`/`_text` si replicano dal
 ## terminale: è duplicazione DELIBERATA di costanti provvisorie (coerente con la memoria
 ## sugli asset), non si estrae una base condivisa ora. Due estetiche diverse sullo stesso
 ## vetro sarebbero un errore di finzione.
 ##
 ## LA CONNESSIONE È UN'ATTESA PICCOLA DENTRO L'ATTESA GRANDE. All'`arm()` parte un
-## handshake udibile — beep/rumore sintetizzato in codice, nessun asset — che dura qualche
-## secondo: il tempo che ci vuole fa parte della cosa, non è un caricamento da nascondere.
+## handshake che dura qualche secondo: il tempo che ci vuole fa parte della cosa, non è un caricamento da nascondere.
 ## Finché l'handshake gira la vista mostra CONNECTING; poi compare l'elenco.
 ##
 ## LE DUE LINGUE (NFR10). La cornice/menu/prompt e i titoli delle aree (`title`) sono
@@ -71,9 +70,6 @@ const BODY_WINDOW := 8
 const HANDSHAKE_SEC := 3.0
 
 var _font: SystemFont
-var _beep: AudioStreamPlayer
-## Il rumore del modem 56k in loop, sintetizzato in codice: l'handshake udibile.
-var _handshake: AudioStreamPlayer
 ## Conta i secondi dell'handshake e poi apre l'elenco. Il tempo REALE (non scalato):
 ## la connessione dura quello che dura, F1–F4 non la accorciano.
 var _connect_timer: Timer
@@ -113,8 +109,6 @@ func _ready() -> void:
 	size = DESIGN_SIZE
 	_font = SystemFont.new()
 	_font.font_names = PackedStringArray(["Consolas", "Courier New", "monospace"])
-	_install_beep()
-	_install_handshake()
 	_install_connect_timer()
 	_load_boards()
 
@@ -157,69 +151,6 @@ func deactivate() -> void:
 		return
 	_active = false
 	Events.wait_activity_ended.emit(ACTIVITY)
-	# L'handshake, se ancora in corso alla chiusura, si spegne: non deve continuare a
-	# suonare da una BBS parcheggiata e spenta.
-	_stop_handshake()
-
-
-## Costruisce lo stream di beep in codice: identico al terminale — è lo stesso computer.
-## Un'onda quadra breve a bassa frequenza, il clic secco di un terminale.
-func _install_beep() -> void:
-	_beep = AudioStreamPlayer.new()
-	var wav := AudioStreamWAV.new()
-	wav.format = AudioStreamWAV.FORMAT_8_BITS
-	wav.mix_rate = 22050
-	wav.stereo = false
-	var frames := 900               # ~40 ms
-	var data := PackedByteArray()
-	data.resize(frames)
-	var period := 22050 / 660       # ~660 Hz, onda quadra
-	for i in frames:
-		var env := 1.0 - float(i) / float(frames)
-		var high := (i % period) < (period / 2)
-		var amp := 90.0 * env
-		var v := int(amp) if high else int(-amp)
-		data[i] = (v + 256) % 256   # 8-bit signed → byte
-	wav.data = data
-	_beep.stream = wav
-	_beep.volume_db = -6.0
-	add_child(_beep)
-
-
-## Costruisce lo stream dell'handshake del modem 56k in codice: nessun asset (provvisorio,
-## coerente con la memoria sugli asset). Due toni ruvidi che si alternano rapidi — non una
-## nota, il verso stridulo di due modem che si accordano. In loop: parte all'`arm()` e si
-## ferma quando la connessione «si stabilisce» (fine `_connect_timer`) o alla chiusura.
-func _install_handshake() -> void:
-	_handshake = AudioStreamPlayer.new()
-	var wav := AudioStreamWAV.new()
-	wav.format = AudioStreamWAV.FORMAT_8_BITS
-	wav.mix_rate = 22050
-	wav.stereo = false
-	wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
-	var frames := 22050              # ~1 s in loop
-	wav.loop_begin = 0
-	wav.loop_end = frames
-	var data := PackedByteArray()
-	data.resize(frames)
-	# Due frequenze che si alternano ogni ~120 ms: il carrier che cerca l'aggancio.
-	var seg := 2646                  # ~120 ms per segmento
-	var p_a := 22050 / 1200          # tono grave
-	var p_b := 22050 / 2100          # tono acuto
-	for i in frames:
-		var use_a := (i / seg) % 2 == 0
-		var period := p_a if use_a else p_b
-		# Un po' di ruvidità: XOR di una seconda onda più veloce, così suona sporco.
-		var high := (i % period) < (period / 2)
-		var buzz := (i % 37) < 18
-		var on := high != buzz
-		var amp := 55.0
-		var v := int(amp) if on else int(-amp)
-		data[i] = (v + 256) % 256
-	wav.data = data
-	_handshake.stream = wav
-	_handshake.volume_db = -10.0
-	add_child(_handshake)
 
 
 ## Il timer della connessione: one-shot, tempo REALE (`Engine.time_scale` non lo tocca,
@@ -237,42 +168,16 @@ func _install_connect_timer() -> void:
 	add_child(_connect_timer)
 
 
-## Avvia l'handshake: la vista mostra CONNECTING, il rumore parte, il timer conta.
+## Avvia l'handshake: la vista mostra CONNECTING e il timer conta.
 func _start_handshake() -> void:
 	_connecting = true
-	if _handshake != null and _handshake.stream != null and _audio_is_audible():
-		_handshake.play()
 	_connect_timer.start()
 
 
-## La connessione si è stabilita: ferma il rumore, esce dalla vista CONNECTING, apre
-## l'elenco. Un beep secco segna l'aggancio.
+## La connessione si è stabilita: esce dalla vista CONNECTING e apre l'elenco.
 func _on_connected() -> void:
 	_connecting = false
-	_stop_handshake()
-	_play_beep()
 	queue_redraw()
-
-
-func _stop_handshake() -> void:
-	if _handshake != null and _handshake.playing:
-		_handshake.stop()
-
-
-func _play_beep() -> void:
-	if _beep != null and _audio_is_audible():
-		_beep.play()
-
-
-## Se c'è un'uscita audio VERA. In headless (cancello, banco, import) il driver è `Dummy`:
-## un suono avviato che l'engine spegne a forza lascia un WARNING.
-##
-## RESTA QUI, e non passa da `world/toni_segnaposto.gd` dove i suoi gemelli sono
-## confluiti: `bbs/` non dipende da `world/`, e non è il caso di aprire quella porta
-## per due righe. E non passa comunque dall'interruttore dei toni continui: il beep
-## e la portante del modem durano un istante — sono fra i suoni che restano accesi.
-func _audio_is_audible() -> bool:
-	return DisplayServer.get_name() != "headless"
 
 
 ## Legge `forum.tres` e tiene le board. FORUM ASSENTE/ILLEGGIBILE (I/O matrix): `load`
@@ -367,7 +272,6 @@ func _move_cursor(delta: int) -> void:
 	if _rows.is_empty():
 		return
 	_cursor = (_cursor + delta + _rows.size()) % _rows.size()
-	_play_beep()
 	queue_redraw()
 
 
@@ -379,7 +283,6 @@ func _scroll_body(delta: int) -> void:
 	if next == _scroll:
 		return
 	_scroll = next
-	_play_beep()
 	queue_redraw()
 
 
@@ -397,7 +300,6 @@ func _open_reading() -> void:
 	_body_lines = _wrap(msg.body, WRAP_WIDTH)
 	_scroll = 0
 	_reading = true
-	_play_beep()
 	queue_redraw()
 
 
@@ -407,7 +309,6 @@ func _close_reading() -> void:
 	_reading = false
 	_body_lines = PackedStringArray()
 	_scroll = 0
-	_play_beep()
 	queue_redraw()
 
 
@@ -431,8 +332,8 @@ func _draw() -> void:
 	_draw_list()
 
 
-## La vista dell'handshake: mentre il modem si accorda. Testo EN (voce macchina); il
-## rumore lo si sente. Nessun codice d'errore, nessuna barra di caricamento: è un'attesa
+## La vista dell'handshake: mentre il modem si accorda. Testo EN (voce macchina).
+## Nessun codice d'errore, nessuna barra di caricamento: è un'attesa
 ## dichiarata, non un progresso da riempire.
 func _draw_connecting() -> void:
 	_text(Vector2(9, 40), "DIALING 0335-BBS...", FG, 12)
@@ -475,7 +376,7 @@ func _draw_list() -> void:
 		_text(Vector2(196, y), _clip(msg.author, 8), DIM, 10)
 		y += 13
 
-	_text(Vector2(9, 182), "up/down  enter read  esc quit", DIM, 10)
+	_text(Vector2(9, 182), "w/s  enter read  esc quit", DIM, 10)
 
 
 ## La vista LETTURA: soggetto (IT) e corpo (IT) scorribile. Lo SCROLL È ESPLICITO — un
@@ -515,7 +416,7 @@ func _draw_reading() -> void:
 		_draw_arrow(Vector2(238, 166), false)
 		_text(Vector2(202, 172), "MORE", SEL, 9)
 
-	var hint := "up/down scroll  esc back" if (more_above or more_below) else "esc back"
+	var hint := "w/s scroll  esc back" if (more_above or more_below) else "esc back"
 	_text(Vector2(9, 182), hint, DIM, 10)
 
 

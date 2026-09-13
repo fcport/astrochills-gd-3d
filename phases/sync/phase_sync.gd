@@ -168,7 +168,7 @@ func _centrata() -> bool:
 	return _scarto.length() <= ERRORE_BUONO
 
 
-## Muove il tubo con le frecce.
+## Muove il tubo con W A S D.
 ##
 ## `get_axis` E NON QUATTRO `if`, per la ragione del focheggiatore: tenendo
 ## premute due direzioni opposte il tubo sta fermo, che è quello che fa un motore
@@ -178,6 +178,14 @@ func _centrata() -> bool:
 ## «renderlo intuitivo»: è quello che succede guardando in un oculare, ed è la
 ## prima cosa che si impara a un telescopio.
 func _muovi(delta: float) -> void:
+	# SI ASCOLTA SOLO A FINESTRA DAVANTI. `Input.get_axis` legge la tastiera, non il
+	# fuoco: senza questa riga W A S D muoverebbero il tubo anche con la BBS in primo
+	# piano, che scorre con gli stessi tasti. Se la fase ascolta lo decide
+	# l'orchestratore accendendole `_unhandled_input` (`NightSession.set_player_present`),
+	# e qui si legge quella decisione invece di rifarla.
+	if not is_processing_unhandled_input():
+		_truth_input.seconds_still += delta
+		return
 	var dx := Input.get_axis(&"aim_left", &"aim_right")
 	var dy := Input.get_axis(&"aim_down", &"aim_up")
 	if is_zero_approx(dx) and is_zero_approx(dy):

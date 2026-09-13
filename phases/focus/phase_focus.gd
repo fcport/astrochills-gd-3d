@@ -38,8 +38,8 @@ const TRAVEL := 900.0
 ## DUECENTO, e il numero viene da un conto e non dal gusto: la corsa intera è 1800
 ## passi, cioè nove secondi da un fermo all'altro — abbastanza per una passata di
 ## ricognizione senza che diventi un viaggio. E la zona dentro cui il punteggio è
-## pieno è larga circa 124 passi, cioè sei decimi di secondo di dito: si centra,
-## ma bisogna guardare.
+## pieno va da 124 passi prima a 124 passi dopo il fuoco, cioè un secondo e un quarto
+## di dito: si centra, ma bisogna guardare.
 const STEP_RATE := 200.0
 
 ## Ogni quanti passi si segna un punto sul grafico.
@@ -162,7 +162,7 @@ func encoder() -> int:
 
 
 func _moving() -> bool:
-	return (Input.is_action_pressed(&"focus_in")
+	return is_processing_unhandled_input() and (Input.is_action_pressed(&"focus_in")
 		or Input.is_action_pressed(&"focus_out"))
 
 
@@ -172,6 +172,10 @@ func _moving() -> bool:
 ## sta fermo, che è ciò che fa un motore a cui chiedi due cose opposte. Con due
 ## `if` in fila vincerebbe l'ultimo che ho scritto, cioè il caso.
 func _move_focuser(delta: float) -> void:
+	# SI ASCOLTA SOLO A FINESTRA DAVANTI: vedi `phase_sync.gd`.
+	if not is_processing_unhandled_input():
+		_truth_input.seconds_since_move += delta
+		return
 	var verso := Input.get_axis(&"focus_in", &"focus_out")
 	if is_zero_approx(verso):
 		_truth_input.seconds_since_move += delta

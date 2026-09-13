@@ -1,12 +1,12 @@
 ## Il telescopio della cupola: la RESA del registro «stare» dell'attesa (storia 3.5).
-## Mentre l'imaging espone, il tubo insegue lento e la montatura ronza; a sequenza
-## ferma sta immobile e tace. È il visivo+audio del «telescopio che lavora da solo»
+## Mentre l'imaging espone, il tubo insegue lento; a sequenza ferma sta immobile. È il
+## visivo del «telescopio che lavora da solo»
 ## mentre il giocatore alza gli occhi alla fessura — non la misura, che è del gemello
 ## `DomeActivity`. Due responsabilità diverse, due nodi (vedi Design Notes dello spec).
 ##
 ## SA TRAMITE `Events`, MAI INTERROGANDO LA FASE. Che una sequenza sia in corso passa
 ## SOLO da `Events.phase_started`/`phase_finished` filtrati su `key == &"imaging"` — la
-## stessa soft-coupling via `StringName` che `world/sequence_chime.gd` già usa. Questo
+## stessa soft-coupling via `StringName` di `world/dome_activity.gd`. Questo
 ## file NON nomina `phases/`, `night/`, `photo/`: «imaging» compare solo come chiave di
 ## filtro sul bus, e il mondo continua a non conoscere la cartella delle fasi.
 ##
@@ -23,7 +23,7 @@ class_name Telescope
 extends Node3D
 
 ## Chi ha bisogno del telescopio lo trova per GRUPPO, mai per percorso di nodo: stessa
-## regola della moka, della lampada e del monitor.
+## regola della moka e del monitor.
 const GROUP := &"telescope"
 
 ## Quanto insegue: radianti al secondo di gioco. Un inseguimento LENTO e continuo,
@@ -40,36 +40,26 @@ const GROUP := &"telescope"
 ## rivedendolo giocare risultasse ancora sbagliato, è questa riga e nient'altro.
 const TRACK_RATE := 0.02
 
-## Il ronzio sintetizzato della montatura: un tono grave in loop (onda quadra), come il
-## borbottio della moka (3.3) e il ronzio della lampada (3.4). Nessun asset d'arte
-## (segnaposto, coerente con la memoria «asset provvisori»).
-const HUM_HZ := 70
-const SND_FRAMES := 4410            ## ~200 ms a 22050 Hz, in loop
-const SND_MIX_RATE := 22050
-const HUM_VOL_DB := -18.0
 
 @onready var _tube: Node3D = $Tube
-@onready var _hum: AudioStreamPlayer3D = $Hum
 
-## Vero mentre una sequenza di imaging è in corso: SOLO allora il tubo si muove e la
-## montatura ronza. Lo dice il bus, non la fase.
+## Vero mentre una sequenza di imaging è in corso: SOLO allora il tubo si muove. Lo dice
+## il bus, non la fase.
 var _tracking := false
 
 
 func _ready() -> void:
 	add_to_group(GROUP)
-	_install_hum_sound()
 
 	# Non `connect` in scena: il collegamento sta nel codice del nodo, così chi istanzia
-	# `dome.tscn` in `world/` non deve ricablare nulla. Stessa disciplina di
-	# `sequence_chime.gd`.
+	# `dome.tscn` in `world/` non deve ricablare nulla.
 	# LA SEQUENZA, non lo schermo della sequenza. `phase_started(&"imaging")` diceva
 	# «il pannello di configurazione è comparso»: il tubo si metteva a inseguire mentre
 	# il giocatore stava ancora scegliendo i frame. `sequence_started` arriva su START.
 	Events.sequence_started.connect(_on_sequence_started)
 	Events.sequence_ended.connect(_on_sequence_ended)
 
-	# Fermo e silenzioso finché una sequenza non parte: `_process` gira SOLO in
+	# Fermo finché una sequenza non parte: `_process` gira SOLO in
 	# tracking (lo accende `_on_phase_started`), così a riposo non c'è lavoro per frame.
 	set_process(false)
 
@@ -80,19 +70,16 @@ func _ready() -> void:
 func _on_sequence_started() -> void:
 	_tracking = true
 	set_process(true)
-	if _hum.stream != null and ToniSegnaposto.continui():
-		_hum.play()
 
 
 ## La sequenza è finita — conclusa, oppure smontata a metà dall'alba o da *rifai
 ## setup*. Prima della review dell'epica 3 questo nodo ascoltava `phase_finished`, che
-## nel secondo caso non arriva MAI: una posa interrotta lasciava il tubo a ruotare e la
-## montatura a ronzare per il resto della partita. Il tubo si ferma dov'è (nessun
+## nel secondo caso non arriva MAI: una posa interrotta lasciava il tubo a ruotare per il
+## resto della partita. Il tubo si ferma dov'è (nessun
 ## ritorno a casa: è un segnaposto, non una montatura vera che fa il parking).
 func _on_sequence_ended() -> void:
 	_tracking = false
 	set_process(false)
-	_hum.stop()
 
 
 ## L'inseguimento: il tubo ruota lentamente in azimut attorno al mount. Solo il tubo si
@@ -104,32 +91,6 @@ func _process(delta: float) -> void:
 	if not _tracking:
 		return
 	_tube.global_rotate(Vector3.UP, TRACK_RATE * delta)
-
-
-## Costruisce lo stream del ronzio in codice: nessun asset esterno (provvisorio,
-## coerente con la memoria sugli asset e col beep del terminale). Un'onda quadra grave
-## in loop — il motore della montatura che insegue, non una nota. Gemello di
-## `Moka._install_brew_sound` e `Lamp._install_hum_sound`.
-func _install_hum_sound() -> void:
-	var wav := AudioStreamWAV.new()
-	wav.format = AudioStreamWAV.FORMAT_8_BITS
-	wav.mix_rate = SND_MIX_RATE
-	wav.stereo = false
-	# In loop: il ronzio dura quanto l'imaging, il campione ne dura una frazione.
-	wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
-	wav.loop_begin = 0
-	wav.loop_end = SND_FRAMES
-	var data := PackedByteArray()
-	data.resize(SND_FRAMES)
-	var period := SND_MIX_RATE / HUM_HZ        # onda quadra grave
-	for i in SND_FRAMES:
-		var high := (i % period) < (period / 2)
-		var amp := 55.0
-		var v := int(amp) if high else int(-amp)
-		data[i] = (v + 256) % 256              # 8-bit signed → byte
-	wav.data = data
-	_hum.stream = wav
-	_hum.volume_db = HUM_VOL_DB
 
 
 ## Il telescopio della scena, o `null` se non ce n'è. Stessa firma di `Moka.find_in`.

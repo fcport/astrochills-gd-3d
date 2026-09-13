@@ -15,11 +15,10 @@
 ## Gli articoli non implementati restano nei `.tres` ma il filtro
 ## `ItemCatalog.for_category()` li tiene fuori.
 ##
-## E AL MOMENTO NON VENDE NIENTE, che è la stessa regola portata fino in fondo. Gli
-## unici due implementati erano la moka e la lampadina; i loro oggetti sono usciti dal
-## mondo perché erano scatole segnaposto (D-183), quindi non esistono più «là fuori» e
-## non si vendono. Un negozio vuoto è un buco visibile e va riempito; un negozio che
-## vende cose che non compaiono è un buco invisibile, che è peggio.
+## OGGI VENDE SOLO LA MOKA, ed è la stessa regola portata fino in fondo: è l'unico
+## articolo il cui oggetto esiste nel mondo. La lampadina è uscita dal gioco insieme
+## alla lampada (D-236). Un negozio che vende cose che non compaiono è un buco
+## invisibile, peggio di un negozio corto.
 ##
 ## LA SPESA PASSA DA `Game`, COME LA SOMMA. `wallet_now()` è la sola somma; comprare è
 ## `Game.can_afford()` + `Game.spend_lire()`. Questo Control NON scala lire da sé, NON
@@ -34,8 +33,7 @@
 ## descrizioni prodotto (`blurb`) sono in ITALIANO, dietro il tasto descrizione. L'esito
 ## «fondi insufficienti» è diegetico e in inglese sul vetro (UX-DR10): nessun modale.
 ##
-## Disegnato per 256x192, fosforo verde su nero, come le altre viste del CRT. Beep sui
-## movimenti del cursore, sintetizzato in codice (nessun asset d'arte — provvisorio).
+## Disegnato per 256x192, fosforo verde su nero, come le altre viste del CRT.
 extends Control
 
 ## Il giocatore esce dal terminale col tasto back/quit. Signal DIRETTO — l'ascoltatore
@@ -60,7 +58,6 @@ const CATEGORIES := [
 ]
 
 var _font: SystemFont
-var _beep: AudioStreamPlayer
 
 ## La lista PIATTA degli articoli in vendita, in ordine di categoria — è ciò su cui
 ## scorre il cursore. Ogni voce è un `ItemData` implementato; l'intestazione di
@@ -82,7 +79,6 @@ func _ready() -> void:
 	size = DESIGN_SIZE
 	_font = SystemFont.new()
 	_font.font_names = PackedStringArray(["Consolas", "Courier New", "monospace"])
-	_install_beep()
 	_load_rows()
 
 
@@ -96,37 +92,6 @@ func arm() -> void:
 	_message = ""
 	_load_rows()
 	queue_redraw()
-
-
-## Costruisce lo stream di beep in codice: nessun asset esterno (provvisorio, coerente
-## con la memoria sugli asset). Un'onda quadra breve a bassa frequenza — il clic secco
-## di un terminale, non una nota.
-func _install_beep() -> void:
-	_beep = AudioStreamPlayer.new()
-	var wav := AudioStreamWAV.new()
-	wav.format = AudioStreamWAV.FORMAT_8_BITS
-	wav.mix_rate = 22050
-	wav.stereo = false
-	var frames := 900               # ~40 ms
-	var data := PackedByteArray()
-	data.resize(frames)
-	var period := 22050 / 660       # ~660 Hz, onda quadra
-	for i in frames:
-		# Inviluppo lineare in caduta: evita il click di troncamento a fine sample.
-		var env := 1.0 - float(i) / float(frames)
-		var high := (i % period) < (period / 2)
-		var amp := 90.0 * env
-		var v := int(amp) if high else int(-amp)
-		data[i] = (v + 256) % 256   # 8-bit signed → byte
-	wav.data = data
-	_beep.stream = wav
-	_beep.volume_db = -6.0
-	add_child(_beep)
-
-
-func _play_beep() -> void:
-	if _beep != null:
-		_beep.play()
 
 
 ## Legge il catalogo e ricostruisce la lista piatta degli articoli in vendita.
@@ -189,7 +154,6 @@ func _move_cursor(delta: int) -> void:
 		return
 	_cursor = (_cursor + delta + _rows.size()) % _rows.size()
 	_message = ""
-	_play_beep()
 	queue_redraw()
 
 
@@ -232,7 +196,6 @@ func _try_buy() -> void:
 		return
 	Events.item_purchased.emit(item.id)
 	_message = "PURCHASED"
-	_play_beep()
 	Log.info("terminal", "acquistato %s per %d lire" % [item.id, item.price])
 	queue_redraw()
 
@@ -297,7 +260,7 @@ func _draw_catalog() -> void:
 	if not _message.is_empty():
 		_text(Vector2(9, 168), _message, SEL, 12)
 
-	_text(Vector2(9, 182), "up/down  enter buy  tab desc  esc quit", DIM, 10)
+	_text(Vector2(9, 182), "w/s  enter buy  tab desc  esc quit", DIM, 10)
 
 
 func _draw_desc() -> void:

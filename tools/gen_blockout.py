@@ -21,7 +21,7 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        H_APPLIQUE, NOME_LOCALE, LUCE_MONITOR, SEMPRE_ACCESE,
                        H_INTERRUTTORE, L_PLACCA, A_PLACCA, SP_PLACCA,
                        ATTIVITA_CUPOLA, CUPOLA, SALA_TELESCOPIO,
-                       AR_RIPOSO_GRADI, DEC_RIPOSO_GRADI, LATITUDINE, MOKA,
+                       AR_RIPOSO_GRADI, DEC_RIPOSO_GRADI, LATITUDINE, MOKA, QUADERNO,
                        CASSA_MONITOR, VETRO_MONITOR, SEDILE_MONITOR,
                        BOMBATURA_MONITOR, FRANCO_VETRO,
                        PULSANTIERA_STAFFA, PULSANTIERA_TASTI,
@@ -186,7 +186,6 @@ def tscn():
              '[ext_resource type="PackedScene" path="res://crt/crt_screen.tscn" id="26_vetro"]',
              '[ext_resource type="Script" path="res://world/dome_shutter.gd" id="27_cupola"]',
              '[ext_resource type="Script" path="res://world/interactables/macchina.gd" id="28_auto"]',
-             '[ext_resource type="PackedScene" path="res://world/sequence_chime.tscn" id="31_chime"]',
              '[ext_resource type="Script" path="res://world/indoors_volume.gd" id="32_dentro"]',
              '[ext_resource type="Script" path="res://world/dome_activity.gd" id="33_attivita"]',
              '[ext_resource type="Shader" path="res://world/shaders/cielo.gdshader" id="37_cielo"]',
@@ -215,6 +214,8 @@ def tscn():
              '[ext_resource type="Script" path="res://world/corazza.gd" id="55_corazza"]',
              '[ext_resource type="Script" path="res://world/interactables/oculare.gd" '
              'id="56_oculare"]',
+             '[ext_resource type="Script" path="res://world/interactables/quaderno.gd" id="61_quaderno"]',
+             '[ext_resource type="PackedScene" path="res://assets/models/quaderno.glb" id="62_modquaderno"]',
              '']
     dims = sorted(set((round(b[3], 3), round(b[4], 3), round(b[5], 3)) for b in blocchi)
                   | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
@@ -634,6 +635,13 @@ def tscn():
               # prima; un'antenna che compenetra uno stipite e' meno falsa.
               '[sub_resource type="BoxShape3D" id="s_radio"]',
               'size = Vector3(0.220, 0.115, 0.090)', '',
+              # IL QUADERNO: diciotto per ventuno, cioe' il quaderno chiuso con un
+              # centimetro di margine, e ALTO QUATTRO invece dei due e mezzo veri.
+              # Il centimetro e mezzo in piu' e' il bersaglio: una cosa piatta su un
+              # piano si mira di taglio, e a filo della copertina il raggio del
+              # giocatore trova il legno della consolle prima del quaderno.
+              '[sub_resource type="BoxShape3D" id="s_quaderno"]',
+              'size = Vector3(0.180, 0.040, 0.210)', '',
               # IL COPIONE DELLA POSTAZIONE STA SULLA RADICE, ed e' l'unico script
               # di questa scena che non sia un interagibile: sedersi non e' una
               # proprieta' del monitor, e' una sequenza fra il monitor, il corpo del
@@ -1768,15 +1776,25 @@ def tscn():
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
               % STAMPANTE,
               'script = ExtResource("61_stampante")', '',
-              # Il campanello di fine sequenza sta al monitor, come nel vecchio
-              # mondo: la sua taratura - unit_size, max_distance - e' fatta su
-              # QUELLA distanza, e spostarlo vorrebbe dire rifarla a orecchio.
-              '[node name="SequenceChime" parent="." instance=ExtResource("31_chime")]',
-              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, 1.100, %.3f)'
-              % (CASSA_MONITOR[0], CASSA_MONITOR[2]), '',
-              # Dentro o fuori. Serve al campanello, che senza non sa distinguere
-              # «in cupola» da «sul prato»: in Compatibility i muri non occludono,
-              # e la sola distanza metteva il prato piu' vicino della cupola.
+              # IL QUADERNO DELLE PROCEDURE, sulla consolle a sinistra del
+              # monitor (D-233). Dove sta lo dice la consolle: `QUADERNO` in
+              # `geometria.py` e' derivato dal mobile e dalla sedia, e porta i
+              # gradi in pianta come quarto numero. Qui prima stava il campanello
+              # di fine sequenza, uscito con i suoni segnaposto (D-235).
+              '[node name="Quaderno" type="StaticBody3D" parent="."]',
+              'transform = Transform3D(%.5f, 0, %.5f, 0, 1, 0, %.5f, 0, %.5f, %.3f, %.3f, %.3f)'
+              % (_m.cos(_m.radians(QUADERNO[3])), -_m.sin(_m.radians(QUADERNO[3])),
+                 _m.sin(_m.radians(QUADERNO[3])), _m.cos(_m.radians(QUADERNO[3])),
+                 QUADERNO[0], QUADERNO[1], QUADERNO[2]),
+              'script = ExtResource("61_quaderno")',
+              'prompt_text = "Leggi il quaderno"', '',
+              '[node name="Modello" parent="Quaderno" instance=ExtResource("62_modquaderno")]', '',
+              '[node name="Col" type="CollisionShape3D" parent="Quaderno"]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.020, 0)',
+              'shape = SubResource("s_quaderno")', '',
+              # Dentro o fuori. Serviva al campanello di fine sequenza, che se n'e'
+              # andato con i suoni segnaposto (D-235); il volume resta, perche' i
+              # suoni veri si faranno la stessa domanda.
               # LA COLLISIONE VERA, per le cose che si posano. I blocchi qui
               # sopra sono giusti per il corpo del giocatore e sbagliati per un
               # termos: la cima di una fila di sedie e' aria. Questo nodo prende
@@ -1794,9 +1812,7 @@ def tscn():
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
               % ((_DX0 + _DX1) / 2, H / 2, (_DZ0 + _DZ1) / 2),
               'shape = SubResource("s_dentro_est")', '',
-              # «Stare a guardare»: misura e basta, nessun feedback. Il cigolio che
-              # si porta dietro e' un tono continuo, quindi tace finche' non ci
-              # saranno campioni veri (world/toni_segnaposto.gd).
+              # «Stare a guardare»: misura e basta, nessun feedback.
               '[node name="AttivitaCupola" type="Area3D" parent="."]',
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
               % (CX, ATTIVITA_CUPOLA[1] / 2, CZ),
@@ -1804,7 +1820,6 @@ def tscn():
               '[node name="Collision" type="CollisionShape3D" parent="AttivitaCupola"]',
               'shape = SubResource("s_attivita")', '',
               '[node name="Dwell" type="Timer" parent="AttivitaCupola"]', '',
-              '[node name="Creak" type="AudioStreamPlayer3D" parent="AttivitaCupola"]', '',
               # L'OCCHIO CHE SI FA IL BUIO (idea di Federico). Il perche' e il come
               # stanno in `world/dark_adaptation.gd`; qui c'e' la stanza in cui vale e
               # l'elenco delle lampade che lo annullano.
@@ -2450,6 +2465,7 @@ _attesi = [("ambient_light_energy = 0.035", "la luce ambientale della notte"),
            ('script = ExtResource("60_pianeti")', "i pianeti che seguono il calendario"),
            ("shader_parameter/pianeta_luce", "i pianeti nel cielo"),
            ('instance=ExtResource("58_moka")', "la moka sul bancone della cucina"),
+           ('script = ExtResource("61_quaderno")', "il quaderno delle procedure accanto al monitor"),
            ('script = ExtResource("38_lucecielo")', "la luce del cielo in cupola"),
            # Senza l'elenco delle lampade l'adattamento al buio non si spegne quando
            # si accende la luce rossa, e il patto - «lo hai perche' stai al buio» -

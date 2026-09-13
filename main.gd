@@ -27,7 +27,7 @@
 ##   1. `player.set_enabled(false)` — il controllo si toglie PRIMA di muovere
 ##      qualunque cosa;
 ##   2. `desk.toggle()` — il corpo si aggancia al `Marker3D` e la camera
-##      interpola, mezzo secondo, con il FOV che si stringe a 42°;
+##      interpola, mezzo secondo, con il FOV che si stringe a 33°;
 ##   3. su `seated` — e solo lì — lo schermo comincia a ricevere input.
 ## All'uscita l'inverso, e il controller torna acceso solo su `left`.
 ##
@@ -39,11 +39,10 @@
 ## camera. È una decisione della code review della 1.2: non disfarla.
 ##
 ## IL CONTROLLO È DI UNO SOLO ALLA VOLTA, e non è una scelta di comodo.
-## `W`, `A`, `S`, `D` e `ENTER` sono legati sia al movimento sia alle due viti
-## della fase polare: con entrambi attivi, camminare girerebbe le viti. Le azioni
-## polari non si possono rinominare, perché `phases/polar/phase_polar.gd` le
-## nomina e la prova dell'AC2 della storia 1.1 richiede che quel file non cambi.
-## Quindi comanda uno solo alla volta: si entra nella fase interagendo col
+## `W`, `A`, `S`, `D` sono legati sia al movimento sia ai comandi di tutte le fasi al
+## PC (D-234; prima erano le frecce, e con WASD c'erano solo le viti della fase
+## polare): con entrambi attivi, camminare muoverebbe il telescopio. Quindi comanda
+## uno solo alla volta: si entra nella fase interagendo col
 ## monitor, e il controller del giocatore si spegne.
 ##
 ## SEDUTO NON È FINITO, e sono due stati diversi che prima coincidevano. `ENTER`

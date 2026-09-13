@@ -36,8 +36,9 @@ extends CoolingTruthSource
 
 ## In quanti secondi la differenza dalla temperatura di equilibrio si riduce a un
 ## terzo. Piccolo: la notte dura un'ora vera, e un raffreddamento realistico da
-## quindici minuti sarebbe un quarto d'ora di niente.
-@export var time_constant: float = 8.0
+## quindici minuti sarebbe un quarto d'ora di niente. Il default è quello del `.tres`:
+## un default diverso dal dato vero è una seconda risposta alla stessa domanda.
+@export var time_constant: float = 6.0
 
 ## Di quanto ondeggia la temperatura quando la cella è satura, in gradi.
 ##
@@ -56,12 +57,6 @@ extends CoolingTruthSource
 
 ## Quanto vale un ondeggio completo, in secondi.
 @export var wobble_period: float = 26.0
-
-## Sopra questa frazione di potenza la cella è in saturazione.
-##
-## Non 1,0: un regolatore che vive al novantacinque per cento non ha già più
-## margine, e la temperatura comincia a scappare prima di arrivare al fondo scala.
-@export var saturation: float = 0.92
 
 
 ## Con la cella spenta, il sensore sta alla temperatura della cupola.
@@ -105,7 +100,3 @@ func duty(input: CoolingInput) -> float:
 	var chiesto := ambient - maxf(input.setpoint, floor_temperature())
 	return clampf(chiesto / maxf(max_drop, 0.001), 0.0, 1.0)
 
-
-## Se a queste condizioni la cella è al limite delle proprie forze.
-func is_saturated(input: CoolingInput) -> bool:
-	return input.setpoint < floor_temperature() or duty(input) >= saturation

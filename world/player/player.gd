@@ -160,11 +160,32 @@ const LATO_MANO := 0.22
 ## leggere in orbita e non muoverebbe le pesanti.
 const SPINTA := 2.5
 
+## IL LANCIO, in secondi di sinistro tenuto con qualcosa in mano. LA RICHIESTA, DA
+## FEDERICO: «tenendo premuto il pulsante sinistro si possa lanciare, una piccola
+## barra che fa vedere che stai caricando e solo se arrivi al massimo lanci».
+##
+## SOLO A BARRA PIENA, e mollando prima non parte niente: non c'è un lancio corto.
+## Se ci fosse, ogni click distratto con la moka in mano la farebbe cadere mezzo
+## metro più in là — e qui non c'è niente a cui mirare che valga quel rischio.
+##
+## PARTE QUANDO SI MOLLA, non quando la barra si riempie: fra le due Federico ha
+## scelto il rilascio. Piena, la barra resta piena quanto si vuole, e intanto si
+## prende la mira.
+##
+## Otto decimi: abbastanza per essere un gesto voluto, non tanto da diventare
+## un'attesa. La barra la disegna il mirino (`Crosshair.set_carica`).
+const TEMPO_CARICA := 0.8
+
+## Dove converge il lancio, in metri lungo lo sguardo. La mano sta in basso a destra
+## (`LATO_MANO`): tirando dritto, l'oggetto volerebbe per sempre ventidue centimetri
+## a destra del mirino. Puntato qui, parte dalla mano e va dove si guarda.
+const MIRA_LANCIO := 4.0
+
 ## Le azioni che questo controller legge. Servono a rilasciarle in blocco quando
 ## il controllo torna: vedi `set_enabled()`.
 const OWN_ACTIONS: Array[StringName] = [
 	&"move_forward", &"move_back", &"move_left", &"move_right", &"interact",
-	&"sprint", &"jump", &"crouch",
+	&"sprint", &"jump", &"crouch", &"lancia",
 ]
 
 ## Chi ha bisogno del giocatore lo trova per GRUPPO, mai per percorso di nodo né
@@ -246,6 +267,11 @@ var _in_mano: Carryable = null
 
 ## Se il giocatore è accovacciato adesso.
 var _accovacciato := false
+
+## Se il sinistro è giù per un lancio, e quanto è piena la barra, da 0 a 1. Vedi
+## `TEMPO_CARICA`.
+var _caricando := false
+var _carica := 0.0
 
 
 func _ready() -> void:
@@ -406,6 +432,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		if click.pressed and click.button_index == MOUSE_BUTTON_LEFT and _mouse_free:
 			_mouse_free = false
 			_capture_mouse()
+			# E NON CARICA: il click che ridà il controllo è quello, e basta. Senza
+			# il `return` chi riprende il mouse con la moka in mano e tiene il dito
+			# giù un attimo di troppo se la vedrebbe partire.
+			return
+		# IL LANCIO SI CARICA SOLO CON QUALCOSA IN MANO, e la barra la riempie
+		# `_aggiorna_carica()`. Parte quando il dito si alza, e solo a barra piena.
+		if event.is_action_pressed(&"lancia") and _is_controlling() and _in_mano != null:
+			_caricando = true
+		elif event.is_action_released(&"lancia"):
+			if _caricando and _carica >= 1.0 and _in_mano != null and _is_controlling():
+				_lancia()
+			else:
+				_smetti_di_caricare()
 		return
 
 	if event.is_action_pressed(&"ui_release_mouse"):
@@ -509,6 +548,7 @@ func _physics_process(delta: float) -> void:
 	# sempre, cioè fluttuando dietro la spalla mentre si cammina.
 	if _in_mano != null:
 		_in_mano.punta(_trasformata_mano())
+	_aggiorna_carica(delta)
 
 
 ## Porta capsula e occhio verso l'altezza voluta. `t` è quanto avvicinarsi in
@@ -713,6 +753,42 @@ func _prendi(oggetto: Carryable) -> void:
 ## una mano a una cosa che è per terra due stanze fa.
 func _su_oggetto_posato() -> void:
 	_in_mano = null
+	# E LA CARICA SI PERDE: posato con `E` o strappato da uno stipite a metà barra,
+	# il lancio non ha più niente da lanciare, e al prossimo oggetto la barra deve
+	# ripartire da zero.
+	_smetti_di_caricare()
+
+
+## Riempie la barra mentre il sinistro resta giù. Piena resta piena: a lanciare è
+## il rilascio, in `_unhandled_input`.
+##
+## SI GUARDA ANCHE IL CONTROLLO, ogni tick: liberando il cursore con il dito ancora
+## giù il rilascio non arriva mai a questo nodo, e la carica resterebbe appesa fino
+## al click dopo.
+func _aggiorna_carica(delta: float) -> void:
+	if not _caricando:
+		return
+	if _in_mano == null or not _is_controlling():
+		_smetti_di_caricare()
+		return
+	_carica = minf(_carica + delta / TEMPO_CARICA, 1.0)
+	_mirino.set_carica(_carica)
+
+
+func _smetti_di_caricare() -> void:
+	_caricando = false
+	_carica = 0.0
+	_mirino.set_carica(0.0)
+
+
+## Lancia quello che si ha in mano verso il punto `MIRA_LANCIO` lungo lo sguardo, con
+## la velocità del corpo addosso.
+func _lancia() -> void:
+	var oggetto := _in_mano
+	_smetti_di_caricare()
+	var testa := _cam.global_transform
+	var mira := testa.origin - testa.basis.z * MIRA_LANCIO
+	oggetto.lancia(mira - oggetto.global_position, velocity)
 
 
 ## Dove la mano vuole l'oggetto, adesso.

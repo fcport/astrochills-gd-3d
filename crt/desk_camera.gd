@@ -22,12 +22,11 @@ const RECENTER := 0.25
 
 ## Da seduti ci si guarda intorno, e la sedia gira.
 ##
-## PERCHÉ ESISTE. La cupola si comanda dal PC e si apre mentre tieni il dito sul
-## pulsante: chi vuole VEDERLA aprirsi non può alzarsi, perché alzandosi il motore
-## si ferma. Dalla postazione la cupola si vede — c'è una vetrata fra la sala di
-## controllo e la sala del telescopio — ma solo se si può alzare lo sguardo. Senza
-## questo, l'unica cosa che il giocatore vede della fase 1 è una barra che si
-## riempie.
+## PERCHÉ ESISTE. Dalla postazione la sala del telescopio si vede — c'è una vetrata
+## fra la sala di controllo e la cupola — ma solo se si può alzare lo sguardo: il tubo
+## che va sulla stella del SOLVE, e la fessura che gli gira dietro da sola. È nato
+## quando la cupola si apriva dal PC; adesso si apre e si chiude dalla pulsantiera in
+## cupola (D-188), ma la ragione per guardare in alto è rimasta.
 ##
 ## L'IMBARDATA VA SUL CORPO E IL BECCHEGGIO SULLA TESTA, come in piedi. E girare il
 ## corpo da seduti non sposta la testa di un millimetro: il marcatore del sedile è

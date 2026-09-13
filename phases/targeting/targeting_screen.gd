@@ -105,7 +105,7 @@ func _draw() -> void:
 	# detto, non c'è gara. E le due non ci stanno insieme: 31 caratteri più 30, a
 	# corpo 10, sfondano i 240 px del vetro.
 	if _commission.is_empty():
-		_text(Vector2(MARGIN, FOOTER_TOP), "UP/DOWN SELECT   ENTER CONFIRM", FAINT, 10)
+		_text(Vector2(MARGIN, FOOTER_TOP), "W/S SELECT   ENTER CONFIRM", FAINT, 10)
 	else:
 		_text(Vector2(MARGIN, FOOTER_TOP), _commission, FG, 10)
 

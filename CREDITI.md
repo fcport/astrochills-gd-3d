@@ -157,6 +157,22 @@ Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuz
 > by Schmoldt5000 (https://sketchfab.com/Schmoldt5000) licensed under CC-BY-4.0
 > (http://creativecommons.org/licenses/by/4.0/)
 
+**OKIDATA Microline 320 Turbo** — la stampante ad aghi della sala di controllo.
+Autore: [Remik.Papaj](https://sketchfab.com/Remik.Papaj).
+Fonte: <https://sketchfab.com/3d-models/okidata-microline-320-turbo-f7bf859023544e91ab622a8f18862ecf>
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> This work is based on "OKIDATA Microline 320 Turbo"
+> (https://sketchfab.com/3d-models/okidata-microline-320-turbo-f7bf859023544e91ab622a8f18862ecf)
+> by Remik.Papaj (https://sketchfab.com/Remik.Papaj) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
+È una macchina vera del 1990, nove aghi, e sostituisce le tre scatole che facevano
+la stampante a mano. Arriva con un materiale solo per quattordici mesh, dichiarato
+trasparente perché tre di quelle sono il coperchio acrilico: `opacizza_il_pieno()` in
+`tools/modellare.py` rimette piene le altre undici. Il modulo continuo non ce l'ha, e
+resta fatto a mano da `tools/arredi_blender.py`.
+
 ## Tutto il resto
 
 Gli altri modelli e tutte le texture sono **CC0**: nessuna attribuzione richiesta.

@@ -132,6 +132,12 @@ func key() -> StringName:
 	return &"imaging"
 
 
+## Sulla scheda del software di ripresa: «SEQ», la sequenza, come la chiamava MaxIm DL. La chiave intera non entra in
+## una scheda.
+func tab_label() -> String:
+	return "SEQ"
+
+
 ## Sta LAVORANDO solo da START in poi, e solo finché non ha finito. Prima di START
 ## la fase esiste e mostra il pannello di configurazione: è un momento interattivo, e
 ## `night/` lo usa per NON aprirci sopra i programmi del PC. Vedi `Phase.is_working()`.

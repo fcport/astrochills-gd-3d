@@ -19,6 +19,19 @@ func key() -> StringName:
 	return &""
 
 
+## L'etichetta corta di questa fase, sulla scheda del software di ripresa.
+##
+## È DELLA FASE e non di chi disegna la barra: l'orchestratore non può nominare le fasi
+## (ADR-002) e il CRT non sa che esistano, quindi l'unico posto che può dire «questa si
+## chiama SOLVE» è la fase stessa. Il default è la chiave in maiuscolo; le fasi con una
+## chiave troppo lunga per una scheda la accorciano.
+##
+## `phases/polar/phase_polar.gd` NON la sovrascrive: è la prova dell'AC2 della storia 1.1
+## che quel file non cambi di una riga, e il default gli basta.
+func tab_label() -> String:
+	return String(key()).to_upper()
+
+
 ## LA COMMESSA DI STANOTTE, GIÀ IN FORMA LEGGIBILE, dentro il `ctx`.
 ##
 ## PERCHÉ UNA STRINGA E NON IL DIZIONARIO. La commessa vive su `NightRun`, che le

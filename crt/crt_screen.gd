@@ -29,6 +29,9 @@ var _input_enabled := false
 ## Se vale la pena ridisegnare lo schermo. Vedi `set_live()`.
 var _live := false
 
+## Il desktop di Windows 98 che sta SEMPRE sul vetro. Vedi `crt/desktop/desktop.gd`.
+var _desktop: Desktop
+
 
 func _ready() -> void:
 	# LO STATO INIZIALE SI DICHIARA. Un CRT nasce muto e fermo: chi non è alla
@@ -85,46 +88,86 @@ func _ready() -> void:
 
 	mat.set_shader_parameter("bulge", glass_bulge)
 
+	# IL DESKTOP SI MONTA QUI, e il vetro non è più mai vuoto. Prende la misura del
+	# viewport, che è 352x264 e non più 256x192: è la più piccola 4:3 in cui una finestra
+	# con barra del titolo e schede contiene un pannello da 256x192 intero, e in cui
+	# terminale e BBS stanno interi in finestra propria. Nessuna schermata del gioco è
+	# stata toccata per starci — si incorniciano, non si ridisegnano.
+	_desktop = Desktop.new()
+	_desktop.setup(DesktopTheme.new(), Vector2(_viewport.size))
+	_viewport.add_child(_desktop)
+
 	Events.screen_registered.emit(self)
 
 
-## Mostra un Control sullo schermo.
+## Mostra un Control sullo schermo: nella finestra di lavoro del desktop.
 ##
 ## REGOLA: il CRT non libera MAI ciò che mostra. Dopo reparent() il Control non
 ## è più figlio della fase, ma la proprietà resta sua — è la fase a liberarlo
 ## quando viene distrutta (NOTIFICATION_PREDELETE, vedi core/phase.gd). Un
 ## queue_free() qui distruggerebbe l'interfaccia di una fase che sta ancora
 ## girando in background.
+##
+## NON SVUOTA PIÙ IL VETRO. Fino al desktop questa funzione staccava tutti i figli del
+## viewport e ci metteva il nuovo arrivato: chiunque mostrasse qualcosa buttava via chi
+## c'era prima, la notte sfrattava il terminale e il terminale la notte. Adesso il vetro
+## ha sempre il desktop, e ciò che si mostra va nella finestra di lavoro — dove resta
+## anche se quella finestra è chiusa, e dove le altre finestre non lo toccano. La firma
+## è la stessa di prima di proposito: chi mostra, cioè l'orchestratore della notte, non
+## ha dovuto cambiare una chiamata.
 func show_control(c: Control) -> void:
-	for child in _viewport.get_children():
-		_viewport.remove_child(child)
-	if c == null:
+	if _desktop == null:
 		return
-	if c.get_parent() != null:
-		c.reparent(_viewport)
-	else:
-		_viewport.add_child(c)
-	# `set_anchors_AND_OFFSETS_preset`, non `set_anchors_preset`. Il secondo lascia
-	# `keep_offsets = true` e quindi PRESERVA il rect che il Control ha già: sposta
-	# le ancore e ricalcola gli offset perché nulla si muova. Funzionava per
-	# coincidenza, perché `polar_screen._ready()` si impone 256x192 a (0,0) e il
-	# viewport è 256x192. Il primo Control che arrivasse con un rect diverso
-	# resterebbe della sua misura dentro uno schermo di un'altra.
-	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	# UN FRAME ANCHE A SCHERMO FERMO. Da spento il render target è congelato
-	# sull'ultimo fotogramma (vedi `set_live()`), quindi ciò che arriva adesso
-	# non verrebbe disegnato da nessuno: si vedrebbe ancora la cosa di prima.
-	# Succede davvero all'alba — il riepilogo arriva mentre il giocatore è
-	# dall'altra parte della casa, cioè esattamente quando lo schermo è fermo — e
-	# comparirebbe solo dopo essersi seduti, perché `set_live(true)` è lì per
-	# un'altra ragione. `UPDATE_ONCE` disegna un frame e si rispegne da sé: è la
-	# stessa cosa che `set_live(false)` concede, e non riaccende niente.
-	if not _live:
+	_desktop.set_work_content(c)
+	_nudge()
+
+
+## UN FRAME ANCHE A SCHERMO FERMO. Da spento il render target è congelato
+## sull'ultimo fotogramma (vedi `set_live()`), quindi ciò che cambia adesso non
+## verrebbe disegnato da nessuno. Succede davvero all'alba — il riepilogo arriva mentre
+## il giocatore è dall'altra parte della casa — e comparirebbe solo dopo essersi
+## seduti. `UPDATE_ONCE` disegna un frame e si rispegne da sé.
+func _nudge() -> void:
+	if not _live and _viewport != null:
 		_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 
 func viewport_size() -> Vector2i:
 	return _viewport.size
+
+
+## Il desktop, per chi deve metterci icone e aprirci finestre: il punto d'ingresso. Chi
+## mostra soltanto — l'orchestratore della notte — continua a passare da `show_control()`.
+func desktop() -> Desktop:
+	return _desktop
+
+
+## Le schede della finestra di lavoro. È un dato generico, etichette e un indice: il CRT
+## non sa che siano fasi, come non sa cosa sia il Control che mostra.
+func set_work_tabs(labels: PackedStringArray, current: int) -> void:
+	if _desktop == null:
+		return
+	_desktop.set_work_tabs(labels, current)
+	_nudge()
+
+
+## Il puntatore sul vetro. Passa dal cancello di `set_input_enabled()` come la tastiera:
+## una regola che vale solo se chi chiama se la ricorda non è una regola. Vedi `push()`
+## per perché il mouse vero non entra nel viewport.
+func pointer_move(delta: Vector2) -> void:
+	if not _input_enabled or _desktop == null:
+		return
+	_desktop.pointer_move(delta)
+
+
+## La pressione passa solo a cancello aperto; il RILASCIO passa sempre, perché chi si
+## alza col tasto ancora giù non deve lasciare una finestra appesa al trascinamento.
+func pointer_button(pressed: bool) -> void:
+	if _desktop == null:
+		return
+	if pressed and not _input_enabled:
+		return
+	_desktop.pointer_button(pressed)
 
 
 ## Che cosa c'è sul vetro adesso, come immagine. SOLO PER LE SONDE.
@@ -183,13 +226,10 @@ func is_input_enabled() -> bool:
 ## si ridisegna niente, si guarda l'ultimo fotogramma. È ciò che l'AC5 della
 ## storia 1.3 chiede di vedere da lontano.
 ##
-## Da vuoto il render target non è nero: un `SubViewport` con
-## `transparent_bg = false` si pulisce con `default_clear_color`, che è
-## un'impostazione GLOBALE di progetto e vale 0,3 grigio. Attraverso lo shader
-## diventa il grigio-verde di un CRT acceso senza segnale — guardato e scelto il
-## 2026-08-22 (col nero lo shader sparisce e il vetro sembra un buco nella
-## scocca). Chi un giorno cambierà quel default per un'altra ragione cambierà
-## anche questo: vedi `deferred-work.md`.
+## Il vetro non è mai vuoto, da quando c'è il desktop: lo sfondo teal copre tutto il
+## viewport, e il `default_clear_color` di progetto non si vede più attraverso lo
+## shader. Chi un giorno togliesse il desktop ritroverebbe il grigio-verde di un CRT
+## acceso senza segnale — vedi `deferred-work.md`.
 func set_live(value: bool) -> void:
 	# Lo stato si ricorda PRIMA della guardia, come in `set_input_enabled()`: una
 	# chiamata arrivata prima di `_ready()` non deve essere persa in silenzio, e
@@ -231,12 +271,12 @@ func push(event: InputEvent) -> void:
 		return
 	# IL MOUSE NON PASSA, e non è una svista. Questo schermo è un quad nel mondo:
 	# le coordinate di un evento del mouse sono quelle della finestra, e non hanno
-	# nessuna relazione con i 256x192 del vetro. Inoltrarle darebbe a un Control
-	# futuro un puntatore che si muove a caso — che è peggio di non averne uno,
-	# perché sembra funzionare. A mappare il puntatore sarà il raycast sul mesh,
-	# che ADR-003 rinvia dichiaratamente: «l'upgrade tocca solo il routing
-	# dell'input, non il codice delle fasi», ed è questa riga il punto in cui
-	# toccherà. La tastiera invece è completa: focus e `ui_accept` funzionano.
+	# nessuna relazione con i pixel del vetro. Inoltrarle darebbe ai Control un
+	# puntatore che si muove a caso — peggio di non averne uno, perché sembra
+	# funzionare. Il puntatore esiste lo stesso, ma è VIRTUALE: `pointer_move()` gli
+	# somma lo spostamento del mouse, e il desktop decide cosa c'è sotto la freccia.
+	# È il routing dell'input che ADR-003 prevedeva di dover toccare, fatto senza il
+	# raycast (D-232). La tastiera invece è completa: focus e `ui_accept` funzionano.
 	if event is InputEventMouse:
 		return
 	_viewport.push_input(event)

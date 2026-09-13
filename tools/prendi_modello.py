@@ -331,6 +331,37 @@ A_MANO = {
         "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
         "Telefono da tavolo beige con la cornetta e il filo a spirale",
     ),
+    # LA STAMPANTE AD AGHI del mobile sotto la finestra nord. Quella fatta a mano
+    # (arredi_blender.mobile_e_stampante) e' una scatola con sopra una scatola piu'
+    # piccola, e da mezzo metro e' quello che sembra. Questa e' una MACCHINA VERA -
+    # Okidata Microline 320 Turbo, 9 aghi, uscita nel 1990 - col coperchio acrilico,
+    # la manopola del rullo e il pannello serigrafato PRINT QUALITY / CHARACTER
+    # PITCH: e' esattamente la stampante che nel 1999 sta attaccata al PC di
+    # acquisizione, perche' un'osservazione la si vuole su carta e la carta a moduli
+    # continui non si inceppa da sola di notte.
+    #
+    # E' LARGA 36 CM, NON 54. La ML320 e' una carrozza da 9 pollici: 360 x 275 x 106
+    # mm. L'impronta a mano ne dichiarava 54 di larghezza, e posa_modello scala sulla
+    # PIANTA - passargliela cosi' com'e' fa una stampante taglia e mezzo piu' grande
+    # del vero. La misura giusta la mette arredi_blender.
+    #
+    # IL MODULO CONTINUO NON CE L'HA, e resta fatto a mano: il modello e' la macchina
+    # sola, senza il foglio che esce dal trattore e ricade a fisarmonica dietro il
+    # mobile. E' la stessa regola del pulsante del quadro elettrico - si modella il
+    # pezzo che il modello scaricato non ha.
+    "stampante_aghi": (
+        ("stampante_aghi.zip", "okidata_microline_320_turbo.zip"),
+        "https://sketchfab.com/3d-models/okidata-microline-320-turbo-f7bf859023544e91ab622a8f18862ecf",
+        "Remik.Papaj", "CC-BY-4.0",
+        'This work is based on "OKIDATA Microline 320 Turbo" '
+        "(https://sketchfab.com/3d-models/okidata-microline-320-turbo-f7bf859023544e91ab622a8f18862ecf) "
+        "by Remik.Papaj (https://sketchfab.com/Remik.Papaj) licensed under "
+        "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "Stampante ad aghi beige da ufficio, 1.528 triangoli e texture PBR sporche."
+        " L'alternativa CC-BY scaricabile era una Heathkit anni Settanta senza"
+        " coperchio ne' trattore, e il tributo alla OKI 320 low poly e' CC BY-NC:"
+        " non si puo' usare.",
+    ),
     # I FALDONI. Sopra lo schedario della sala di controllo c'e' una PILA DI TRE
     # SCATOLE di materiale "Carta" (vedi arredi_blender.schedario), e da un metro
     # sono tre scatole: un faldone non e' un parallelepipedo - ha la costa

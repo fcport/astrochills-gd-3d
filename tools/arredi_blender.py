@@ -33,9 +33,9 @@ for _m in ("geometria", "modellare"):
 from geometria import (ARREDI_PC, BOMBATURA_MONITOR, CASSA_MONITOR,   # noqa: E402
                        VETRO_MONITOR, verifica_arredi, V_SILL)
 from modellare import (barra, bm_di, cavo, cilindro, cilindro_orizz, esporta,   # noqa: E402
-                       faldone, finisci, lampada, materiale, posa_modello,
-                       prepara_render, prisma, pulisci, scatola, scatola_inclinata,
-                       verifica_impronte)
+                       faldone, finisci, lampada, materiale, opacizza_il_pieno,
+                       posa_modello, prepara_render, prisma, pulisci, scatola,
+                       scatola_inclinata, verifica_impronte)
 
 RADICE = os.path.dirname(QUI)
 USCITA = os.path.join(RADICE, "assets", "models", "controllo_pc.glb")
@@ -68,6 +68,12 @@ POSTAZIONE = os.path.join(RADICE, "assets", "models", "esterni",
 TASTIERA, MOUSE = "Object_4", "Object_9"
 TELEFONO = os.path.join(RADICE, "assets", "models", "esterni",
                         "telefono_ufficio", "scene.gltf")
+# LA STAMPANTE AD AGHI viene da fuori: Okidata Microline 320 Turbo, Sketchfab,
+# CC-BY (vedi CREDITI.md). Quattordici mesh, un materiale solo e nessun nome utile
+# - si chiamano tutte `defaultMaterial.NNN` - ma qui non serve distinguerle: della
+# stampante si posa tutto, non ce n'e' un pezzo che il gioco debba muovere.
+STAMPANTE = os.path.join(RADICE, "assets", "models", "esterni",
+                         "stampante_aghi", "scene.gltf")
 # La carta e la cancelleria, CC0 da Poly Haven. Qui i nomi SOPRAVVIVONO all'import,
 # perche' chi ha fatto il set ha dato lo stesso nome alla mesh e al nodo: si possono
 # chiedere i pezzi per nome invece che riconoscerli dalla forma.
@@ -503,14 +509,43 @@ def mobile_e_stampante():
         scatola("LegnoUfficio", a, b, 0.10, alt - 0.04, z1, z1 + 0.015)
         scatola("Metallo", b - 0.08, b - 0.04, (0.10 + alt) / 2 - 0.01,
                 (0.10 + alt) / 2 + 0.01, z1 + 0.012, z1 + 0.035)
-    # stampante ad aghi, con il modulo continuo che esce e ricade
-    sx0, sx1 = x0 + 0.18, x0 + 0.72
-    scatola("Plastica", sx0, sx1, alt, alt + 0.13, z0 + 0.05, z1 - 0.04)
-    scatola("Plastica", sx0 + 0.04, sx1 - 0.04, alt + 0.13, alt + 0.17, z0 + 0.10, z0 + 0.22)
-    scatola("Schermo", sx1 - 0.16, sx1 - 0.05, alt + 0.128, alt + 0.135, z0 + 0.30, z0 + 0.36)
-    for k in range(5):                                                  # il foglio a fisarmonica
-        scatola("Carta", sx0 + 0.06, sx1 - 0.06, alt + 0.17 - k * 0.006,
-                alt + 0.175 - k * 0.006, z1 - 0.06 - k * 0.035, z1 - 0.02 - k * 0.035)
+    # LA STAMPANTE E' UNA MACCHINA VERA, e prima erano tre scatole: la cassa, il
+    # trattore sopra e una fessura di "Schermo" per il display. Da mezzo metro erano
+    # tre scatole. Questa e' una Okidata Microline 320 Turbo - nove aghi, 1990 - col
+    # coperchio acrilico, la manopola del rullo e il pannello serigrafato: e' la
+    # stampante che nel 1999 sta attaccata al PC di acquisizione, e le osservazioni
+    # si vogliono su carta.
+    #
+    # SI SCALA SULLA PIANTA E NON SULL'ALTEZZA. La ML320 e' una carrozza da NOVE
+    # POLLICI, trentasei centimetri, e l'impronta fatta a mano ne dichiarava
+    # cinquantaquattro: passata cosi', posa_modello avrebbe fatto una stampante
+    # taglia e mezza piu' grande del ferro vero. Fra il limite dell'altezza e quello
+    # della pianta lui prende il piu' stretto, quindi l'altezza qui e' larga apposta
+    # e a comandare e' la misura giusta.
+    #
+    # IL FRONTE GUARDA LA STANZA, E LA PRIMA VOLTA GUARDAVA IL MURO. Il modello nasce
+    # col pannello verso -X di Blender e la carrozza lungo Y, e a -90 gradi il
+    # pannello finiva contro la finestra nord: la targhetta OKIDATA e i tasti li
+    # vedeva solo il muro, e di qua restava il retro con la feritoia del trattore.
+    # A +90 la carrozza si stende lungo il mobile e la macchina guarda chi entra.
+    # Il verso non si deduce, si guarda: e' il render controllo-pc-stampante.png.
+    sx0, sx1 = x0 + 0.18, x0 + 0.54                      # 36 cm: la carrozza vera
+    sz0, sz1 = z0 + 0.05, z0 + 0.38                      # 33 cm di profondita'
+    pezzi = posa_modello(STAMPANTE, (sx0, sz0, sx1, sz1, 0.30), gradi=90.0,
+                         appoggio=alt)
+    # SOLO IL COPERCHIO E' DI PLASTICA TRASPARENTE, e il file lo dice per tutti:
+    # senza questa riga la stampante e' una scatola di ghiaccio. Vedi opacizza_il_pieno.
+    _pieni, _vetro = opacizza_il_pieno(pezzi)
+    print("  stampante: %d mesh riportate piene, %d lasciate trasparenti"
+          % (_pieni, _vetro))
+    cima = max((o.matrix_world @ Vector(c)).z
+               for o in pezzi if o.type == "MESH" for c in o.bound_box)
+    # IL MODULO CONTINUO RESTA FATTO A MANO, perche' il modello e' la macchina sola:
+    # la carta a fisarmonica gli entra da dietro col trattore e riesce di sopra, ed
+    # e' il pezzo che dice che la stampante sta lavorando invece di stare li'.
+    for k in range(5):
+        scatola("Carta", sx0 + 0.06, sx1 - 0.06, cima - k * 0.006,
+                cima + 0.005 - k * 0.006, sz1 - 0.02 - k * 0.035, sz1 + 0.02 - k * 0.035)
     # pila di stampati sull'altro lato
     for k in range(4):
         scatola("Carta", x1 - 0.42, x1 - 0.10, alt + k * 0.012, alt + 0.010 + k * 0.012,
@@ -690,3 +725,6 @@ scatta("controllo-pc-seduti.png", (6.35, 1.22, 1.58), (3.20, 2.15, 2.20), lente=
 # i raccoglitori sopra lo schedario: da mezzo metro, che e' la distanza a cui il
 # difetto vecchio - tre scatole color carta impilate - si vedeva per quello che era
 scatta("controllo-pc-schedario.png", (7.05, 1.78, 2.95), (7.88, 1.40, 2.00), lente=45.0)
+# la stampante sul mobile, da un metro: e' la distanza a cui si vede se la carrozza
+# e' larga come quella vera e se il pannello guarda la stanza invece del muro
+scatta("controllo-pc-stampante.png", (6.95, 1.30, 1.35), (6.46, 0.93, 0.32), lente=40.0)

@@ -54,6 +54,12 @@ func key() -> StringName:
 	return &"targeting"
 
 
+## Sulla scheda del software di ripresa: «TARGET», la scelta del soggetto. La chiave intera non entra in
+## una scheda.
+func tab_label() -> String:
+	return "TARGET"
+
+
 ## Chiamato dall'orchestratore PRIMA di entrare nell'albero. Si tiene la notte:
 ## `run.elapsed_min` è la sorgente dell'ora, e `run.selected_target_id` è la casa
 ## persistente della scelta.

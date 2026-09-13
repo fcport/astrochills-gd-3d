@@ -92,6 +92,12 @@ func key() -> StringName:
 	return &"cooling"
 
 
+## Sulla scheda del software di ripresa: «COOL», il raffreddamento della camera. La chiave intera non entra in
+## una scheda.
+func tab_label() -> String:
+	return "COOL"
+
+
 func _ready() -> void:
 	if truth == null:
 		# Canale 1: errore di programma. L'orchestratore salta la fase invece di

@@ -107,6 +107,26 @@ const RENDER_TUNING_PATH := "res://debug/render_tuning.gd"
 const LIE_INJECTOR_PATH := "res://debug/lie_injector.gd"
 const TIME_CONTROL_PATH := "res://debug/time_control.gd"
 
+## IL DESKTOP DEL PC. Le icone sono dati di questo file e non del desktop, che non sa
+## cosa ci sia dietro: l'id torna indietro in `icon_activated`, e qui si decide cosa
+## aprire. Il titolo della finestra di lavoro sta qui per la stessa ragione — il CRT non
+## sa che quel programma si chiami MaxIm DL.
+const WORK_TITLE := "MaxIm DL"
+const ICONS := [
+	[Desktop.WORK_ID, "MaxIm DL", "telescope"],
+	[&"terminal", "Terminal", "terminal"],
+	[&"bbs", "BBS", "modem"],
+	[&"photos", "Photos", "folder"],
+]
+
+## Quanto corre il puntatore sul vetro rispetto al mouse. Più piano della testa: lì si
+## gira uno sguardo, qui si attraversa uno schermo largo 352 px, e con la stessa cifra la
+## freccia sbatterebbe da un bordo all'altro con un colpo di polso.
+const POINTER_SPEED := 0.55
+
+## Parla al giocatore, quindi è italiana (NFR10 riserva l'inglese alle macchine).
+const LOOK_HINT := "Tieni premuto ALT per muovere la visuale liberamente"
+
 @onready var _container: SubViewportContainer = %WorldViewport
 @onready var _world: SubViewport = %SubViewport
 
@@ -164,6 +184,14 @@ var _bbs: Control
 ## dei due è aperto, così due Control non si contendono il viewport (Design Notes).
 var _bbs_open := false
 
+## L'elenco delle foto della notte, quando la finestra «Photos» è aperta. Le righe si
+## rifanno a ogni apertura: le foto cambiano durante la notte.
+var _photos: DesktopList
+
+## La riga che dice come guardarsi attorno da seduti. Vive nel viewport del mondo come il
+## prompt d'interazione, e ne ha la stessa resa.
+var _look_hint: CanvasLayer
+
 
 func _ready() -> void:
 	Log.info("main", "avvio — renderer %s" % RenderingServer.get_video_adapter_api_version())
@@ -194,6 +222,7 @@ func _ready() -> void:
 	Events.sequence_ended.connect(_on_sequence_ended)
 	_setup_terminal()
 	_setup_bbs()
+	_setup_look_hint()
 	if OS.is_debug_build():
 		_install_debug_tools()
 	# LA NOTTE COMINCIA PER ULTIMA, a mondo montato: l'orchestratore mostra
@@ -231,6 +260,7 @@ func _connect_monitor() -> void:
 	# finirebbe sepolta sotto le sue stesse conseguenze.
 	monitor.interacted.connect(_on_monitor_interacted)
 	_monitor = monitor
+	_setup_desktop()
 
 
 ## Monta l'orchestratore e gli consegna lo schermo.
@@ -266,6 +296,9 @@ func _begin_night() -> void:
 	_night = night
 	add_child(_night)
 	_night.plan_exhausted.connect(_on_plan_exhausted)
+	# Il desktop nasce con la finestra di lavoro chiusa: la notte deve saperlo prima di
+	# montare la prima fase, o quella ascolterebbe i tasti da dietro un vetro vuoto.
+	_night.set_screen_focused(_crt.desktop().is_work_focused())
 	_start_new_night()
 
 
@@ -298,6 +331,11 @@ func _start_new_night() -> void:
 		_bbs.deactivate()
 	_bbs_open = false
 	_park_bbs()
+	# LA NOTTE NUOVA COMINCIA DAL DESKTOP: le finestre della notte prima si chiudono, e
+	# il programma di lavoro lo si riapre sedendosi. Il suo contenuto non si tocca — lo
+	# rimpiazza l'orchestratore mostrando la prima fase.
+	_close_photos()
+	_crt.desktop().hide_work()
 	Game.start_night()
 	_night.begin()
 	_refresh_affordances()
@@ -512,21 +550,30 @@ func _toggle_terminal() -> void:
 	if _terminal_open:
 		_close_terminal()
 		return
+	_open_terminal()
+
+
+## Apre il terminale in una finestra sua, o lo porta davanti se è già aperto. È ciò che
+## fanno l'icona del desktop e il tasto `terminal_open`.
+##
+## GATED SU `is_waiting()` come prima: mai sopra una fase interattiva o la vendita.
+##
+## LA MUTUA ESCLUSIONE CON LA BBS NON C'È PIÙ, e la ragione per cui c'era è sparita col
+## desktop: esisteva perché «due Control non si contendano il viewport», e adesso il
+## viewport ha un desktop e ognuno ha la sua finestra. I tasti vanno solo a quella col
+## fuoco (`DesktopWindow.set_input_focus`), che è la stessa garanzia detta meglio.
+func _open_terminal() -> void:
 	if _terminal == null or _crt == null or _night == null:
 		return
-	# MUTUA ESCLUSIONE con la BBS (3.7): il terminale si apre solo se la BBS è chiusa, così
-	# due Control non si contendono il viewport. Il simmetrico è in `_toggle_bbs`.
-	if _bbs_open:
+	if _terminal_open:
+		_crt.desktop().focus(_crt.desktop().window(&"terminal"))
 		return
 	if not _night.is_waiting():
-		# Non si è in attesa (una fase interattiva è a schermo): il tasto non apre nulla.
 		return
-	# Riacceso all'apertura: parcheggiato era `DISABLED` e nascosto. `show_control` lo
-	# reparenta nel viewport del CRT; da seduti lo schermo è già vivo e con l'input
-	# aperto, quindi l'`_unhandled_input` del terminale riceve gli eventi inoltrati.
+	# Riacceso all'apertura: parcheggiato era `DISABLED` e nascosto.
 	_terminal.show()
 	_terminal.process_mode = Node.PROCESS_MODE_INHERIT
-	_crt.show_control(_terminal)
+	_crt.desktop().open_window(&"terminal", "Terminal", _terminal, Phosphor.BG)
 	_terminal.arm()
 	_terminal_open = true
 
@@ -559,6 +606,10 @@ func _close_terminal() -> void:
 func _park_terminal() -> void:
 	if _terminal == null:
 		return
+	# LA FINESTRA SI CHIUDE PRIMA: `close_window` stacca il terminale senza liberarlo, e da
+	# lì lo si riporta sotto questo nodo come quando lo staccava `show_control`.
+	if _crt != null and _crt.desktop() != null:
+		_crt.desktop().close_window(&"terminal")
 	var parent := _terminal.get_parent()
 	if parent == self:
 		pass
@@ -598,18 +649,22 @@ func _toggle_bbs() -> void:
 	if _bbs_open:
 		_close_bbs()
 		return
+	_open_bbs()
+
+
+## Apre la BBS in una finestra sua, o la porta davanti. Gemella di `_open_terminal`, con
+## la stessa guardia sull'attesa e senza più la mutua esclusione.
+func _open_bbs() -> void:
 	if _bbs == null or _crt == null or _night == null:
 		return
-	if _terminal_open:
-		# Il terminale è aperto: la BBS non si apre (mutua esclusione). Si finisce col
-		# terminale prima.
+	if _bbs_open:
+		_crt.desktop().focus(_crt.desktop().window(&"bbs"))
 		return
 	if not _night.is_waiting():
-		# Non si è in attesa (una fase interattiva è a schermo): il tasto non apre nulla.
 		return
 	_bbs.show()
 	_bbs.process_mode = Node.PROCESS_MODE_INHERIT
-	_crt.show_control(_bbs)
+	_crt.desktop().open_window(&"bbs", "BBS", _bbs, Phosphor.BG)
 	_bbs.arm()
 	# `activate()` DOPO `arm()`: `arm` mette a punto la vista (e avvia l'handshake),
 	# `activate` è il fatto misurato — emette `wait_activity_started(&"forum")`.
@@ -646,6 +701,9 @@ func _close_bbs() -> void:
 func _park_bbs() -> void:
 	if _bbs == null:
 		return
+	# La finestra si chiude prima, come per il terminale.
+	if _crt != null and _crt.desktop() != null:
+		_crt.desktop().close_window(&"bbs")
 	var parent := _bbs.get_parent()
 	if parent == self:
 		pass
@@ -748,7 +806,12 @@ func _on_monitor_interacted(_by: Node3D) -> void:
 ## il giocatore sta raggiungendo mostra il presente e non un fermo immagine.
 ## Ciò che NON passa è `ENTER`, che la concluderebbe.
 func _input(event: InputEvent) -> void:
-	if _desk == null or not _desk.is_busy():
+	if _desk == null:
+		return
+	if (_desk.is_seated or _desk.is_busy()) and _pointer_input(event):
+		get_viewport().set_input_as_handled()
+		return
+	if not _desk.is_busy():
 		return
 	for action in InputMap.get_actions():
 		if event.is_action(action):
@@ -895,6 +958,9 @@ func _sit_down() -> void:
 func _stand_up() -> void:
 	if _desk == null or not _desk.is_seated:
 		return
+	_show_look_hint(false)
+	if _crt != null and _crt.desktop() != null:
+		_crt.desktop().cancel_drag()
 	if _crt != null:
 		_crt.set_input_enabled(false)
 	if _night != null:
@@ -927,12 +993,161 @@ func _on_seated() -> void:
 	# interpolazione finita, mai prima» (AC1).
 	if _crt != null:
 		_crt.set_input_enabled(true)
+	_show_look_hint(true)
 
 
 func _on_left() -> void:
 	# E il controller torna attivo solo a transizione conclusa, che è l'altra
 	# metà della stessa clausola.
 	_set_world_active(true)
+
+
+## IL MOUSE, DA SEDUTI, È DEL COMPUTER. Torna vero se l'evento è stato preso.
+##
+## `_input` e non `_unhandled_input`: `DeskCamera` gira la testa leggendo il movimento
+## dal suo `_unhandled_input`, e tutti gli `_input` dell'albero precedono qualunque
+## `_unhandled_input`. Consumando l'evento qui la testa sta ferma e la freccia sul vetro
+## si muove, senza che quel file sappia niente del desktop.
+##
+## CON ALT PREMUTO NON SI PRENDE NIENTE, e l'evento prosegue: la postazione fa il suo
+## mestiere di sempre. È visuale libera proprio perché è il comportamento originale
+## lasciato passare, non un secondo sistema che lo imita. Lasciato ALT si torna a
+## guardare il monitor.
+##
+## DURANTE LA TRANSIZIONE il movimento si ingoia senza muovere niente: è il mezzo secondo
+## in cui la mano è già sul mouse, e senza questa riga la visuale partirebbe per conto
+## suo prima ancora di arrivare seduti.
+func _pointer_input(event: InputEvent) -> bool:
+	if event.is_action_released(&"free_look"):
+		_desk.recenter()
+		return false
+	if Input.is_action_pressed(&"free_look"):
+		return false
+	var motion := event as InputEventMouseMotion
+	if motion != null:
+		if _desk.is_seated and _crt != null:
+			_crt.pointer_move(motion.relative * POINTER_SPEED)
+		return true
+	var button := event as InputEventMouseButton
+	if button != null and button.button_index == MOUSE_BUTTON_LEFT:
+		if _desk.is_seated and _crt != null:
+			_crt.pointer_button(button.pressed)
+		return true
+	return false
+
+
+## Configura il desktop del PC: il titolo del programma di lavoro, le icone, l'orologio
+## della tray, e chi risponde a icone e finestre. Una volta, a monitor trovato.
+func _setup_desktop() -> void:
+	var d := _crt.desktop()
+	if d == null:
+		push_error("[main] il CRT non ha un desktop")
+		return
+	d.set_work_title(WORK_TITLE)
+	d.icons = ICONS.duplicate(true)
+	# L'ora VERA della notte: il desktop sa chiedere che ore sono, non che esista una notte.
+	d.clock_source = func() -> String:
+		if _night == null or _night.clock() == null:
+			return ""
+		return _night.clock().clock_text()
+	d.icon_activated.connect(_on_icon_activated)
+	d.window_close_requested.connect(_on_window_close_requested)
+	d.work_focus_changed.connect(_on_work_focus_changed)
+	d.queue_redraw()
+
+
+## Un'icona è stata aperta. Quella del programma di lavoro la gestisce il desktop da sé.
+func _on_icon_activated(id: StringName) -> void:
+	match id:
+		&"terminal":
+			_open_terminal()
+		&"bbs":
+			_open_bbs()
+		&"photos":
+			_open_photos()
+
+
+## La X di una finestra. Il desktop non la chiude da sé: il contenuto è di questo file, e
+## lo riprende chi lo possiede — con gli stessi percorsi del tasto d'uscita.
+func _on_window_close_requested(id: StringName) -> void:
+	match id:
+		&"terminal":
+			_close_terminal()
+		&"bbs":
+			_close_bbs()
+		&"photos":
+			_close_photos()
+
+
+func _on_work_focus_changed(focused: bool) -> void:
+	if _night != null:
+		_night.set_screen_focused(focused)
+
+
+## Le foto della notte in una finestra. Si leggono da `Game.run.photos`, che è il registro
+## vero: nessun file inventato, e una notte senza scatti dice che non ce ne sono.
+func _open_photos() -> void:
+	if _crt == null or _crt.desktop() == null:
+		return
+	var d := _crt.desktop()
+	if _photos == null:
+		_photos = DesktopList.new()
+		_photos.setup(d.look, Vector2(232, 124))
+	_photos.set_rows(_photo_rows(), "no photos yet")
+	_photos.show()
+	d.open_window(&"photos", "Photos", _photos)
+
+
+## Chiude «Photos» e si riprende l'elenco, come il terminale: staccato dalla finestra non è
+## figlio di nessuno, e orfano non verrebbe liberato all'uscita.
+func _close_photos() -> void:
+	if _crt != null and _crt.desktop() != null:
+		_crt.desktop().close_window(&"photos")
+	if _photos != null and _photos.get_parent() == null:
+		add_child(_photos)
+		_photos.hide()
+
+
+func _photo_rows() -> Array:
+	var rows: Array = []
+	if Game.run == null:
+		return rows
+	for record: Dictionary in Game.run.photos:
+		var target := String(record.get(Photo.KEY_TARGET, "")).to_lower()
+		var n := int(record.get(Photo.KEY_ID, 0)) + 1
+		rows.append([
+			"%s_%03d.fit" % [target if target != "" else "img", n],
+			"Q %d" % int(record.get(Photo.KEY_QUALITY, 0)),
+			"%dx%ds" % [int(record.get(Photo.KEY_FRAMES, 0)), int(record.get(Photo.KEY_EXPOSURE, 0))],
+		])
+	return rows
+
+
+## La riga che dice come guardarsi attorno. Stessa resa del prompt d'interazione — font,
+## corpo, ombra — e stesso viewport, così ha la grana della stanza e non sembra
+## un'interfaccia moderna appiccicata sopra.
+func _setup_look_hint() -> void:
+	_look_hint = CanvasLayer.new()
+	_look_hint.name = "LookHint"
+	var label := Label.new()
+	var font := SystemFont.new()
+	font.font_names = PackedStringArray(["Consolas", "Courier New", "monospace"])
+	label.add_theme_font_override("font", font)
+	label.add_theme_font_size_override("font_size", InteractionPrompt.FONT_SIZE)
+	label.add_theme_color_override("font_color", InteractionPrompt.FG)
+	label.add_theme_color_override("font_shadow_color", InteractionPrompt.SHADOW)
+	label.add_theme_constant_override("shadow_offset_x", 1)
+	label.add_theme_constant_override("shadow_offset_y", 1)
+	label.text = LOOK_HINT
+	_look_hint.add_child(label)
+	label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_MINSIZE, 8)
+	_world.add_child(_look_hint)
+	_look_hint.visible = false
+
+
+func _show_look_hint(on: bool) -> void:
+	if _look_hint != null:
+		_look_hint.visible = on
 
 
 ## Gli strumenti di debug non esistono in release: `OS.is_debug_build()` è falso e

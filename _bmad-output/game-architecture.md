@@ -487,6 +487,14 @@ raycast → UV → evento sintetico, e senza gestire hover, drag e focus a mano.
 dell'input**, non il codice delle fasi — che parlano `Control` e non sanno da dove arrivi
 il click.
 
+**Aggiornamento (D-232) — il puntatore virtuale, senza raycast.** Il routing è stato
+toccato, e come previsto solo lui. Sul vetro c'è un desktop di Windows 98; il mouse vero
+continua a non entrare nel `SubViewport`, e da seduti `main.gd` ne passa lo SPOSTAMENTO a
+`CrtScreen.pointer_move()`, che muove una freccia disegnata dal desktop. Il raycast è stato
+scartato e non solo rinviato: il vetro è curvo nello shader e bombato nella mesh, e le UV
+geometriche non stanno dove l'occhio le vede. Da seduti il mouse è del computer; ALT tenuto
+premuto restituisce la testa. Le fasi non sono cambiate.
+
 ---
 
 ## Cross-cutting Concerns

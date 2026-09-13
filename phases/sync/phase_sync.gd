@@ -84,6 +84,12 @@ func key() -> StringName:
 	return &"sync"
 
 
+## Sulla scheda del software di ripresa: «SOLVE», il plate solving. La chiave intera non entra in
+## una scheda.
+func tab_label() -> String:
+	return "SOLVE"
+
+
 func setup(run: NightRun, _ctx: Dictionary) -> void:
 	_run = run
 

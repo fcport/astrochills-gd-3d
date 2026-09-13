@@ -106,6 +106,12 @@ func key() -> StringName:
 	return &"startup"
 
 
+## Sulla scheda del software di ripresa: «BOOT», l'avvio del PC. La chiave intera non entra in
+## una scheda.
+func tab_label() -> String:
+	return "BOOT"
+
+
 func _ready() -> void:
 	if truth == null:
 		# Canale 1: errore di programma. L'orchestratore salta la fase invece di

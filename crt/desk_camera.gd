@@ -16,6 +16,9 @@ signal left()
 
 const TRANSITION := 0.5
 const SEATED_FOV := 33.0
+## Quanto dura il ritorno al monitor dopo essersi guardati attorno. Un quarto di secondo:
+## abbastanza da leggersi come un gesto, poco da non far aspettare.
+const RECENTER := 0.25
 
 ## Da seduti ci si guarda intorno, e la sedia gira.
 ##
@@ -52,6 +55,9 @@ var _seat: Marker3D
 var _standing_xform: Transform3D
 var _standing_fov: float
 var _standing_pitch: float
+## La posa della seduta, quella che `_sit()` calcola. Serve a `recenter()`.
+var _seated_xform: Transform3D
+var _seated_pitch := 0.0
 var _busy := false
 
 
@@ -112,6 +118,20 @@ func is_busy() -> bool:
 	return _busy
 
 
+## Riporta lo sguardo al monitor dopo essersi guardati attorno.
+##
+## DA SEDUTI IL MOUSE HA DUE PADRONI: di norma muove il puntatore sul vetro, e con ALT
+## tenuto premuto gira la testa (lo smista `main.gd`). Lasciato ALT si torna al computer
+## — e se la testa restasse girata, il mouse muoverebbe una freccia su un vetro che non
+## si vede. Si torna alla posa della seduta, la stessa che `_sit()` ha calcolato.
+func recenter() -> void:
+	if not is_seated or _busy or _player == null or _cam == null:
+		return
+	var t := create_tween().set_parallel().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	t.tween_property(_player, "global_transform", _seated_xform, RECENTER)
+	t.tween_property(_cam, "rotation:x", _seated_pitch, RECENTER)
+
+
 func _sit() -> void:
 	_busy = true
 	_standing_xform = _player.global_transform
@@ -164,6 +184,8 @@ func _sit() -> void:
 	# ALZANDOSI SI TORNA COM'ERA DA SÉ: `_standing_fov` è salvato qui sotto prima
 	# della transizione e rimesso da `_leave()`. Non c'è un secondo numero da
 	# tenere allineato a questo.
+	_seated_xform = target
+	_seated_pitch = euler.x
 	var t := create_tween().set_parallel().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 	t.tween_property(_player, "global_transform", target, TRANSITION)
 	t.tween_property(_cam, "rotation:x", euler.x, TRANSITION)
@@ -189,6 +211,10 @@ func _sit() -> void:
 
 
 ## Il mouse gira la testa, da seduti come in piedi.
+##
+## DA SEDUTI SOLO CON ALT: senza, `main.gd` consuma il movimento in `_input` e lo
+## manda al puntatore sul vetro, e qui non arriva niente. Questo file non lo sa e non
+## deve saperlo — riceve quello che gli arriva.
 ##
 ## `_unhandled_input` e non `_input`: gli schermi del CRT — il terminale, la BBS,
 ## le fasi — devono poter prendere quello che è loro prima che questo nodo ci metta

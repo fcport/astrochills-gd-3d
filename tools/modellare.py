@@ -916,6 +916,90 @@ def _collega_texture_vicine(percorso, oggetti):
                 nt.links.new(bsdf.inputs[ingresso], t.outputs["Color"])
 
 
+def _immagine_di(m, socket):
+    """L'immagine attaccata a un ingresso del Principled, se c'e'."""
+    if not m.use_nodes or m.node_tree is None:
+        return None
+    b = next((n for n in m.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None)
+    if b is None or socket not in b.inputs or not b.inputs[socket].is_linked:
+        return None
+    return getattr(b.inputs[socket].links[0].from_node, "image", None)
+
+
+def _copia_piena(m):
+    """La stessa superficie, senza trasparenza: l'alpha staccato e messo a uno."""
+    c = m.copy()
+    c.name = m.name + "Pieno"
+    for attributo, valore in (("surface_render_method", "DITHERED"),
+                              ("blend_method", "OPAQUE")):
+        if hasattr(c, attributo):
+            setattr(c, attributo, valore)
+    b = next((n for n in c.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None)
+    if b is not None:
+        for legame in list(b.inputs["Alpha"].links):
+            c.node_tree.links.remove(legame)
+        b.inputs["Alpha"].default_value = 1.0
+    return c
+
+
+def opacizza_il_pieno(posati, soglia=0.90, lato=256):
+    """Spegne la trasparenza sulle mesh di un modello importato che non ne hanno.
+
+    IL DIFETTO, VISTO NEL PRIMO RENDER: la stampante ad aghi era una scatola di
+    GHIACCIO - si vedeva il mobile attraverso la cassa, e dentro il fianco le facce
+    di dietro - e nessun controllo lo diceva, perche' non e' una misura sbagliata:
+    e' il materiale che arriva cosi'.
+
+    LA CAUSA, MISURATA: quel modello ha UN SOLO materiale per quattordici mesh e lo
+    dichiara `alphaMode: BLEND`, perche' tre di quelle mesh sono il coperchio
+    acrilico. Con il blend acceso per tutte, le undici piene vengono disegnate
+    ordinate alla buona e con le facce interne visibili - il materiale e' anche
+    `doubleSided` - e il beige diventa vetro.
+
+    LA DIVISIONE SI CHIEDE ALLA TEXTURE, NON AI NOMI, che in quel file sono tutti
+    `defaultMaterial.NNN` e non dicono niente. Per ogni mesh si campiona l'alpha
+    della baseColor sui suoi UV: misurate, le tre del coperchio stanno fra 0,53 e
+    0,69 e le altre undici fra 0,96 e 1,00 - in mezzo non c'e' nessuna, e la soglia
+    cade nel vuoto fra i due gruppi. Sopra passa a una copia opaca del materiale,
+    sotto resta quello che l'autore ha dichiarato.
+
+    Vale per qualunque modello di archivio con un materiale solo e una parte
+    trasparente: e' il caso normale su Sketchfab, non l'eccezione.
+    """
+    campioni, copie = {}, {}
+    pieni = vetro = 0
+    for o in [x for x in posati if x.type == "MESH" and x.data is not None]:
+        if not o.material_slots or o.material_slots[0].material is None:
+            continue
+        m = o.material_slots[0].material
+        trasparente = (getattr(m, "blend_method", "OPAQUE") != "OPAQUE"
+                       or getattr(m, "surface_render_method", "DITHERED") == "BLENDED")
+        img = _immagine_di(m, "Base Color")
+        uv = o.data.uv_layers.active
+        if not trasparente or img is None or uv is None or not len(uv.data):
+            continue
+        if img.name not in campioni:
+            ridotta = img.copy()
+            ridotta.scale(lato, lato)
+            campioni[img.name] = list(ridotta.pixels)
+            bpy.data.images.remove(ridotta)
+        px = campioni[img.name]
+        valori = []
+        for i in range(0, len(uv.data), max(1, len(uv.data) // 64)):
+            u, v = uv.data[i].uv
+            x = min(lato - 1, max(0, int((u % 1.0) * lato)))
+            y = min(lato - 1, max(0, int((v % 1.0) * lato)))
+            valori.append(px[(y * lato + x) * 4 + 3])
+        if sum(valori) / len(valori) < soglia:
+            vetro += 1
+            continue
+        if m.name not in copie:
+            copie[m.name] = _copia_piena(m)
+        o.material_slots[0].material = copie[m.name]
+        pieni += 1
+    return pieni, vetro
+
+
 def posa_modello(percorso, impronta, gradi=0.0, riempi=1.0, appoggio=0.0,
                  appeso=False, tieni=None, piede=False):
     """Importa un modello esterno e lo POSA DENTRO la sua impronta.

@@ -126,6 +126,10 @@ func _ready() -> void:
 	print("")
 	_check_pianeti()
 	print("")
+	_check_work_tabs()
+	print("")
+	_check_desktop_window()
+	print("")
 	print("=== fine ===")
 	get_tree().quit()
 
@@ -2226,6 +2230,7 @@ func _report_luna(label: String, anno: int, mese: int, giorno: int,
 		% [label, e[&"fase"], atteso, scarto, scarto / 12.19 * 1440.0,
 			"" if scarto < 0.5 else "   <-- ATTESO: sotto mezzo grado, cioe' sotto l'ora"])
 
+
 ## I PIANETI: il Sole calcolato due volte, l'almanacco del 1999 e la regola che
 ## decide chi si vede.
 ##
@@ -2325,3 +2330,91 @@ func _report_opposizione(label: String, nome: StringName, anno: int, mese: int,
 		% [label, meglio, scarto * 24.0, "" if absf(scarto) < 1.5
 			else "   <-- ATTESO: dentro il giorno e mezzo"])
 
+
+## Le schede del software di ripresa (D-232): quale casella del piano è in corso, e le
+## etichette che le fasi danno di sé.
+##
+## L'INDICE È UNA SOTTRAZIONE, e proprio per questo si collauda: l'orchestratore avanza
+## l'indice nel momento in cui prende la scena, e un «meno uno» dimenticato evidenzia la
+## scheda dopo quella giusta — un difetto che a occhio sembra un ritardo e non un errore.
+##
+## LE ETICHETTE NON SI ELENCANO QUI, e non per pigrizia: un elenco copiato invecchierebbe
+## al primo upgrade che toglie una fase dal `.tres`. Si collauda ciò che deve valere per
+## qualunque piano — ci stanno in una scheda, non sono vuote, non si ripetono.
+func _check_work_tabs() -> void:
+	print("--- schede della finestra di lavoro ---")
+	var casi := [
+		[true, 1, 0, 4, 0, "prima fase di setup"],
+		[true, 4, 0, 4, 3, "ultima fase di setup"],
+		[false, 4, 1, 4, 4, "prima fase di foto"],
+		[false, 4, 4, 4, 7, "ultima fase di foto"],
+	]
+	for c in casi:
+		var got := NightPlan.tab_index(c[0], c[1], c[2], c[3])
+		print("   %-22s -> %d%s" % [c[5], got, "" if got == c[4] else "   <-- ATTESO: %d" % c[4]])
+
+	var plan := load("res://data/night_plan.tres") as NightPlan
+	if plan == null:
+		print("   piano assente  <-- ATTESO: data/night_plan.tres")
+		return
+	var labels := PackedStringArray()
+	for scene in plan.setup_phases + plan.photo_phases:
+		var node: Node = scene.instantiate()
+		var phase := node as Phase
+		labels.append(phase.tab_label() if phase != null else "?")
+		node.free()
+	var storte := PackedStringArray()
+	var viste := {}
+	for l in labels:
+		if l == "" or l == "?" or l.length() > 6 or viste.has(l):
+			storte.append(l)
+		viste[l] = true
+	print("   etichette del piano: %s%s" % [" ".join(labels),
+			"" if storte.is_empty() else "   <-- ATTESO: non vuote, al massimo 6 lettere, uniche; storte: %s" % " ".join(storte)])
+
+
+## Le misure del desktop (D-232). Sono conti, non resa: che si LEGGA si guarda con
+## `tools/prova_desktop.tscn`. Qui si collauda che le cose CI STIANO — un pannello da
+## 256x192 dentro la finestra di lavoro con le schede, e quella finestra dentro il vetro.
+func _check_desktop_window() -> void:
+	print("--- finestre del desktop ---")
+	var look := DesktopTheme.new()
+
+	var w := DesktopWindow.new()
+	w.setup(look, "Terminal", Vector2(264, 218), &"terminal")
+	var c := w.client_rect().size
+	print("   area utile di una finestra 264x218: %s%s" % [c,
+			"" if c == Vector2(256, 192) else "   <-- ATTESO: (256, 192)"])
+	var sovrapposti := w.rect_close().intersects(w.rect_maximize()) \
+			or w.rect_maximize().intersects(w.rect_minimize())
+	var dentro := Rect2(Vector2.ZERO, w.size).encloses(w.rect_minimize())
+	print("   i tre pulsanti non si toccano e stanno dentro: %s%s" % [not sovrapposti and dentro,
+			"" if not sovrapposti and dentro else "   <-- ATTESO: true"])
+	w.free()
+
+	var work := DesktopWindow.new()
+	work.setup(look, "MaxIm DL", Desktop.WORK_SIZE, Desktop.WORK_ID)
+	work.tabs = PackedStringArray(["DOME", "BOOT", "COOL", "SOLVE", "TARGET", "GOTO", "FOCUS", "SEQ"])
+	var wc := work.client_rect().size
+	print("   finestra di lavoro %s, area utile %s%s" % [Desktop.WORK_SIZE, wc,
+			"" if wc.x >= 256.0 and wc.y >= 192.0 else "   <-- ATTESO: almeno (256, 192)"])
+	var ultima := work.rect_tab(work.tabs.size() - 1)
+	var stanno := ultima.end.x <= work.size.x - DesktopWindow.BORDER + 0.5
+	print("   otto schede nella larghezza: %s%s" % [stanno, "" if stanno else "   <-- ATTESO: true"])
+	# Il ritorno da massimizzata torna ALLA MISURA DI PRIMA. Non è ovvio: un Control non
+	# scende sotto il suo `custom_minimum_size`, e con l'ordine sbagliato tornava largo
+	# quanto il vetro.
+	var prima := work.size
+	work.toggle_maximize(Rect2(0, 0, 352, 236))
+	var grande := work.size
+	work.toggle_maximize(Rect2(0, 0, 352, 236))
+	var torna := work.size == prima and grande == Vector2(352, 236)
+	print("   massimizza e ritorno: %s -> %s -> %s%s" % [prima, grande, work.size,
+			"" if torna else "   <-- ATTESO: (352, 236) e poi di nuovo %s" % prima])
+	work.free()
+
+	var d := Desktop.new()
+	d.setup(look, Vector2(352, 264))
+	var entra := d.work_area().encloses(Rect2(Desktop.WORK_POS, Desktop.WORK_SIZE))
+	print("   finestra di lavoro dentro il vetro 352x264: %s%s" % [entra, "" if entra else "   <-- ATTESO: true"])
+	d.free()

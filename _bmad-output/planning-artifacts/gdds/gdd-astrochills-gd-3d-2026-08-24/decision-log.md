@@ -7442,6 +7442,51 @@ riga.
 **Nota di numerazione**: la voce precedente era uscita come D-102, che esisteva già (le
 porte). È stata rinumerata D-228.
 
+## D-230 La stampante ad aghi diventa una macchina vera, e il verso non si deduce: si guarda
+
+La stampante della sala di controllo erano **tre scatole**: la cassa, una scatola più
+piccola sopra per il trattore e una fessura di materiale «Schermo» al posto del display.
+Da mezzo metro erano tre scatole, che è lo stesso difetto del telefono e dei faldoni.
+
+**IL MODELLO È UNA MACCHINA CHE È ESISTITA**: Okidata Microline 320 Turbo, nove aghi,
+1990, da Sketchfab con licenza CC-BY (Remik.Papaj — il credito sta in `CREDITI.md`, che la
+licenza lo impone). Coperchio acrilico, manopola del rullo, pannello serigrafato PRINT
+QUALITY / CHARACTER PITCH e la targhetta: nel 1999 è la stampante attaccata al PC di
+acquisizione, perché un'osservazione la si vuole su carta. Fra le alternative scaricabili,
+la Heathkit CC-BY è di vent'anni prima e il tributo alla OKI 320 è CC BY-**NC**, cioè
+inutilizzabile qui.
+
+**SI SCALA SULLA PIANTA, NON SULL'ALTEZZA.** La ML320 è una carrozza da nove pollici —
+36 cm — e l'impronta scritta a mano ne dichiarava 54. `posa_modello()` fra il limite
+dell'altezza e quello della pianta prende il più stretto, quindi l'altezza dichiarata è
+larga apposta e a comandare è la misura del ferro vero. Passata com'era, sarebbe uscita una
+stampante taglia e mezza più grande del mobile che la regge.
+
+**IL FRONTE GUARDAVA IL MURO, E NESSUN CONTROLLO POTEVA DIRLO.** Girato di −90 gradi il
+pannello finiva contro la finestra nord: la targhetta e i tasti li vedeva solo l'intonaco, e
+alla stanza restava il retro con la feritoia del trattore. L'impronta era rispettata, le
+misure erano giuste, il render no. Il verso si è trovato rendendo i due lati lunghi e
+guardandoli; adesso c'è `controllo-pc-stampante.png`, da un metro, che è la distanza a cui
+la differenza si vede.
+
+**ERA UNA SCATOLA DI GHIACCIO, E LA CAUSA STA NEL FILE.** Il modello ha **un solo
+materiale per quattordici mesh**, dichiarato `alphaMode: BLEND` perché tre di quelle mesh
+sono il coperchio acrilico: con il blend acceso per tutte, le undici piene venivano
+disegnate ordinate alla buona e con le facce interne visibili (il materiale è anche
+`doubleSided`), e il beige diventava vetro — si vedeva il mobile attraverso la cassa.
+
+**LA DIVISIONE SI CHIEDE ALLA TEXTURE, NON AI NOMI**, che in quel file sono tutti
+`defaultMaterial.NNN`. Per ogni mesh `opacizza_il_pieno()` campiona l'alpha della baseColor
+sui suoi UV: misurate, le tre del coperchio stanno fra **0,53 e 0,69** e le altre undici fra
+**0,96 e 1,00** — in mezzo non c'è nessuna, e la soglia cade nel vuoto fra i due gruppi. È
+il caso normale dei modelli di archivio con una parte trasparente, non l'eccezione, e per
+questo la funzione sta in `modellare.py` e non accanto alla stampante.
+
+**IL MODULO CONTINUO RESTA FATTO A MANO**, perché il modello è la macchina sola: la carta a
+fisarmonica che le esce di sopra è il pezzo che dice che sta lavorando, ed è la stessa
+regola del pulsante del quadro elettrico — si modella solo quello che il modello
+scaricato non ha.
+
 ## D-231 In cielo ci sono i pianeti, e non si vedono mai tutti
 
 Federico: «vorrei che nel cielo mettessimo anche cose più base da vedere come i pianeti, ma
@@ -7534,3 +7579,81 @@ provino continua a dire «nessun guasto». Il nucleo non si è toccato apposta: 
 `pianeta_raggio` 0,5 i pianeti sono puntini veri (0,26°), ma torna il difetto di Saturno
 caduto male fra due pixel. La dimensione la fa l'alone, che è la parte che aggiunge
 l'occhio; il nucleo è quella che tiene il pianeta acceso.
+
+## D-232 Il PC dell'osservatorio ha Windows 98, e il vetro smette di avere un padrone solo
+
+Federico: «non mi piace il terminale come lo abbiamo adesso. Vorrei che fosse magari un
+Windows 98». Poi, provandolo: «quando entri al computer tu vedi direttamente Windows 98, e
+uno le cose se le apre di volta in volta».
+
+**Il realismo era dalla parte di Windows.** Il GDD dice che quel PC fa girare CCDOPS e
+MaxIm DL, che nel 1999 erano finestre grigie, non terminali MS-DOS. Il fosforo resta — ma
+DENTRO i programmi che parlano con le macchine; il chrome è di Windows. La regola è scritta
+in testa a `crt/desktop/desktop_theme.gd` in modo che si applichi da sola, e D-173 regge:
+il desktop lo si guarda due secondi, il software di ripresa venti minuti.
+
+**Il problema vero non era grafico: era chi comanda il vetro.** `CrtScreen.show_control()`
+svuotava il viewport e ci metteva il nuovo arrivato. L'orchestratore lo chiamava a ogni
+fase, main.gd lo chiamava per terminale e BBS, e ognuno buttava via l'altro — da qui la
+mutua esclusione, i parcheggi, `reshow_current()`. Una sonda che provava a mettere un
+desktop sopra la notte perdeva la gara a ogni cambio di fase. **La gara non si è vinta, si
+è tolta:** il vetro ha sempre un `Desktop`, e `show_control()` — stessa firma, nessun
+chiamante cambiato — mette il Control nella *finestra di lavoro*. Terminale e BBS aprono
+finestre loro. La tabella dei confini lo permetteva già: `crt/` «riceve un Control, non sa
+quale», e il desktop non sa cosa mostra più di quanto lo sapesse il CRT.
+
+**Il vetro passa da 256x192 a 352x264, e nessuna schermata è stata toccata.** Le dodici
+viste del gioco sono disegnate a coordinate fisse fino a y=182: «accettare la misura dal
+contenitore» non le avrebbe adattate, le avrebbe lasciate tagliate lo stesso. Il conto ha
+dato un'altra strada — 352x264 è la più piccola 4:3 in cui una finestra con barra del
+titolo e schede contiene un pannello da 256x192 intero, e in cui terminale e BBS stanno
+interi in finestra propria. Si incorniciano, non si ridisegnano. Il banco collauda che ci
+stiano.
+
+**Il FOV da seduti è 33.** Da 42 il software si leggeva stringendo gli occhi; 30, provato
+giocando, zoomava meglio ma lasciava fuori campo mezzo grado di bordo alto — che con una
+finestra massimizzata è esattamente la barra del titolo. Verificato con uno scatto.
+
+**Il puntatore è virtuale, e ADR-003 è aggiornato.** Il mouse vero non entra nel viewport
+(`push()` lo scarta, e continua a farlo): le sue coordinate sono quelle della finestra del
+gioco. Il raycast che ADR-003 rinviava avrebbe dato UV geometriche su un vetro curvo nello
+shader e bombato nella mesh — la freccia sarebbe finita accanto al punto guardato. La
+freccia invece somma lo spostamento del mouse, e sta dove la si porta. Da seduti il mouse è
+del computer; **ALT tenuto premuto** gira la testa, lasciato ALT lo sguardo torna al monitor
+(`DeskCamera.recenter()`). In basso lo dice una riga, con la resa del prompt d'interazione.
+
+**Sedersi non accende niente.** Tre versioni di sonda lo hanno sbagliato in tre modi: il
+desktop dietro un tasto (ci si sedeva e il mouse girava ancora la testa), il desktop che
+compariva sedendosi (da lontano il monitor mostrava un'altra cosa), il desktop con tre
+finestre già aperte (non si capiva cosa fosse). Il PC è acceso: Windows c'è da lontano come
+da vicino, e la finestra di lavoro **nasce chiusa** — MaxIm lo apre chi si siede.
+
+**Le fasi ascoltano solo a finestra davanti.** Con un solo vetro bastava essere seduti. Con
+le finestre ci si può sedere a guardare le foto con la fase sotto, e i tasti arriverebbero
+a un programma che non si vede. Adesso `NightSession` separa i due assi che già
+distingueva: GIRARE segue la postazione, ASCOLTARE vuole anche la finestra di lavoro col
+fuoco (`set_screen_focused`). Nei Control del viewport — menu, vendita, terminale, BBS — lo
+stesso lo fa la finestra, spegnendo gli `_unhandled_input` di chi non ha il fuoco.
+
+**Le schede di MaxIm seguono il piano, a sblocco.** Federico ha scelto la sequenza: la
+notte resta un ordine, e la barra lo mostra — fatte, in corso, ancora da fare. Le
+etichette le dà ogni fase con `tab_label()`, perché l'orchestratore non può nominarle
+(ADR-002) e il CRT non sa che esistano; `polar` non la sovrascrive, e non cambia di una
+riga. Le schede sono un indicatore, non una navigazione: dove rientrare nel piano lo decide
+ancora il menu post-foto. Una sonda aveva messo POLAR in quella barra, a memoria: la notte
+non la esegue. L'ordine ora viene dal `.tres`.
+
+**Scelte di Federico sul resto:** terminale e BBS restano programmi a sé con la loro icona
+(la finestra «Internet» della sonda non c'è più: MARKET era il terminale, FORUM la BBS);
+rivelazione, vendita e menu post-foto si aprono dentro MaxIm; la vendita resta a fine posa.
+La mutua esclusione fra terminale e BBS è caduta con la ragione che la teneva in piedi.
+Photos elenca `Game.run.photos`, cioè le foto vere della notte.
+
+**Tahoma e non MS Sans Serif,** misurato affiancando la stessa lista: a 10 px sul vetro le
+lettere di MS Sans Serif si toccano. Tahoma arrivava con Windows 98.
+
+**Aperto, e detto qui perché non si perda:** il monitor si usa solo se la notte ha qualcosa
+da fare (`_refresh_affordances`), quindi fra il piano esaurito e l'alba non ci si siede —
+e Photos e la BBS restano irraggiungibili proprio nell'attesa. È una scelta di design della
+2.x sull'attesa vuota, e cambiarla non è stato fatto di sbieco. Le liste non scorrono. Il
+terminale è ancora l'interfaccia MS-DOS dentro una finestra.

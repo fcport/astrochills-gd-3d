@@ -85,6 +85,23 @@ signal plan_exhausted()
 
 var _crt: CrtScreen
 
+## Le etichette delle schede della finestra di lavoro, una per casella del piano, e quale
+## è in corso. Si imparano in `configure()` chiedendole alle fasi stesse: in questo file
+## non compare il nome di nessuna fase, e la barra non fa eccezione.
+var _tab_labels := PackedStringArray()
+var _tab_current := -1
+
+## Se la finestra in cui la notte mostra le fasi ha il fuoco sul desktop del PC.
+##
+## ASCOLTARE HA ADESSO DUE CONDIZIONI. Prima bastava essere alla postazione: il vetro
+## mostrava una cosa sola ed era quella. Col desktop ci si può sedere e guardare le foto,
+## o la BBS, mentre la finestra della fase è chiusa o sotto — e i tasti arriverebbero a
+## un programma che non si vede. Quindi una fase ascolta se il giocatore è seduto E la
+## sua finestra ha il fuoco. GIRARE invece segue solo la postazione, come prima: un
+## programma dietro un altro continua a lavorare. `true` di default, così una notte
+## senza desktop — il banco, le sonde — si comporta esattamente come prima.
+var _screen_focused := true
+
 ## Lo schermo di riposo, creato la prima volta che serve e poi tenuto: il
 ## giocatore ci torna sopra a ogni fase senza pannello, e ricrearlo ogni volta
 ## vorrebbe dire un cursore che riparte sempre dallo stesso battito.
@@ -182,6 +199,8 @@ func configure(crt: CrtScreen) -> bool:
 		push_error("[night] configure() senza NightPlan: la notte non ha un piano")
 		return false
 	_crt = crt
+	_tab_labels = _labels_of(plan)
+	_mark_tab(-1)
 	return true
 
 
@@ -342,6 +361,39 @@ func clock() -> NightClock:
 	return _clock
 
 
+## La finestra in cui la notte mostra le fasi ha preso o perso il fuoco. Lo dice il punto
+## d'ingresso, che vede il desktop; qui si riapplica soltanto il gating dell'ascolto.
+func set_screen_focused(focused: bool) -> void:
+	_screen_focused = focused
+	set_player_present(_player_present)
+
+
+## Le etichette delle schede, lette dalle fasi del piano senza montarle.
+##
+## SI ISTANZIANO E SI LIBERANO SUBITO, fuori dall'albero: `tab_label()` legge solo la
+## chiave, e senza `_ready()` una fase non costruisce niente e non si collega a niente.
+## Una casella vuota del `.tres` vale «?» e non sparisce, perché l'indice della scheda
+## deve restare quello della casella.
+func _labels_of(p: NightPlan) -> PackedStringArray:
+	var out := PackedStringArray()
+	for scene in p.setup_phases + p.photo_phases:
+		var label := "?"
+		if scene != null:
+			var node: Node = scene.instantiate()
+			var phase := node as Phase
+			if phase != null:
+				label = phase.tab_label()
+			node.free()
+		out.append(label)
+	return out
+
+
+func _mark_tab(i: int) -> void:
+	_tab_current = i
+	if _crt != null:
+		_crt.set_work_tabs(_tab_labels, i)
+
+
 ## Se il giocatore è alla postazione.
 ##
 ## Lo legge l'overlay, passando dal punto d'ingresso: fino alla 2.1 una fase
@@ -397,8 +449,11 @@ func set_player_present(present: bool) -> void:
 	var s := _phase.screen()
 	var has_screen := s != null and is_instance_valid(s)
 
-	_phase.set_process_input(present)
-	_phase.set_process_unhandled_input(present)
+	# Ascoltare vuole la postazione E la finestra col fuoco; girare solo la postazione.
+	# Vedi `_screen_focused`.
+	var listening := present and _screen_focused
+	_phase.set_process_input(listening)
+	_phase.set_process_unhandled_input(listening)
 
 	if not present and _phase.runs_in_background():
 		return
@@ -535,6 +590,7 @@ func _enter_stacking() -> void:
 	_stacking.revealed.connect(
 		_enter_sale.bind(quality, int(record.get(Photo.KEY_ID))), CONNECT_DEFERRED)
 	_crt.show_control(_stacking)
+	_mark_tab(_tab_labels.size())
 	set_player_present(_player_present)
 
 	Log.info("night", "stack — foto %d registrata, qualità %d" % [record.get(Photo.KEY_ID), quality])
@@ -573,6 +629,7 @@ func _enter_sale(quality: int, photo_id: int) -> void:
 	# callback (NFR16).
 	_sale.dismissed.connect(_on_sale_dismissed, CONNECT_DEFERRED)
 	_crt.show_control(_sale)
+	_mark_tab(_tab_labels.size())
 	set_player_present(_player_present)
 
 	Log.info("night", "vendita — foto %d, base %d lire" % [photo_id, _sale_base])
@@ -661,6 +718,7 @@ func _enter_menu() -> void:
 	# Il modo si registra appena il Control esiste, prima che il gating lo sospenda.
 	_menu_mode = _menu.process_mode
 	_crt.show_control(_menu)
+	_mark_tab(_tab_labels.size())
 	# `chosen` → il rientro nel piano, DIFFERITO: nasce dentro l'input del menu, e i
 	# rami che liberano il menu non devono farlo dentro la sua stessa callback (NFR16).
 	_menu.chosen.connect(_on_menu_chosen, CONNECT_DEFERRED)
@@ -800,6 +858,7 @@ func _enter_phase(scene: PackedScene) -> void:
 	# screen() DOPO add_child: si risolve nel `_ready()` della fase, e
 	# `show_control()` fa un `reparent()`, che vuole il nodo già nell'albero.
 	_crt.show_control(scr)
+	_mark_tab(NightPlan.tab_index(_in_setup, _setup_index, _photo_index, plan.setup_phases.size()))
 	# La fase nasce ferma se il giocatore non è alla postazione.
 	set_player_present(_player_present)
 	Events.phase_started.emit(p.key())
@@ -1013,3 +1072,4 @@ func _show_summary() -> void:
 	# ieri. La somma vive in un posto solo, su `Game`.
 	_summary.set_readout(Game.run, _clock.clock_text(), Game.wallet_now())
 	_crt.show_control(_summary)
+	_mark_tab(-1)

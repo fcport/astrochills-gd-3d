@@ -70,8 +70,49 @@ static func righe_di(pagina: PaginaQuaderno, colonne: int = COLONNE) -> PackedSt
 	if not pagina.titolo.is_empty():
 		righe.append_array(a_capo(pagina.titolo.to_upper(), colonne))
 		righe.append("")
-	righe.append_array(a_capo(pagina.testo, colonne))
+	if not pagina.testo.is_empty():
+		righe.append_array(a_capo(pagina.testo, colonne))
 	return righe
+
+
+## Le righe della pagina `i` di questo quaderno: `righe_di()`, e per la pagina
+## dell'indice anche l'elenco che le pagine dopo scrivono da sé.
+func righe_pagina(i: int, colonne: int = COLONNE) -> PackedStringArray:
+	if i < 0 or i >= pagine.size() or pagine[i] == null:
+		return PackedStringArray()
+	var pagina := pagine[i]
+	var righe := righe_di(pagina, colonne)
+	if pagina.indice:
+		if not pagina.testo.is_empty():
+			righe.append("")
+		righe.append_array(righe_indice(i, colonne))
+	return righe
+
+
+## L'indice delle pagine che vengono DOPO la pagina `dopo` — quelle prima le si è già
+## lette per arrivarci. Una riga per ogni pagina con un titolo, con il numero che il
+## quaderno le stampa in fondo (`- n -`, da 1); le pagine senza titolo sono il seguito
+## di quella prima, e non si elencano.
+##
+## SI COMPONE, NON SI SCRIVE: scritto a mano, il primo testo che si allunga su due
+## pagine sposterebbe tutti i numeri, e l'indice mentirebbe in silenzio.
+func righe_indice(dopo: int, colonne: int = COLONNE) -> PackedStringArray:
+	var righe := PackedStringArray()
+	var cifre := str(pagine.size()).length()
+	for i in range(dopo + 1, pagine.size()):
+		var p := pagine[i]
+		if p != null and not p.indice and not p.titolo.is_empty():
+			righe.append(voce_indice(p.titolo, i + 1, cifre, colonne))
+	return righe
+
+
+## Una riga dell'indice, lunga esattamente una colonna di carta: il titolo, i puntini,
+## il numero allineato a destra. Un titolo che non ci sta si accorcia, perché
+## l'alternativa è un numero che esce dal foglio.
+static func voce_indice(titolo: String, numero: int, cifre: int, colonne: int = COLONNE) -> String:
+	var n := str(numero).lpad(cifre)
+	var t := titolo.left(colonne - n.length() - 3)
+	return t + " " + ".".repeat(colonne - t.length() - n.length() - 2) + " " + n
 
 
 ## Le pagine che non ci stanno sulla carta, come coppie [indice, righe]. Vuoto se
@@ -79,7 +120,7 @@ static func righe_di(pagina: PaginaQuaderno, colonne: int = COLONNE) -> PackedSt
 func pagine_che_sbordano(colonne: int = COLONNE, righe: int = RIGHE) -> Array:
 	var fuori := []
 	for i in pagine.size():
-		var n := righe_di(pagine[i], colonne).size()
+		var n := righe_pagina(i, colonne).size()
 		if n > righe:
 			fuori.append([i, n])
 	return fuori

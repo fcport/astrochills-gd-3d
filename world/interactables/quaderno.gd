@@ -218,9 +218,7 @@ func _mostra() -> void:
 
 
 func _righe(indice: int) -> String:
-	if indice < 0 or indice >= _dati.pagine.size():
-		return ""
-	return "\n".join(QuadernoData.righe_di(_dati.pagine[indice]))
+	return "\n".join(_dati.righe_pagina(indice))
 
 
 ## La carta si costruisce la prima volta che si apre il quaderno, e poi si tiene: chi

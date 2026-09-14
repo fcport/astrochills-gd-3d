@@ -22,3 +22,7 @@ extends Resource
 ## generali. Serve al banco: ogni fase del piano della notte deve avere la sua
 ## pagina, o il quaderno smette di dire la verità il giorno che se ne aggiunge una.
 @export var fase: StringName = &""
+
+## Se vera, questa è la pagina dell'INDICE: sotto il testo, l'elenco delle pagine che
+## vengono dopo lo compone `QuadernoData.righe_indice()`. Qui non si scrive.
+@export var indice: bool = false

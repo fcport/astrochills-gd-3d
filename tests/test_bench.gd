@@ -92,6 +92,8 @@ func _ready() -> void:
 	_check_player_profile()
 	print("")
 	_check_save_manager()
+
+	_check_partite()
 	print("")
 	_check_photo_quality()
 	print("")
@@ -1156,99 +1158,128 @@ func _report_afford(amount: int, expected: bool, label: String) -> void:
 	print("   %-42s can_afford(%d) = %s%s" % [label, amount, got, note])
 
 
-## Il rituale della moka (3.3): la logica PURA e STATICA — transizioni, interattivita' per
-## tempo, prompt, e i punti d'emissione della coppia started/ended. Gemella di
-## `Game.split_spend`: nessuno SceneTree, nessun autoload, nessun timer.
+## La moka, i fuochi e le tazze (D-244): la logica PURA e STATICA. Il gesto, la mira e il
+## fuoco vero si camminano con `tools/prova_moka.gd`; qui si legge la tavola.
 ##
-## Il timer d'attesa e la raggiungibilita' del volume di
-## collisione NON si collaudano qui: sono effetti e percezione — verifiche d'operatore,
-## che si camminano nel gioco (come dice lo spec). Il banco legge la tavola.
+## PRIMA QUI C'ERA LA TAVOLA DEI TEMPI della moka di 3.3 — riempi, sul fuoco, versa, bevi —
+## che si avanzava a colpi di E guardandola. Non c'è più perché non ci sono più i tempi: il
+## caffè lo fanno le cose, e quello che resta da collaudare senza SceneTree sono le regole
+## che le cose seguono.
 func _check_moka_ritual() -> void:
-	print("-- Moka: rituale a piu' tempi, transizioni pure + punti d'emissione (3.3)")
+	print("-- Moka: cuoce solo su un fuoco acceso, versa solo in una tazza vuota (D-244)")
+	var quarto := 10.0 / Moka.BREW_SECONDS
+	_report_cottura(0.0, 0, true, 10.0, quarto, "vuota, sul fuoco acceso, 10 s")
+	_report_cottura(0.0, 0, false, 10.0, 0.0, "vuota, fuoco spento: ferma")
+	_report_cottura(0.5, 0, false, 10.0, 0.5, "tolta a meta': resta a meta'")
+	_report_cottura(0.0, Moka.TAZZINE, true, 10.0, 0.0, "col caffe' dentro non ne fa altro")
+	_report_cottura(0.95, 0, true, 10.0, 1.0, "oltre la fine si ferma a 1")
 
-	# La tavola delle transizioni `E`. BREWING → READY NON e' qui: lo guida il Timer,
-	# non un'interazione — e BREWING → BREWING e' inerte (li' `is_interactive` e' falso).
-	_report_moka_next(Moka.Step.IDLE, Moka.Step.FILLED, "IDLE + E -> FILLED (riempi)")
-	_report_moka_next(Moka.Step.FILLED, Moka.Step.BREWING, "FILLED + E -> BREWING (sul fuoco)")
-	_report_moka_next(Moka.Step.BREWING, Moka.Step.BREWING, "BREWING + E -> BREWING (inerte)")
-	_report_moka_next(Moka.Step.READY, Moka.Step.POURED, "READY + E -> POURED (versa)")
-	_report_moka_next(Moka.Step.POURED, Moka.Step.IDLE, "POURED + E -> IDLE (bevi, ripetibile)")
+	print("   -- versare")
+	_report_moka_si(Moka.puo_versare(Moka.TAZZINE, true), true, "caffe' nella moka, tazza vuota")
+	_report_moka_si(Moka.puo_versare(0, true), false, "moka vuota")
+	_report_moka_si(Moka.puo_versare(2, false), false, "tazza gia' piena")
+	_report_moka_num(Moka.inclinazione_a(0.0), 0.0, "inclinazione all'inizio del gesto")
+	_report_moka_num(Moka.inclinazione_a((Moka.VERSA_DA + Moka.VERSA_A) / 2.0), 1.0,
+		"inclinazione mentre il caffe' scende")
+	_report_moka_num(Moka.inclinazione_a(Moka.VERSA_SECONDI), 0.0, "inclinazione alla fine")
 
-	# Interattivita' per tempo: falso SOLO in BREWING (si aspetta), vero
-	# altrove. E' la condizione che `can_interact()` STRINGE sopra la base.
-	print("   -- is_interactive: falso solo in BREWING")
-	_report_moka_interactive(Moka.Step.IDLE, true, "IDLE interagibile")
-	_report_moka_interactive(Moka.Step.FILLED, true, "FILLED interagibile")
-	_report_moka_interactive(Moka.Step.BREWING, false, "BREWING inerte")
-	_report_moka_interactive(Moka.Step.READY, true, "READY interagibile")
-	_report_moka_interactive(Moka.Step.POURED, true, "POURED interagibile")
+	print("   -- il fuoco: cuoce cio' che gli sta sopra, non cio' che gli sta accanto")
+	var c := Vector3(10.94, 0.94, 2.01)
+	_report_moka_si(Fornello.sta_sopra(c, c + Vector3(0.0, 0.003, 0.0)), true, "appoggiata al centro")
+	_report_moka_si(Fornello.sta_sopra(c, c + Vector3(0.03, 0.0, 0.0)), true, "tre centimetri fuori centro")
+	_report_moka_si(Fornello.sta_sopra(c, c + Vector3(0.0, 0.0, -0.22)), false, "sul fuoco dietro")
+	_report_moka_si(Fornello.sta_sopra(c, c + Vector3(0.0, 0.25, 0.0)), false, "tenuta in mano sopra")
 
-	# Prompt per tempo (IT, lo legge il giocatore — NFR10). BREWING non ha prompt:
-	# durante l'attesa non c'e' niente da sollecitare (nessun conto alla rovescia).
-	print("   -- prompt per tempo")
-	_report_moka_prompt(Moka.Step.IDLE, "Riempi la moka")
-	_report_moka_prompt(Moka.Step.FILLED, "Metti la moka sul fuoco")
-	_report_moka_prompt(Moka.Step.BREWING, "")
-	_report_moka_prompt(Moka.Step.READY, "Versa il caffè")
-	_report_moka_prompt(Moka.Step.POURED, "Bevi il caffè")
-
-	# I punti d'emissione della coppia (C4): started al PRIMO tempo (riempire, cioe' da
-	# IDLE), ended all'ULTIMO (bere, cioe' da POURED). Nessun altro tempo emette.
-	print("   -- punti d'emissione: started al 1o tempo (IDLE), ended all'ultimo (POURED)")
-	var all_steps: Array[Moka.Step] = [
-		Moka.Step.IDLE, Moka.Step.FILLED, Moka.Step.BREWING, Moka.Step.READY, Moka.Step.POURED]
-	for step in all_steps:
-		var starts := Moka.starts_activity(step)
-		var ends := Moka.ends_activity(step)
-		var exp_start: bool = step == Moka.Step.IDLE
-		var exp_end: bool = step == Moka.Step.POURED
-		var note := ""
-		if starts != exp_start:
-			note = "   <-- ATTESO started = %s" % exp_start
-		elif ends != exp_end:
-			note = "   <-- ATTESO ended = %s" % exp_end
-		print("      %-10s started=%s ended=%s%s" % [_moka_step_name(step), starts, ends, note])
-
-	# Il giro completo, e la sua ripetibilita': IDLE →(E)→ FILLED →(E)→ BREWING →(Timer)→
-	# READY →(E)→ POURED →(E)→ IDLE. Si simula la mano (le `E`) e il Timer (BREWING→READY)
-	# a mano, e si verifica che si torni a IDLE — pronta per rifarlo.
-	var s := Moka.Step.IDLE
-	s = Moka.next_on_interact(s)          # riempi
-	s = Moka.next_on_interact(s)          # sul fuoco
-	if s == Moka.Step.BREWING:
-		s = Moka.Step.READY               # il Timer, non un'interazione
-	s = Moka.next_on_interact(s)          # versa
-	s = Moka.next_on_interact(s)          # bevi
-	var loop_note := "" if s == Moka.Step.IDLE else "   <-- ATTESO: torna a IDLE (ripetibile)"
-	print("   giro completo torna a IDLE: %s%s" % [_moka_step_name(s), loop_note])
+	print("   -- la tazza: il caffe' e' largo quanto la tazza alla sua quota")
+	_report_moka_num(Tazza.raggio_a(0.035), 0.0269, "raggio interno a 35 mm (misurato)")
+	_report_moka_num(Tazza.raggio_a(0.0275), (0.0173 + 0.0269) / 2.0, "a meta' fra due misure")
+	_report_moka_num(Tazza.raggio_a(0.2), 0.0353, "sopra l'ultima misura: l'ultima")
+	_report_moka_num(Tazza.quota_per(0.0), Tazza.FONDO, "vuota: il fondo")
+	_report_moka_num(Tazza.quota_per(1.0), Tazza.PIENA, "piena")
+	_report_moka_num(Tazza.verso_la_bocca((Tazza.BEVI_DA + Tazza.BEVI_A) / 2.0), 1.0,
+		"bevendo, a meta' gesto e' alla bocca")
+	_report_moka_num(Tazza.verso_la_bocca(Tazza.BEVI_SECONDI), 0.0, "finito di bere, torna giu'")
 
 
-func _report_moka_next(step: Moka.Step, expected: Moka.Step, label: String) -> void:
-	var got := Moka.next_on_interact(step)
-	var note := "" if got == expected else "   <-- ATTESO: %s" % _moka_step_name(expected)
-	print("   %-42s -> %s%s" % [label, _moka_step_name(got), note])
+func _report_cottura(prima: float, dosi: int, acceso: bool, delta: float, expected: float,
+		label: String) -> void:
+	var got := Moka.avanza_cottura(prima, dosi, acceso, delta)
+	var note := "" if absf(got - expected) < 0.0001 else "   <-- ATTESO: %.3f" % expected
+	print("   %-44s cottura %.3f -> %.3f%s" % [label, prima, got, note])
 
 
-func _report_moka_interactive(step: Moka.Step, expected: bool, label: String) -> void:
-	var got := Moka.is_interactive(step)
+func _report_moka_si(got: bool, expected: bool, label: String) -> void:
 	var note := "" if got == expected else "   <-- ATTESO: %s" % expected
-	print("      %-38s is_interactive = %s%s" % [label, got, note])
+	print("      %-44s %s%s" % [label, got, note])
 
 
-func _report_moka_prompt(step: Moka.Step, expected: String) -> void:
-	var got := Moka.prompt_for(step)
-	var note := "" if got == expected else "   <-- ATTESO: \"%s\"" % expected
-	print("      %-10s prompt = \"%s\"%s" % [_moka_step_name(step), got, note])
+func _report_moka_num(got: float, expected: float, label: String) -> void:
+	var note := "" if absf(got - expected) < 0.0001 else "   <-- ATTESO: %.4f" % expected
+	print("      %-44s %.4f%s" % [label, got, note])
 
 
-func _moka_step_name(step: Moka.Step) -> String:
-	match step:
-		Moka.Step.IDLE: return "IDLE"
-		Moka.Step.FILLED: return "FILLED"
-		Moka.Step.BREWING: return "BREWING"
-		Moka.Step.READY: return "READY"
-		Moka.Step.POURED: return "POURED"
-		_: return "?"
+## Le partite e la memoria della casa (D-243): quale partita apre un avvio, quali nomi sono
+## cartelle ammesse, e il giro su disco di com'è il mondo. Senza SceneTree; la memoria vera
+## — una tazza spostata che finisce nel file e torna al riavvio — la cammina
+## `tools/prova_memoria.gd`.
+func _check_partite() -> void:
+	print("-- Partite: quale si apre, e il mondo che si ricorda (D-243)")
+	var vera := SaveManager.PARTITA_VERA
+	var sonde := SaveManager.PARTITA_SONDE
+	var gioco := PackedStringArray(["--path", "."])
+	var sonda := PackedStringArray(["--headless", "tools/prova_moka.tscn"])
+	var principale := PackedStringArray(["res://main.tscn"])
+	_report_partita(Game.partita_dell_avvio(gioco, "", "", false), vera, "gioco finito")
+	_report_partita(Game.partita_dell_avvio(gioco, "", "prova-2", false), vera,
+		"gioco finito, con una scelta di sviluppo rimasta")
+	_report_partita(Game.partita_dell_avvio(gioco, "", "prova-2", true), "prova-2",
+		"sviluppo: l'ultima scelta col pannello")
+	_report_partita(Game.partita_dell_avvio(principale, "", "", true), vera,
+		"main.tscn lanciata a mano")
+	_report_partita(Game.partita_dell_avvio(sonda, "", "prova-2", true), sonde, "una sonda")
+	_report_partita(Game.partita_dell_avvio(sonda, vera, "", true), vera,
+		"una sonda con PARTITA=partita")
+	_report_partita(Game.partita_dell_avvio(gioco, "../profilo", "", true), vera,
+		"PARTITA con un percorso dentro: ignorata")
+
+	for coppia in [["prova-1", true], ["partita", true], ["", false], ["../x", false],
+			["Prova", false], ["_bench", false], ["con spazio", false]]:
+		var got := SaveManager.nome_valido(coppia[0])
+		print("      nome «%s» valido: %s%s" % [coppia[0], got,
+			"" if got == coppia[1] else "   <-- ATTESO: %s" % coppia[1]])
+	var libero := SaveManager.nome_libero(PackedStringArray(["partita", "prova-1", "prova-3"]))
+	print("      primo nome libero dopo prova-1 e prova-3: %s%s" % [libero,
+		"" if libero == "prova-2" else "   <-- ATTESO: prova-2"])
+
+	# IL GIRO SU DISCO, con una trasformata e un numero dentro il dizionario: sono i tipi
+	# che le cose mettono nel loro ricordo, e `ResourceSaver` deve riportarli uguali.
+	var dir := "user://saves/_bench_mondo"
+	var path := dir.path_join(SaveManager.WORLD_FILE)
+	var saves := SaveManager.new()
+	var w := WorldState.new()
+	var xf := Transform3D(Basis(Vector3.UP, 0.7), Vector3(11.9, 0.78, 3.65))
+	w.oggetti = {"TazzaCucina": {&"xf": xf, &"livello": 0.5}, "Fornello2": {&"acceso": true}}
+	saves.save_world(w, path)
+	var letto := saves.load_world(path)
+	var tazza: Dictionary = letto.oggetti.get("TazzaCucina", {})
+	var fuoco: Dictionary = letto.oggetti.get("Fornello2", {})
+	var giro_ok: bool = letto.version == WorldState.CURRENT_VERSION \
+		and tazza.has(&"xf") and (tazza[&"xf"] as Transform3D).is_equal_approx(xf) \
+		and is_equal_approx(float(tazza.get(&"livello", 0.0)), 0.5) \
+		and bool(fuoco.get(&"acceso", false))
+	print("   giro su disco del mondo: versione %d, tazza e fuoco intatti %s%s" % [
+		letto.version, giro_ok, "" if giro_ok else "   <-- ATTESO: true"])
+	var vuoto := saves.load_world(dir.path_join("non_esiste.tres"))
+	var silenzio := vuoto.oggetti.is_empty() and saves.last_load_message.is_empty()
+	print("   mondo assente: %d voci, in silenzio %s%s" % [vuoto.oggetti.size(), silenzio,
+		"" if silenzio else "   <-- ATTESO: vuoto e in silenzio"])
+	DirAccess.remove_absolute(path)
+	DirAccess.remove_absolute(dir)
+
+
+func _report_partita(got: String, expected: String, label: String) -> void:
+	var note := "" if got == expected else "   <-- ATTESO: %s" % expected
+	print("      %-58s %s%s" % [label, got, note])
 
 
 ## Lo «stare a guardare» della cupola (3.5): la logica PURA e STATICA di `DomeActivity` —
@@ -2395,6 +2426,17 @@ func _check_quaderno() -> void:
 	print("   riga lunga: %s%s" % [" | ".join(lunga),
 		"" if rientro_ok else "   <-- ATTESO: a capo entro 20, rientro tenuto"])
 
+	# La voce dell'indice è lunga una riga esatta con il numero in fondo, anche quando il
+	# titolo da solo non ci starebbe.
+	var voce := QuadernoData.voce_indice("Come muoversi", 3, 2)
+	var voce_ok := voce.length() == QuadernoData.COLONNE and voce.ends_with(" 3")
+	print("   voce d'indice: \"%s\"%s" % [voce,
+		"" if voce_ok else "   <-- ATTESO: %d colonne, numero in fondo" % QuadernoData.COLONNE])
+	var lunga_voce := QuadernoData.voce_indice("un titolo che da solo è più lungo di tutta la riga", 12, 2)
+	var lunga_ok := lunga_voce.length() == QuadernoData.COLONNE and lunga_voce.ends_with(" 12")
+	print("   titolo troppo lungo: \"%s\"%s" % [lunga_voce,
+		"" if lunga_ok else "   <-- ATTESO: accorciato, numero in fondo"])
+
 	var dati := _load_source(QUADERNO_PATH) as QuadernoData
 	if dati == null:
 		return
@@ -2405,7 +2447,28 @@ func _check_quaderno() -> void:
 		print("   pagina %d: %d righe   <-- ATTESO: al massimo %d" % [
 			coppia[0] + 1, coppia[1], QuadernoData.RIGHE])
 	if sbordano.is_empty():
-		print("   nessuna pagina esce dal foglio")
+		print("   nessuna pagina esce dal foglio (indice compreso)")
+
+	# L'INDICE È UNO, E OGNI NUMERO PORTA ALLA SUA PAGINA: si rilegge ogni voce, si
+	# prende il numero in fondo e si guarda che quella pagina abbia quel titolo. È il
+	# controllo che scopre un indice sfasato di uno rispetto al `- n -` stampato.
+	var indici := PackedInt32Array()
+	for i in dati.pagine.size():
+		if dati.pagine[i] != null and dati.pagine[i].indice:
+			indici.append(i)
+	if indici.size() != 1:
+		print("   pagine d'indice: %d   <-- ATTESO: una" % indici.size())
+	else:
+		var voci := dati.righe_indice(indici[0])
+		var storte := PackedStringArray()
+		for riga in voci:
+			var numero := riga.substr(riga.rfind(" ") + 1).to_int()
+			var giusta := (numero >= 1 and numero <= dati.pagine.size()
+				and riga.begins_with(dati.pagine[numero - 1].titolo + " "))
+			if not giusta:
+				storte.append(riga)
+		print("   indice a pagina %d: %d voci%s" % [indici[0] + 1, voci.size(),
+			"" if storte.is_empty() else "   <-- ATTESO: ogni numero alla sua pagina (%s)" % " | ".join(storte)])
 
 	var plan := load("res://data/night_plan.tres") as NightPlan
 	if plan == null:

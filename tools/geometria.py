@@ -1666,6 +1666,30 @@ _BANCONE = [_a for _a in ARREDI_CUCINA if _a[0] == "CucinaBase"][0]
 # dall'inizio del piano, al centro in profondita', appoggiata sul top.
 MOKA = (_BANCONE[1] + 0.50, _BANCONE[5], (_BANCONE[2] + _BANCONE[4]) / 2.0)
 
+# IL PIANO COTTURA, e sta qui perche' adesso lo devono sapere in due (D-244).
+# `cucina_blender.py` ci disegna i fuochi e le griglie; `gen_blockout.py` ci posa le
+# manopole che si girano e i punti su cui la moka cuoce. Finche' i fuochi erano un
+# calcolo dentro il disegno, il gioco non poteva sapere dove fossero: si vedevano e
+# basta. Le quote sono quelle che il disegno usava da sempre, portate qui senza
+# cambiarle.
+#
+# x0, z0, x1, z1 del piano in acciaio, verso la fine del bancone
+COTTURA = (_BANCONE[3] - 0.90, _BANCONE[2] + 0.06, _BANCONE[3] - 0.04, _BANCONE[4] - 0.06)
+# i centri dei quattro fuochi, nell'ordine in cui il disegno li costruisce:
+# dietro a sinistra, davanti a sinistra, dietro a destra, davanti a destra
+FUOCHI = [(COTTURA[0] + 0.24 + _i * 0.42, COTTURA[1] + 0.13 + _j * 0.22)
+          for _i in range(2) for _j in range(2)]
+# dove si posa una pentola: la cima delle griglie
+H_GRIGLIA = _BANCONE[5] + 0.040
+# le manopole sul frontale del mobile, da sinistra a destra: il centro della manopola
+MANOPOLE = [(COTTURA[0] + 0.16 + _k * 0.18, _BANCONE[5] - 0.02, _BANCONE[4] + 0.02)
+            for _k in range(4)]
+# QUALE FUOCO ACCENDE OGNI MANOPOLA, come indice in `FUOCHI`. Le due di sinistra
+# accendono i fuochi di sinistra e le due di destra quelli di destra, e in ogni coppia
+# l'esterna comanda il fuoco di dietro: la manopola sta sotto il fuoco che accende, e
+# chi guarda il piano non deve imparare niente.
+MANOPOLA_FUOCO = [0, 1, 3, 2]
+
 # IL QUADERNO DELLE PROCEDURE, sulla consolle a SINISTRA del monitor. Sinistra per
 # chi siede vuol dire z CRESCENTE: chi si siede guarda la vetrata, verso -X, e la
 # sua destra cade su -Z (e' la stessa regola che ha spostato il mouse, vedi

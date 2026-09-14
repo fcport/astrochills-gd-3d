@@ -313,6 +313,6 @@ script = ExtResource("3_activity")
 shape = SubResource("ShapeActivity")
 
 ; La soglia di permanenza (dome_activity.gd fissa one_shot e wait_time dal codice: e' un
-; valore di rituale, non di layout — stessa scelta del BrewTimer della moka).
+; valore di rituale, non di layout).
 [node name="Dwell" type="Timer" parent="DomeActivity"]
 

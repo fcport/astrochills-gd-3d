@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="QuadernoData" load_steps=17 format=3]
+[gd_resource type="Resource" script_class="QuadernoData" load_steps=20 format=3]
 
 [ext_resource type="Script" path="res://data/quaderno/quaderno_data.gd" id="1_quaderno"]
 [ext_resource type="Script" path="res://data/quaderno/pagina_quaderno.gd" id="2_pagina"]
@@ -6,47 +6,74 @@
 [sub_resource type="Resource" id="pagina_01"]
 script = ExtResource("2_pagina")
 titolo = "Procedure del turno di notte"
-testo = "Osservatorio di Montegrimano.
+testo = "Osservatorio di Monte Grimano
 
-Questo quaderno sta accanto al computer, e lì deve restare. La prima notte nessuno sa niente: va bene così.
+Questo quaderno si trova accanto al computer. Lascialo lì.
 
-Il turno va dalle 21:00 alle 06:00, e il tempo corre anche se stai fermo. L'ora è in basso a destra sullo schermo del computer.
+È la tua prima notte, quindi probabilmente non sai ancora come funziona tutto. Non preoccuparti: qui trovi le procedure necessarie per portare a termine il turno.
 
-Qui c'è l'ordine del lavoro e, una pagina per volta, come si fa ogni passaggio."
+Il turno inizia alle 21:00 e termina alle 06:00. Il tempo passa anche quando non stai facendo nulla. Puoi controllare l'ora nell'angolo in basso a destra dello schermo del computer."
 fase = &""
+
+[sub_resource type="Resource" id="pagina_indice"]
+script = ExtResource("2_pagina")
+titolo = "Indice"
+testo = "Le procedure sono elencate nell'ordine in cui devono essere eseguite. Ogni pagina spiega passo dopo passo come completare una delle operazioni."
+fase = &""
+indice = true
 
 [sub_resource type="Resource" id="pagina_02"]
 script = ExtResource("2_pagina")
-titolo = "Come ci si muove"
-testo = "  W A S D   cammina
-  SHIFT     corri
-  CTRL      abbassati
-  SPAZIO    salta
-  E         usa, prendi, posa
-  SINISTRO  tenuto, lancia
-  ESC       libera il mouse
+titolo = "Come muoversi"
+testo = "Tasto           Azione
+--------------  ----------------------
+W A S D         Cammina
+SHIFT           Corri
+CTRL            Abbassati
+SPAZIO          Salta
+E               Usa / raccogli / posa
+Tasto sinistro  Tieni premuto / lancia
+Tasto destro    Bevi
+ESC             Libera il mouse
 
-Guardando una cosa da vicino, in basso compare cosa ci si può fare.
+Quando ti avvicini a un oggetto interattivo, nella parte inferiore dello schermo vengono mostrati i comandi disponibili."
+fase = &""
 
-Al computer: E per sederti e per alzarti. Il mouse muove la freccia, ALT tenuto premuto gira la testa. Nei programmi W e S scelgono, A e D cambiano, INVIO conferma."
+[sub_resource type="Resource" id="pagina_02_segue"]
+script = ExtResource("2_pagina")
+titolo = ""
+testo = "Al computer puoi usare E per sederti e alzarti. Il mouse controlla il cursore, mentre tenendo premuto ALT puoi guardarti intorno.
+
+Nei programmi del computer:
+
+  W / S   seleziona una voce
+  A / D   modifica il valore
+  INVIO   conferma"
 fase = &""
 
 [sub_resource type="Resource" id="pagina_03"]
 script = ExtResource("2_pagina")
-titolo = "L'ordine della notte"
-testo = "Una volta sola, all'inizio:
-  1 cupola      aprirla       DOME
-  2 strumenti   accenderli    BOOT
-  3 camera      raffreddarla  COOL
-  4 puntamento  sincronizzare SOLVE
+titolo = "L'ordine delle operazioni"
+testo = "All'inizio del turno devi eseguire queste quattro operazioni UNA SOLA VOLTA:
 
-Per ogni fotografia:
-  5 soggetto    sceglierlo    TARGET
-  6 telescopio  puntarlo      GOTO
-  7 fuoco       regolarlo     FOCUS
-  8 posa        avviarla      SEQ
+1. DOME    aprire la cupola
+2. BOOT    accendere e collegare
+           gli strumenti
+3. COOL    raffreddare la camera
+4. SOLVE   sincronizzare il telescopio"
+fase = &""
 
-Al computer si lavora nella finestra di MaxIm DL: le schede in cima dicono a che punto sei."
+[sub_resource type="Resource" id="pagina_03_segue"]
+script = ExtResource("2_pagina")
+titolo = ""
+testo = "Per ogni fotografia, invece, dovrai eseguire:
+
+5. TARGET  scegliere il soggetto
+6. GOTO    puntare il telescopio
+7. FOCUS   mettere a fuoco
+8. SEQ     avviare la posa
+
+Tutte le operazioni al computer vengono eseguite tramite MaxIm DL. Le schede nella parte superiore dello schermo indicano la fase in cui ti trovi."
 fase = &""
 
 [sub_resource type="Resource" id="pagina_04"]
@@ -205,4 +232,4 @@ fase = &""
 
 [resource]
 script = ExtResource("1_quaderno")
-pagine = Array[PaginaQuaderno]([SubResource("pagina_01"), SubResource("pagina_02"), SubResource("pagina_03"), SubResource("pagina_04"), SubResource("pagina_05"), SubResource("pagina_06"), SubResource("pagina_07"), SubResource("pagina_08"), SubResource("pagina_09"), SubResource("pagina_10"), SubResource("pagina_11"), SubResource("pagina_12"), SubResource("pagina_13"), SubResource("pagina_14")])
+pagine = Array[PaginaQuaderno]([SubResource("pagina_01"), SubResource("pagina_indice"), SubResource("pagina_02"), SubResource("pagina_02_segue"), SubResource("pagina_03"), SubResource("pagina_03_segue"), SubResource("pagina_04"), SubResource("pagina_05"), SubResource("pagina_06"), SubResource("pagina_07"), SubResource("pagina_08"), SubResource("pagina_09"), SubResource("pagina_10"), SubResource("pagina_11"), SubResource("pagina_12"), SubResource("pagina_13"), SubResource("pagina_14")])

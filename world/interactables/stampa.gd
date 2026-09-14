@@ -120,6 +120,10 @@ func _ready() -> void:
 	forma.size = Vector3(LARGHEZZA, ALTEZZA, SPESSORE)
 	_col.shape = forma
 	add_child(_col)
+	# LA STAMPA NON SI RICORDA DA SÉ: ha già il suo registro (`Stampante`, D-239), e non
+	# esiste nella scena — nasce stampando — quindi la memoria del mondo non la
+	# ritroverebbe al suo percorso.
+	si_ricorda = false
 	# DOPO i figli: `Carryable._ready()` non li guarda, ma la rete sì, e la rete cerca il
 	# collisore fra i figli.
 	super()

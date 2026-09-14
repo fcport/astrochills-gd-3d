@@ -16,7 +16,7 @@
 ## Questo file NON nomina `phases/`, `night/`, `photo/`: «imaging» compare solo come
 ## chiave di filtro sul bus.
 ##
-## IL GATE E LA SOGLIA SONO PURI; TIMER ED EMISSIONE SONO EFFETTO. Come `Moka`, la
+## IL GATE E LA SOGLIA SONO PURI; TIMER ED EMISSIONE SONO EFFETTO. Come `Game.split_spend`, la
 ## logica di decisione è in funzioni statiche collaudabili sul banco (`is_gate_open`,
 ## `should_emit_started`, `should_emit_ended`): nessuno SceneTree,
 ## nessun autoload, nessun timer. Il nodo tiene lo stato, guida il `Dwell` Timer, e
@@ -42,7 +42,7 @@ const GROUP := &"dome_activity"
 ## La soglia di permanenza: quanti secondi di gioco il giocatore deve restare in cupola
 ## con una sequenza in corso perché «stare a guardare» conti — POCHI secondi, non decine.
 ## Separa lo «stare» dal semplice attraversare la cupola. Il `Dwell` Timer conta col
-## tempo scalato (come il `BrewTimer` della moka), quindi F1–F4 lo accelerano. Tarabile
+## tempo scalato, come ogni `Timer` del gioco, quindi F1–F4 lo accelerano. Tarabile
 ## guardando/misurando: è una verifica d'operatore, non un numero da difendere al pixel.
 const DWELL_SECONDS := 4.0
 
@@ -61,7 +61,7 @@ var _watching := false
 
 # --- Logica pura del gate e della soglia: statica, senza SceneTree, sul banco ---------
 #
-# Gemella di `Moka.is_interactive`. Il nodo la consulta e ci
+# Gemella di `Game.split_spend`. Il nodo la consulta e ci
 # appende gli effetti (timer, emissione); la funzione non tocca né l'uno né l'altro.
 
 ## Il gate è aperto quando ENTRAMBE le condizioni valgono: il giocatore è in cupola E una
@@ -113,8 +113,8 @@ func _ready() -> void:
 	Events.sequence_ended.connect(_on_sequence_ended)
 
 	# Il Dwell Timer della soglia: one-shot, avviato quando il gate si apre. Il nodo
-	# `Timer` conta col tempo scalato, così F1–F4 lo accelerano come il `BrewTimer` della
-	# moka. La durata la fissa il codice (valore di rituale, non di layout).
+	# `Timer` conta col tempo scalato, così F1–F4 lo accelerano. La durata la fissa il
+	# codice (valore di rituale, non di layout).
 	_dwell.one_shot = true
 	_dwell.wait_time = DWELL_SECONDS
 	_dwell.timeout.connect(_on_dwell_timeout)

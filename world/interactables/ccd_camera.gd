@@ -127,6 +127,10 @@ static func find_in(tree: SceneTree) -> CcdCamera:
 
 
 func _ready() -> void:
+	# LA CAMERA NON SI RICORDA DOVE LA SI LASCIA (D-243). È attrezzatura della notte, non
+	# roba di casa: la notte riparte da capo, e da capo la camera è avvitata al fuoco.
+	# Ritrovarla per terra alle 21:00 vorrebbe dire una notte che comincia rotta.
+	si_ricorda = false
 	super()
 	add_to_group(GRUPPO)
 	_casa = get_parent()

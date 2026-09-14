@@ -22,6 +22,7 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        H_INTERRUTTORE, L_PLACCA, A_PLACCA, SP_PLACCA,
                        ATTIVITA_CUPOLA, CUPOLA, SALA_TELESCOPIO,
                        AR_RIPOSO_GRADI, DEC_RIPOSO_GRADI, LATITUDINE, MOKA, QUADERNO,
+                       FUOCHI, H_GRIGLIA, MANOPOLE, MANOPOLA_FUOCO,
                        CASSA_MONITOR, VETRO_MONITOR, SEDILE_MONITOR,
                        BOMBATURA_MONITOR, FRANCO_VETRO,
                        PULSANTIERA_STAFFA, PULSANTIERA_TASTI,
@@ -216,6 +217,9 @@ def tscn():
              'id="56_oculare"]',
              '[ext_resource type="Script" path="res://world/interactables/quaderno.gd" id="61_quaderno"]',
              '[ext_resource type="PackedScene" path="res://assets/models/quaderno.glb" id="62_modquaderno"]',
+             '[ext_resource type="Script" path="res://world/memoria_mondo.gd" id="63_memoria"]',
+             '[ext_resource type="Script" path="res://world/interactables/tazza.gd" id="64_tazza"]',
+             '[ext_resource type="Script" path="res://world/interactables/fornello.gd" id="65_fornello"]',
              '']
     dims = sorted(set((round(b[3], 3), round(b[4], 3), round(b[5], 3)) for b in blocchi)
                   | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
@@ -1645,7 +1649,9 @@ def tscn():
               '[node name="Tazza" type="RigidBody3D" parent="."]',
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.590, 0.751, 1.680)',
               'mass = 0.2',
-              'script = ExtResource("48_preso")',
+              # LE TAZZE HANNO IL LORO SCRIPT (D-244): si riempiono dalla moka e si
+              # bevono. Restano cose da prendere in mano come prima.
+              'script = ExtResource("64_tazza")',
               'nome = "la tazza"', '',
               '[node name="Modello" parent="Tazza" instance=ExtResource("50_tazza")]', '',
               '[node name="Col" type="CollisionShape3D" parent="Tazza"]',
@@ -1718,7 +1724,7 @@ def tscn():
               % (TAVOLO_CUCINA[0] + 0.30, TAVOLO_CUCINA[4] + 0.020,
                  TAVOLO_CUCINA[1] + 0.30),
               'mass = 0.2',
-              'script = ExtResource("48_preso")',
+              'script = ExtResource("64_tazza")',
               'nome = "la tazza"', '',
               '[node name="Modello" parent="TazzaCucina" instance=ExtResource("50_tazza")]', '',
               '[node name="Col" type="CollisionShape3D" parent="TazzaCucina"]',
@@ -1765,6 +1771,25 @@ def tscn():
               '[node name="Moka" parent="." instance=ExtResource("58_moka")]',
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, '
               '%.3f, %.3f, %.3f)' % MOKA, '',
+              # --- IL PIANO COTTURA: quattro manopole, e i loro fuochi (D-244) --
+              #
+              # La moka fa il caffe' sul fuoco, e il fuoco lo accende la manopola.
+              # Il nodo sta sulla manopola, dove si mira; `fuoco` e' il centro del
+              # bruciatore che accende, alla quota della griglia, relativo a lei.
+              # Posizioni e abbinamenti vengono da `geometria.py`, dove li legge
+              # anche il disegno della cucina: spostare il bancone sposta i fuochi
+              # disegnati e quelli che cuociono insieme.
+              *[_riga for _k in range(4) for _riga in (
+                  '[node name="Fornello%d" type="StaticBody3D" parent="."]' % (_k + 1),
+                  'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
+                  % MANOPOLE[_k],
+                  'collision_mask = 0',
+                  'script = ExtResource("65_fornello")',
+                  'fuoco = Vector3(%.3f, %.3f, %.3f)' % (
+                      FUOCHI[MANOPOLA_FUOCO[_k]][0] - MANOPOLE[_k][0],
+                      H_GRIGLIA - MANOPOLE[_k][1],
+                      FUOCHI[MANOPOLA_FUOCO[_k]][1] - MANOPOLE[_k][2]),
+                  '')],
               # --- LA STAMPANTE, cioe' la fessura da cui escono le foto ---------
               #
               # NON E' LA MACCHINA: la Okidata sta dentro `controllo_pc.glb`. Questo
@@ -1776,6 +1801,13 @@ def tscn():
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
               % STAMPANTE,
               'script = ExtResource("61_stampante")', '',
+              # LA MEMORIA DELLA CASA (D-243): rimette le cose dove erano state
+              # lasciate, e se ne ricorda quando le si sposta. Sta alla RADICE del
+              # mondo perche' le sue chiavi sono i percorsi da qui: `TazzaCucina`,
+              # `Moka`. Spostarla piu' in basso cambierebbe tutte le chiavi, e la
+              # casa si dimenticherebbe di tutto in silenzio.
+              '[node name="MemoriaDelMondo" type="Node" parent="."]',
+              'script = ExtResource("63_memoria")', '',
               # IL QUADERNO DELLE PROCEDURE, sulla consolle a sinistra del
               # monitor (D-233). Dove sta lo dice la consolle: `QUADERNO` in
               # `geometria.py` e' derivato dal mobile e dalla sedia, e porta i
@@ -2465,6 +2497,9 @@ _attesi = [("ambient_light_energy = 0.035", "la luce ambientale della notte"),
            ('script = ExtResource("60_pianeti")', "i pianeti che seguono il calendario"),
            ("shader_parameter/pianeta_luce", "i pianeti nel cielo"),
            ('instance=ExtResource("58_moka")', "la moka sul bancone della cucina"),
+           ('script = ExtResource("63_memoria")', "la memoria della casa"),
+           ('script = ExtResource("65_fornello")', "i fuochi della cucina"),
+           ('script = ExtResource("64_tazza")', "le tazze in cui si versa il caffe'"),
            ('script = ExtResource("61_quaderno")', "il quaderno delle procedure accanto al monitor"),
            ('script = ExtResource("38_lucecielo")', "la luce del cielo in cupola"),
            # Senza l'elenco delle lampade l'adattamento al buio non si spegne quando

@@ -105,6 +105,7 @@ const DEBUG_OVERLAY_PATH := "res://debug/debug_overlay.tscn"
 const RENDER_TUNING_PATH := "res://debug/render_tuning.gd"
 const LIE_INJECTOR_PATH := "res://debug/lie_injector.gd"
 const TIME_CONTROL_PATH := "res://debug/time_control.gd"
+const PARTITE_PATH := "res://debug/partite.gd"
 
 ## IL DESKTOP DEL PC. Le icone sono dati di questo file e non del desktop, che non sa
 ## cosa ci sia dietro: l'id torna indietro in `icon_activated`, e qui si decide cosa
@@ -1169,6 +1170,12 @@ func _install_debug_tools() -> void:
 	var time: Node = (load(TIME_CONTROL_PATH) as GDScript).new()
 	time.name = "TimeControl"
 	add_child(time)
+
+	# `F10`: le partite (D-243). Aprirne un'altra ricarica questa scena da capo, quindi
+	# non gli serve niente da qui: parla solo con `Game`.
+	var partite: Node = (load(PARTITE_PATH) as GDScript).new()
+	partite.name = "Partite"
+	add_child(partite)
 
 	var overlay := (load(DEBUG_OVERLAY_PATH) as PackedScene).instantiate()
 	overlay.configure(self, render)

@@ -50,7 +50,12 @@ func _ready() -> void:
 
 ## Unico ingresso. Si legge la `NightRun` una volta sola, all'alba: da qui in poi
 ## questo Control non guarda più niente, e non deve — la notte è finita.
-func set_readout(run: NightRun, clock_text: String, wallet_lire: int) -> void:
+##
+## `etichette` porta i nomi delle schede per chiave di fase: il giocatore ha visto SOLVE e
+## SEQ tutta la notte, e all'alba non deve leggere SYNC e IMAGING. Una chiave senza
+## etichetta si scrive com'è.
+func set_readout(run: NightRun, clock_text: String, wallet_lire: int,
+		etichette := {}) -> void:
 	_clock_text = clock_text
 	_wallet = wallet_lire
 	if run == null:
@@ -61,7 +66,7 @@ func set_readout(run: NightRun, clock_text: String, wallet_lire: int) -> void:
 	_score_keys = PackedStringArray()
 	_scores = []
 	for k in run.phase_scores:
-		_score_keys.append(String(k).to_upper())
+		_score_keys.append(String(etichette.get(k, String(k).to_upper())))
 		_scores.append(Vector2i(int(run.phase_scores[k]), 0))
 	queue_redraw()
 
@@ -86,16 +91,23 @@ func _draw() -> void:
 	# le righe di questa schermata è quella che si guarda.
 	_text(Vector2(8, 74), "WALLET  %d lire" % _wallet, FG, 14)
 
-	var y := 104
+	# I PUNTEGGI IN DUE COLONNE. In una sola, a quindici pixel l'uno, stavano otto righe da
+	# 104 a 209 in uno schermo alto 192: l'intestazione cadeva otto pixel sopra la prima
+	# riga e le si scriveva addosso, e le ultime fasi finivano sotto il bordo del vetro,
+	# sopra la riga del cielo. Andava bene quando le fasi erano quattro. Federico: «si vede
+	# male questo». Due colonne da quattro stanno fra l'intestazione e l'ultima riga.
 	if _score_keys.is_empty():
-		_text(Vector2(8, y), "NOTHING RECORDED", DIM, 12)
+		_text(Vector2(8, 104), "NOTHING RECORDED", DIM, 12)
 	else:
-		_text(Vector2(8, 96), "PHASE SCORES", DIM, 12)
+		_text(Vector2(8, 98), "PHASE SCORES", DIM, 12)
+		var per_colonna := ceili(_score_keys.size() / 2.0)
 		for i in _score_keys.size():
-			_text(Vector2(8, y), "%-14s %3d" % [_score_keys[i], _scores[i].x], DIM, 12)
-			y += 15
+			var colonna := floori(float(i) / per_colonna)
+			var riga := i - colonna * per_colonna
+			_text(Vector2(8 + colonna * 124, 114 + riga * 14),
+				"%-6s %3d" % [_score_keys[i], _scores[i].x], DIM, 12)
 
-	_text(Vector2(8, 172), "the sky is getting light", DIM, 12)
+	_text(Vector2(8, 184), "the sky is getting light", DIM, 12)
 
 
 func _text(pos: Vector2, s: String, color: Color, px: int) -> void:

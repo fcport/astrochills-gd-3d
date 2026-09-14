@@ -58,6 +58,11 @@ const ERRORE_PESSIMO := 0.80
 ## ogni cento è mezzo pixel sul cercatore: sotto, il tubo non si sta muovendo.
 const PASSO_ANNUNCIO := 0.01
 
+## Gradi di cielo per minuto di notte: quindici l'ora, il giro della Terra. Sta già scritto
+## in `TempoSiderale`, `HonestCatalog` e `HonestPointing`; questa cartella non può nominare
+## `world/`, e questa è la quarta copia dello stesso quarto di grado (vedi `TempoSiderale`).
+const CIELO_GRADI_AL_MINUTO := 0.25
+
 @export var truth: SyncTruthSource
 
 @onready var _screen: Control = %SyncScreen
@@ -78,6 +83,10 @@ var _annunciato := Vector2(INF, INF)
 
 var _run: NightRun
 var _done := false
+
+## I minuti della notte quando la fase ha mandato il tubo sulla stella. Da lì il cielo gira,
+## e la montatura con lui: vedi `_annuncia()`.
+var _minuti_zero := 0.0
 
 
 func key() -> StringName:
@@ -106,6 +115,7 @@ func _ready() -> void:
 	# la fase in due righe: il comando è esatto, il risultato no.
 	_encoder = truth.catalog_position()
 	_truth_input.encoder_deg = _encoder
+	_minuti_zero = _minuti()
 	_annuncia()
 
 
@@ -197,12 +207,32 @@ func _muovi(delta: float) -> void:
 
 
 ## Dice al mondo dove è stato mandato il tubo, se si è spostato abbastanza.
+##
+## CON IL CIELO CHE È GIRATO NEL FRATTEMPO (D-246). La stella di taratura ha l'angolo orario
+## di quando la fase è partita, e il cercatore resta giusto così: stella e tubo girano
+## insieme, e lo scarto che si vede non cambia. La montatura nel mondo invece insegue il
+## cielo, e un angolo orario fermo per lei è un comando di tornare indietro. Federico:
+## «il primo movimento che faccio mi dice slewing e poi non lo dice più». Misurato con
+## `tools/prova_solve.gd`: dopo otto secondi fermi il tubo aveva inseguito 1,2 gradi, il
+## primo tasto lo rimandava indietro di quasi tre, oltre il mezzo grado che accende la
+## scritta — e il tubo perdeva la stella. I tasti dopo stavano sotto la soglia perché
+## ognuno rimetteva il conto a zero. La GOTO non l'ha mai avuto: a ogni fotogramma
+## ricalcola il soggetto all'ora della notte.
 func _annuncia() -> void:
-	var dove := truth.aim(_encoder)
+	var dove := truth.aim(_encoder) + Vector2(_cielo_girato(), 0.0)
 	if _annunciato.distance_to(dove) < PASSO_ANNUNCIO:
 		return
 	_annunciato = dove
 	Events.telescope_aim_changed.emit(dove.x, dove.y)
+
+
+## Di quanto è girato il cielo da quando la fase è partita, in gradi di angolo orario.
+func _cielo_girato() -> float:
+	return (_minuti() - _minuti_zero) * CIELO_GRADI_AL_MINUTO
+
+
+func _minuti() -> float:
+	return _run.elapsed_min if _run != null else 0.0
 
 
 func _su_moto(muove: bool) -> void:
@@ -217,7 +247,9 @@ func _finish() -> void:
 	# DOPO. Il GOTO lo legge da lì, e non da un payload che «rifai setup» svuota.
 	if _run != null:
 		_run.sync_done = true
-		_run.sync_point_deg = truth.catalog_position()
+		# All'angolo orario di ADESSO, come lo scrive la GOTO risincronizzandosi: il punto
+		# tarato è dove la stella sta quando si preme SYNC, non dove stava all'inizio.
+		_run.sync_point_deg = truth.catalog_position() + Vector2(_cielo_girato(), 0.0)
 		_run.pointing_error_deg = _scarto
 	# CANALE 2 — esito diegetico, in inglese. Una sincronizzazione mediocre non è
 	# un fallimento: `ok` resta true e la notte va avanti con i GOTO che arrivano

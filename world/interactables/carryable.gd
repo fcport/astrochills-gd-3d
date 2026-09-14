@@ -98,10 +98,21 @@ const SMORZAMENTO_GIRO := 4.0
 ## resterebbe a credere di avere in mano una cosa che è per terra due stanze fa.
 signal posato
 
+## Emesso quando la cosa, dopo essersi mossa, è di nuovo ferma: c'è un posto nuovo da
+## ricordare. Lo ascolta `MemoriaDelMondo` (D-243). Le sottoclassi lo emettono anche
+## quando cambia quello che hanno DENTRO — la moka col caffè, la tazza piena.
+signal cambiato
+
 ## Come si chiama nel prompt, articolo compreso: la riga che si legge è «Raccogli
 ## la moka», non «Raccogli moka». Stessa regola di `Interactable.prompt_text` —
 ## il prompt lo legge il giocatore, quindi è italiano.
 @export var nome := "l'oggetto"
+
+## Se la casa si ricorda dove la si è lasciata (D-243). Vero per quasi tutto: è roba di
+## casa, e dopo un riavvio sta dove stava. Falso per chi ha già un altro modo di tornare
+## al suo posto — la stampa ha il suo registro, la camera CCD riparte avvitata con la notte.
+## Va deciso PRIMA di `super()` in `_ready()`, che è dove si entra nel gruppo.
+@export var si_ricorda := true
 
 ## IL MODO SBAGLIATO, tenuto a portata di mano perché lo si possa misurare.
 ##
@@ -257,6 +268,25 @@ var _ripescaggi := 0
 
 var _in_mano := false
 
+## Se si è mossa dall'ultima volta che la casa se n'è ricordata. Vedi `cambiato`.
+var _mosso := false
+
+## Dove guarda chi lo tiene: il punto colpito dal raggio della mira, o `Vector3.INF`. Lo
+## scrive il giocatore a ogni passo con `mira()` (D-244).
+var _mirando := Vector3.INF
+
+## Se il giocatore l'ha toccata: presa, spostata, riempita. Solo allora la casa se la ricorda
+## (D-243). Vedi `stato_da_ricordare()`.
+var _toccata := false
+
+## Se si è già fermata una volta da quando esiste. La prima fermata è l'assestamento
+## dell'avvio, e non conta. Vedi `_physics_process`.
+var _assestata := false
+
+## Dove portarla al prossimo passo di fisica, e se c'è da farlo. Vedi `teletrasporta()`.
+var _teletrasporto := Transform3D.IDENTITY
+var _da_teletrasportare := false
+
 ## Lanciata e non ha ancora toccato niente: finché è vero lo smorzamento del giro è
 ## tolto. Vedi `SMORZAMENTO_GIRO`.
 var _in_volo := false
@@ -275,6 +305,8 @@ static func find_in(tree: SceneTree) -> Carryable:
 
 func _ready() -> void:
 	add_to_group(GROUP)
+	if si_ricorda:
+		add_to_group(MemoriaDelMondo.GRUPPO)
 	# SOLO IL LAYER DEGLI INTERAGIBILI, E NON QUELLO DEL MONDO — e questa riga vale
 	# un paragrafo, perché la prima stesura ce li metteva tutti e due.
 	#
@@ -404,6 +436,12 @@ func prendi(chi: PhysicsBody3D) -> void:
 		return
 	_in_mano = true
 	_chi = chi
+	_mirando = Vector3.INF
+	# Presa in mano è toccata, e la fermata dopo averla posata conta anche se è la prima.
+	_toccata = true
+	_assestata = true
+	# Un teletrasporto non ancora eseguito non la deve strappare dalla mano.
+	_da_teletrasportare = false
 	_lontano_da = 0.0
 	# LA GRAVITÀ SI SPEGNE, e non è un modo di barare sul peso. La mano ci lavora
 	# contro a ogni tick con la stessa forza, quindi lasciarla accesa vorrebbe
@@ -471,8 +509,121 @@ func lancia(verso: Vector3, trascinamento := Vector3.ZERO) -> void:
 ## Dove la mano lo vuole, adesso. La chiama chi lo tiene, dal proprio
 ## `_physics_process`: gira prima del passo di fisica, quindi `_integrate_forces`
 ## legge sempre un valore di questo tick e non di quello prima.
-func punta(mano: Transform3D) -> void:
+##
+## `testa` è la camera di chi lo tiene. Qui non serve; serve a chi fa un gesto verso la
+## faccia, come la tazza che si beve.
+func punta(mano: Transform3D, _testa := Transform3D.IDENTITY) -> void:
 	_mano = mano
+
+
+## Il punto che chi lo tiene sta guardando, o `Vector3.INF`.
+##
+## SERVE A CHI SI POSA IN UN POSTO PRECISO, e la moka l'ha dimostrato: la prima stesura la
+## metteva sul fuoco più vicino alla MANO, e da in piedi davanti al bancone la mano sta
+## venticinque centimetri oltre il bordo — sopra nessun fuoco, da nessun punto della cucina.
+## Chi mette una moka sul fuoco guarda il fuoco, e il fuoco giusto è quello guardato.
+func mira(punto: Vector3) -> void:
+	_mirando = punto
+
+
+func punto_mirato() -> Vector3:
+	return _mirando
+
+
+## PORTALA LÌ, FERMA — e dentro il passo di fisica (D-245).
+##
+## `global_transform = …` SU UN CORPO RIGIDO NON BASTA, e l'ha dimostrato la moka: messa sul
+## fuoco con E tornava alla mano e cadeva per terra, anche con la riga «Metti la moka sul
+## fuoco» a schermo. L'assegnazione arriva al motore solo quando la scena smaltisce i cambi
+## di trasformata; se prima cade un passo di fisica, il motore riscrive sul nodo la posizione
+## che conosce lui — quella vecchia — e vince. Misurato con `tools/prova_moka_fuochi.gd`:
+## con un passo per fotogramma o meno la moka restava sul fuoco, con cinque passi per
+## fotogramma tornava alla mano su tutti e quattro i fuochi.
+##
+## IL POSTO GIUSTO È `_integrate_forces`, dove lo stato è quello del motore. Si assegna
+## ANCHE il nodo, subito: chi chiede dov'è nello stesso fotogramma deve già vederla lì.
+func teletrasporta(xf: Transform3D) -> void:
+	_teletrasporto = xf
+	_da_teletrasportare = true
+	global_transform = xf
+	linear_velocity = Vector3.ZERO
+	angular_velocity = Vector3.ZERO
+	sleeping = false
+
+
+## C'è qualcosa di nuovo da ricordare, e l'ha fatto il giocatore (D-243). Le sottoclassi la
+## chiamano anche quando cambia quello che hanno dentro — la moka col caffè, la tazza piena —
+## senza essersi mosse: una tazza riempita sul tavolo senza spostarla va ricordata piena.
+func _annuncia() -> void:
+	_toccata = true
+	cambiato.emit()
+
+
+# ---------------------------------------------------------------------------
+# QUELLO CHE SI FA CON UNA COSA IN MANO (D-244)
+# ---------------------------------------------------------------------------
+#
+# Di base niente: E posa, il destro non fa niente. Chi sa fare qualcosa lo dice
+# sovrascrivendo questi metodi — il giocatore chiede e non nomina nessuno, come per
+# `posa()`. Oggi la moka versa nella tazza, e la tazza si beve.
+
+## Mirando `bersaglio` con questa in mano, se E ci fa qualcosa invece di posare.
+func puo_usare_su(_bersaglio: Object) -> bool:
+	return false
+
+
+## La riga che lo dice, al posto di «Posa…».
+func prompt_usa_su(_bersaglio: Object) -> String:
+	return ""
+
+
+func usa_su(_bersaglio: Object) -> void:
+	pass
+
+
+## Col destro, senza bisogno di mirare niente: se la cosa in mano si usa da sola.
+func puo_usare() -> bool:
+	return false
+
+
+func prompt_usa() -> String:
+	return ""
+
+
+func usa() -> void:
+	pass
+
+
+## Se sta facendo un gesto — versare, bere — durante il quale la mano non la muove il
+## giocatore, e nessun tasto deve interromperlo posandola o lanciandola.
+func in_gesto() -> bool:
+	return false
+
+
+## Cosa questa cosa vuole ritrovare dopo un riavvio (D-243): dove sta. Chi ha anche un
+## contenuto — la moka il caffè, la tazza quanto è piena — ci aggiunge il suo.
+##
+## VUOTO SE NESSUNO L'HA MAI TOCCATA, e la memoria del mondo non ne scrive la voce: una cosa
+## mai toccata sta dove la mette la scena, anche quando la scena cambia.
+##
+## NON SI CHIAMA `ricordo()`, e il nome ovvio l'ha già preso la stampa: `Stampa.ricordo(radice)`
+## è la voce del registro delle foto, con un argomento, e in GDScript una sottoclasse non
+## può ridefinire un metodo con un'altra firma. La stampa smetteva di compilare, e con lei
+## la stampante.
+func stato_da_ricordare() -> Dictionary:
+	if not _toccata:
+		return {}
+	return {&"xf": global_transform}
+
+
+## Rimette quello che `stato_da_ricordare()` aveva scritto. FERMA: una cosa ritrovata non
+## riparte con la velocità che aveva quando si è chiuso il gioco.
+func torna_come_ricordato(voce: Dictionary) -> void:
+	if voce.has(&"xf"):
+		_toccata = true
+		global_transform = voce[&"xf"]
+		linear_velocity = Vector3.ZERO
+		angular_velocity = Vector3.ZERO
 
 
 # ---------------------------------------------------------------------------
@@ -489,7 +640,10 @@ func _physics_process(delta: float) -> void:
 	if _in_volo and (get_contact_count() > 0 or _fuori_dalla_rete()):
 		_in_volo = false
 		angular_damp = SMORZAMENTO_GIRO
-	if si_puo_perdere or _fuori_dalla_rete() or linear_velocity.length() > 0.05:
+	var in_moto := _fuori_dalla_rete() or linear_velocity.length() > 0.05
+	if in_moto:
+		_mosso = true
+	if si_puo_perdere or in_moto:
 		_quieta_da = 0.0
 		_gia_guardata = false
 		# IN MANO O CONGELATA IL CONTO SI AZZERA: qualcuno l'ha presa e messa
@@ -514,6 +668,21 @@ func _physics_process(delta: float) -> void:
 		_gia_guardata = true
 		_dove_guardata = global_position
 		_rete_di_sicurezza()
+		# E SE SI ERA MOSSA, LA CASA SE NE RICORDA (D-243). Qui, a cosa ferma e dopo la
+		# rete, e non posandola: posata rimbalza, e la rete può ancora spostarla di un
+		# palmo.
+		#
+		# LA PRIMA FERMATA NON CONTA. La scena posa le cose un millimetro sopra i piani,
+		# e all'avvio cadono tutte di quel millimetro: la prima stesura lo prendeva per
+		# uno spostamento, e al primo avvio della partita vera la casa si è ricordata la
+		# posizione di ogni tazza e ogni bottiglia. Innocuo quel giorno, e un guaio il
+		# giorno in cui si sposta un mobile nel generatore: le cose mai toccate
+		# resterebbero inchiodate al posto vecchio.
+		if _mosso:
+			_mosso = false
+			if _assestata:
+				_annuncia()
+		_assestata = true
 
 
 ## Quando la rete non deve nemmeno guardare. Qui basta «in mano o congelata»; la
@@ -760,6 +929,12 @@ func _velocita_massima() -> float:
 
 
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
+	if _da_teletrasportare:
+		_da_teletrasportare = false
+		state.transform = _teletrasporto
+		state.linear_velocity = Vector3.ZERO
+		state.angular_velocity = Vector3.ZERO
+		return
 	if not _in_mano:
 		return
 	if mano_rigida:

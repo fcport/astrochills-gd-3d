@@ -1,64 +1,36 @@
-; La moka: l'attivita' del registro FARE dell'attesa (storia 3.3). Compare in cucina
-; SOLO quando l'articolo &"moka" e' posseduto — comprato al terminale (3.2) — e la sua
-; logica di comparsa e di rituale sta tutta in moka.gd: la scena e' geometria + nodi
-; d'effetto, il codice li cabla da se' in `_ready()`.
+; La moka (D-244): una cosa che si prende in mano, si mette sul fuoco e versa il caffe'
+; nelle tazze. Compare in cucina SOLO quando l'articolo &"moka" e' posseduto — comprato
+; al terminale (3.2) — e tutto il resto sta in moka.gd.
 ;
-; NASCE SPENTA (`enabled = false`) E INVISIBILE. Il codice legge il possesso all'avvio
-; (`_apply_presence`) e ascolta `Events.item_purchased` a runtime: da non-posseduta
-; resta invisibile, senza collisione e inerte. Non e' `main.gd` ad accenderla — a
-; differenza del letto — perche' la sua comparsa dipende solo dal possesso, non dalla
-; notte.
+; NON E' PIU' UN INTERAGIBILE FERMO. Era uno StaticBody3D con un timer: la si guardava e
+; si premeva E. Adesso e' un corpo rigido come il termos e la tazza, e il caffe' lo fa il
+; fuoco (`fornello.gd`).
 ;
-; LA GEOMETRIA NON E' PIU' SEGNAPOSTO. Erano tre scatole grigie, ed e' per quelle che
-; D-183 ha tolto la moka dalla cucina: «fra un posto vuoto e un posto occupato male,
-; vuoto legge meglio». Adesso il corpo arriva da `assets/models/moka.glb`, che
-; `tools/moka_blender.py` posa da un modello scaricato: una caffettiera conica di
-; alluminio segnato, venti centimetri col pomello, CC-BY di "ninja of stealth" (il
-; credito sta in `assets/models/esterni/moka/FONTE.txt`, ed e' obbligatorio). Il
-; modello porta i propri materiali: niente `material_override`.
-;
-; L'ORIGINE E' ALLA BASE, appoggiata sul piano: chi la colloca in scena scrive la quota
-; del piano (0,9 m, il top del Counter di kitchen.tscn) e non deve sottrarre mezza
-; altezza.
-;
-; RAGGIUNGIBILITA' (lezione di bed.tscn). L'occhio e' a 1,65 m e il raggio arriva a
-; 1,2 m; la moka sul piano a 0,9 m ha il suo corpo fra 0,9 e ~1,15 m — sopra i ~60 cm
-; irraggiungibili, dentro la portata. Il volume di collisione ricalca la silhouette
-; visibile (come il monitor: collider = scocca): non piu' alto della cosa piu' alta che
-; la moka ha davvero, cosi' non c'e' volume sopra qualcosa che non si vede e il prompt
-; non compare da lontano. La quota esatta si tara GUARDANDO — verifica d'operatore.
+; IL CORPO arriva da `assets/models/moka.glb`, che `tools/moka_blender.py` posa da un
+; modello scaricato: una caffettiera conica di alluminio segnato, venti centimetri col
+; pomello, CC-BY di "ninja of stealth" (il credito e' in `CREDITI.md` e in
+; `assets/models/esterni/moka/FONTE.txt`). L'ORIGINE E' ALLA BASE, al centro in pianta:
+; posata, la moka ha l'origine sul piano, ed e' il punto che il fornello guarda.
 [gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://world/interactables/moka.gd" id="1_moka"]
 [ext_resource type="PackedScene" path="res://assets/models/moka.glb" id="2_modello"]
 
-; IL COLLIDER RICALCA IL CORPO, NON L'INGOMBRO. Le quote le MISURA
-; `tools/moka_blender.py` e le stampa: il corpo e' 8,9 cm in pianta e 20 alto col
-; pomello, l'ingombro con manico e becco arriva a 11,4. Questa scatola e' il corpo.
-; Il MANICO resta fuori - e' la stessa scelta dell'antenna della radiolina, scritta
-; li' per esteso: dargli un volume vorrebbe dire un prompt largo il doppio della
-; cosa che si vede, e una moka che non si appoggia perche' il manico tocca prima.
+; IL COLLIDER RICALCA IL CORPO, NON L'INGOMBRO: 8,9 cm in pianta e 20 alto col pomello,
+; misurati da `moka_blender.py`. Il manico e il becco restano fuori, come l'antenna della
+; radiolina. UNA SCATOLA E NON UN CILINDRO, per la ragione della tazza (D-201): un
+; cilindro appoggiato su una griglia trova contatti asimmetrici e gira su se stesso.
 [sub_resource type="BoxShape3D" id="ShapeMoka"]
-size = Vector3(0.092, 0.20, 0.092)
+size = Vector3(0.089, 0.20, 0.089)
 
-; Nessun `prompt_text` qui: il prompt e' CODE-DRIVEN — moka.gd fa override di `prompt()`
-; per restituire `prompt_for(_step)`, e la riga cambia a ogni tempo del rituale. Un
-; default di scena sarebbe una seconda sorgente di verita' per la stessa riga, mai letta.
-[node name="Moka" type="StaticBody3D"]
-collision_mask = 0
+; Mezzo chilo: una moka d'alluminio da tre tazze, vuota.
+[node name="Moka" type="RigidBody3D"]
+mass = 0.5
 script = ExtResource("1_moka")
-enabled = false
+nome = "la moka"
 
-; Il modello vero. L'origine del .glb sta SOTTO E AL CENTRO IN PIANTA, come per tutto
-; quello che si posa su un piano: qui non serve nessuna trasformata.
 [node name="Modello" parent="." instance=ExtResource("2_modello")]
 
-[node name="Collision" type="CollisionShape3D" parent="."]
+[node name="Col" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.100, 0)
 shape = SubResource("ShapeMoka")
-
-
-; L'attesa reale fra fuoco e pronto. One-shot; durata e connessione le fissa moka.gd
-; (BREW_SECONDS), perche' e' un valore di rituale, non di layout. Conta col tempo
-; scalato → F1–F4 la accelerano.
-[node name="BrewTimer" type="Timer" parent="."]

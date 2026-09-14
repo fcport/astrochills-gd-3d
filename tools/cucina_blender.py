@@ -29,7 +29,7 @@ import importlib   # noqa: E402
 for _m in ("geometria", "modellare"):
     if _m in sys.modules:
         importlib.reload(sys.modules[_m])
-from geometria import ARREDI_CUCINA, verifica_arredi, W_SILL   # noqa: E402
+from geometria import ARREDI_CUCINA, COTTURA, FUOCHI, verifica_arredi, W_SILL   # noqa: E402
 from modellare import (bm_di, cilindro, cilindro_orizz, esporta, finisci,   # noqa: E402
                        lampada, prepara_render, prisma, pulisci, scatola,
                        posa_modello, scatola_inclinata, verifica_impronte,
@@ -176,24 +176,27 @@ def lavello():
     scatola("Inox", xr - 0.012, xr + 0.012, H_TOP + 0.30, H_TOP + 0.325, zr - 0.02, zr + 0.10)
 
 
-def cottura_e_moka():
-    """Quattro fuochi, le griglie, e la moka su quello davanti a sinistra.
+def cottura():
+    """Quattro fuochi e le griglie. Niente manopole, e niente moka.
 
-    LA MOKA NON E' UN VEZZO. Il GDD dice che per il caffe' si attraversa la sala
-    aperta al pubblico: il caffe' e' un gesto dichiarato del gioco, e questa e'
-    la sua estremita' - il posto dove finisce quel percorso.
+    LA MOKA DISEGNATA SUL FUOCO NON C'E' PIU' (D-244). Federico: «ci sono due moke,
+    una e' sui fornelli, una e' a sinistra, ed e' quella che si deve acquistare».
+    Quella sul fuoco era un rilievo del piano - si vedeva e non si toccava - e
+    accanto alla moka vera diceva che il caffe' si fa da solo. La moka adesso e'
+    una, `moka.tscn`, compare comprandola, e sul fuoco ce la si mette.
+
+    LE MANOPOLE NON SI DISEGNANO PIU' QUI: si girano, e una cosa che si gira non
+    puo' essere un pezzo della stanza. Le fa `world/interactables/fornello.gd`,
+    con la stessa forma che avevano qui, nei punti di `geometria.MANOPOLE`.
+
+    Dove stanno piano e fuochi lo dice `geometria.py`, perche' lo deve sapere anche
+    il gioco: e' li' che una moka cuoce.
     """
-    x0, x1 = X_B - 0.90, X_B - 0.04
-    z0, z1 = Z_MURO + 0.06, Z_FRONTE - 0.06
+    x0, z0, x1, z1 = COTTURA
     scatola("Inox", x0, x1, H_TOP - 0.005, H_TOP + 0.010, z0, z1)
-    fuochi = []
-    for i in range(2):
-        for j in range(2):
-            fx = x0 + 0.24 + i * 0.42
-            fz = z0 + 0.13 + j * 0.22
-            fuochi.append((fx, fz))
-            cilindro("Metallo", fx, fz, H_TOP + 0.010, H_TOP + 0.030, 0.055, 16, r2=0.045)
-            cilindro("Schermo", fx, fz, H_TOP + 0.030, H_TOP + 0.042, 0.028, 12)
+    for fx, fz in FUOCHI:
+        cilindro("Metallo", fx, fz, H_TOP + 0.010, H_TOP + 0.030, 0.055, 16, r2=0.045)
+        cilindro("Schermo", fx, fz, H_TOP + 0.030, H_TOP + 0.042, 0.028, 12)
     # griglie: due telai rettangolari con le traverse
     for i in range(2):
         gx = x0 + 0.24 + i * 0.42
@@ -203,19 +206,6 @@ def cottura_e_moka():
         for dx in (-0.17, 0.0, 0.17):
             scatola("Metallo", gx + dx - 0.006, gx + dx + 0.006, H_TOP + 0.028, H_TOP + 0.040,
                     z0 + 0.02, z0 + 0.42)
-    # manopole sul frontale
-    for k in range(4):
-        cilindro_orizz("Plastica", x0 + 0.16 + k * 0.18, H_TOP - 0.02, Z_FRONTE + 0.02,
-                       "z", 0.03, 0.022, 12)
-    # la moka, sul fuoco davanti a sinistra
-    mx, mz = fuochi[1]
-    cilindro("Inox", mx, mz, H_TOP + 0.042, H_TOP + 0.115, 0.048, 12, r2=0.034)
-    cilindro("Inox", mx, mz, H_TOP + 0.115, H_TOP + 0.130, 0.040, 12)
-    cilindro("Inox", mx, mz, H_TOP + 0.130, H_TOP + 0.205, 0.034, 12, r2=0.046)
-    cilindro("Inox", mx, mz, H_TOP + 0.205, H_TOP + 0.222, 0.030, 12, r2=0.012)
-    scatola("Schermo", mx + 0.040, mx + 0.105, H_TOP + 0.120, H_TOP + 0.150, mz - 0.014, mz + 0.014)
-    scatola("Schermo", mx + 0.090, mx + 0.105, H_TOP + 0.150, H_TOP + 0.200, mz - 0.014, mz + 0.014)
-    cilindro("Inox", mx - 0.052, mz, H_TOP + 0.150, H_TOP + 0.190, 0.010, 10, r2=0.016)
 
 
 def sul_piano():
@@ -350,7 +340,7 @@ def pattumiera():
 pulisci()
 basi()
 lavello()
-cottura_e_moka()
+cottura()
 sul_piano()
 bacheca()
 cappa()
@@ -424,7 +414,7 @@ def scatta(nome, posizione, mira, lente=28.0):
 scatta("cucina.png", (9.90, 1.62, 3.85), (11.40, 1.05, 2.00), lente=20.0)
 # e dall'angolo del tavolo verso ovest: tutta la linea in un colpo
 scatta("cucina-linea.png", (12.70, 1.62, 3.20), (8.80, 1.05, 2.00), lente=22.0)
-# il lavello e la moka sul fuoco, da vicino
+# il lavello e i fuochi, da vicino
 scatta("cucina-fuochi.png", (10.05, 1.45, 3.00), (10.95, 1.02, 1.95), lente=34.0)
 # l'angolo del tavolo, verso est
 scatta("cucina-tavolo.png", (9.90, 1.60, 3.00), (12.60, 0.90, 3.70), lente=26.0)

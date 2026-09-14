@@ -7910,3 +7910,202 @@ fisso: nessuna si ferma in piedi; senza giro, sette su otto. Banco verde.
 
 **Da verificare giocando:** gli otto decimi; se la barra si legge; se sei metri al secondo sono
 troppi dentro casa; se il giro sembra un polso o una trottola.
+
+
+## D-242 Le prime pagine del quaderno le ha riscritte Federico, e l'indice si compone da solo
+
+Federico, il 14 settembre, ha riscritto le prime tre pagine del quaderno («cambialo così»:
+procedure del turno, come muoversi, l'ordine delle operazioni) e ha chiesto un indice.
+
+**IL TESTO È SUO, IMPAGINATO PER LA CARTA.** Lo ha mandato in markdown, e grassetti e tabelle il
+`Label` non li disegna. La tabella dei tasti è diventata due colonne battute a spazi, con una riga
+di trattini sotto l'intestazione; anche gli elenchi sono colonne allineate. Dei grassetti resta solo
+«UNA SOLA VOLTA», in maiuscolo come si sottolinea a macchina. Ogni sua pagina superava le 20 righe:
+la parte finale continua su una seconda pagina senza titolo, a destra della prima, così ogni
+argomento sta su una doppia pagina aperta e non si interrompe girando il foglio. «Monte Grimano»
+staccato l'ha scritto lui così; nel resto del progetto è «Montegrimano».
+
+**L'INDICE È A PAGINA 2**, sotto il suo paragrafo «Le procedure sono elencate nell'ordine…», che lo
+introduce; il resto dell'introduzione sta a pagina 1 in 18 righe. Elenca solo le pagine che vengono
+dopo e che hanno un titolo (i seguiti no), con i puntini e il numero che il quaderno stampa in fondo.
+Con 13 voci la pagina è piena, 20 righe su 20: una pagina con titolo in più la fa sbordare, e il
+banco lo dice.
+
+**SI COMPONE, NON SI SCRIVE** (`PaginaQuaderno.indice`, `QuadernoData.righe_indice()`): scritto a
+mano, il primo testo che va a capo su due pagine sposterebbe tutti i numeri, e l'indice mentirebbe
+in silenzio. Il banco rilegge ogni voce e controlla che il numero porti alla pagina con quel titolo.
+
+**Misurato:** banco verde (17 pagine, nessuna fuori dal foglio, 13 voci d'indice tutte giuste,
+nessuna fase senza pagina); `tools/prova_quaderno.gd` passa, e negli scatti le tabelle restano
+allineate.
+
+**Da verificare giocando:** se l'indice serve davvero, visto che si sfoglia due pagine alla volta e
+non si salta a un numero.
+
+
+## D-243 Le partite sono cartelle, e la casa si ricorda quello che hai toccato
+
+Federico, il 14 settembre: prima di andare avanti con la cucina «potrebbe valere la pena inserire
+il concetto di salvataggio», perché «testare cose e fare cose senza avere un concetto di
+salvataggio» diventa strano. Le scelte sono sue, fatte davanti a quattro domande: la notte a metà
+riparte da capo e il mondo no; le partite si cambiano con un tasto di sviluppo; si beve col
+destro; il mocio sta in magazzino.
+
+**UNA PARTITA È UNA CARTELLA**, `user://saves/<nome>/`, con `profile.tres`, `night.tres` e il
+nuovo `world.tres`. La vera si chiama `partita`, e i due file che stavano sciolti in `saves/` ci
+sono stati traslocati al primo avvio (`SaveManager.trasloca_vecchi`: una volta sola, e senza
+sovrascrivere un profilo che là ci fosse già). Fuori dallo sviluppo è l'unica.
+
+**F10, SOLO IN SVILUPPO** (`debug/partite.gd`): continuare, aprire un'altra partita, cominciarne
+una da zero, copiare la vera in una di prova. Aprire ricarica la scena, e la notte in corso non si
+salva, come è sempre stato. L'ultima scelta resta aperta anche rilanciando (`saves/scelta.txt`),
+e finché non si torna alla vera in alto a sinistra resta scritto «PARTITA DI PROVA: prova-1»:
+dimenticarsela vorrebbe dire credere di aver perso le lire. W/S e E, come tutto il resto.
+
+**LE SONDE HANNO LA LORO**, `sonde`, svuotata a ogni avvio: lanciando una scena che non è
+`main.tscn` si apre quella. Prima giravano sulla partita vera — è la notte 34 del D-240 — e
+potevano scriverci. `PARTITA=<nome>` forza una partita precisa, anche la vera.
+
+**IL MONDO SI RICORDA** (`core/world_state.gd`, `world/memoria_mondo.gd`): dove stanno le cose
+che si prendono in mano, cosa c'è dentro, se un fuoco è acceso. Si scrive un secondo e mezzo
+dopo che una cosa si è fermata, e alla chiusura della finestra; la chiave è il percorso del nodo
+dalla radice del mondo. Fuori restano la camera CCD — attrezzatura della notte, che riparte
+avvitata — e le stampe, che il loro registro ce l'hanno già nel profilo (D-239).
+
+**SOLO QUELLO CHE È STATO TOCCATO.** La prima stesura si ricordava tutto: all'avvio le cose cadono
+del millimetro che le separa dai piani, e quel millimetro contava come uno spostamento. Il primo
+avvio della partita vera ha scritto la posizione di ogni bottiglia. Innocuo quel giorno, e un guaio
+il giorno in cui si sposta un mobile nel generatore: le cose mai toccate resterebbero inchiodate al
+posto vecchio. Adesso la prima fermata non conta, e la voce la scrive solo ciò che il giocatore ha
+preso, spostato o riempito. Il file di quel primo avvio è stato cancellato.
+
+**Misurato:** banco verde, con i controlli nuovi (quale partita apre un avvio, i nomi ammessi —
+niente `../`, niente cartelle del banco — e il giro su disco di trasformate e numeri dentro il
+mondo). `tools/prova_memoria.gd`: una tazza spostata finisce nel file da sola, rimontata la scena
+torna lì a 0,0 cm, e il termos mai toccato resta dove lo mette la scena e nel file non c'è.
+Avviato il gioco vero, il profilo si legge dalla cartella nuova.
+
+**Da verificare giocando:** F10; chiudere la finestra e ritrovare le cose dove le si era lasciate;
+che dopo il trasloco la partita sia quella di ieri.
+
+
+## D-244 La moka fa il caffè sul fuoco, e il caffè si versa nelle tazze
+
+Federico: «ci sono due moke, una è sui fornelli, una è a sinistra, ed è quella che si deve
+acquistare». E: la moka «fa il caffè quando la metti sul fornello, non fa il caffè a caso… al
+momento tu premi, fa il caffè, e che è sta merda?».
+
+**LA MOKA DISEGNATA SUL FUOCO È USCITA** dal modello della cucina (`cucina_blender.py`): era un
+rilievo del piano che si vedeva e non si toccava, e accanto a quella vera diceva che il caffè si fa
+da solo. Resta una moka, quella del negozio, che compare comprandola.
+
+**LA MOKA SI PRENDE IN MANO** (`Moka` è un `Carryable`), e il rituale a tempi della 3.3 — E riempie,
+E «mette sul fuoco» senza muoversi, E versa, E beve — non c'è più. Il caffè lo fanno le cose. La
+moka si porta ai fornelli; guardando un fuoco la riga dice «Metti la moka sul fuoco», ed E ce la
+mette dritta, centrata, col manico verso chi la mette. Si gira la manopola. Su un fuoco acceso
+cuoce quaranta secondi di gioco, e tolta dal fuoco non torna indietro; negli ultimi secondi dal
+becco esce vapore, e alla fine dentro ci sono tre tazze, perché è una moka da tre. Il vapore è
+l'unico segnale finché non ci sono i suoni (D-235).
+
+**IL FUOCO GIUSTO È QUELLO GUARDATO, non quello vicino alla mano.** La prima stesura cercava il fuoco
+più vicino alla mano, e da in piedi davanti al bancone la mano sta venticinque centimetri oltre il
+bordo: la sonda non ha trovato un solo punto della cucina da cui la moka andasse sul fuoco. Il
+giocatore adesso passa a quello che tiene in mano il punto guardato (`Carryable.mira`).
+
+**LE MANOPOLE SI GIRANO** (`world/interactables/fornello.gd`, una per fuoco): un quarto di giro in
+senso antiorario, con una tacca, e una corona di diciotto lingue blu attorno al bruciatore con un
+filo di luce. Non potevano più stare disegnate nella stanza. Piano, fuochi e manopole stanno in
+`geometria.py` (`COTTURA`, `FUOCHI`, `MANOPOLE`, `MANOPOLA_FUOCO`), letti dal disegno e dal
+generatore: le due manopole di sinistra accendono i fuochi di sinistra, e l'esterna quello dietro.
+
+**VERSARE.** Con la moka in mano, guardando una tazza vuota, la riga dice «Versa il caffè nella
+tazza»; E porta la moka sopra la tazza col becco verso di lei, la inclina di 65°, scende un filo di
+caffè e la tazza si riempie. Le tazze sono quelle che c'erano già — sulla consolle e sul tavolo
+della cucina — perché Federico ha chiesto di usare quelle. Il caffè è un disco largo quanto la
+tazza alla sua quota, e il becco e il fondo sono misurati sui vertici dei modelli. La sonda ha
+trovato due difetti del gesto: la moka arrivava di fianco e rovesciava la tazza, e poi versava in
+una tazza coricata (adesso durante il gesto non la urta, e in una tazza coricata non entra niente);
+e il verso del becco, ricalcolato a ogni passo, spostava il bersaglio insieme alla moka, che restava
+ferma a sedici centimetri senza toccare niente (adesso si fissa all'inizio del gesto).
+
+**SI BEVE COL DESTRO** (azione `usa`): la tazza sale verso la bocca, si inclina, il caffè cala. Il
+destro non ha una riga sua, e la sua voce va in coda: «[E] Posa la tazza    [DESTRO] Bevi il
+caffè». Nel quaderno, `Tasto destro  Bevi`. Con le mani piene E posa sempre, TRANNE quando la cosa in
+mano sa fare qualcosa con ciò che si guarda: non è la lotta della porta, perché la tazza con la moka
+c'entra e la porta no.
+
+**LANCIATA PIENA SI SVUOTA**, al primo urto; e una tazza piena che resta coricata, da qualunque parte
+arrivi, si è rovesciata. La macchia per terra e il mocio che la pulisce aspettano i modelli.
+
+**LA COPPIA C4** si apre quando la moka comincia a cuocere e si chiude quando il caffè è bevuto.
+Nessun bonus, come prima.
+
+**Misurato:** `tools/prova_moka.gd`, riscritta, cammina tutto con le mani del giocatore — il suo
+raggio, la sua riga, E e il destro — e passa le sue undici domande: il negozio la vende; senza
+possesso non c'è; comprata sta sul bancone (0,899 su un piano a 0,900); sui quattro fuochi non c'è
+niente; si prende; va sul fuoco e ci resta; la manopola accende quel fuoco; il caffè sale, tre tazze,
+coppia aperta una volta; versata col becco a 0,0 cm dalla bocca e due dosi rimaste; bevuta, coppia
+chiusa; lanciata piena, svuotata; la casa ricorda due dosi e il fuoco spento. Banco verde,
+`tools/prova_mani.gd` passa. Gli avvisi «MODELLO VECCHIO» di `gen_blockout.py` sono l'orologio dei
+file: in `geometria.py` ci sono costanti nuove, la geometria degli altri modelli non è cambiata.
+
+**Da verificare giocando:** la fiamma (colore, quanta luce); la manopola, che da un metro è una
+decina di pixel; i quaranta secondi; il gesto del versare (65° in un secondo e otto); il bere visto
+da dentro la testa; se «[DESTRO]» in coda alla riga si legge.
+
+
+## D-245 La moka cadeva dal fuoco: un corpo rigido si sposta nel passo di fisica, e F2–F4 accorciano i passi
+
+Federico, giocando: «anche se dice metti la moka sul fuoco comunque mi cade». `prova_moka.gd`
+passava, perché consegnava E direttamente al giocatore. `tools/prova_moka_fuochi.gd` rifà il gesto
+come si gioca — la moka che insegue la mano, in piedi davanti al piano, il tasto vero che passa per
+i viewport — su tutti e quattro i fuochi e a ×1, ×2, ×5, ×10. Il registro della sua partita aveva
+F2, F3 e F4 premuti.
+
+**PRIMA CAUSA: `Engine.time_scale` ALLUNGA IL PASSO DI FISICA, non ne fa fare di più.** A ×10 un
+passo simula un sesto di secondo, e una moka appoggiata su barre da un centimetro rimbalza: a ×5 e
+×10 finiva cinque o dieci centimetri più in là, fuori dal fuoco. Il controllo del tempo adesso alza
+insieme passi al secondo e tetto dei passi per fotogramma (`TimeControl.accelera`), e ogni passo
+resta un sessantesimo di secondo di gioco. Solo in sviluppo; le impostazioni del progetto non
+cambiano. Le sonde che accelerano usano la stessa funzione.
+
+**SECONDA CAUSA, rivelata dalla prima cura: `global_transform = …` su un corpo rigido si perde.**
+Con cinque passi per fotogramma la moka, messa sul fuoco, tornava alla mano e cadeva per terra: il
+motore riscriveva sul nodo la posizione vecchia prima che la nuova gli arrivasse. È la stessa cosa
+che può succedere a ×1 in una finestra a 60 fps. `Carryable.teletrasporta()` sposta il corpo dentro
+`_integrate_forces`, e la moka va sul fuoco così.
+
+**Misurato:** `prova_moka_fuochi.gd`, 16 casi, la moka resta sul fuoco in tutti (prima: 8 guasti).
+La moka scrive nel registro dove l'ha messa, e un secondo dopo avvisa se non ci sta più.
+
+
+## D-246 In SOLVE il primo tasto accendeva SLEWING e faceva perdere il cielo
+
+Federico: «il primo movimento che faccio mi dice slewing e poi non lo dice più». Non era il
+lampeggio del D-198, e `prova_slew.gd` continuava a passare.
+
+**LA CAUSA.** La stella di taratura ha l'angolo orario di quando la fase parte, e il cercatore resta
+giusto così, perché stella e tubo girano insieme. Ma la montatura nel mondo insegue il cielo (0,15
+gradi al secondo vero), e per lei un angolo orario fermo è un comando di tornare indietro. Fermi a
+guardare otto secondi, il tubo aveva inseguito 1,2 gradi; il primo tasto lo rimandava indietro di
+quasi tre, oltre il mezzo grado che accende la scritta. I tasti dopo stavano sotto la soglia perché
+ognuno azzerava il conto. La GOTO non l'ha mai avuto: ricalcola il soggetto all'ora della notte.
+
+**LA CURA:** la fase annuncia il puntamento più il cielo girato da quando è partita
+(`PhaseSync._cielo_girato`), e il punto di sincronizzazione si scrive all'angolo orario del SYNC,
+come fa la GOTO quando si risincronizza.
+
+**Misurato** (`tools/prova_solve.gd`, la fase vera sulla montatura vera): prima, al primo tasto 2
+cambi di stato e il tubo indietro di 2,88 gradi; adesso 0 cambi, e il tubo avanza col cielo.
+`prova_slew.gd` invariata: GOTO 2 cambi, inseguimento e centraggio 0.
+
+
+## D-247 Il riepilogo dell'alba in due colonne, con i nomi delle schede
+
+Federico, con uno scatto: «si vede male questo». Le fasi sono diventate otto e il riepilogo era
+impaginato per quattro: una colonna a quindici pixel scendeva fino a 209 su uno schermo alto 192,
+l'intestazione cadeva sopra la prima riga e le ultime fasi sopra la riga del cielo. Adesso due
+colonne da quattro, e i nomi sono quelli delle schede che si sono viste tutta la notte (BOOT, COOL,
+SOLVE, SEQ) invece delle chiavi interne (STARTUP, COOLING, SYNC, IMAGING).
+
+**Da verificare giocando:** allo scatto non è stato riguardato; nessuna sonda disegna il riepilogo.

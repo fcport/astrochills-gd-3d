@@ -89,6 +89,10 @@ var _crt: CrtScreen
 ## è in corso. Si imparano in `configure()` chiedendole alle fasi stesse: in questo file
 ## non compare il nome di nessuna fase, e la barra non fa eccezione.
 var _tab_labels := PackedStringArray()
+
+## Le stesse etichette per chiave di fase: il riepilogo dell'alba ha i punteggi per chiave
+## (`sync`, `imaging`) e deve scriverli con i nomi delle schede (`SOLVE`, `SEQ`).
+var _etichette_per_chiave := {}
 var _tab_current := -1
 
 ## Se la finestra in cui la notte mostra le fasi ha il fuoco sul desktop del PC.
@@ -383,6 +387,7 @@ func _labels_of(p: NightPlan) -> PackedStringArray:
 			var phase := node as Phase
 			if phase != null:
 				label = phase.tab_label()
+				_etichette_per_chiave[phase.key()] = label
 			node.free()
 		out.append(label)
 	return out
@@ -1084,6 +1089,6 @@ func _show_summary() -> void:
 	# PRIMA di `Game.end_night()` — deve, perché quella azzera `Game.run` e il
 	# riepilogo la sta ancora leggendo — quindi il profilo porta ancora il saldo di
 	# ieri. La somma vive in un posto solo, su `Game`.
-	_summary.set_readout(Game.run, _clock.clock_text(), Game.wallet_now())
+	_summary.set_readout(Game.run, _clock.clock_text(), Game.wallet_now(), _etichette_per_chiave)
 	_crt.show_control(_summary)
 	_mark_tab(-1)

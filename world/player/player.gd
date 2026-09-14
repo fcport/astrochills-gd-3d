@@ -185,7 +185,7 @@ const MIRA_LANCIO := 4.0
 ## il controllo torna: vedi `set_enabled()`.
 const OWN_ACTIONS: Array[StringName] = [
 	&"move_forward", &"move_back", &"move_left", &"move_right", &"interact",
-	&"sprint", &"jump", &"crouch", &"lancia",
+	&"sprint", &"jump", &"crouch", &"lancia", &"usa",
 ]
 
 ## Chi ha bisogno del giocatore lo trova per GRUPPO, mai per percorso di nodo né
@@ -244,6 +244,10 @@ var _mirato: Carryable = null
 ## Quello che ha in mano, o null. Uno solo: si hanno due mani ma un solo mirino,
 ## e non c'è un gesto per dire in quale delle due.
 var _in_mano: Carryable = null
+
+## Quello su cui la cosa che si ha in mano sa fare qualcosa, guardandolo adesso — la tazza,
+## per la moka — o null. Lo scrive `_aggiorna_mira()` a mani piene (D-244).
+var _bersaglio_mano: Object = null
 
 ## QUELLO CHE SI HA IN MANO SI RADDRIZZA, e non conserva come stava.
 ##
@@ -353,6 +357,17 @@ func mirato() -> Carryable:
 	return _mirato
 
 
+## Quello che ha in mano, o null. Per le sonde, come `mirato()`.
+func tenuto() -> Carryable:
+	return _in_mano
+
+
+## Ciò su cui la cosa in mano sa fare qualcosa, guardandolo adesso — o null. Per le sonde,
+## per la stessa ragione di `mirato()`: la risposta giusta è quella del tick di fisica.
+func bersaglio_mano() -> Object:
+	return _bersaglio_mano
+
+
 ## Accende e spegne il MIRINO, e serve a chi mette l'occhio da un'altra parte.
 ##
 ## Il punto al centro dello schermo lo disegna `crosshair.gd` SEMPRE - anche a
@@ -423,6 +438,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not _enabled:
 		return
 
+	# IL DESTRO USA QUELLO CHE SI HA IN MANO (D-244): la tazza piena si beve. Senza
+	# mirare niente, e mai durante un gesto — una tazza a metà sorso non si ribeve.
+	if event.is_action_pressed(&"usa"):
+		if _is_controlling() and _in_mano != null and not _in_mano.in_gesto() \
+				and _in_mano.puo_usare():
+			_in_mano.usa()
+		return
+
 	# Un click ridà il controllo dopo che il cursore era stato liberato. Solo la
 	# pressione del tasto sinistro: senza il filtro anche una rotellina — che
 	# Godot consegna come `InputEventMouseButton` — ricatturerebbe il cursore
@@ -438,7 +461,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		# IL LANCIO SI CARICA SOLO CON QUALCOSA IN MANO, e la barra la riempie
 		# `_aggiorna_carica()`. Parte quando il dito si alza, e solo a barra piena.
-		if event.is_action_pressed(&"lancia") and _is_controlling() and _in_mano != null:
+		if event.is_action_pressed(&"lancia") and _is_controlling() and _in_mano != null \
+				and not _in_mano.in_gesto():
 			_caricando = true
 		elif event.is_action_released(&"lancia"):
 			if _caricando and _carica >= 1.0 and _in_mano != null and _is_controlling():
@@ -475,7 +499,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		# nessuna, lo stesso tasto farebbe due cose a seconda di dove sto
 		# guardando, e posare qualcosa vicino a una porta diventerebbe una lotta.
 		# Chi deve aprire una porta posa quello che ha in mano, come nella vita.
+		#
+		# L'ECCEZIONE LA FA COSA SI HA IN MANO, non cosa si guarda (D-244): la moka,
+		# guardando una tazza, versa. Non è la lotta della porta — la porta con la moka
+		# non c'entra, la tazza sì — e il prompt lo dice prima di premere.
 		if _in_mano != null:
+			if _in_mano.in_gesto():
+				return
+			_aggiorna_mira()
+			if _bersaglio_mano != null:
+				_in_mano.usa_su(_bersaglio_mano)
+				return
 			# `posa()` E NON `lascia()`: quasi sempre sono la stessa cosa, ma un
 			# oggetto che ha un posto suo lo sa e ci va. Vedi `Carryable.posa()`.
 			_in_mano.posa()
@@ -547,7 +581,7 @@ func _physics_process(delta: float) -> void:
 	# del fotogramma precedente e resterebbe indietro di un passo — di poco, e
 	# sempre, cioè fluttuando dietro la spalla mentre si cammina.
 	if _in_mano != null:
-		_in_mano.punta(_trasformata_mano())
+		_in_mano.punta(_trasformata_mano(), _cam.global_transform)
 	_aggiorna_carica(delta)
 
 
@@ -593,14 +627,28 @@ func _aggiorna_mira() -> void:
 	if not _is_controlling():
 		_mostra_mira(null, null)
 		return
-	# CON LE MANI PIENE NON SI MIRA NIENTE, perché `E` posa comunque (vedi
-	# `_unhandled_input`). Continuare a mostrare «Apri il quadro» mentre l'unica
-	# cosa che quel tasto fa è posare la moka sarebbe una riga che mente.
+	# CON LE MANI PIENE NON SI MIRANO GLI INTERAGIBILI, perché `E` non li usa (vedi
+	# `_unhandled_input`). Continuare a mostrare «Apri il quadro» mentre quel tasto
+	# posa la moka sarebbe una riga che mente. Si mira soltanto ciò su cui la cosa in
+	# mano sa fare qualcosa — la tazza, per la moka (D-244) — e la riga lo dice.
 	if _in_mano != null:
 		_focus = null
 		_mirato = null
+		_bersaglio_mano = _bersaglio_per(_in_mano)
+		# E le si dice dove si guarda: la moka si mette sul fuoco guardato (D-244).
+		_in_mano.mira(_ray.get_collision_point() if _ray.is_colliding() else Vector3.INF)
 		_mirino.set_attivo(true)
-		_prompt.show_prompt(_in_mano.prompt_posa())
+		if _in_mano.in_gesto():
+			_prompt.hide_prompt()
+			return
+		var riga := _in_mano.prompt_posa()
+		if _bersaglio_mano != null:
+			riga = _in_mano.prompt_usa_su(_bersaglio_mano)
+		# IL DESTRO NON HA UNA RIGA SUA: il prompt è uno e comincia con [E]. Lo si
+		# aggiunge in coda, e solo quando fa qualcosa.
+		if _in_mano.puo_usare():
+			riga += "    [DESTRO]  %s" % _in_mano.prompt_usa()
+		_prompt.show_prompt(riga)
 		return
 	# `RayCast3D` aggiorna la propria collisione all'inizio del tick di fisica,
 	# cioè PRIMA di `move_and_slide()`: senza questa riga si leggerebbe un
@@ -624,6 +672,22 @@ func _aggiorna_mira() -> void:
 	if usabile == null and oggetto == null:
 		oggetto = _dentro_l_ingombro()
 	_mostra_mira(usabile, oggetto)
+
+
+## Ciò che si sta guardando, se la cosa in mano ci sa fare qualcosa (D-244). Lo stesso
+## raggio della mira, e dietro un ingombro la stessa seconda domanda di sempre: una tazza
+## posata sul ripiano del carrello si vede, quindi ci si versa.
+func _bersaglio_per(cosa: Carryable) -> Object:
+	_ray.force_raycast_update()
+	if not _ray.is_colliding():
+		return null
+	var colpito := _ray.get_collider()
+	if cosa.puo_usare_su(colpito):
+		return colpito
+	if colpito is Carryable:
+		return null
+	var dietro := _dentro_l_ingombro()
+	return dietro if dietro != null and cosa.puo_usare_su(dietro) else null
 
 
 ## L'OGGETTO CHE SI VEDE MA STA DENTRO UN INGOMBRO — e senza questo sparisce.
@@ -664,6 +728,10 @@ func _dentro_l_ingombro() -> Carryable:
 	var solo_le_cose := PhysicsRayQueryParameters3D.create(
 		da, _ray.to_global(_ray.target_position))
 	solo_le_cose.collision_mask = Interactable.LAYER_INTERACTABLE
+	# Quello che si ha in mano sta davanti agli occhi, e sul layer delle cose: senza
+	# escluderlo, dietro ogni ingombro si ritroverebbe la moka che si sta tenendo.
+	if _in_mano != null:
+		solo_le_cose.exclude = [_in_mano.get_rid()]
 	# SI GUARDA OLTRE ANCHE QUI, fino a `STRATI` corpi. Sul layer degli
 	# interagibili non c'è solo la roba da raccogliere: c'è anche il volume di
 	# MIRA degli interagibili, che a volte è più grande della cosa — quello del
@@ -745,14 +813,20 @@ func _prendi(oggetto: Carryable) -> void:
 	_in_mano = oggetto
 	oggetto.posato.connect(_su_oggetto_posato, CONNECT_ONE_SHOT)
 	oggetto.prendi(self)
-	oggetto.punta(_trasformata_mano())
+	# IL RAGGIO NON VEDE QUELLO CHE SI TIENE: sta davanti agli occhi, e a mani piene la
+	# mira serve a trovare la tazza, non la moka.
+	_ray.add_exception(oggetto)
+	oggetto.punta(_trasformata_mano(), _cam.global_transform)
 
 
 ## L'oggetto non è più in mano — posato da noi o strappato via da un muro. In
 ## tutti e due i casi arriva di qui: senza, chi lo teneva continuerebbe a puntare
 ## una mano a una cosa che è per terra due stanze fa.
 func _su_oggetto_posato() -> void:
+	if is_instance_valid(_in_mano):
+		_ray.remove_exception(_in_mano)
 	_in_mano = null
+	_bersaglio_mano = null
 	# E LA CARICA SI PERDE: posato con `E` o strappato da uno stipite a metà barra,
 	# il lancio non ha più niente da lanciare, e al prossimo oggetto la barra deve
 	# ripartire da zero.

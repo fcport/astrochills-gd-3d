@@ -24,13 +24,117 @@ var profile := PlayerProfile.new()
 ## chiamante in gioco. Carica all'avvio, versa+salva alla chiusura della notte.
 var _saves := SaveManager.new()
 
+## Chi tiene qualcosa in memoria lo scriva ADESSO: si sta per cambiare partita, o per
+## copiare questa. Lo ascolta `MemoriaDelMondo`, che sta in `world/` e che `Game` non può
+## nominare — da qui la si chiama soltanto.
+signal salvataggio_richiesto
 
-## Carica il profilo dal disco PRIMA della prima notte. Un save assente è un avvio
+## La partita aperta, cioè la cartella dei salvataggi (D-243). Fuori dallo sviluppo è
+## sempre quella vera; le altre le apre il pannello di F10.
+var partita := SaveManager.PARTITA_VERA
+
+## Com'era il mondo quando lo si è lasciato (D-243): dove stanno le cose e cosa c'è
+## dentro. Lo carica `_ready()`, lo rilegge `MemoriaDelMondo` rimettendo le cose al loro
+## posto, lo riscrive `ricorda_mondo()`.
+var mondo := WorldState.new()
+
+## Quale partita ha aperto per ultima il pannello di F10: così una partita di prova resta
+## aperta anche rilanciando il gioco, finché non se ne sceglie un'altra. Solo in sviluppo.
+const SCELTA_PATH := "user://saves/scelta.txt"
+
+
+## Carica profilo e mondo dal disco PRIMA della prima notte. Un save assente è un avvio
 ## nuovo, silenzioso; un save illeggibile diventa un profilo pulito (la frase gentile
 ## resta su `_saves.last_load_message`, canale 2): all'avvio non c'è CRT montato dove
 ## mostrarla, e nessun AC chiede una schermata di boot — basta non crashare e proseguire.
 func _ready() -> void:
+	SaveManager.trasloca_vecchi()
+	var sviluppo := OS.is_debug_build()
+	var nome := partita_dell_avvio(OS.get_cmdline_args(), OS.get_environment("PARTITA"),
+		_leggi_scelta() if sviluppo else "", sviluppo)
+	if nome == SaveManager.PARTITA_SONDE:
+		SaveManager.svuota_partita(nome)
+	_apri(nome)
+
+
+## Quale partita apre questo avvio. PURA e STATICA, per il banco.
+##
+## NELL'ORDINE: la variabile d'ambiente `PARTITA`, se c'è — è il modo di far girare una
+## sonda su una partita precisa, anche quella vera; poi, se si sta lanciando una scena che
+## non è `main.tscn`, cioè una sonda, la partita delle sonde; poi, in sviluppo, l'ultima
+## scelta col pannello; e infine la vera.
+static func partita_dell_avvio(args: PackedStringArray, env: String, scelta: String,
+		sviluppo: bool) -> String:
+	if SaveManager.nome_valido(env):
+		return env
+	for a in args:
+		if a.ends_with(".tscn") and a.get_file() != "main.tscn":
+			return SaveManager.PARTITA_SONDE
+	if sviluppo and SaveManager.nome_valido(scelta):
+		return scelta
+	return SaveManager.PARTITA_VERA
+
+
+func _apri(nome: String) -> void:
+	partita = nome
+	_saves.usa_partita(nome)
 	profile = _saves.load_profile()
+	mondo = _saves.load_world()
+	if nome != SaveManager.PARTITA_VERA:
+		Log.info("game", "partita «%s»: %d notti, %d lire" % [
+			nome, profile.nights_completed, profile.wallet_lire])
+
+
+## Apre un'altra partita e ricomincia la scena da capo (pannello di F10).
+##
+## PRIMA SI SCRIVE QUELLA DI ADESSO: dopo `_apri()` ogni salvataggio andrebbe nella
+## cartella nuova. La notte in corso non si salva, ed è la regola di sempre — una notte
+## interrotta non è successa.
+func apri_partita(nome: String) -> void:
+	if not SaveManager.nome_valido(nome):
+		return
+	salvataggio_richiesto.emit()
+	_scrivi_scelta(nome)
+	_apri(nome)
+	run = null
+	get_tree().paused = false
+	get_tree().reload_current_scene.call_deferred()
+
+
+## Crea una partita vuota, da zero, e ne restituisce il nome. Non la apre.
+func nuova_partita() -> String:
+	var nome := SaveManager.nome_libero(SaveManager.elenco_partite())
+	return nome if SaveManager.crea_partita(nome) else ""
+
+
+## Copia la partita `da` in una di prova e ne restituisce il nome, vuoto se non ci è
+## riuscita. Non la apre. Se `da` è quella aperta, prima si scrive il mondo di adesso.
+func copia_partita(da: String) -> String:
+	if da == partita:
+		salvataggio_richiesto.emit()
+	var nome := SaveManager.nome_libero(SaveManager.elenco_partite())
+	return nome if SaveManager.copia_partita(da, nome) else ""
+
+
+## Riscrive com'è il mondo (D-243). Come `save_prints`: il mondo compone le voci, il
+## disco lo tocca `Game`.
+func ricorda_mondo(oggetti: Dictionary) -> void:
+	mondo.oggetti = oggetti
+	_saves.save_world(mondo)
+
+
+func _leggi_scelta() -> String:
+	if not FileAccess.file_exists(SCELTA_PATH):
+		return ""
+	var f := FileAccess.open(SCELTA_PATH, FileAccess.READ)
+	return f.get_line().strip_edges() if f != null else ""
+
+
+func _scrivi_scelta(nome: String) -> void:
+	DirAccess.make_dir_recursive_absolute(SaveManager.SAVES_DIR)
+	var f := FileAccess.open(SCELTA_PATH, FileAccess.WRITE)
+	if f != null:
+		f.store_line(nome)
 
 
 ## Comincia una notte nuova. L'indice NON è un argomento: si ricava dalle notti già

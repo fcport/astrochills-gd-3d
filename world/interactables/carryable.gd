@@ -73,6 +73,25 @@ const VELOCITA_LANCIO := 6.0
 ## all'infinito, e il braccio che le tira invece pesa sempre uguale.
 const MASSA_BRACCIO := 0.5
 
+## IL GIRO DEL LANCIO, in radianti al secondo. Federico: «ho provato a tirare la
+## bottiglia e cade perfettamente in piedi». In mano la cosa sta dritta (vedi
+## `_giro_verso`), e senza un giro volava dritta com'era e atterrava sul fondo — ogni
+## volta, che è la cosa che nessun lancio vero fa.
+##
+## Chi tira una cosa la fa ruotare in avanti col polso. Nove radianti sono un giro e
+## mezzo al secondo: in un lancio in casa, mezzo secondo di volo, quasi un giro. Il
+## CASO cambia di un terzo la velocità e inclina l'asse, o l'atterraggio sarebbe
+## deciso dalla distanza e basta — sempre coricata di qua a tre metri, sempre in
+## piedi a quattro.
+const GIRO_LANCIO := 9.0
+const GIRO_CASO := 0.35
+const ASSE_CASO := 0.5
+
+## Lo smorzamento angolare a terra: vedi `_ready()`. IN VOLO SI TOGLIE, e torna al
+## primo urto: a quattro il giro del lancio si spegne in un quarto di secondo, cioè
+## prima di atterrare, e la bottiglia tornerebbe a toccare terra dritta.
+const SMORZAMENTO_GIRO := 4.0
+
 
 ## Emesso quando l'oggetto smette di stare in mano, per qualunque ragione — posato
 ## dal giocatore o strappato via da un muro. Chi lo teneva lo ascolta: senza,
@@ -102,6 +121,11 @@ signal posato
 ## Camminandoci sopra si decolla. Vedi `_ready()` per il perché, e
 ## `tools/prova_mani.gd`, che lo accende con `PROP_OSTACOLO=1`.
 @export var ostacolo_per_il_giocatore := false
+
+## IL LANCIO SENZA GIRO, tenuto per poterlo misurare: a `true` si torna a lanciare
+## senza far ruotare niente, e la bottiglia torna ad atterrare in piedi. Vedi
+## `GIRO_LANCIO` e `tools/prova_mani.gd`, che lo accende con `LANCIO_SENZA_GIRO=1`.
+@export var lancio_senza_giro := false
 
 ## LA RETE, cioè la promessa che una cosa caduta si ritrova, e vale per tutto
 ## quello che si prende in mano — non solo per la camera CCD, che è stata la prima
@@ -233,6 +257,10 @@ var _ripescaggi := 0
 
 var _in_mano := false
 
+## Lanciata e non ha ancora toccato niente: finché è vero lo smorzamento del giro è
+## tolto. Vedi `SMORZAMENTO_GIRO`.
+var _in_volo := false
+
 ## Da quanto tempo l'oggetto è oltre `STRAPPO`. Vedi lassù perché non basta la
 ## distanza.
 var _lontano_da := 0.0
@@ -336,7 +364,7 @@ func _ready() -> void:
 	# un piano di formica non e' una trottola, e un termos non rotola come una
 	# biglia. Quello lineare resta basso, o un oggetto lanciato si fermerebbe a
 	# mezz'aria.
-	angular_damp = 4.0
+	angular_damp = SMORZAMENTO_GIRO
 	linear_damp = 0.2
 
 
@@ -423,8 +451,21 @@ func lancia(verso: Vector3, trascinamento := Vector3.ZERO) -> void:
 	if not _in_mano:
 		return
 	lascia()
+	verso = verso.normalized()
 	var v := VELOCITA_LANCIO / sqrt(maxf(mass, MASSA_BRACCIO))
-	linear_velocity = verso.normalized() * v + trascinamento
+	linear_velocity = verso * v + trascinamento
+	if lancio_senza_giro:
+		return
+	# L'ASSE È IL FIANCO DI CHI LANCIA, e `UP × verso` fa girare la cima in avanti,
+	# che è il verso del polso. Tirando dritto in su o in giù il fianco non esiste
+	# più, e un asse qualunque orizzontale va bene uguale.
+	var asse := Vector3.UP.cross(verso)
+	if asse.length() < 0.1:
+		asse = Vector3.RIGHT
+	asse = asse.normalized().rotated(verso, randf_range(-ASSE_CASO, ASSE_CASO))
+	angular_velocity = asse * GIRO_LANCIO * randf_range(1.0 - GIRO_CASO, 1.0 + GIRO_CASO)
+	angular_damp = 0.0
+	_in_volo = true
 
 
 ## Dove la mano lo vuole, adesso. La chiama chi lo tiene, dal proprio
@@ -443,6 +484,11 @@ func punta(mano: Transform3D) -> void:
 ## muoversi — e non a ogni tick, che costerebbe trenta interrogazioni allo spazio
 ## sessanta volte al secondo.
 func _physics_process(delta: float) -> void:
+	# IL VOLO FINISCE AL PRIMO URTO, o se qualcuno la riprende al volo: da lì in poi
+	# la cosa si deve poter fermare, e lo smorzamento del giro torna.
+	if _in_volo and (get_contact_count() > 0 or _fuori_dalla_rete()):
+		_in_volo = false
+		angular_damp = SMORZAMENTO_GIRO
 	if si_puo_perdere or _fuori_dalla_rete() or linear_velocity.length() > 0.05:
 		_quieta_da = 0.0
 		_gia_guardata = false

@@ -7896,9 +7896,17 @@ fuoco NON si avvita: si avvita solo posandola con `E`.
 Il click che ridà il mouse non carica; la carica si perde posando, con lo strappo e liberando il
 cursore. Nel quaderno, pagina «Come ci si muove»: `SINISTRO  tenuto, lancia`.
 
+**E GIRA.** Federico, provandolo: «ho provato a tirare la bottiglia e cade perfettamente in piedi».
+In mano la cosa sta dritta, e senza giro volava dritta com'era e toccava terra sul fondo. Adesso il
+lancio la fa ruotare in avanti a 9 rad/s, con un terzo di caso sulla velocità e mezzo radiante
+sull'asse (`Carryable.GIRO_LANCIO`). In volo lo smorzamento angolare (4) è tolto e torna al primo
+urto: lasciato, il giro si spegneva in un quarto di secondo, prima di atterrare.
+`LANCIO_SENZA_GIRO=1` rimette il difetto.
+
 **Misurato** con `tools/prova_mani.gd`: mollato a metà (barra a 0,50) la scatola resta in mano;
 tenuto, la barra è piena a 0,80 s e mezzo secondo dopo la scatola è ancora in mano; mollata, parte
-a 6,0 m/s e dopo un secondo sta a 3,04 m. Banco verde.
+a 6,0 m/s e dopo un secondo sta a 3,04 m. Otto lanci della bottiglia con la sua forma vera e seme
+fisso: nessuna si ferma in piedi; senza giro, sette su otto. Banco verde.
 
 **Da verificare giocando:** gli otto decimi; se la barra si legge; se sei metri al secondo sono
-troppi dentro casa.
+troppi dentro casa; se il giro sembra un polso o una trottola.

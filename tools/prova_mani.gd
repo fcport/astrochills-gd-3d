@@ -139,6 +139,25 @@ func _clic(premuto: bool) -> void:
 	_p._unhandled_input(ev)
 
 
+## La bottiglia del blockout rifatta con le sue misure (`s_bottiglia` in
+## `world/blockout.tscn`), con l'origine sul fondo come lì.
+func _bottiglia() -> Carryable:
+	var b := Carryable.new()
+	b.name = "Bottiglia"
+	b.nome = "la bottiglia"
+	b.mass = 0.5
+	b.lancio_senza_giro = OS.get_environment("LANCIO_SENZA_GIRO") == "1"
+	var forma := CollisionShape3D.new()
+	var cilindro := CylinderShape3D.new()
+	cilindro.height = 0.299
+	cilindro.radius = 0.037
+	forma.shape = cilindro
+	forma.position.y = 0.150
+	b.add_child(forma)
+	_scena.add_child(b)
+	return b
+
+
 func _prova() -> void:
 	_monta()
 	await _tick()
@@ -374,6 +393,54 @@ func _prova() -> void:
 	print("[mani] lanciata, dopo un secondo sta a %.2f m da dove e' partita" % volo)
 	if volo < 1.5:
 		_guasto("lanciata, la scatola si e' fermata a %.2f m: non e' un lancio" % volo)
+
+	# --- E UNA BOTTIGLIA LANCIATA NON ATTERRA SEMPRE IN PIEDI.
+	#
+	# Federico: «ho provato a tirare la bottiglia e cade perfettamente in piedi». In
+	# mano sta dritta, e senza un giro volava dritta e toccava terra sul fondo. Si
+	# lancia la forma vera della bottiglia OTTO volte, con lo sguardo che cambia, e si
+	# conta come si ferma. `LANCIO_SENZA_GIRO=1` rimette il difetto.
+	#
+	# IL SEME E' FISSO perche' il giro ha un caso dentro: senza, un referto rosso non
+	# si potrebbe rifare.
+	seed(241)
+	var lanci := 8
+	var in_piedi := 0
+	for k in lanci:
+		var bottiglia := _bottiglia()
+		_p.global_position = Vector3(-5.0, 0.0, -0.5)
+		_p.rotation.y = PI + deg_to_rad(-30.0 + 60.0 * k / float(lanci - 1))
+		_p.camera().rotation.x = deg_to_rad(-10.0 + 5.0 * (k % 3))
+		bottiglia.global_position = _p._trasformata_mano().origin
+		await _tick()
+		_p._prendi(bottiglia)
+		for _i in 30:
+			await _tick()
+		_clic(true)
+		for _i in int(Player.TEMPO_CARICA * 60.0) + 5:
+			await _tick()
+		_clic(false)
+		await _tick()
+		var lanciata := not bottiglia.in_mano()
+		for _i in 240:
+			await _tick()
+		var pende := rad_to_deg(bottiglia.global_basis.y.angle_to(Vector3.UP))
+		var lontana := Vector2(bottiglia.global_position.x - _p.global_position.x,
+			bottiglia.global_position.z - _p.global_position.z).length()
+		print("[mani] bottiglia %d: ferma a %.1f m, pende di %.0f gradi"
+			% [k + 1, lontana, pende])
+		# SONDA CIECA: una bottiglia rimasta in mano, o caduta ai piedi, sta dritta
+		# per ragioni che col lancio non c'entrano.
+		if not lanciata or lontana < 1.5:
+			_guasto("SONDA CIECA: la bottiglia %d non e' stata lanciata (a %.1f m)"
+				% [k + 1, lontana])
+		elif pende < 15.0:
+			in_piedi += 1
+		bottiglia.queue_free()
+	print("[mani] bottiglie lanciate: %d su %d si fermano in piedi" % [in_piedi, lanci])
+	if in_piedi * 2 > lanci:
+		_guasto("%d bottiglie lanciate su %d si fermano in piedi: volano dritte"
+			% [in_piedi, lanci])
 
 	# --- E CI SI CAMMINA SOPRA SENZA DECOLLARE.
 	#

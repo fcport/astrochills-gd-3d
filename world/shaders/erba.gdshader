@@ -15,6 +15,10 @@ uniform sampler2D ciuffi : source_color, filter_nearest, repeat_disable;
 uniform float varianti = 4.0;
 // Sotto questa copertura il pixel non c'è.
 uniform float soglia : hint_range(0.0, 1.0) = 0.4;
+// Quanto è chiaro il piede del ciuffo rispetto alla punta. La foto è fatta senza
+// luce, e un ciuffo chiaro fino a terra sta sul prato come un timbro: in un prato
+// vero la base dei fili è all'ombra degli altri fili.
+uniform float piede : hint_range(0.0, 1.0) = 0.35;
 
 // Risoluzione della griglia di snapping, la stessa di ps1.gdshader.
 uniform float snap_resolution : hint_range(8.0, 2048.0) = 665.0;
@@ -33,7 +37,7 @@ void vertex() {
 
 void fragment() {
 	vec4 foto = texture(ciuffi, vec2((UV.x + colonna) / varianti, UV.y));
-	ALBEDO = foto.rgb * tinta;
+	ALBEDO = foto.rgb * tinta * mix(1.0, piede, UV.y);
 	ALPHA = foto.a;
 	ALPHA_SCISSOR_THRESHOLD = soglia;
 	ROUGHNESS = 1.0;

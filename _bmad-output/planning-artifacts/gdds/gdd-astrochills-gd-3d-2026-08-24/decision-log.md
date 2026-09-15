@@ -8440,3 +8440,34 @@ chiusa. Adesso aspetta due passi.
 quadro chiuso il raggio verso il pulsante di dentro prende l'anta, a quadro aperto prende il
 pulsante, e premuto due volte spegne le 20 luci e le riaccende tutte. Il banco arriva in fondo. Nei
 provini `14_` e `14c_` l'anta chiusa è a filo, e quella aperta ha le cerniere sul bordo della cassa.
+
+
+## D-257 L'erba era a pois
+
+Federico, il 15 settembre: «l'erba per terra è orribile».
+
+**NEGLI SCATTI SI VEDEVANO TRE DIFETTI.** Li ho fatti con `prova_trafila`, viste `nord` e `macchina`.
+Il primo: tre ciuffi al metro quadro, tutti alti più o meno uguali, messi a pois su un fondo scuro.
+Il secondo: i fili si spezzavano in una pioggia di punti. Il terzo: sotto la lampada della porta i
+ciuffi secchi diventavano fiammelle arancioni.
+
+**I FILI SI SPEZZAVANO PER LA RISOLUZIONE, non per il modello.** La foto aveva 128 pixel per 42 cm,
+e a tre metri un ciuffo occupa sullo schermo circa la metà dei pixel. Con il filtro nearest, senza
+mipmap, lo schermo saltava una riga della texture su due, e un filo largo un pixel usciva a
+tratti. `erba_blender.py` adesso scatta quattro volte più fitto e riduce a 64 pixel. Per ogni
+quadretto tiene la copertura più alta, e il colore lo fa con la media dei soli fili. Con la media
+semplice un filo sottile resterebbe sotto la soglia e sparirebbe. L'atlante è 256 × 64.
+
+**PIÙ FITTA, PIÙ VARIA, CON IL PIEDE IN OMBRA.** Adesso i ciuffi sono dodici al metro quadro, 23.003
+in tutto. La scala va da 0,5 a 1,2 invece che da 0,75 a 1,25. `erba.gdshader` scurisce la base del
+ciuffo fino al 35%: la foto è fatta senza luce, e un ciuffo chiaro fino a terra ci stava sopra come
+un timbro. La tinta secca non spinge più il rosso (1,0 0,95 0,80 invece di 1,15 1,0 0,70), e
+quella verde è un po' più verde.
+
+**Misurato:** il banco è verde e `_check_prato` conta 23.003 ciuffi, nessuno dentro i muri. Nella
+vista `nord` il gioco fa da 127 a 144 FPS, con il V-Sync a 144. Di notte negli scatti il prato
+resta quasi nero, quindi forma e colore li ho giudicati con `LUNA=0.44`. Adesso vicino all'auto
+sembra un prato. Verso la porta la lampada lo tinge d'ambra, ed è la luce, non la tinta.
+
+**Da verificare giocando:** se da vicino dodici al metro quadro bastano, e se a distanza le file
+dei ciuffi si leggono ancora come un campo seminato.

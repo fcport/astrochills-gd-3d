@@ -36,10 +36,16 @@ USCITA = os.path.join(RADICE, "assets", "textures", "erba_ciuffi.png")
 # fuori: sedici centimetri e quattro fili, e a questa scala e' un graffio.
 CIUFFI = ("grass_medium_02_b", "grass_medium_02_c", "grass_medium_02_d",
           "grass_medium_02_e")
-# Il lato della fotografia, in metri e in pixel. 128 pixel per 42 centimetri sono tre
-# millimetri a pixel: un filo resta un filo, e la texture intera pesa niente.
+# Il lato della fotografia, in metri e in pixel. 64 pixel per 42 centimetri sono sei
+# millimetri e mezzo a pixel: a tre metri, dove l'erba si guarda, un pixel della
+# texture e' un pixel dello schermo. A 128 lo schermo ne saltava uno su due, e i fili
+# si spezzavano in una pioggia di punti.
 LATO_M = 0.42
-LATO_PX = 128
+LATO_PX = 64
+# Quante volte piu' fitto si scatta prima di ridurre. UN FILO E' PIU' SOTTILE DI UN
+# PIXEL: ridotto con la media diventerebbe una velatura sotto la soglia, e sparirebbe.
+# Tenendo la copertura piu' alta di ogni quadretto resta un filo largo un pixel.
+SOVRA = 4
 # Sotto questa copertura il pixel non c'e': e' la `soglia` di `erba.gdshader`.
 SOGLIA = 0.4
 
@@ -59,7 +65,7 @@ sc.display.shading.light = "FLAT"
 sc.display.shading.color_type = "TEXTURE"
 sc.render.film_transparent = True
 sc.view_settings.view_transform = "Standard"
-sc.render.resolution_x = sc.render.resolution_y = LATO_PX
+sc.render.resolution_x = sc.render.resolution_y = LATO_PX * SOVRA
 sc.render.image_settings.file_format = "PNG"
 sc.render.image_settings.color_mode = "RGBA"
 
@@ -94,8 +100,14 @@ for k, nome in enumerate(CIUFFI):
     sc.render.filepath = scatto
     bpy.ops.render.render(write_still=True)
     foto = bpy.data.images.load(scatto, check_existing=False)
-    pixel = np.array(foto.pixels[:], dtype=np.float32).reshape(LATO_PX, LATO_PX, 4)
+    fitti = np.array(foto.pixels[:], dtype=np.float32).reshape(
+        LATO_PX, SOVRA, LATO_PX, SOVRA, 4)
     bpy.data.images.remove(foto)
+    # la copertura e' la piu' alta del quadretto; il colore e' la media dei soli fili
+    alfa = fitti[..., 3]
+    peso = np.maximum(alfa.sum(axis=(1, 3)), 1e-6)[..., None]
+    colore = (fitti[..., :3] * alfa[..., None]).sum(axis=(1, 3)) / peso
+    pixel = np.dstack([colore, alfa.max(axis=(1, 3))])
     atlante[:, k * LATO_PX:(k + 1) * LATO_PX, :] = pixel
     print("  %-20s %.2f x %.2f m, %4.1f%% della foto coperta"
           % (nome, x1 - x0, z1 - z0, 100.0 * float((pixel[:, :, 3] > SOGLIA).mean())))

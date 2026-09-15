@@ -29,8 +29,8 @@ const INTERRATO := 0.015
 
 ## Le due tinte fra cui sta ogni ciuffo, moltiplicate sul colore della fotografia. A
 ## novembre un prato di montagna è metà verde e metà paglia.
-const VERDE := Color(0.85, 1.0, 0.85)
-const SECCO := Color(1.15, 1.0, 0.70)
+const VERDE := Color(0.70, 1.0, 0.70)
+const SECCO := Color(1.0, 0.95, 0.80)
 
 ## Il rettangolo di prato, in pianta: x, z, larghezza, profondità.
 @export var estensione := Rect2(-13.0, -11.0, 48.0, 44.0)
@@ -42,7 +42,7 @@ const SECCO := Color(1.15, 1.0, 0.70)
 @export var senza_erba: Array[Rect2] = []
 @export var materiale: Material
 @export var seme := 1999
-@export var ciuffi_per_m2 := 3.0
+@export var ciuffi_per_m2 := 12.0
 
 
 func _ready() -> void:

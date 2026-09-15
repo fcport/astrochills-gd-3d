@@ -113,7 +113,7 @@ static func ciuffi(seme: int, per_m2: float, estensione: Rect2, senza: Array[Rec
 		for i in int(estensione.size.x / lato):
 			var p := estensione.position + Vector2(i + rng.randf(), j + rng.randf()) * lato
 			var angolo := rng.randf() * TAU
-			var scala := rng.randf_range(0.75, 1.25)
+			var scala := rng.randf_range(0.5, 1.2)
 			var variante := rng.randi_range(0, VARIANTI - 1)
 			var secco := rng.randf()
 			if not _escluso(p, senza):

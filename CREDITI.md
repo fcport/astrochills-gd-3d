@@ -173,6 +173,57 @@ trasparente perché tre di quelle sono il coperchio acrilico: `opacizza_il_pieno
 `tools/modellare.py` rimette piene le altre undici. Il modulo continuo non ce l'ha, e
 resta fatto a mano da `tools/arredi_blender.py`.
 
+**Kitchen Sink** — il lavello della cucina. Un blocco da incasso con la vasca, il
+gocciolatoio e il miscelatore; sostituisce la vasca d'acciaio fatta a mano, e sotto il
+piano di lavoro sparisce dentro il mobile.
+Autore: [Heliona](https://sketchfab.com/Heliona).
+Fonte: <https://sketchfab.com/3d-models/kitchen-sink-d4044684be3a45d2b8b81dbcb83847fa>
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> This work is based on "Kitchen Sink"
+> (https://sketchfab.com/3d-models/kitchen-sink-d4044684be3a45d2b8b81dbcb83847fa)
+> by Heliona (https://sketchfab.com/Heliona) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
+**Plate** — i quattro piatti nello scolapiatti della cucina, tutti dallo stesso modello.
+Autore: [Black Snow](https://sketchfab.com/BlackSnow02).
+Fonte: <https://sketchfab.com/3d-models/plate-519c319332ed4708ba4b3ca1dfd5f54a>
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> This work is based on "Plate"
+> (https://sketchfab.com/3d-models/plate-519c319332ed4708ba4b3ca1dfd5f54a)
+> by Black Snow (https://sketchfab.com/BlackSnow02) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
+**1965 Fiat 500F** — l'auto parcheggiata fuori, quella con cui il giocatore torna a
+casa all'alba. **È un segnaposto, e va sostituito prima di distribuire il gioco.** È
+l'unico asset del progetto con una licenza **non commerciale** (NC) e **condivisa allo
+stesso modo** (SA): con questa auto dentro il gioco non si vende, e la versione ridotta
+che ne fa `tools/cinquecento_blender.py` — motore e vani buttati, decimata a ventimila
+facce — resta sotto la stessa licenza. Federico l'ha scelta sapendolo, al posto della
+scatola grigia da quattro metri, finché non c'è un'auto con una licenza con cui si
+distribuisce.
+Autore: [Ddiaz Design](https://sketchfab.com/ddiaz-design).
+Fonte: <https://sketchfab.com/3d-models/1965-fiat-500f-91c9a625d0c24026b266fbe68352e6fa>
+Licenza: [CC-BY-NC-SA 4.0](http://creativecommons.org/licenses/by-nc-sa/4.0/) — **attribuzione obbligatoria, niente uso commerciale, modifiche sotto la stessa licenza**.
+
+> This work is based on "1965 Fiat 500F"
+> (https://sketchfab.com/3d-models/1965-fiat-500f-91c9a625d0c24026b266fbe68352e6fa)
+> by Ddiaz Design (https://sketchfab.com/ddiaz-design) licensed under CC-BY-NC-SA-4.0
+> (http://creativecommons.org/licenses/by-nc-sa/4.0/)
+
+**Pair of mops** — il mocio del magazzino, quello che pulisce il caffè rovesciato. Del set
+si tiene il mocio pulito; `tools/mocio_blender.py` ne raddrizza il manico, lo porta a un
+metro e trenta e ne decima le frange.
+Autore: [Sousinho](https://sketchfab.com/sousinho).
+Fonte: <https://sketchfab.com/3d-models/pair-of-mops-56daf9708906449ea4f8576790ee476f>
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> This work is based on "Pair of mops"
+> (https://sketchfab.com/3d-models/pair-of-mops-56daf9708906449ea4f8576790ee476f)
+> by Sousinho (https://sketchfab.com/sousinho) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
 ## Immagini
 
 **Le foto delle stampe**: `assets/stampe/*.png`, le pagine che escono dalla stampante

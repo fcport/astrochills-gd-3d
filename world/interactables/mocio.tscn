@@ -1,0 +1,60 @@
+; Il mocio del magazzino (D-251): una cosa che si prende in mano, e col destro tenuto pulisce le
+; macchie di caffe'. Tutto il resto sta in mocio.gd.
+;
+; IL CORPO arriva da `assets/models/mocio.glb`, che `tools/mocio_blender.py` fa dal «Pair of mops»
+; di Sousinho (CC-BY; il credito e' in `CREDITI.md` e in `assets/models/esterni/mocio/FONTE.txt`):
+; il mocio pulito dei due, col manico raddrizzato, alto un metro e trenta.
+;
+; L'ORIGINE E' IN FONDO ALLE FRANGE, sull'asse del manico: posato dritto, il mocio ha l'origine sul
+; pavimento, ed e' il punto che tocca la macchia.
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://world/interactables/mocio.gd" id="1_mocio"]
+[ext_resource type="PackedScene" path="res://assets/models/mocio.glb" id="2_modello"]
+
+; IL MANICO PRIMA DELLE FRANGE, e l'ordine conta: `Carryable._centro()` prende il primo collisore,
+; e la rete di sicurezza si chiede se da li' la cosa si raggiunge. Il centro del manico sta
+; all'altezza del petto; quello delle frange a sei centimetri da terra, e da in piedi non si
+; raggiungerebbe mai.
+;
+; DAL RACCORDO ALLA CIMA, da 9 cm a 1,30 m, misurati da `mocio_blender.py`.
+;
+; DUE CENTIMETRI DI RAGGIO, e un manico vero ne ha uno e mezzo: il centimetro in piu' e' il
+; bersaglio, come per la manopola del fornello. Un bastone da due centimetri e mezzo a un metro,
+; a 640 per 360, e' largo sei pixel.
+[sub_resource type="CapsuleShape3D" id="ShapeManico"]
+radius = 0.02
+height = 1.21
+
+; LE FRANGE SONO UNA SCATOLA, per la ragione della tazza (D-201): un fondo piatto sta fermo su un
+; pavimento, un cilindro basso gira su se stesso.
+;
+; E SONO STRETTE, dodici centimetri contro i trentotto delle frange aperte del modello, perche'
+; un mocio non sta in piedi da solo: le frange sono stracci e cedono. Con la scatola da sedici il
+; mocio messo contro il muro si raddrizzava sul fondo e restava dritto in mezzo all'angolo,
+; misurato da `prova_mocio.gd`.
+[sub_resource type="BoxShape3D" id="ShapeFrange"]
+size = Vector3(0.12, 0.12, 0.12)
+
+; Otto etti: un manico d'alluminio e una testa di cotone asciutta.
+;
+; IL BARICENTRO SI DICHIARA. Quello automatico lo pesa sul VOLUME dei collisori, e la scatola delle
+; frange ha dieci volte il volume del manico: finiva a undici centimetri da terra, cioe' un
+; misirizzi. Il manico pesa tre etti e mezzo col baricentro a settanta centimetri, la testa quattro
+; e mezzo a sei: il baricentro sta a trentaquattro.
+[node name="Mocio" type="RigidBody3D"]
+mass = 0.8
+center_of_mass_mode = 1
+center_of_mass = Vector3(0, 0.34, 0)
+script = ExtResource("1_mocio")
+nome = "il mocio"
+
+[node name="Modello" parent="." instance=ExtResource("2_modello")]
+
+[node name="Manico" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.695, 0)
+shape = SubResource("ShapeManico")
+
+[node name="Frange" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.06, 0)
+shape = SubResource("ShapeFrange")

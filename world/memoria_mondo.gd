@@ -15,11 +15,18 @@
 ## l'ultima cosa posata non dipende da quanto in fretta si esce.
 ##
 ## IL DISCO LO TOCCA `Game`, come per le stampe: il mondo non conosce `SaveManager`.
+##
+## E LE MACCHIE DI CAFFÈ (D-251), che non promettono niente perché nella scena non ci sono: le
+## porta qui chi le fa (`Macchia.versa`), e rimontando la scena questo nodo le rifà dal file.
 class_name MemoriaDelMondo
 extends Node
 
 ## Il gruppo di chi si ricorda di sé. Vedi l'intestazione per cosa promette chi ci entra.
 const GRUPPO := &"si_ricorda"
+
+## Il gruppo di questo nodo, che è uno per scena: ci arriva la tazza che si rovescia, per
+## consegnare la macchia a chi se la ricorda.
+const GRUPPO_MEMORIA := &"memoria_del_mondo"
 
 ## Secondi di quiete dall'ultimo cambiamento prima di scrivere.
 const ATTESA_SALVATAGGIO := 1.5
@@ -33,6 +40,7 @@ var _pronta := false
 
 
 func _ready() -> void:
+	add_to_group(GRUPPO_MEMORIA)
 	_salvataggio = Timer.new()
 	_salvataggio.one_shot = true
 	_salvataggio.timeout.connect(salva_adesso)
@@ -57,9 +65,31 @@ func _avvia() -> void:
 			n.torna_come_ricordato(voci[chiave])
 			rimessi += 1
 		n.cambiato.connect(_salva_presto)
+	# LE MACCHIE SI RIFANNO, invece di rimettersi: nella scena non ci sono (D-251). Prima di
+	# `_pronta`, così rifarle non conta come un cambiamento da scrivere.
+	var macchie := 0
+	for voce in Game.mondo.macchie:
+		if voce is Dictionary and (voce as Dictionary).has(&"xf"):
+			aggiungi_macchia(Macchia.da_ricordo(voce), voce[&"xf"])
+			macchie += 1
 	_pronta = true
 	if rimessi > 0:
 		Log.info("mondo", "%d cose rimesse dove erano state lasciate" % rimessi)
+	if macchie > 0:
+		Log.info("mondo", "%d macchie ancora per terra" % macchie)
+
+
+static func find_in(tree: SceneTree) -> MemoriaDelMondo:
+	return tree.get_first_node_in_group(GRUPPO_MEMORIA) as MemoriaDelMondo
+
+
+## Una macchia nuova, o rifatta dal file: entra nel mondo accanto alle cose, in `xf`, e da lì in
+## poi quando cambia la casa se ne ricorda.
+func aggiungi_macchia(m: Macchia, xf: Transform3D) -> void:
+	get_parent().add_child(m)
+	m.global_transform = xf
+	m.cambiata.connect(_salva_presto)
+	_salva_presto()
 
 
 ## La chiave di un oggetto: il suo percorso dalla radice del mondo, che è il genitore di
@@ -87,7 +117,11 @@ func salva_adesso() -> void:
 		var voce: Dictionary = n.stato_da_ricordare()
 		if not voce.is_empty():
 			voci[chiave_di(n)] = voce
-	Game.ricorda_mondo(voci)
+	var macchie: Array = []
+	for n in get_tree().get_nodes_in_group(Macchia.GRUPPO):
+		if not n.is_queued_for_deletion():
+			macchie.append((n as Macchia).stato_da_ricordare())
+	Game.ricorda_mondo(voci, macchie)
 
 
 func _notification(what: int) -> void:

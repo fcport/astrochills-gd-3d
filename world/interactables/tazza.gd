@@ -1,4 +1,5 @@
-## Una tazza: si riempie dalla moka, si beve col destro, e lanciata piena si svuota (D-244).
+## Una tazza: si riempie dalla moka, si beve col destro, e lanciata piena si rovescia (D-244) e
+## lascia una macchia per terra (D-251).
 ##
 ## LE TAZZE CI SONO GIÀ, e Federico ha chiesto di usare quelle: una sulla consolle della sala
 ## di controllo, una col piattino sul tavolo della cucina. Sono quella del servizio da tè di
@@ -206,10 +207,16 @@ func _physics_process(delta: float) -> void:
 
 
 func _rovescia() -> void:
+	var quanto := livello
+	var lanciata := _rovescia_urtando
 	_rovescia_urtando = false
 	livello = 0.0
 	_aggiorna_caffe()
 	Log.info("caffe", "%s si è rovesciata" % nome)
+	# E IL CAFFÈ FINISCE DA QUALCHE PARTE (D-251). Prima spariva, e Federico ha lanciato la
+	# tazza per casa cercando una macchia che non c'era. Cade dal centro della tazza sul primo
+	# piano sotto, e la macchia è grande quanto il caffè che c'era dentro.
+	Macchia.versa(self, _centro(), quanto, lanciata)
 	_annuncia()
 
 

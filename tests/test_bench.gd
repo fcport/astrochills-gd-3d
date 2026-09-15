@@ -125,6 +125,10 @@ func _ready() -> void:
 	print("")
 	_check_quaderno()
 	print("")
+	_check_prato()
+	print("")
+	_check_macchie()
+	print("")
 	_check_luna()
 	print("")
 	_check_pianeti()
@@ -1273,8 +1277,81 @@ func _check_partite() -> void:
 	var silenzio := vuoto.oggetti.is_empty() and saves.last_load_message.is_empty()
 	print("   mondo assente: %d voci, in silenzio %s%s" % [vuoto.oggetti.size(), silenzio,
 		"" if silenzio else "   <-- ATTESO: vuoto e in silenzio"])
+	# E LE MACCHIE (D-251): una lista di dizionari con dentro la trasformata. Il mondo di
+	# prima, scritto qui sopra senza macchie, le rilegge vuote.
+	var w2 := WorldState.new()
+	var xf_m := Macchia.trasformata_su(Vector3(9.1, 0.0, 6.2), Vector3.UP, 1.1)
+	w2.macchie = [{&"xf": xf_m, &"raggio": 0.129, &"seme": 42.5, &"schizzata": true, &"sporco": 0.4}]
+	var senza := letto.macchie.is_empty()
+	saves.save_world(w2, path)
+	var letto2 := saves.load_world(path)
+	var m: Dictionary = letto2.macchie[0] if letto2.macchie.size() == 1 \
+		and letto2.macchie[0] is Dictionary else {}
+	var macchia_ok: bool = senza and not m.is_empty() \
+		and (m.get(&"xf", Transform3D()) as Transform3D).is_equal_approx(xf_m) \
+		and is_equal_approx(float(m.get(&"sporco", 0.0)), 0.4) and bool(m.get(&"schizzata", false))
+	print("   giro su disco delle macchie: senza macchie %s, poi %d macchia intatta %s%s" % [
+		senza, letto2.macchie.size(), macchia_ok, "" if macchia_ok else "   <-- ATTESO: true"])
 	DirAccess.remove_absolute(path)
 	DirAccess.remove_absolute(dir)
+
+
+## Le macchie di caffè (D-251): la pozza è grande quanto il caffè che c'era, il mocio la porta
+## via in pochi secondi, sta sul piano su cui è caduta e copre quello che deve. Che il caffè cada
+## dove deve, che il mocio arrivi a terra da in piedi e che la casa se ne ricordi si cammina in
+## `tools/prova_mocio.gd`.
+func _check_macchie() -> void:
+	print("-- Macchie di caffè: grandi quanto il caffè, e il mocio le porta via (D-251)")
+	var piena := Macchia.raggio_per(1.0, false)
+	var schizzo := Macchia.raggio_per(1.0, true)
+	var fondo := Macchia.raggio_per(0.05, false)
+	var misure_ok := piena > 0.07 and piena < 0.12 and schizzo > piena and fondo < piena \
+		and fondo >= Macchia.RAGGIO_MINIMO
+	print("   raggio: tazza piena %.1f cm, lanciata %.1f, un fondo di tazza %.1f%s" % [
+		piena * 100.0, schizzo * 100.0, fondo * 100.0, "" if misure_ok
+		else "   <-- ATTESO: la piena fra 7 e 12, la lanciata più larga, il fondo più piccolo e non sotto il minimo"])
+	var ml := PI * piena * piena * Macchia.SPESSORE * 1e6
+	print("   la pozza della tazza piena tiene %.1f ml%s" % [ml,
+		"" if absf(ml - Macchia.ML_TAZZA) < 0.5 else "   <-- ATTESO: %.0f, il caffè che c'era" % Macchia.ML_TAZZA])
+
+	var t_piena := _secondi_di_mocio(piena)
+	var t_schizzo := _secondi_di_mocio(schizzo)
+	var tempi_ok := t_piena >= 2.0 and t_piena <= 5.0 and t_schizzo > t_piena and t_schizzo <= 8.0
+	print("   secondi di mocio: tazza piena %.1f, lanciata %.1f%s" % [t_piena, t_schizzo,
+		"" if tempi_ok else "   <-- ATTESO: la piena fra 2 e 5, la lanciata di più ma entro 8"])
+	var finita := Macchia.dopo_strofinata(0.01, 10.0, piena)
+	print("   dieci secondi su una macchia quasi pulita: %.2f%s" % [finita,
+		"" if finita == 0.0 else "   <-- ATTESO: 0, mai sotto"])
+
+	var storte := PackedStringArray()
+	for n in [Vector3.UP, Vector3(0.3, 1.0, -0.2).normalized(), Vector3.FORWARD, Vector3.DOWN]:
+		var xf_n := Macchia.trasformata_su(Vector3(1.0, 2.0, 3.0), n, 0.7)
+		var b := xf_n.basis
+		var giusta := b.y.is_equal_approx(n) and is_equal_approx(b.determinant(), 1.0) \
+			and b.orthonormalized().is_equal_approx(b) \
+			and xf_n.origin.is_equal_approx(Vector3(1.0, 2.0, 3.0) + n * Macchia.SOLLEVATA)
+		if not giusta:
+			storte.append(str(n))
+	print("   su pavimento, pendenza, muro e soffitto: l'alto è la normale, sollevata di %.0f mm%s" % [
+		Macchia.SOLLEVATA * 1000.0, "" if storte.is_empty() else "   <-- ATTESO: storta per %s" % ", ".join(storte)])
+
+	var xf := Macchia.trasformata_su(Vector3(5.0, 0.0, 5.0), Vector3.UP, 0.3)
+	for c in [[Vector3(5.0, 0.01, 5.0), 0.0, true, "il centro"],
+			[Vector3(5.12, 0.01, 5.0), 0.0, true, "a un raggio e un quinto"],
+			[Vector3(5.30, 0.01, 5.0), 0.0, false, "a tre raggi"],
+			[Vector3(5.30, 0.01, 5.0), 0.2, true, "a tre raggi, con le frange"],
+			[Vector3(5.0, 0.75, 5.0), 0.0, false, "sul tavolo, sopra la macchia"]]:
+		var got := Macchia.copre(xf, 0.10, c[0], c[1])
+		print("      copre %-30s %s%s" % [c[3], got, "" if got == c[2] else "   <-- ATTESO: %s" % c[2]])
+
+
+func _secondi_di_mocio(r: float) -> float:
+	var sporco := 1.0
+	var t := 0.0
+	while sporco > 0.0 and t < 60.0:
+		sporco = Macchia.dopo_strofinata(sporco, 1.0 / 60.0, r)
+		t += 1.0 / 60.0
+	return t
 
 
 func _report_partita(got: String, expected: String, label: String) -> void:
@@ -2485,3 +2562,106 @@ func _check_quaderno() -> void:
 	print("   fasi del piano senza pagina: %s%s" % [
 		"nessuna" if mancano.is_empty() else ", ".join(mancano),
 		"" if mancano.is_empty() else "   <-- ATTESO: una pagina per ogni fase"])
+
+
+## Il prato (D-249): piatto dove qualcosa poggia a terra, mai sotto la quota dei
+## pavimenti, mai più ripido di quanto si cammini, e senza erba dentro i muri.
+##
+## LE IMPRONTE SI LEGGONO DALLA SCENA GENERATA, non si ribattono qui: è la scena che il
+## gioco carica, e un'impronta ricopiata resterebbe giusta il giorno che l'edificio si
+## sposta. Si legge lo STATO del .tscn, senza istanziarlo: basta il nodo `Prato`.
+func _check_prato() -> void:
+	print("-- Prato: piatto dove si poggia, mai sotto zero, pendenze, erba fuori dai muri (D-249)")
+	const PENDENZA_MASSIMA := 0.35
+	var prato := Prato.new()
+	var stato := (load("res://world/blockout.tscn") as PackedScene).get_state()
+	var trovato := false
+	for i in stato.get_node_count():
+		if stato.get_node_name(i) != "Prato":
+			continue
+		trovato = true
+		for k in stato.get_node_property_count(i):
+			var nome := stato.get_node_property_name(i, k)
+			if nome in ["estensione", "recinto", "piatti", "senza_erba", "seme", "ciuffi_per_m2"]:
+				prato.set(nome, stato.get_node_property_value(i, k))
+	var est := prato.estensione
+	var rec := prato.recinto
+	var piatti := prato.piatti
+	var senza := prato.senza_erba
+	var seme := prato.seme
+	var densita := prato.ciuffi_per_m2
+	prato.free()
+	if not trovato:
+		print("   nessun nodo Prato in blockout.tscn   <-- ATTESO: rigenerare con tools/gen_blockout.py")
+		return
+	print("   prato %s, recinto %s, %d impronte piatte" % [est, rec, piatti.size()])
+
+	# Sulle impronte il terreno è a zero: agli angoli, a metà dei lati e al centro.
+	var sollevati := 0
+	for r in piatti:
+		for p in [r.position, r.end, r.get_center(), Vector2(r.position.x, r.end.y),
+				Vector2(r.end.x, r.position.y)]:
+			if absf(FormaPrato.altezza(p, piatti, rec)) > 1e-6:
+				sollevati += 1
+	print("   punti delle impronte sollevati: %d%s" % [sollevati,
+		"" if sollevati == 0 else "   <-- ATTESO: 0, l'edificio o l'auto non poggerebbero"])
+
+	var q := FormaPrato.quote(est, piatti, rec)
+	var n := FormaPrato.vertici(est)
+	var minimo := INF
+	var massimo := -INF
+	var ripida := 0.0
+	for j in n.y:
+		for i in n.x:
+			var h := q[j * n.x + i]
+			minimo = minf(minimo, h)
+			massimo = maxf(massimo, h)
+			if i + 1 < n.x:
+				ripida = maxf(ripida, absf(q[j * n.x + i + 1] - h) / FormaPrato.PASSO)
+			if j + 1 < n.y:
+				ripida = maxf(ripida, absf(q[(j + 1) * n.x + i] - h) / FormaPrato.PASSO)
+	print("   quote da %.2f a %.2f m%s" % [minimo, massimo,
+		"" if minimo >= 0.0 else "   <-- ATTESO: mai sotto zero, il recinto resterebbe sospeso"])
+	print("   pendenza massima %.0f%% (%.1f gradi)%s" % [ripida * 100.0, rad_to_deg(atan(ripida)),
+		"" if ripida <= PENDENZA_MASSIMA else "   <-- ATTESO: al massimo %.0f%%" % (PENDENZA_MASSIMA * 100.0)])
+
+	# LA QUOTA SU CUI SI POSANO I CIUFFI È QUELLA DELLA MAGLIA: dentro un quadrato non
+	# esce mai dalle quote dei suoi quattro vertici, e su un vertice è la sua.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var fuori_maglia := 0
+	for _k in 300:
+		var p := est.position + Vector2(rng.randf() * est.size.x, rng.randf() * est.size.y)
+		var i := mini(int((p.x - est.position.x) / FormaPrato.PASSO), n.x - 2)
+		var j := mini(int((p.y - est.position.y) / FormaPrato.PASSO), n.y - 2)
+		var quattro := [q[j * n.x + i], q[j * n.x + i + 1], q[(j + 1) * n.x + i], q[(j + 1) * n.x + i + 1]]
+		var h := FormaPrato.quota(p, est, q)
+		if h < float(quattro.min()) - 1e-5 or h > float(quattro.max()) + 1e-5:
+			fuori_maglia += 1
+	var sul_vertice := absf(FormaPrato.quota(est.position + Vector2(17, 23) * FormaPrato.PASSO, est, q)
+		- q[23 * n.x + 17])
+	print("   quota sulla maglia: %d punti su 300 fuori dai loro vertici, %.6f m su un vertice%s" % [
+		fuori_maglia, sul_vertice,
+		"" if fuori_maglia == 0 and sul_vertice < 1e-5 else "   <-- ATTESO: 0 e 0, i ciuffi galleggerebbero"])
+
+	var ciuffi := FormaPrato.ciuffi(seme, densita, est, senza)
+	var dentro := 0
+	for c in ciuffi:
+		if FormaPrato._escluso(c[0], senza):
+			dentro += 1
+	var ancora := FormaPrato.ciuffi(seme, densita, est, senza)
+	var uguali: bool = ancora.size() == ciuffi.size() and (ciuffi.is_empty() or ancora[0][0] == ciuffi[0][0])
+	print("   %d ciuffi, %d dentro l'edificio o sotto l'auto, stesso seme stesso prato: %s%s" % [
+		ciuffi.size(), dentro, uguali,
+		"" if dentro == 0 and uguali and ciuffi.size() > 1000 else "   <-- ATTESO: migliaia, 0, true"])
+
+	# IL LATO DEL CIUFFO È SCRITTO IN DUE FILE, uno GDScript e uno Python: si legge il
+	# secondo e si confrontano. Diversi, l'erba sarebbe tutta più grande o più piccola.
+	var sorgente := FileAccess.get_file_as_string("res://tools/erba_blender.py")
+	var trovata := RegEx.create_from_string("(?m)^LATO_M = ([0-9.]+)").search(sorgente)
+	var lato := float(trovata.get_string(1)) if trovata != null else -1.0
+	print("   lato del ciuffo: gioco %.2f, fotografia %.2f%s" % [Prato.LATO_CIUFFO, lato,
+		"" if is_equal_approx(lato, Prato.LATO_CIUFFO) else "   <-- ATTESO: uguali in world/prato.gd e tools/erba_blender.py"])
+	var foto := FileAccess.file_exists(Prato.TEXTURE_CIUFFI)
+	print("   texture dei ciuffi: %s%s" % ["c'è" if foto else "manca",
+		"" if foto else "   <-- ATTESO: lancia tools/erba_blender.py"])

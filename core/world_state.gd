@@ -43,6 +43,16 @@ const CURRENT_VERSION := 1
 ## nessuno ha toccato.
 @export var oggetti: Dictionary = {}
 
+## Le macchie di caffè per terra (D-251), una voce per macchia: dove sta, quanto è grande, quanto
+## ne resta (`Macchia.stato_da_ricordare()`).
+##
+## NON STANNO FRA GLI OGGETTI perché nella scena non esistono. Una tazza c'è sempre, e il file
+## dice solo dove; una macchia c'è solo se il file la dice, e la rifà `MemoriaDelMondo`.
+##
+## LA VERSIONE NON CAMBIA: un salvataggio di prima non ha il campo, e leggerlo vuoto vuol dire
+## «nessuna macchia», che è esattamente com'era.
+@export var macchie: Array = []
+
 
 func migrate() -> void:
 	if version == CURRENT_VERSION:

@@ -1268,8 +1268,14 @@ def usa_le_ridotte(pezzi, cartella, metallico=None):
     riflettere e' NERO. E' il difetto ricorrente di questo progetto.
     """
     dentro = os.path.join(cartella, "textures")
+    # `metallicroughness` PRIMA di `roughness`, e l'ordine conta: il primo pezzo che il nome
+    # contiene vince. Con il solo `roughness` il set di `T_mop_clean_metallicRoughness`
+    # diventava `t_mop_clean_metallic` - un file che non esiste - e la mappa restava quella
+    # originale a 4096 dentro il .glb, in silenzio. Visto col mocio (D-251); con un set solo
+    # non cambia niente, perche' si ricade comunque su `roughness.jpg`.
     nostre = {"basecolor": "color.jpg", "diffuse": "color.jpg", "albedo": "color.jpg",
-              "normal": "normal.png", "roughness": "roughness.jpg"}
+              "normal": "normal.png", "metallicroughness": "roughness.jpg",
+              "roughness": "roughness.jpg"}
     materiali = set()
     for o in pezzi:
         for slot in getattr(o, "material_slots", []):

@@ -445,6 +445,13 @@ func _unhandled_input(event: InputEvent) -> void:
 				and _in_mano.puo_usare():
 			_in_mano.usa()
 		return
+	# E MOLLATO SMETTE, per chi si usa tenendo: il mocio pulisce finché il dito sta giù
+	# (D-251). Prima di guardare il cursore: chi libera il mouse col destro ancora giù lo
+	# molla dopo, e il mocio deve smettere lo stesso.
+	if event.is_action_released(&"usa"):
+		if _in_mano != null:
+			_in_mano.smetti_di_usare()
+		return
 
 	# Un click ridà il controllo dopo che il cursore era stato liberato. Solo la
 	# pressione del tasto sinistro: senza il filtro anche una rotellina — che

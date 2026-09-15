@@ -31,9 +31,9 @@ for _m in ("geometria", "modellare"):
         importlib.reload(sys.modules[_m])
 from geometria import ARREDI_CUCINA, COTTURA, FUOCHI, verifica_arredi, W_SILL   # noqa: E402
 from modellare import (bm_di, cilindro, cilindro_orizz, esporta, finisci,   # noqa: E402
-                       lampada, prepara_render, prisma, pulisci, scatola,
-                       posa_modello, scatola_inclinata, verifica_impronte,
-                       verifica_luce)
+                       lampada, materiale, prepara_render, prisma, pulisci, scatola,
+                       posa_modello, scatola_inclinata, usa_le_ridotte,
+                       verifica_impronte, verifica_luce)
 
 # La finestra sopra il lavello, in coordinate di gioco: il muro nord sta a z 1,50 e
 # il vano va da x 9,10 a 10,30. Serve a due cose - interrompere il paraschizzi e i
@@ -51,14 +51,39 @@ IMPRONTE = {n: (x0, z0, x1, z1, h) for (n, x0, z0, x1, z1, h) in ARREDI_CUCINA}
 SEDIA = os.path.join(RADICE, "assets", "models", "esterni",
                      "painted_wooden_chair_01", "painted_wooden_chair_01_1k.gltf")
 
+# IL LAVELLO E I PIATTI VENGONO DA FUORI, e li ha scelti Federico: Sketchfab, CC-BY,
+# con il credito in CREDITI.md. Li scompatta `tools/prendi_modello.py`.
+LAVELLO_GLTF = os.path.join(RADICE, "assets", "models", "esterni", "lavello_cucina",
+                            "scene.gltf")
+PIATTO_GLTF = os.path.join(RADICE, "assets", "models", "esterni", "piatto", "scene.gltf")
+
 # La cucina e' addossata al muro NORD: il fronte dei mobili guarda +z, cioe' verso
 # chi entra. Tutte le maniglie, le ante e i rubinetti nascono da questo.
 BASE = IMPRONTE["CucinaBase"]
 X_A, Z_MURO, X_B, Z_FRONTE, H_TOP = BASE
+
+# IL LAVELLO IN PIANTA, x0 z0 x1 z1: 86 x 52, la misura di serie di un monovasca con
+# gocciolatoio, a quattro centimetri dal muro e dal bordo del piano. Sta sopra il
+# vano con le due ante, dove sotto c'e' il sifone e non ci vanno cassetti.
+LAVELLO = (X_A + 0.81, Z_MURO + 0.04, X_A + 1.67, Z_FRONTE - 0.04)
 # IL FORO DEL LAVELLO, e sta qui perche' lo devono conoscere in due: il piano di
-# lavoro in formica e il top in acciaio ci passano tutti e due sopra, e finche' e'
-# stato dichiarato in uno solo la vasca e' rimasta coperta dall'altro.
-FORO = (X_A + 0.86, X_A + 1.64, Z_MURO + 0.11, Z_FRONTE - 0.11)
+# lavoro in formica e la carcassa ci passano tutti e due sopra, e finche' e' stato
+# dichiarato in uno solo la vasca e' rimasta coperta dall'altro. E' UN CENTIMETRO
+# DENTRO IL BORDO del lavello: il piano ci passa sotto, e nessuna faccia del foro
+# resta a filo di una faccia del modello.
+FORO = (LAVELLO[0] + 0.01, LAVELLO[2] - 0.01, LAVELLO[1] + 0.01, LAVELLO[3] - 0.01)
+# Di quanto il bordo del lavello sta sopra la formica: un lavello da incasso ci
+# appoggia sopra con il bordo, non ci affonda a filo.
+BORDO_LAVELLO = 0.004
+# IL MISCELATORE VA VERSO IL MURO. Il modello nasce con la vasca e il gocciolatoio in
+# fila lungo il suo asse lungo e il rubinetto su un fianco: a 270 gradi il fianco
+# del rubinetto guarda il muro, la vasca va a est e il gocciolatoio a ovest.
+GRADI_LAVELLO = 270.0
+
+# I piatti dello scolapiatti: ventiquattro centimetri, e in piedi pendono un poco,
+# come un piatto che si appoggia a quello dopo.
+DIAMETRO_PIATTO = 0.24
+PENDENZA_PIATTO = 8.0
 
 
 def maniglia(x0, x1, y, z):
@@ -138,42 +163,66 @@ def basi():
 
 
 def lavello():
-    """Vasca incassata, gocciolatoio e miscelatore. Il fondo sta 20 cm sotto il piano.
+    """Il lavello preso da fuori, dentro il foro del piano, col bordo sulla formica.
 
-    La vasca e' un incavo VERO: quattro pareti che scendono dal bordo del foro e
-    un fondo in pendenza verso la piletta. Da sopra si vede dentro, ed e' l'unico
-    modo perche' si veda dentro.
+    E' UN BLOCCO DA INCASSO: vasca, gocciolatoio e miscelatore sono un pezzo solo, e
+    sotto il bordo il modello scende dentro il mobile, dove nessuno lo vede. Prima
+    era fatto a mano - quattro pareti d'acciaio, un fondo, la piletta e un rubinetto
+    di cilindri - e da vicino erano scatole.
+
+    SI SCALA SULLA PIANTA, e l'altezza passata a `posa_modello` e' un numero che non
+    comanda mai. POI SI ALZA SUL BORDO, non sul fondo: `posa_modello` appoggia il
+    punto piu' basso, che qui e' il fondo del blocco e non dice niente di dove stia
+    il bordo. Il bordo si misura sul lato davanti, dove il rubinetto non c'e'.
     """
-    x0, x1 = X_A + 0.80, X_A + 1.70
-    z0, z1 = Z_MURO + 0.04, Z_FRONTE - 0.04
-    fx0, fx1, fz0, fz1 = FORO
-    fondo = H_TOP - 0.200
-    piano_forato("Inox", x0, x1 + 0.42, H_TOP - 0.005, H_TOP + 0.008,
-                 z0 - 0.02, z1 + 0.02, FORO)
-    # le pareti stanno DENTRO il foro, a filo: fuori compenetrerebbero la lastra
-    for (a_, b_, c_, d_) in ((fx0, fx0 + 0.010, fz0, fz1), (fx1 - 0.010, fx1, fz0, fz1),
-                             (fx0, fx1, fz0, fz0 + 0.010), (fx0, fx1, fz1 - 0.010, fz1)):
-        scatola("Inox", a_, b_, fondo, H_TOP + 0.008, c_, d_)
-    scatola("Inox", fx0, fx1, fondo, fondo + 0.012, fz0, fz1)
-    # la piletta, con la crociera: e' il pezzo che fa capire che c'e' un fondo
-    px, pz = (fx0 + fx1) / 2, (fz0 + fz1) / 2
-    cilindro("Inox", px, pz, fondo + 0.010, fondo + 0.016, 0.042, 16)
-    cilindro("Schermo", px, pz, fondo + 0.014, fondo + 0.020, 0.034, 16)
-    for asse in ("x", "z"):
-        cilindro_orizz("Inox", px, fondo + 0.020, pz, asse, 0.072, 0.004, 8)
-    # il troppopieno sulla parete di fondo, e il rialzo del paraschizzi
-    cilindro_orizz("Schermo", px + 0.24, H_TOP - 0.048, fz0 + 0.012, "z", 0.010, 0.014, 12)
-    # gocciolatoio: le nervature scolpite nell'inox, a destra del foro
-    for k in range(6):
-        scatola("Inox", x1 + 0.04 + k * 0.055, x1 + 0.075 + k * 0.055,
-                H_TOP + 0.008, H_TOP + 0.013, z0 + 0.06, z1 - 0.06)
-    # miscelatore
-    xr, zr = (x0 + x1) / 2, Z_MURO + 0.055
-    cilindro("Inox", xr, zr, H_TOP + 0.008, H_TOP + 0.035, 0.032, 14)
-    cilindro("Inox", xr, zr, H_TOP + 0.035, H_TOP + 0.30, 0.017, 14)
-    cilindro_orizz("Inox", xr, H_TOP + 0.295, zr + 0.09, "z", 0.19, 0.017)
-    cilindro("Inox", xr, zr + 0.175, H_TOP + 0.245, H_TOP + 0.295, 0.015, 12)
-    scatola("Inox", xr - 0.012, xr + 0.012, H_TOP + 0.30, H_TOP + 0.325, zr - 0.02, zr + 0.10)
+    x0, z0, x1, z1 = LAVELLO
+    pezzi = posa_modello(LAVELLO_GLTF, (x0, z0, x1, z1, 10.0), gradi=GRADI_LAVELLO)
+    mesh = [o for o in pezzi if o.type == "MESH"]
+    davanti = [p.z for o in mesh for p in (o.matrix_world @ v.co for v in o.data.vertices)
+               if -p.y > z1 - 0.015]
+    pezzi[0].location.z += H_TOP + BORDO_LAVELLO - max(davanti)
+    bpy.context.view_layer.update()
+    # la mappa metallicRoughness, presa com'e', farebbe del lavello uno specchio: e
+    # uno specchio in una cucina chiusa e' nero (vedi `usa_le_ridotte`)
+    usa_le_ridotte(mesh, os.path.dirname(LAVELLO_GLTF), metallico=0.0)
+    return pezzi
+
+
+def piatto(x, base, z):
+    """Un piatto in piedi nello scolapiatti, di taglio fra le due sponde.
+
+    DEL MODELLO SI PRENDE LA FORMA. Arriva grigio a mezza luce, largo sessanta
+    centimetri e senza mappe: accanto alla tazza e al piattino sarebbe l'unica
+    ceramica grigia della casa. La ceramica e' quella della cucina.
+    """
+    prima = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=PIATTO_GLTF)
+    nuovi = [o for o in bpy.data.objects if o not in prima]
+    mesh = [o for o in nuovi if o.type == "MESH"]
+    perno = bpy.data.objects.new("Piatto", None)
+    bpy.context.collection.objects.link(perno)
+    for o in nuovi:
+        if o.parent is None:
+            o.parent = perno
+    for o in mesh:
+        o.data.materials.clear()
+        o.data.materials.append(materiale("Ceramica"))
+    bpy.context.view_layer.update()
+
+    def punti():
+        return [o.matrix_world @ v.co for o in mesh for v in o.data.vertices]
+
+    # nato disteso: si misura quanto e' largo, si scala e lo si mette in piedi
+    largo = max(p.x for p in punti()) - min(p.x for p in punti())
+    perno.scale = (DIAMETRO_PIATTO / largo,) * 3
+    perno.rotation_euler = (0.0, math.radians(90.0 - PENDENZA_PIATTO), 0.0)
+    bpy.context.view_layer.update()
+    tutti = punti()
+    perno.location = (x - (min(p.x for p in tutti) + max(p.x for p in tutti)) / 2,
+                      -z - (min(p.y for p in tutti) + max(p.y for p in tutti)) / 2,
+                      base - min(p.z for p in tutti))
+    bpy.context.view_layer.update()
+    return [perno] + nuovi
 
 
 def cottura():
@@ -210,16 +259,18 @@ def cottura():
 
 def sul_piano():
     """Scolapiatti, bottiglia e radio: il piano vuoto era la cosa piu' finta della stanza."""
-    # scolapiatti sul gocciolatoio, con quattro piatti in verticale
-    sx, sz = X_A + 1.86, Z_MURO + 0.28
-    for a, b in ((-0.16, -0.16), (0.16, 0.16)):
-        scatola("Metallo", sx + a - 0.008, sx + a + 0.008, H_TOP + 0.013, H_TOP + 0.145,
+    # scolapiatti sul gocciolatoio, che e' la meta' a ovest del lavello (GRADI_LAVELLO),
+    # con quattro piatti in piedi
+    sx, sz = LAVELLO[0] + 0.215, (LAVELLO[1] + LAVELLO[3]) / 2
+    base = H_TOP + BORDO_LAVELLO
+    for a in (-0.16, 0.16):
+        scatola("Metallo", sx + a - 0.008, sx + a + 0.008, base, base + 0.132,
                 sz - 0.14, sz + 0.14)
     for dz in (-0.13, 0.13):
-        cilindro_orizz("Metallo", sx, H_TOP + 0.140, sz + dz, "x", 0.34, 0.007)
+        cilindro_orizz("Metallo", sx, base + 0.127, sz + dz, "x", 0.34, 0.007)
+    posati = []
     for k in range(4):
-        scatola("Ceramica", sx - 0.13 + k * 0.075, sx - 0.115 + k * 0.075,
-                H_TOP + 0.020, H_TOP + 0.185, sz - 0.115, sz + 0.115)
+        posati += piatto(sx - 0.1225 + k * 0.075, base, sz)
     # LA BOTTIGLIA E LA RADIOLINA NON SI DISEGNANO PIU' QUI, e non sono sparite:
     # sono diventate OGGETTI. Erano due gruppi di primitive fusi in questa mesh,
     # cioe' due rilievi del piano di lavoro - si vedevano e non si potevano
@@ -229,6 +280,7 @@ def sul_piano():
     #
     # La radiolina conserva le quote che aveva qui: ventidue centimetri di cassa,
     # l'altoparlante, la manopola e l'antenna. Vedi `tools/radiolina_blender.py`.
+    return posati
 
 
 def bacheca():
@@ -339,9 +391,9 @@ def pattumiera():
 # --- costruzione -------------------------------------------------------------
 pulisci()
 basi()
-lavello()
+_lavello = lavello()
 cottura()
-sul_piano()
+_piatti = sul_piano()
 bacheca()
 cappa()
 pensili()
@@ -357,9 +409,10 @@ for o in oggetti:
 
 # --- controlli ---------------------------------------------------------------
 problemi = list(verifica_arredi())
-# DENTRO LA VASCA NON CI DEVE STARE ALTRO CHE ACCIAIO. E' il controllo che manca
+# DENTRO IL LAVELLO NON CI DEVE STARE NIENTE DI NOSTRO. E' il controllo che manca
 # ogni volta: la vasca c'era gia', erano i pezzi che le passavano sopra e attorno
-# a nasconderla, e nessuno se ne accorgeva perche' guardavano tutti la vasca.
+# a nasconderla, e nessuno se ne accorgeva perche' guardavano tutti la vasca. Adesso
+# la vasca e' il modello di fuori, e i pezzi fatti qui devono restarne fuori uguale.
 _fx0, _fx1, _fz0, _fz1 = FORO
 _intrusi = set()
 for _o in oggetti:
@@ -377,7 +430,8 @@ for _n in sorted(_intrusi):
 problemi += verifica_luce(oggetti, [FINESTRA])
 # anche i modelli presi da fuori devono stare nella loro impronta: e' il patto
 problemi += verifica_impronte(
-    oggetti + _sedie, [(x0, z0, x1, z1) for (x0, z0, x1, z1, _h) in IMPRONTE.values()])
+    oggetti + _sedie + _lavello + _piatti,
+    [(x0, z0, x1, z1) for (x0, z0, x1, z1, _h) in IMPRONTE.values()])
 
 # niente deve superare l'altezza della stanza: la dispensa e i suoi scatoloni ci
 # vanno vicino, e un mobile dentro il solaio non si vede finche' non ci si passa sotto

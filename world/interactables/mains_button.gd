@@ -5,6 +5,10 @@
 ## che serve qui: si esce di notte, si arma il quadro, si rientra. Una leva da
 ## interruttore vorrebbe due dita e la vista.
 ##
+## SONO DUE, E FANNO LA STESSA COSA (D-256): il fungo sull'anta, che si preme a
+## quadro chiuso, e il pulsante rosso che il modello ha già dentro la cassa, che si
+## preme a quadro aperto — l'anta aperta gira il primo dall'altra parte.
+##
 ## SI PREME E BASTA, e non si tiene premuto. È la differenza con i pulsanti della
 ## cupola, ed è la differenza fra i due meccanismi veri: il portello si comanda a
 ## uomo presente perché è un battente da quintali che si muove, la corrente è uno
@@ -45,6 +49,8 @@ var _riposo := Vector3.ZERO
 var _premuto := 0.0
 
 
+## Il primo del gruppo, cioè uno dei due: chi deve distinguerli guarda chi li porta — il
+## fungo sta sull'anta (vedi `prova_rete.gd`).
 static func find_in(tree: SceneTree) -> MainsButton:
 	return tree.get_first_node_in_group(GROUP) as MainsButton
 

@@ -565,7 +565,7 @@ func _annuncia() -> void:
 #
 # Di base niente: E posa, il destro non fa niente. Chi sa fare qualcosa lo dice
 # sovrascrivendo questi metodi — il giocatore chiede e non nomina nessuno, come per
-# `posa()`. Oggi la moka versa nella tazza, e la tazza si beve.
+# `posa()`. Oggi la moka versa nella tazza, la tazza si beve, e il mocio pulisce.
 
 ## Mirando `bersaglio` con questa in mano, se E ci fa qualcosa invece di posare.
 func puo_usare_su(_bersaglio: Object) -> bool:
@@ -591,6 +591,11 @@ func prompt_usa() -> String:
 
 
 func usa() -> void:
+	pass
+
+
+## Il destro mollato. Serve a chi si usa TENENDO: il mocio pulisce finché il dito sta giù (D-251).
+func smetti_di_usare() -> void:
 	pass
 
 

@@ -60,6 +60,9 @@ const VISTE := {
 	"uscita": [Vector3(11.00, 0.0, 17.00), Vector3(11.50, 1.80, 9.50)],
 	# Appena fuori dalla porta, lo sguardo verso la macchina: il prato che si attraversa.
 	"nord": [Vector3(10.50, 0.0, 11.00), Vector3(20.00, 0.80, 24.00)],
+	# A quattro metri dall'auto, dalla parte da cui si arriva a piedi: la 500 e il
+	# prato che le sta attorno.
+	"macchina": [Vector3(19.50, 0.0, 22.00), Vector3(23.00, 0.55, 25.00)],
 }
 
 ## Le lampade che nella fotografia erano spente: la sala e il corridoio. La cucina

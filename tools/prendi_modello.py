@@ -83,6 +83,14 @@ MODELLI = {
                         "Il quaderno di pelle ad anelli con le procedure del turno. Si\n"
                         "tiene il chiuso dei due: sta sulla consolle, a sinistra del\n"
                         "monitor, e si legge."),
+    # L'ERBA DEL PRATO, che non si posa: si FOTOGRAFA. Cinque ciuffi veri da quindici a
+    # quaranta centimetri, con i fili secchi fra i verdi, e da settecento a
+    # duemilacinquecento facce l'uno - troppe per le migliaia che servono. Li riprende
+    # di fianco tools/erba_blender.py, e sul prato diventano due rettangoli incrociati.
+    "grass_medium_02": ("1k",
+                        "Ciuffi d'erba per il prato attorno all'osservatorio. Si\n"
+                        "fotografano in una texture (tools/erba_blender.py): a novembre\n"
+                        "sull'Appennino un prato e' questo, meta' verde e meta' paglia."),
 }
 
 
@@ -185,6 +193,31 @@ A_MANO = {
         " cupola e il manico di bachelite - e l'alluminio e' segnato, opaco, con le"
         " colature. E' l'oggetto del registro FARE dell'attesa: la si mette sul fuoco"
         " e si aspetta che borbotti, un'attesa piccola dentro l'attesa grande."),
+    # IL LAVELLO E I PIATTI DELLA CUCINA, scelti da Federico e lasciati in
+    # `_da_scaricare` il 14 settembre. Sostituiscono due pezzi fatti a mano da
+    # `cucina_blender.py`: una vasca d'acciaio fatta di scatole, e quattro piatti che
+    # erano quattro lastre.
+    "lavello_cucina": (
+        ("lavello_cucina.zip", "kitchen_sink.zip"),
+        "https://sketchfab.com/3d-models/kitchen-sink-d4044684be3a45d2b8b81dbcb83847fa",
+        "Heliona", "CC-BY-4.0",
+        'This work is based on "Kitchen Sink" '
+        "(https://sketchfab.com/3d-models/kitchen-sink-d4044684be3a45d2b8b81dbcb83847fa) "
+        "by Heliona (https://sketchfab.com/Heliona) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "Lavello da incasso in resina scura, una vasca col gocciolatoio a nervature e"
+        " il miscelatore: un pezzo solo da 10.616 facce con le mappe PBR. Arriva"
+        " lungo due unita', e la misura vera gliela da' cucina_blender.py."),
+    "piatto": (
+        ("piatto.zip", "plate.zip"),
+        "https://sketchfab.com/3d-models/plate-519c319332ed4708ba4b3ca1dfd5f54a",
+        "Black Snow", "CC-BY-4.0",
+        'This work is based on "Plate" '
+        "(https://sketchfab.com/3d-models/plate-519c319332ed4708ba4b3ca1dfd5f54a) "
+        "by Black Snow (https://sketchfab.com/BlackSnow02) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "Un piatto piano, 2.556 facce e nessuna mappa, largo sessanta centimetri. Se ne"
+        " posano quattro nello scolapiatti, ognuno dallo stesso modello."),
     "telescopio_riflettore": (
         "reflector_telescope.zip",
         "https://sketchfab.com/3d-models/reflector-telescope-62549e8c60d24ee5adb2a01a2c226a03",
@@ -435,6 +468,48 @@ A_MANO = {
         "Proiettore per diapositive Diaprex B-11 con il CARICATORE A SLITTA che"
         " sporge di fianco, obiettivo e carter di lamiera. E' l'apparecchio delle"
         " serate divulgative, e la slitta e' il pezzo che lo dice."),
+    # L'AUTO DEL RITORNO A CASA, ed e' la prima voce di questo file che NON SI PUO'
+    # SPEDIRE. La licenza e' CC-BY-NC-SA: niente uso commerciale, e le versioni
+    # modificate - il .glb decimato lo e' - devono restare sotto la stessa licenza.
+    # Federico l'ha scelta sapendolo, COME SEGNAPOSTO: al posto della scatola grigia
+    # da 4,20 metri, finche' non c'e' un'auto con una licenza con cui si distribuisce
+    # un gioco. Prima di distribuirlo, questa voce va sostituita, non dimenticata.
+    #
+    # PERCHE' UNA 500F E NON UN'AUTO QUALSIASI: e' la macchina che un turnista di
+    # provincia guida ancora nel 1999, e da quattro metri, di notte, la sagoma basta
+    # a dire il paese e l'epoca. Una berlina generica non dice niente.
+    "cinquecento": (
+        ("cinquecento.zip", "1965_fiat_500f.zip"),
+        "https://sketchfab.com/3d-models/1965-fiat-500f-91c9a625d0c24026b266fbe68352e6fa",
+        "Ddiaz Design", "CC-BY-NC-SA-4.0",
+        'This work is based on "1965 Fiat 500F" '
+        "(https://sketchfab.com/3d-models/1965-fiat-500f-91c9a625d0c24026b266fbe68352e6fa) "
+        "by Ddiaz Design (https://sketchfab.com/ddiaz-design) licensed under "
+        "CC-BY-NC-SA-4.0 (http://creativecommons.org/licenses/by-nc-sa/4.0/)",
+        "Fiat 500F del 1965, l'auto con cui il giocatore torna a casa all'alba."
+        " Arriva da 334.030 facce con motore, scheletro di porte e cofani e ruote"
+        " separate: tools/cinquecento_blender.py la chiude, butta quello che da"
+        " fuori non si vede e la porta a un .glb statico leggero."
+        "\n\nSEGNAPOSTO, scelto da Federico. LICENZA NON COMMERCIALE (NC) e"
+        " CONDIVISA ALLO STESSO MODO (SA): con questa auto dentro il gioco non si"
+        " distribuisce. Va sostituita prima di distribuire."),
+    # IL MOCIO DEL MAGAZZINO (D-251), che pulisce il caffe' rovesciato. Cercando «mop» su
+    # Sketchfab i mocio A FRANGE sono due; gli altri sono lavapavimenti a spugna, scope, o il
+    # mocio piatto di adesso. Fra i due ha scelto Federico: l'altro era il «Mop & Bucket» di
+    # LadyLionStudios, con le frange gia' usate e un secchio a doppia vasca di quelli moderni.
+    #
+    # IL SET NE PORTA DUE, uno pulito a righe bianche e blu e uno insanguinato: si tiene il
+    # pulito, e lo separa `tools/mocio_blender.py`.
+    "mocio": (
+        ("mocio.zip", "pair_of_mops.zip"),
+        "https://sketchfab.com/3d-models/pair-of-mops-56daf9708906449ea4f8576790ee476f",
+        "Sousinho", "CC-BY-4.0",
+        'This work is based on "Pair of mops" '
+        "(https://sketchfab.com/3d-models/pair-of-mops-56daf9708906449ea4f8576790ee476f) "
+        "by Sousinho (https://sketchfab.com/sousinho) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "Mocio a frange col manico, 18.144 facce e mappe PBR a 4K per due mocio: si tiene"
+        " quello pulito. Serve a pulire il caffe' rovesciato (D-251)."),
 }
 
 # Le texture arrivano a 4096: dentro il .glb della stanza sarebbero ventidue megabyte
@@ -488,8 +563,9 @@ def prendi_a_mano(cartella):
              "", "Credito da riportare ovunque il modello sia distribuito:", credito,
              "", perche,
              "", "Scaricato a mano: l'API di download di Sketchfab vuole un account.",
-             "Le texture sono state ridotte a %d px da prendi_modello.py;" % LATO_RIDOTTO,
-             "gli originali a 4096 restano nello zip.", ""]
+             "Le texture piu' grandi di %d px sono state ridotte da prendi_modello.py;"
+             % LATO_RIDOTTO,
+             "gli originali restano nello zip.", ""]
     io.open(os.path.join(fuori, "FONTE.txt"), "w", encoding="utf-8").write("\n".join(righe))
     print("%-26s pronto (Sketchfab, %s: attribuzione obbligatoria)" % (cartella, licenza))
     return True
@@ -561,9 +637,16 @@ def riduci(cartella_texture):
         if canale is not None:
             im = im.convert("RGB").split()[canale].convert("L")
         im = im.convert("L" if canale is not None else "RGB")
-        im = im.resize((LATO_RIDOTTO, LATO_RIDOTTO), Image.LANCZOS)
+        # SI RIDUCE, NON SI INGRANDISCE. Tutti i modelli arrivati fino alla 500 avevano
+        # mappe a 4096, e portarle "a 1024" voleva dire solo rimpicciolirle; quelle
+        # della 500 stanno fra 64 e 512, e la stessa riga le avrebbe gonfiate fino a
+        # sedici volte - piu' megabyte e nessun dettaglio in piu'. Il nome invece si
+        # cambia sempre: e' quello che `usa_le_ridotte()` cerca.
+        lato = max(im.size)
+        if lato > LATO_RIDOTTO:
+            im = im.resize((LATO_RIDOTTO, LATO_RIDOTTO), Image.LANCZOS)
         im.save(fuori, quality=92)
-        print("    %s -> %s (%d px)" % (sorgente, destino, LATO_RIDOTTO))
+        print("    %s -> %s (%d px)" % (sorgente, destino, min(lato, LATO_RIDOTTO)))
 
 
 def prendi_oga(cartella):

@@ -8109,3 +8109,334 @@ colonne da quattro, e i nomi sono quelli delle schede che si sono viste tutta la
 SOLVE, SEQ) invece delle chiavi interne (STARTUP, COOLING, SYNC, IMAGING).
 
 **Da verificare giocando:** allo scatto non è stato riguardato; nessuna sonda disegna il riepilogo.
+
+
+## D-248 Il lavello e i piatti della cucina vengono da fuori
+
+Federico, il 14 settembre, ha lasciato in `_da_scaricare` due modelli Sketchfab CC-BY,
+«kitchen sink» e «plate», da usare per il lavello e per i piatti dello scolapiatti.
+
+**IL LAVELLO È UN BLOCCO DA INCASSO**, in resina scura con il miscelatore nero (Heliona,
+10.616 facce). Sostituisce quello fatto a mano: quattro pareti d'acciaio, la piletta e un
+rubinetto di cilindri. Arriva lungo due unità e si scala sulla pianta a **86 × 52**, la misura
+di serie di un monovasca con gocciolatoio, sopra il vano con le due ante. Il foro nel piano
+sta un centimetro dentro il suo bordo, così nessuna faccia del foro resta a filo di una del
+modello. Il bordo appoggia quattro millimetri sopra la formica, e si misura sul lato davanti:
+il punto più basso del modello è il fondo del blocco, e non dice dove stia il bordo. Girato di
+270 gradi il miscelatore va verso il muro, la vasca a est e il gocciolatoio a ovest, e lo
+scolapiatti si è spostato sul gocciolatoio.
+
+**I PIATTI SONO QUATTRO COPIE DELLO STESSO MODELLO** (Black Snow, 2.556 facce), scalati da
+sessanta a ventiquattro centimetri, in piedi e inclinati di otto gradi. Del modello si tiene la
+forma: arriva grigio e senza mappe, e la ceramica è quella della cucina.
+
+**LA METALLICITÀ DEL LAVELLO È ZERO** (`usa_le_ridotte(..., metallico=0.0)`), come per i
+sanitari: la mappa metallicRoughness presa com'è ne farebbe uno specchio, e in una cucina
+chiusa uno specchio è nero.
+
+Crediti in `CREDITI.md`, fonti e motivi in `tools/prendi_modello.py`.
+
+**Misurato:** `cucina_blender.py` passa i suoi controlli (impronte, vasca, luce della finestra,
+soffitto) e `cucina-lavello.png` mostra il lavello nel piano, il miscelatore contro il muro e i
+piatti in piedi. `cucina.glb` pesa 11,8 MB, di cui 1,3 per le tre mappe a 1024 del lavello;
+Godot lo reimporta senza errori.
+
+**Da verificare giocando:** come rende in partita, che finora si è visto solo in Blender; se
+un lavello di resina scura sta bene nella cucina del 1999, dove era più comune l'acciaio.
+
+
+## D-249 Il prato sale e scende, e ha l'erba
+
+Federico, il 14 settembre: «come possiamo fare il fuori? mettere un po' di erba ecc...». Fra le
+proposte ha scelto di partire da erba e terreno.
+
+**IL PRATO NON È PIÙ UN BLOCCO.** Era una scatola verde da 48 × 44 m tre centimetri sotto i
+pavimenti, generata insieme ai muri. Adesso è il nodo `Prato` (`world/prato.gd`): una maglia da
+un metro costruita all'avvio, con la collisione fatta degli stessi triangoli. Rettangolo e quota
+sono quelli di prima; `gen_blockout.py` gli passa il recinto e le impronte su cui restare piatto.
+
+**LA FORMA STA IN FUNZIONI PURE** (`world/forma_prato.gd`), e il banco la collauda
+(`_check_prato`). Il prato è piatto per due metri attorno ai due corpi della elle e all'auto, poi
+in tre metri diventa mosso: onde fino a 45 cm fatte di tre sinusoidi, così la stessa gobba sta
+nello stesso posto a ogni avvio. Fuori dal recinto sale fino a 90 cm in dieci metri. Non scende
+mai sotto zero, perché recinto e auto poggiano a zero.
+
+**LA COLLINA DI FUORI HA UN RACCORDO SUO, DI OTTO METRI.** Con i tre metri delle onde, appena
+fuori dal cancello e accanto all'auto il prato saliva del 45%, e il banco l'ha segnalato. Adesso
+la pendenza massima è del 23%.
+
+**L'ERBA È UN CIUFFO VERO FOTOGRAFATO, non una forma inventata.** L'erba di Poly Haven non si può
+ripetere a migliaia: `grass_medium_02` sono cinque ciuffi da 700 a 2.500 facce l'uno.
+`tools/erba_blender.py` ne fotografa quattro di fianco, senza luce e senza sfondo, in una texture
+512 × 128, e in gioco ogni ciuffo è due rettangoli incrociati con quella foto (`erba.gdshader`:
+trasparenza a soglia, normale in su, vertici agganciati come in `ps1.gdshader`). Sono 5.744 ciuffi,
+tre al metro quadro, in un solo MultiMesh, con una tinta fra verde e paglia; nessuno sta dentro i
+muri o sotto l'auto. Il lato della foto, 42 cm, è scritto in due file, e il banco controlla che
+coincidano.
+
+**IL PAVIMENTO DEL PRATO HA UNA MAPPA.** Federico, giocando: «l'erba va bene, il pavimento però
+è ancora un verde e basta». È Ground037 di ambientCG (`prendi_texture.py`, cartella `prato`):
+erba rada, chiazze di terra, qualche rametto. Grass001 e Grass004 sono prati da giardino, e
+Ground013 e withered_grass di Poly Haven sono già tutti paglia, che invece portano i ciuffi. La
+mappa è **tinta sulla media del verde di prima**, 51 66 43, perché la luce di fuori è tarata su
+quel prato (D-240). Le UV della maglia sono in metri, e la ripetizione la dà il righello
+dichiarato da ambientCG, 2,10 m, letto dal FONTE.txt da `gen_blockout.py`.
+
+**Misurato:** banco verde. `prova_macchina` passa: a piedi dalla porta si arriva ancora all'auto.
+Negli scatti di `prova_trafila` (viste `nord`, `uscita` e la nuova `macchina`) i ciuffi si
+leggono, anche con la Luna vera della notte 1; la fascia buia davanti alla facciata è l'ombra
+dell'edificio, come in D-240.
+
+**Da verificare giocando:** come si cammina sul terreno mosso; la densità dell'erba; il colore del
+prato, che resta segnaposto fino al pack di texture.
+
+
+## D-250 L'auto è una 500, e con questa licenza il gioco non si distribuisce
+
+Federico ha lasciato in `_da_scaricare` la «1965 Fiat 500F» di Ddiaz Design (Sketchfab), «per
+tornare a casa». La licenza è **CC-BY-NC-SA**: niente uso commerciale, e le modifiche restano
+sotto la stessa licenza. Glielo si è detto, con due 500 CC-BY in alternativa, e ha scelto di
+tenerla come **segnaposto**. `CREDITI.md` e `prendi_modello.py` lo scrivono.
+
+**DA 334 MILA FACCE A 20 MILA** (`tools/cinquecento_blender.py`). Via il gruppo del motore, che
+conteneva anche i vani con serbatoio e ruota di scorta (92 mila facce), e i tamburi dei freni; il
+resto è decimato all'8%. Metallicità a zero e cruscotto spento. È a misura vera,
+2,97 × 1,32 × 1,30 m, e lo script si ferma se larghezza, altezza o interasse (1,84 m) non
+tornano, se l'auto esce specchiata o se una gomma resta sollevata. `cinquecento.glb` pesa 2 MB.
+
+**`prendi_modello.riduci()` NON INGRANDISCE PIÙ.** Portava tutte le mappe a 1024 px, e queste
+stanno fra 64 e 512.
+
+**LA SCATOLA DIVENTA LA 500** in `gen_blockout.py`. La collisione passa da 4,20 × 1,50 × 1,80 a
+2,97 × 1,30 × 1,32, il nodo scende a mezza altezza (0,65) e il modello di altrettanto. Il muso
+guarda est, così la portiera del guidatore sta dalla parte del prato da cui si arriva.
+
+**Misurato:** Godot la importa senza errori. `prova_macchina`: il prompt compare da 96 punti, il
+più vicino a 1,19 m. Lo scatto `macchina` la mostra intera sul prato.
+
+**Da verificare giocando:** facce nere dove le normali del modello sono girate (non sono state
+ricalcolate); i passaruota vuoti visti dal basso. Prima di distribuire il gioco serve un'auto con
+una licenza che lo permetta.
+
+
+## D-251 Il caffè rovesciato fa una macchia, e il mocio la pulisce
+
+Federico, il 14 settembre: «non sto trovando da nessuna parte il mocio per pulire le chiazze di
+caffè […] non trovo neanche le chiazze quando lancio la tazza». Non c'erano. D-244 lo scriveva in
+una riga — «la macchia per terra e il mocio che la pulisce aspettano i modelli» — e il resoconto
+di quel lavoro non l'aveva detto. D-243 aveva deciso solo dove sta il mocio: in magazzino.
+
+**IL CAFFÈ CADE SUL PRIMO PIANO SOTTO LA TAZZA** (`Macchia.versa`, chiamata da
+`Tazza._rovescia`): il pavimento, o il tavolo se la tazza ci si corica sopra. Si cerca sulla
+geometria che si vede, scavalcando le cose che si prendono in mano: una macchia sul piattino
+resterebbe a mezz'aria spostando il piattino.
+
+**LA MACCHIA È GRANDE QUANTO IL CAFFÈ CHE C'ERA**: 40 ml a tazza piena, stesi a un millimetro e
+mezzo, fanno una pozza da 9,2 cm di raggio. Lanciata la tazza schizza: il raggio è 1,4 volte
+(12,9 cm), il bordo fa lingue e ci sono gocce attorno. Un fondo di tazza fa 2,5 cm.
+
+**È UN RETTANGOLO APPOGGIATO, NON UNA DECAL**, tre millimetri sopra il piano e girato come il
+piano. La forma la disegna `macchia.gdshader`: il bordo a lobi segue un rumore letto sul cerchio,
+e il bordo è più scuro del centro come nell'anello del caffè (Deegan e altri, 1997). Pulendo
+se ne va a chiazze.
+
+**IL MOCIO STA IN MAGAZZINO**, nell'angolo sud-est, appoggiato al muro est con 15 gradi di
+inclinazione (`gen_blockout.py`, derivato da `SALA_MAGAZZINO`). Due misure della sonda:
+- **baricentro dichiarato a 34 cm** (`mocio.tscn`): quello automatico pesa il volume dei
+  collisori, finiva a 11 cm, e il mocio si raddrizzava da solo sulle frange;
+- **frange larghe 12 cm, e 15 gradi di inclinazione, non 10.**
+
+La rotazione nel `.tscn` va scritta PER RIGHE: scritta per colonne la cima pendeva lontano dal
+muro. L'ordine l'ha detto Godot, leggendo la stringa con `str_to_var`.
+
+**ARRIVA A TERRA DA IN PIEDI**, ed è per questo che guarda da solo. Il raggio del giocatore è
+lungo 1,20 m e l'occhio sta a 1,65, quindi da in piedi il pavimento non si mira mai. Il mocio
+lancia un raggio suo lungo 2,20 m lungo lo sguardo.
+
+**IL DESTRO SI TIENE.** Guardando una macchia la riga dice «[DESTRO]  Tieni premuto: pulisci».
+Tenendolo le frange vanno a terra dove si guarda, restando entro un quarto di metro dalla
+macchia, e oscillano di dieci centimetri. Pulisce quello che sta sotto le frange, e una macchia da
+tazza piena se ne va in 2,5 secondi, una schizzata in 5. Mollato il destro, il mocio torna in mano
+(`Carryable.smetti_di_usare`, chiamata dal giocatore quando il destro si alza). Nel quaderno:
+`Tasto destro  Bevi / tieni, pulisci`.
+
+**LA CASA SI RICORDA LE MACCHIE** (`WorldState.macchie`): dove stanno, quanto sono grandi, quanto
+ne resta. Non stanno fra gli oggetti, perché nella scena non esistono, e le rifà
+`MemoriaDelMondo`. Un salvataggio di prima non ha il campo e si legge senza macchie, quindi la
+versione non cambia.
+
+**IL MODELLO È «PAIR OF MOPS» DI SOUSINHO** (Sketchfab, CC-BY), scelto da Federico fra i due mocio
+a frange trovati; credito in `CREDITI.md`. Per un'ora il mocio in magazzino c'è stato senza
+modello, e Federico non l'ha trovato: un bastone invisibile largo quattro centimetri non si trova.
+`tools/mocio_blender.py` tiene il mocio pulito dei due (lo si riconosce dal materiale,
+`T_mop_clean`), raddrizza il manico, che nel modello pendeva di 13,3 gradi, lo porta a 1,30 m e
+decima le frange da 8.400 a 2.328 facce. Il `.glb` pesa 3,7 MB.
+
+**`usa_le_ridotte` SBAGLIAVA LE MAPPE `metallicRoughness` con più di un set**: cercava il file
+`t_mop_clean_metallicrid_roughness.jpg`, e la mappa restava quella a 4096 dentro il `.glb`, in
+silenzio. Adesso `metallicroughness` si cerca prima di `roughness`. Il quadro elettrico, che ha due
+set, ne guadagna al prossimo giro di `quadro_elettrico_blender.py`.
+
+**Misurato:** banco verde, con i controlli nuovi (raggi e volume, secondi di mocio, orientamento
+su quattro normali, cosa copre una macchia, giro su disco delle macchie). `tools/prova_mocio.gd`,
+0 guasti:
+- il mocio in magazzino pende di 15,6 gradi e in cinque secondi non si muove;
+- la tazza lanciata lascia una macchia sola per terra, da 12,9 cm;
+- rimontando la scena la macchia torna a 0,0 cm;
+- il mocio si prende;
+- da in piedi, a 40 cm, la riga offre il destro;
+- le frange scendono a 1 cm dalla macchia, che se ne va in 5,1 s;
+- mollato il destro il mocio torna in mano, e il file resta senza macchie.
+
+`prova_moka`, `prova_memoria` e `prova_mani` passano; `prova_mocio` ripassa col modello
+dentro. `tools/scatta_macchia.tscn` fotografa tre macchie in cucina (versata, lanciata e pulita a
+metà) e il mocio appoggiato nell'angolo del magazzino.
+
+**Da verificare giocando:** il colore e la lucidità della macchia sul pavimento alla veneziana;
+il gesto del mocio visto dagli occhi, che nessuno scatto ha ripreso; se si prende bene il manico
+(il collisore è largo quattro centimetri, apposta); una tazza rovesciata sul tavolo lascia la
+macchia sul tavolo, e oggi si pulisce col mocio anche lì, che nessuno farebbe davvero.
+
+
+## D-252 Il mocio pulisce anche dove non c'è niente
+
+Federico, giocando col mocio: «puoi fare che posso pulire anche random?». Il destro si offriva
+solo guardando una macchia, le frange restavano legate a lei entro un quarto di metro, e pulita
+la macchia il gesto finiva da solo.
+
+**IL DESTRO SI OFFRE SU OGNI PIANO ORIZZONTALE DENTRO PORTATA**: il pavimento, il piano di un
+tavolo. Non su un muro: la normale deve stare entro 45 gradi dalla verticale (`Mocio.PIANO`).
+**LE FRANGE VANNO DOVE SI GUARDA**, e se si alzano gli occhi restano sull'ultimo punto buono. **IL
+GESTO DURA FINCHÉ IL DESTRO È GIÙ**, anche dopo aver pulito una macchia. Le macchie continuano ad
+andarsene quando ci passano sopra le frange, come prima.
+
+**Misurato:** `prova_mocio.gd` ha due domande in più. Pulita la macchia, col destro giù il gesto
+continua. Sul pavimento nudo la riga offre il destro e le frange vanno a terra. Nella domanda 5
+la sonda cerca un posto da cui si guarda LA MACCHIA, non un pavimento qualunque: da quando tutto
+il pavimento offre il destro si sarebbe fermata al primo.
+
+**Da verificare giocando:** se tenere il destro guardando il pavimento, senza niente da pulire,
+sembra un gesto o un tic.
+
+
+## D-253 L'anta del quadro elettrico si apriva dentro il muro
+
+Federico, il 14 settembre: «il box elettrico si apre dentro il muro, non va bene».
+
+**IL CARDINE ERA GIUSTO, IL SEGNO NO.** `quadro_elettrico_blender.py` misura bene da che parte
+sta la cerniera, a x +0,147 (D-195). Il verso di rotazione invece `gen_blockout.py` l'aveva
+dedotto, e sbagliato: la lamiera va dal cardine verso −x, e girando attorno a y di un angolo
+negativo lo spigolo libero va verso −z, dove sta il muro. Adesso `verso = 1`.
+
+**LA SONDA NON LO VEDEVA.** `prova_rete.gd` apriva l'anta e controllava solo che il fungo si
+spostasse, e dentro il muro si sposta quanto verso il prato. Adesso misura anche il punto più
+indietro di tutte le mesh dell'anta, fungo compreso, nelle coordinate del quadro, e pretende che
+non stia dietro il retro della cassa.
+
+**Misurato:** prima della correzione, aperta, l'anta stava 11,7 cm dentro il muro, e la sonda lo
+segnala come guasto. Dopo sta 15,3 cm davanti. `prova_rete` passa, e nel `.tscn` rigenerato è
+cambiata solo la riga `verso`.
+
+**Da verificare giocando:** se a 110 gradi verso destra l'anta aperta dà fastidio a qualcosa
+accanto al quadro.
+
+
+## D-254 L'anta del quadro era montata al contrario
+
+Federico, dopo D-253: «l'hai proprio montato al contrario, cioè la parte che dovrebbe essere
+interna è esterna […] come se qualcuno montasse una porta con lo spioncino che guarda verso
+dentro». Il verso di apertura non c'entrava: la lamiera dell'anta era girata, con la vaschetta
+dal bordo ripiegato verso fuori e il cartello del pericolo verso i fili.
+
+**LA CAUSA È IN COME SI CHIUDEVA.** Nel modello l'anta arriva spalancata, e
+`quadro_elettrico_blender.py` la girava attorno al suo centro della rotazione più corta che la
+rende parallela alla cassa, 58 gradi. L'autore però l'aveva aperta oltre l'angolo retto, e i gradi
+veri erano 123: la rotazione più corta la ribaltava. L'hanno mostrato quattro rendering del modello
+originale: dal davanti si vede la vaschetta dell'anta aperta, da dietro il cartello. Il provino
+del 1° settembre la mostrava già girata, e nessuno l'aveva guardato chiedendosi quale faccia
+fosse quale.
+
+**ADESSO SI CHIUDE SULLA SUA CERNIERA**, lo spigolo dell'anta più vicino a un bordo del fronte
+della cassa. Delle due rotazioni che la rendono parallela si tiene quella che la porta davanti
+all'apertura. Una rotazione attorno alla cerniera non può ribaltare l'anta. Poi la si appoggia
+spostandola solo in profondità: centrata sull'ingombro della cassa, che comprende le staffe sotto,
+scendeva di tre centimetri e sopra l'anta chiusa restava una fessura sui fili. Nel generatore
+cambiano due numeri: la cerniera passa da x 0,147 a 0,154, e il collisore dell'anta sale a y 0,030.
+Il cardine resta a destra, e `verso = 1` di D-253 resta giusto.
+
+**LE TEXTURE RIDOTTE NON ENTRAVANO MAI.** Lo script passava a `usa_le_ridotte` il solo nome
+della cartella, che non si trovava, e il quadro si portava dentro le mappe a 4096. Con il percorso
+intero, e con la correzione di D-251 per `metallicRoughness`, `quadro_elettrico.glb` passa da 23 a
+4,8 MB.
+
+**Misurato:** nei provini `14_` e `14b_` l'anta chiusa ha fuori il cartello, le due viti e il fungo,
+e le cerniere sul bordo destro. Nel `.tscn` rigenerato cambiano solo le due righe dell'anta.
+`prova_rete` passa: l'anta aperta sta 15,3 cm davanti al muro, e il raggio del giocatore trova il
+fungo.
+
+**Da verificare giocando:** di sbieco, dal lato della cerniera, fra anta e cassa resta un filo da
+cui si vede l'interno. Nel modello c'è anche lì.
+
+## D-255 L'anta del quadro girava staccata dalla cassa
+
+Federico, dopo D-254, con uno scatto del quadro aperto: «STACCATO». L'anta si apriva verso fuori e
+col cartello dalla parte giusta, ma fra il bordo della cassa e la lamiera restava un vuoto.
+
+**IL PERNO NON ERA LA CERNIERA.** `quadro_elettrico_blender.py` metteva l'origine dell'anta, cioè il
+punto attorno a cui `PanelDoor` la gira, sullo spigolo destro della lamiera e sul fronte della
+cassa. Ma l'anta è una vaschetta profonda 5,4 cm, e l'asse delle cerniere sta dentro il suo bordo.
+Misurato sul `.glb`: girata attorno allo spigolo, da 30 gradi in su l'anta sta a 3,5 cm dalla
+cassa, mentre nella posa dell'autore la tocca a 3 mm. Godot la girava giusta: l'errore era tutto
+nel modello.
+
+**ADESSO IL PERNO È IL PUNTO CHE LA CHIUSURA LASCIA FERMO.** Chiudere l'anta è un giro di 123 gradi
+sulla cerniera stimata (D-254) più uno spostamento in profondità, e le due mosse insieme sono
+ancora un giro, attorno a un punto solo. Riaprendo attorno a quello l'anta torna esattamente
+nella posa dell'autore. Esce a x 0,141, 1,3 cm davanti alla cassa. Nel generatore l'anta passa da
+(0,154, 0,170) a (0,141, 0,183); il collisore e il fungo restano dov'erano e cambiano solo i loro
+numeri relativi. Anche il fungo del modello resta a 10 cm dal bordo dell'anta, non dal perno.
+
+**Nessun controllo lo vedeva.** I provini mostravano solo l'anta chiusa, e `prova_rete` guardava
+che aperta non entrasse nel muro. Adesso c'è il provino `14c_`, con l'anta aperta di 110 gradi, e
+`prova_rete` misura la distanza fra i vertici dell'anta e quelli della cassa vicino al cardine:
+sopra un centimetro è un guasto.
+
+**Misurato:** aperta di 110 gradi l'anta sta a 7,1 mm dalla cassa, sia in Blender sia in Godot.
+Nel `14c_` le cerniere dell'anta combaciano col bordo della cassa. `prova_rete` passa: il raggio
+trova ancora il fungo, e l'anta aperta sta 15,8 cm davanti al retro della cassa.
+
+## D-256 L'anta chiusa era storta, e dentro il quadro c'era già un pulsante
+
+Federico, dopo D-255, con uno scatto del quadro aperto: «è ancora un po' staccato». E: «mi dai la
+possibilità qui di staccare tutte le luci e riaccenderle?».
+
+**IL PERNO ERA GIUSTO, L'ANTA NO.** Misurato sul `.glb`: aperta a 110 gradi, l'anta passava a 2 mm
+dallo spigolo della cassa. Il vuoto stava già nell'anta chiusa: dal lato libero toccava la cassa,
+dal lato del cardine ne stava a 2,3 cm. Era girata di 5,3 gradi, ed è anche il filo che il D-254
+aveva visto di sbieco.
+
+**LA COLPA ERA DI COME SI TROVA LA FACCIA GRANDE.** `quadro_elettrico_blender.py` orientava cassa e
+anta sulla direzione in cui la nuvola di vertici è più schiacciata, e ogni vertice contava uguale.
+Le cerniere e il bordo ripiegato dell'anta hanno più vertici della lamiera intera, e la tiravano di
+lato; anche la cassa, piena di cablaggio, usciva girata di 0,7 gradi. Adesso conta l'area: si
+prende la direzione orizzontale con più superficie di facce, e si media attorno a quella. L'anta
+chiusa è a filo, profonda 3,6 cm invece di 5,4, e il giro che la chiude è di 117 gradi, non 123. Il
+perno del D-255 esce sull'angolo della cassa, a x 0,147.
+
+**IL PULSANTE C'ERA GIÀ.** Il fungo sull'anta stacca tutta la corrente, ma ad anta aperta sta
+girato dall'altra parte. Dentro la cassa il modello ha un fungo rosso su una piastrina nera, a
+destra dei morsetti: adesso è un secondo `MainsButton`, e stacca e riattacca la stessa corrente.
+Lo script lo separa dalla cassa riconoscendolo dal COLORE della texture, 166 facce rosse in una
+finestra di 5 cm: la piastrina nera sta alla profondità del gambo, e separarli per quota vorrebbe
+dire scegliere un millimetro. Separato, il cappello rientra di 4 mm quando lo si preme, come il
+fungo. È figlio del quadro e non dell'anta, e a quadro chiuso il raggio trova prima l'anta.
+
+**Due trappole della sonda.** Con due pulsanti nel gruppo, «il primo» non dice più quale:
+`prova_rete` li distingue da chi li porta. E un corpo girato non si sposta subito per i raggi, ma al
+passo di fisica successivo: la sonda mirava il pulsante ad anta appena aperta e trovava l'anta
+chiusa. Adesso aspetta due passi.
+
+**Misurato:** aperta di 110 gradi l'anta sta a 3,5 mm dalla cassa (era 7,1). `prova_rete` passa: a
+quadro chiuso il raggio verso il pulsante di dentro prende l'anta, a quadro aperto prende il
+pulsante, e premuto due volte spegne le 20 luci e le riaccende tutte. Il banco arriva in fondo. Nei
+provini `14_` e `14c_` l'anta chiusa è a filo, e quella aperta ha le cerniere sul bordo della cassa.

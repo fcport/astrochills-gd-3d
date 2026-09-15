@@ -26,7 +26,7 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        CASSA_MONITOR, VETRO_MONITOR, SEDILE_MONITOR,
                        BOMBATURA_MONITOR, FRANCO_VETRO,
                        PULSANTIERA_STAFFA, PULSANTIERA_TASTI,
-                       PULSANTIERA_FACCIA, ARREDI_CUCINA
+                       PULSANTIERA_FACCIA, ARREDI_CUCINA, SALA_MAGAZZINO
 )
 
 MURI, APERTURE, PAVIMENTI, SOFFITTI, SALA, (_CX, _CZ) = scalati()
@@ -58,6 +58,30 @@ _SX0, _SZ0, _SX1, _SZ1 = (v * K for v in SALA_TELESCOPIO)
 # I DUE PIANI DELLA CUCINA su cui sta la roba che si prende in mano, da
 # `geometria.py` e non ribattuti: spostare il bancone sposta la bottiglia.
 CUCINA = [_a for _a in ARREDI_CUCINA if _a[0] == "CucinaBase"][0][1:]
+
+# IL MOCIO DEL MAGAZZINO (D-251), nell'angolo sud-est, APPOGGIATO AL MURO EST come si lascia un
+# mocio: le frange per terra e il manico contro l'intonaco. Dove sta lo dice la stanza, non un
+# numero: `SALA_MAGAZZINO` e' il magazzino netto fra i muri, e l'angolo sta lontano dalla porta,
+# che e' sul muro nord e si apre verso dentro.
+#
+# QUINDICI GRADI, e stanno in piedi per attrito: un bastone appoggiato scivola quando la tangente
+# dell'inclinazione supera il doppio dell'attrito col pavimento, e con l'attrito di Godot (1)
+# regge fino a sessanta gradi.
+#
+# E NON MENO DI QUINDICI, per l'altro verso: sotto, il baricentro (34 cm, vedi `mocio.tscn`)
+# cade dentro il fondo delle frange, e il mocio si raddrizza da solo invece di appoggiarsi. A
+# dieci gradi sta 6 cm fuori asse contro i 6 della mezza scatola; a quindici, 9.
+MOCIO_PENDE = 15.0
+MOCIO_ALTO = 1.30
+MOCIO_RAGGIO_MANICO = 0.02
+MOCIO_MEZZE_FRANGE = 0.06
+_MAG_X0, _MAG_Z0, _MAG_X1, _MAG_Z1 = SALA_MAGAZZINO[0]
+_mp = _m.radians(MOCIO_PENDE)
+# La cima del manico tocca il muro est; la base e' un dito piu' in qua. E si alza di quanto
+# l'angolo delle frange scende girandole, o nascerebbero un centimetro dentro il pavimento.
+MOCIO_DOVE = (_MAG_X1 - MOCIO_RAGGIO_MANICO - MOCIO_ALTO * _m.sin(_mp) - 0.01,
+              MOCIO_MEZZE_FRANGE * _m.sin(_mp) + 0.002,
+              _MAG_Z1 - 0.20)
 TAVOLO_CUCINA = [_a for _a in ARREDI_CUCINA if _a[0] == "Tavolo"][0][1:]
 
 # LA CARROZZA DELLA STAMPANTE, da cui escono le foto (D-239): il centro dell'impronta in
@@ -88,8 +112,12 @@ for (_cx, _cy, _cz, _sx, _sy, _sz, _nome, *_r) in collisioni_infissi():
 blocchi.extend(arredi())
 
 # ---------------------------------------------------------------- esterno: prato, recinto, auto
-# prato: continuo con il pavimento interno, cosi' uscendo non si cade
-aggiungi(22.0 * K, -0.13, 22.0 * K, 96.0 * K, 0.20, 88.0 * K, "Prato")   # 3 cm sotto: niente z-fighting
+# IL PRATO NON E' PIU' UN BLOCCO. Era una scatola verde da 48 x 44 m, generata qui
+# insieme ai muri; adesso e' il nodo `Prato` (world/prato.gd), un terreno che sale e
+# scende con l'erba sopra, continuo con il pavimento interno cosi' uscendo non si cade.
+# Il rettangolo e la quota sono quelli della scatola.
+PRATO = (22.0 * K - 48.0 * K, 22.0 * K - 44.0 * K, 96.0 * K, 88.0 * K)   # x, z, lati
+QUOTA_PRATO = -0.03   # 3 cm sotto i pavimenti: niente z-fighting sulla soglia
 
 # recinto del prato (h 1,4), con un varco per il cancello sul lato sud-est
 REC_X0, REC_Z0, REC_X1, REC_Z1 = -10.0 * K, -8.0 * K, 54.0 * K, 52.0 * K
@@ -112,10 +140,50 @@ for (rx0, rz0, rx1, rz1, nm) in [
 # al raggio e uno muto, e guardandola da certi angoli non comparirebbe nessun
 # prompt. Sta qui sotto, nodo `Macchina`, con la sua mesh e la sua forma.
 #
-# LE MISURE RESTANO QUESTE: 4,20 x 1,50 x 1,80 a misura vera, a una quarantina di
-# metri dall'ingresso, dentro il recinto e a due passi dal varco del cancello.
-AUTO_DOVE = (46.0 * K, 0.75, 50.0 * K)
-AUTO_QUANTO = (4.20, 1.50, 1.80)
+# LE MISURE SONO QUELLE DELLA 500: 2,97 x 1,30 x 1,32 (`tools/cinquecento_blender.py`
+# si ferma se il modello non le rispetta), a una ventina di metri dall'ingresso,
+# dentro il recinto e a due passi dal varco del cancello. Il nodo sta a mezza altezza,
+# dove la collisione ha il centro, e il modello - che ha l'origine sotto le ruote -
+# scende di altrettanto. Il muso guarda est: la portiera del guidatore, a sinistra,
+# e' dalla parte da cui si arriva a piedi.
+AUTO_DOVE = (46.0 * K, 0.65, 50.0 * K)
+AUTO_QUANTO = (2.97, 1.30, 1.32)
+
+# LE IMPRONTE SU CUI IL PRATO RESTA PIATTO, come x, z, lati: i due corpi della elle,
+# che hanno i pavimenti a quota zero, e l'auto, che ci poggia sopra. Un terreno che
+# salisse li' dentro spunterebbe dai pavimenti o solleverebbe la macchina.
+IMPRONTE_A_TERRA = [
+    (0.0, 0.0, _DX0, _DZ1),
+    (_DX0, _DZ0, _DX1 - _DX0, _DZ1 - _DZ0),
+    (AUTO_DOVE[0] - AUTO_QUANTO[0] / 2, AUTO_DOVE[2] - AUTO_QUANTO[2] / 2,
+     AUTO_QUANTO[0], AUTO_QUANTO[2]),
+]
+# E li' l'erba non cresce, con un quarto di metro in piu': un ciuffo largo quaranta
+# centimetri piantato a filo del muro ci entrerebbe per meta'.
+SENZA_ERBA = [(x - 0.25, z - 0.25, lx + 0.5, lz + 0.5) for (x, z, lx, lz) in IMPRONTE_A_TERRA]
+
+
+def _rettangoli(elenco):
+    """Un elenco di rettangoli scritto come lo legge un .tscn."""
+    return ", ".join("Rect2(%.3f, %.3f, %.3f, %.3f)" % r for r in elenco)
+
+
+def _righello(cartella, altrimenti=2.0):
+    """Quanti metri copre un quadro della mappa, letti dal FONTE.txt della cartella.
+
+    E' la misura che ambientCG dichiara e `prendi_texture.py` scrive: la stessa che
+    `verifica_ripetizioni()` legge per i materiali di Blender. Se manca si ripete ogni
+    `altrimenti` metri, e lo si dice.
+    """
+    via_ = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets",
+                        "textures", cartella, "FONTE.txt")
+    if os.path.exists(via_):
+        m = _re.search(r"Il quadro copre (\d+) x (\d+) cm", io.open(via_, encoding="utf-8").read())
+        if m:
+            return int(m.group(1)) / 100.0
+    print("ATTENZIONE: la mappa %s non dichiara quanto copre: si ripete ogni %.1f m"
+          % (cartella, altrimenti))
+    return altrimenti
 
 def _base(rot_x, rot_z, cx, cy, cz, rot_y=0.0):
     """La matrice del blocco. Le tre rotazioni non si combinano mai: un blocco sale
@@ -169,6 +237,9 @@ def tscn():
              '[ext_resource type="Texture2D" path="res://assets/textures/metallo/color.jpg" id="16_met_c"]',
              '[ext_resource type="Texture2D" path="res://assets/textures/metallo/normal.jpg" id="17_met_n"]',
              '[ext_resource type="Texture2D" path="res://assets/textures/metallo/roughness.jpg" id="18_met_r"]',
+             '[ext_resource type="Texture2D" path="res://assets/textures/prato/color.jpg" id="68_prato_c"]',
+             '[ext_resource type="Texture2D" path="res://assets/textures/prato/normal.jpg" id="69_prato_n"]',
+             '[ext_resource type="Texture2D" path="res://assets/textures/prato/roughness.jpg" id="70_prato_r"]',
              # IL BATTENTE DEL MAGAZZINO E' UN MODELLO, non delle scatole. Sta in un
              # .glb suo e non dentro quello dell'edificio perche' RUOTA: un pezzo che
              # gira ha bisogno di un nodo con l'origine sul cardine, e dentro
@@ -187,6 +258,8 @@ def tscn():
              '[ext_resource type="PackedScene" path="res://crt/crt_screen.tscn" id="26_vetro"]',
              '[ext_resource type="Script" path="res://world/dome_shutter.gd" id="27_cupola"]',
              '[ext_resource type="Script" path="res://world/interactables/macchina.gd" id="28_auto"]',
+             '[ext_resource type="Script" path="res://world/prato.gd" id="66_prato"]',
+             '[ext_resource type="PackedScene" path="res://assets/models/cinquecento.glb" id="67_cinquecento"]',
              '[ext_resource type="Script" path="res://world/indoors_volume.gd" id="32_dentro"]',
              '[ext_resource type="Script" path="res://world/dome_activity.gd" id="33_attivita"]',
              '[ext_resource type="Shader" path="res://world/shaders/cielo.gdshader" id="37_cielo"]',
@@ -220,6 +293,7 @@ def tscn():
              '[ext_resource type="Script" path="res://world/memoria_mondo.gd" id="63_memoria"]',
              '[ext_resource type="Script" path="res://world/interactables/tazza.gd" id="64_tazza"]',
              '[ext_resource type="Script" path="res://world/interactables/fornello.gd" id="65_fornello"]',
+             '[ext_resource type="PackedScene" path="res://world/interactables/mocio.tscn" id="71_mocio"]',
              '']
     dims = sorted(set((round(b[3], 3), round(b[4], 3), round(b[5], 3)) for b in blocchi)
                   | {(round(p[3], 3), round(p[4], 3), round(p[5], 3))
@@ -244,8 +318,8 @@ def tscn():
         righe.append('size = Vector3(%.3f, %.3f, %.3f)' % dsz)
         righe.append('')
     for nome, col in [("mat_muro", "0.78, 0.76, 0.72"), ("mat_pav", "0.42, 0.40, 0.38"),
-                      ("mat_soff", "0.60, 0.60, 0.62"), ("mat_pass", "0.55, 0.45, 0.32"), ("mat_prato", "0.20, 0.26, 0.17"),
-                      ("mat_auto", "0.45, 0.13, 0.13"), ("mat_rec", "0.35, 0.33, 0.30"), ("mat_tetto", "0.24, 0.22, 0.21"), # L'ANTA E IL SUO TELAIO SONO LO STESSO LEGNO, e per sette porte non lo
+                      ("mat_soff", "0.60, 0.60, 0.62"), ("mat_pass", "0.55, 0.45, 0.32"), ("mat_prato", "1, 1, 1"),
+                      ("mat_rec", "0.35, 0.33, 0.30"), ("mat_tetto", "0.24, 0.22, 0.21"), # L'ANTA E IL SUO TELAIO SONO LO STESSO LEGNO, e per sette porte non lo
                       # sembravano. Il telaio lo disegna Blender, l'anta nasce qui, e
                       # tutti e due usano la mappa `legno-porte`: solo che di la' il
                       # materiale NON e' fra i TINTI - la mappa parla da sola - e qui
@@ -277,6 +351,17 @@ def tscn():
                   'albedo_color = Color(%s, 1)' % col]
         if nome == "mat_dome":
             righe.append('cull_mode = 2')   # visibile anche da dentro la cupola
+        if nome == "mat_prato":
+            # IL PRATO HA LA SUA MAPPA, gia' tinta nel file sul verde a tinta unita che
+            # aveva prima (`prendi_texture.py`, cartella `prato`): qui bianco pieno, o la
+            # tinta si applicherebbe due volte. Le UV della maglia sono in METRI
+            # (`world/prato.gd`), quindi la scala e' uno diviso il righello della mappa.
+            _r = _righello("prato")
+            righe += ['albedo_texture = ExtResource("68_prato_c")',
+                      'normal_enabled = true',
+                      'normal_texture = ExtResource("69_prato_n")',
+                      'roughness_texture = ExtResource("70_prato_r")',
+                      'uv1_scale = Vector3(%.4f, %.4f, 1)' % (1.0 / _r, 1.0 / _r)]
         if nome == "mat_metallo":
             # stesso triplanare dell'anta di legno e per la stessa ragione: le UV
             # di una BoxMesh vanno da 0 a 1 su OGNI faccia, quindi la grana della
@@ -555,9 +640,11 @@ def tscn():
               # compromesso di sempre fra la forma e il dito - lo stesso che
               # portano i tasti della pulsantiera.
               '[sub_resource type="BoxShape3D" id="s_quadro_anta"]',
-              'size = Vector3(0.294, 0.362, 0.054)', '',
+              'size = Vector3(0.293, 0.361, 0.036)', '',
               '[sub_resource type="BoxShape3D" id="s_quadro_fungo"]',
               'size = Vector3(0.060, 0.060, 0.040)', '',
+              '[sub_resource type="BoxShape3D" id="s_quadro_pulsante"]',
+              'size = Vector3(0.034, 0.034, 0.020)', '',
               # LA CAMERA CCD e' un cilindro e non la propria mesh: si prende in
               # mano, sbatte sui muri e rotola per terra, e una collisione convessa
               # costerebbe cinquanta facce per una sagoma che a occhio E' un
@@ -594,13 +681,9 @@ def tscn():
               # fin sopra la testa. I due numeri stanno in `geometria.py`, che e'
               # anche dove sta scritto perche' e' un CILINDRO e non l'ottagono di
               # scatole che c'era prima.
-              # L'AUTO: la sua mesh e la sua forma stanno qui e non fra i blocchi,
-              # perche' l'auto e' un interagibile e si porta dietro tutte e due
-              # (vedi `AUTO_DOVE` in cima a questo file). Scatola grigia come tutto
-              # il resto del segnaposto: arrivera' un modello, e questi due numeri
-              # restano quelli.
-              '[sub_resource type="BoxMesh" id="m_auto"]',
-              'size = Vector3(%.2f, %.2f, %.2f)' % AUTO_QUANTO, '',
+              # L'AUTO: la sua forma sta qui e non fra i blocchi, perche' l'auto e' un
+              # interagibile e si porta dietro la collisione (vedi `AUTO_DOVE` in cima a
+              # questo file). Quello che si vede e' la 500 di `cinquecento.glb`.
               '[sub_resource type="BoxShape3D" id="s_auto"]',
               'size = Vector3(%.2f, %.2f, %.2f)' % AUTO_QUANTO, '',
               '[sub_resource type="CylinderShape3D" id="s_pieno"]',
@@ -677,7 +760,7 @@ def tscn():
         usati[nome] = usati.get(nome, 0) + 1
         nn = "%s_%d" % (nome, usati[nome])
         n = idx[(round(sx, 3), round(sy, 3), round(sz, 3))]
-        visibile = nome.startswith(("Prato", "Rec"))
+        visibile = nome.startswith("Rec")
         righe += ['[node name="%s" type="StaticBody3D" parent="."]' % nn,
                   'transform = %s' % _base(rot, rotz, cx, cy, cz, roty), '',
                   ] + ([] if not visibile else [
@@ -687,7 +770,6 @@ def tscn():
                       "mat_pav" if nome.startswith("Pav") else
                       "mat_soff" if nome.startswith("Soff") else
                       "mat_pass" if nome.startswith(("Pass", "Scal")) else
-                      "mat_prato" if nome.startswith("Prato") else
                       "mat_tetto" if nome.startswith("Tetto") else
                       "mat_rec" if nome.startswith("Rec") else
                       "mat_tele" if nome.startswith(("Pilastro", "Tubo")) else
@@ -1730,6 +1812,16 @@ def tscn():
               '[node name="Col" type="CollisionShape3D" parent="TazzaCucina"]',
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.034, 0)',
               'shape = SubResource("s_tazza")', '',
+              # IL MOCIO, in magazzino (D-251): pulisce le macchie del caffe' rovesciato.
+              # Girato attorno a z di MOCIO_PENDE, con la cima verso est: vedi lassu'
+              # `MOCIO_DOVE`.
+              #
+              # LA BASE SI SCRIVE PER RIGHE, non per colonne: `Transform3D(a, b, c, ...)` nel
+              # .tscn e' x.x, y.x, z.x, poi x.y, y.y, z.y. Scritta per colonne la cima
+              # pendeva verso ovest, lontano dal muro - letto con `str_to_var` da Godot.
+              '[node name="Mocio" parent="." instance=ExtResource("71_mocio")]',
+              'transform = Transform3D(%.5f, %.5f, 0, %.5f, %.5f, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
+              % ((_m.cos(_mp), _m.sin(_mp), -_m.sin(_mp), _m.cos(_mp)) + MOCIO_DOVE), '',
               # L'AUTO, cioe' il modo di finire la notte e cominciare quella dopo.
               # NASCE SPENTA: andarsene con una posa in corso chiuderebbe la notte
               # a meta'. La accende `main.gd` all'alba - vedi `macchina.gd`.
@@ -1740,11 +1832,23 @@ def tscn():
               'script = ExtResource("28_auto")',
               'prompt_text = "Torna a casa"',
               'enabled = false', '',
-              '[node name="Mesh" type="MeshInstance3D" parent="Macchina"]',
-              'mesh = SubResource("m_auto")',
-              'material_override = SubResource("mat_auto")', '',
+              '[node name="Modello" parent="Macchina" instance=ExtResource("67_cinquecento")]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, %.3f, 0)' % -AUTO_DOVE[1], '',
               '[node name="Col" type="CollisionShape3D" parent="Macchina"]',
               'shape = SubResource("s_auto")', '',
+              # IL PRATO, che non e' piu' un blocco: un terreno che sale e scende e si costruisce
+              # all'avvio con la sua erba (`world/prato.gd`). Da qui gli arrivano le misure che sa
+              # il generatore: il rettangolo del prato, il recinto, e le impronte su cui il
+              # terreno resta piatto e l'erba non cresce.
+              '[node name="Prato" type="StaticBody3D" parent="."]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, %.3f, 0)' % QUOTA_PRATO,
+              'script = ExtResource("66_prato")',
+              'estensione = Rect2(%.3f, %.3f, %.3f, %.3f)' % PRATO,
+              'recinto = Rect2(%.3f, %.3f, %.3f, %.3f)'
+              % (REC_X0, REC_Z0, REC_X1 - REC_X0, REC_Z1 - REC_Z0),
+              'piatti = Array[Rect2]([%s])' % _rettangoli(IMPRONTE_A_TERRA),
+              'senza_erba = Array[Rect2]([%s])' % _rettangoli(SENZA_ERBA),
+              'materiale = SubResource("mat_prato")', '',
               # --- LA MOKA, e con lei il negozio smette di essere vuoto --------
               #
               # ERA STATA TOLTA DA D-183, e la riga diceva perche': tre scatole
@@ -1907,22 +2011,36 @@ def tscn():
               # istanziata e dentro non ci si appende niente. Il collegamento fra il
               # corpo invisibile e il pezzo che gira passa da `anta`.
               #
-              # IL VERSO E' -1 PERCHE' IL CARDINE E' A DESTRA, e non e' una scelta:
-              # lo ha misurato `quadro_elettrico_blender.py` guardando quale dei due
-              # spigoli verticali si muove di meno chiudendo l'anta.
+              # IL VERSO E' +1, E PER UN MESE E' STATO -1. Il cardine sta a destra, a
+              # x +0,147, e quello lo ha misurato bene `quadro_elettrico_blender.py`
+              # guardando quale spigolo si muove di meno chiudendo l'anta. Il SEGNO pero'
+              # era stato dedotto: la lamiera va dal cardine verso -x, e girando attorno
+              # a y di un angolo NEGATIVO lo spigolo libero va verso -z, cioe' dentro il
+              # muro. Federico: «il box elettrico si apre dentro il muro». Adesso lo
+              # misura `prova_rete.gd`: aperta, l'anta non sta mai dietro il retro della
+              # cassa (D-253).
               # IL CORPO DELL'ANTA HA L'ORIGINE SUL CARDINE, come il nodo che ruota
               # nel modello: cosi' ruotandolo il bersaglio segue il battente invece
               # di restare piantato nel vano. Con il corpo centrato sull'anta la
               # collisione restava chiusa a quadro aperto, e il prompt compariva
               # davanti al vuoto.
+              # IL CARDINE STA A x 0,154 E L'ANTA SALE DI TRE CENTIMETRI dal D-254:
+              # chiusa girandola sulla cerniera vera, e non piu' centrata sull'ingombro
+              # della cassa con le staffe, l'anta ha l'altezza e il lato che le ha dato
+              # l'autore. Numeri stampati da `quadro_elettrico_blender.py`.
+              # E IL CARDINE STA A x 0,147, z 0,170 dal D-256: sull'asse attorno a cui
+              # l'anta gira davvero (D-255), sull'angolo della cassa. Il D-255 lo aveva
+              # messo a x 0,141, z 0,183 perche' l'anta chiusa era storta di 5 gradi:
+              # dal lato del cardine stava a 2,3 cm dalla cassa, e aperta sembrava
+              # staccata. Dritta, e' profonda 3,6 cm e non 5,4.
               '[node name="Anta" type="StaticBody3D" parent="QuadroElettrico"]',
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.147, 0.000, 0.170)',
               'script = ExtResource("44_anta")',
               'prompt_text = "Apri il quadro"',
               'anta = NodePath("../Modello/Anta")',
-              'verso = -1', '',
+              'verso = 1', '',
               '[node name="Col" type="CollisionShape3D" parent="QuadroElettrico/Anta"]',
-              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.147, 0.000, 0.027)',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.141, 0.029, 0.015)',
               'shape = SubResource("s_quadro_anta")', '',
               # IL FUNGO E' FIGLIO DELL'ANTA, perche' e' avvitato sull'anta: aprendo
               # il quadro se ne va con lei, e non resta appeso a mezz'aria davanti
@@ -1930,13 +2048,27 @@ def tscn():
               # due bersagli si sovrappongono il raggio prende lui - che e' quello
               # che deve succedere.
               '[node name="Fungo" type="StaticBody3D" parent="QuadroElettrico/Anta"]',
-              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.100, -0.090, 0.075)',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.094, -0.090, 0.043)',
               'script = ExtResource("45_fungo")',
               'prompt_text = "Dai corrente"',
               'rete = NodePath("../..")',
               'cappello = NodePath("../../Modello/Anta/Fungo")', '',
               '[node name="Col" type="CollisionShape3D" parent="QuadroElettrico/Anta/Fungo"]',
-              'shape = SubResource("s_quadro_fungo")', '']
+              'shape = SubResource("s_quadro_fungo")', '',
+              # IL PULSANTE DI DENTRO (D-256): il fungo rosso che il modello ha gia'
+              # sulla piastrina accanto ai morsetti, staccato dalla cassa perche'
+              # rientri. Stacca la stessa corrente del fungo sull'anta, che ad anta
+              # aperta sta girato dall'altra parte. E' FIGLIO DEL QUADRO e non
+              # dell'anta: sta avvitato sul fondo. A quadro chiuso il raggio trova
+              # prima l'anta, e dietro la lamiera non si preme niente.
+              '[node name="Pulsante" type="StaticBody3D" parent="QuadroElettrico"]',
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.096, 0.002, 0.038)',
+              'script = ExtResource("45_fungo")',
+              'prompt_text = "Stacca la corrente"',
+              'rete = NodePath("..")',
+              'cappello = NodePath("../Modello/Pulsante")', '',
+              '[node name="Col" type="CollisionShape3D" parent="QuadroElettrico/Pulsante"]',
+              'shape = SubResource("s_quadro_pulsante")', '']
 
     righe += ['[node name="Player" parent="." instance=ExtResource("1_player")]',
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, 0.000, %.3f)' % (21.7 * K, 17.0 * K), '', '',
@@ -1960,7 +2092,7 @@ def verifica_raccordi(tolleranza=0.03):
     return problemi
 
 
-ESTERNI = ("Prato", "Rec", "Tetto")   # gli unici blocchi ammessi fuori dai muri
+ESTERNI = ("Rec", "Tetto")   # gli unici blocchi ammessi fuori dai muri: il prato e' il nodo `Prato`
 
 
 def verifica_ingombri(margine=0.40):
@@ -2140,6 +2272,7 @@ SCRIVONO = {
     "cupola_blender.py": "cupola.glb",
     "arredi_blender.py": "controllo_pc.glb",
     "cucina_blender.py": "cucina.glb",
+    "cinquecento_blender.py": "cinquecento.glb",
     "bagno_blender.py": "bagno.glb",
     "divulgazione_blender.py": "divulgazione.glb",
     "impianti_blender.py": "impianti.glb",
@@ -2460,6 +2593,9 @@ _attesi = [("ambient_light_energy = 0.035", "la luce ambientale della notte"),
            # sala di controllo e' rimasta senza la sua unica luce propria senza che
            # niente si lamentasse. Un valore che conta si controlla NEL FILE.
            ('[node name="LuceMonitor" type="OmniLight3D"', "la luce del monitor"),
+           ('[node name="Prato" type="StaticBody3D"', "il prato: senza, uscendo si cade nel vuoto"),
+           ('67_cinquecento', "la 500 con cui si torna a casa"),
+           ('68_prato_c', "la mappa del prato"),
            ('[node name="Luce_esterno_porta"', "le applique esterne"),
            # LA POSTAZIONE, per la stessa ragione della luce qui sopra e con lo
            # stesso precedente: sono tre nodi che si tengono per mano, e due di
@@ -2500,6 +2636,7 @@ _attesi = [("ambient_light_energy = 0.035", "la luce ambientale della notte"),
            ('script = ExtResource("63_memoria")', "la memoria della casa"),
            ('script = ExtResource("65_fornello")', "i fuochi della cucina"),
            ('script = ExtResource("64_tazza")', "le tazze in cui si versa il caffe'"),
+           ('instance=ExtResource("71_mocio")', "il mocio del magazzino, che pulisce il caffe'"),
            ('script = ExtResource("61_quaderno")', "il quaderno delle procedure accanto al monitor"),
            ('script = ExtResource("38_lucecielo")', "la luce del cielo in cupola"),
            # Senza l'elenco delle lampade l'adattamento al buio non si spegne quando

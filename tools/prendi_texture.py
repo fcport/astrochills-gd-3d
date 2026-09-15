@@ -45,6 +45,15 @@ SET = {
                     "Noce scuro verniciato per teche, libreria e tavolo della sala."),
     "legno-porte": ("Wood049", None,
                     "Legno medio neutro per ante e telai delle porte."),
+    # IL PRATO. Non un tappeto: un prato di montagna a novembre, con l'erba rada, le
+    # chiazze di terra e qualche rametto. Grass001 e Grass004 sono prati da giardino,
+    # fitti e uniformi; Ground013 e withered_grass (Poly Haven) sono gia' tutti paglia,
+    # e la paglia la portano i ciuffi. TINTO SULLA MEDIA DEL VERDE DI PRIMA, e non per
+    # prudenza: la luce di fuori e' tarata su quel prato (D-240), e una mappa due volte
+    # piu' chiara farebbe il crepuscolo.
+    "prato": ("Ground037", (51, 66, 43),
+              "Terreno erboso rado con chiazze di terra, per il prato attorno\n"
+              "all'osservatorio."),
     "pavimento": ("Terrazzo013", None,
                   "Graniglia: il pavimento degli edifici pubblici italiani di quegli anni,"
                   " e non c'e' niente che dati meglio un interno del 1999."),

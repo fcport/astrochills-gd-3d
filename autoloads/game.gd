@@ -116,10 +116,11 @@ func copia_partita(da: String) -> String:
 	return nome if SaveManager.copia_partita(da, nome) else ""
 
 
-## Riscrive com'è il mondo (D-243). Come `save_prints`: il mondo compone le voci, il
-## disco lo tocca `Game`.
-func ricorda_mondo(oggetti: Dictionary) -> void:
+## Riscrive com'è il mondo (D-243): le cose, e le macchie per terra (D-251). Come
+## `save_prints`: il mondo compone le voci, il disco lo tocca `Game`.
+func ricorda_mondo(oggetti: Dictionary, macchie: Array) -> void:
 	mondo.oggetti = oggetti
+	mondo.macchie = macchie
 	_saves.save_world(mondo)
 
 

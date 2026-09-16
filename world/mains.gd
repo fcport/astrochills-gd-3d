@@ -12,27 +12,37 @@
 ## davanti. Un autoload avrebbe reso possibile staccare la corrente da qualunque
 ## punto del codice, che è precisamente la cosa da non poter fare.
 ##
-## STACCARE NON GIRA GLI INTERRUTTORI, e questa è la parte che sembra un dettaglio
-## e non lo è. Quando torna la corrente, si riaccende quello che era acceso PRIMA —
-## non tutto, e non niente. È come funziona un impianto vero, ed è anche l'unica
-## versione che non irrita: chi aveva spento la sala divulgazione non se la ritrova
-## accesa al ritorno.
+## TORNANDO LA CORRENTE LE PLAFONIERE RESTANO SPENTE (D-260). Federico: «se la corrente
+## si stacca, le luci devono comunque essere riaccese». Si riaccendono a mano, placca per
+## placca: staccare la corrente costa un giro dell'edificio al buio. Tornano da sole solo
+## le cose che una placca non ce l'hanno — le due luci di fuori, le spie delle placche,
+## la luce del monitor — e le superfici che brillano da sé.
 ##
-## E UN INTERRUTTORE PREMUTO AL BUIO NON SI PERDE. Se il giocatore gira una placca
-## mentre la corrente è staccata, la lampada resta spenta (non c'è corrente) ma la
-## POSIZIONE dell'interruttore cambia — e si vede quando la corrente torna. Senza
-## questo, un deviatore premuto durante il blackout tornava fuori fase, e il
-## giocatore lo doveva premere due volte senza capire perché.
+## E AL BUIO UNA PLACCA NON FA NIENTE. Girata a corrente staccata la lampada resta
+## spenta, e quando la corrente torna resta spenta lo stesso: la placca dice «Accendi»
+## perché lo stato lo leggono le lampade. La versione di prima ricordava la placca
+## girata al buio e al ritorno riaccendeva quella stanza sola, fra tutte spente.
 class_name Mains
 extends Node3D
 
 const GROUP := &"mains"
 
-## Tutte le lampade dell'edificio. Le scrive il generatore del blockout, che le
-## legge dalla stessa fonte da cui nascono le plafoniere: un elenco raccolto a
-## runtime per prossimità o per tipo sarebbe la solita ricerca che funziona finché
-## qualcuno non aggiunge una luce.
+## Tutte le lampade dell'edificio, tranne le rosse della cupola (D-259). Le scrive il
+## generatore del blockout, che le legge dalla stessa fonte da cui nascono le
+## plafoniere: un elenco raccolto a runtime per prossimità o per tipo sarebbe la
+## solita ricerca che funziona finché qualcuno non aggiunge una luce.
 @export var luci: Array[NodePath] = []
+
+## Le lampade che tornano da sole con la corrente: quelle che nessuna placca comanda
+## (D-260). Le scrive il generatore, che sa quali lampade comanda ogni placca.
+@export var tornano: Array[NodePath] = []
+
+## LE COSE CHE BRILLANO DA SÉ e stanno attaccate alla rete: la spia verde del PC, i
+## tasti della pulsantiera, le spie delle placche, l'insegna della sala. Non fanno luce
+## e nessuna `Light3D` le rappresenta, ma una spia accesa a corrente staccata tradisce
+## l'impianto quanto una plafoniera (D-258). Le scrive il generatore, che le legge dai
+## modelli: sono i pezzi con un materiale emissivo.
+@export var luminose: Array[NodePath] = []
 
 ## Se l'osservatorio nasce sotto tensione. Sì: la sera si arriva e la corrente c'è
 ## — staccarla è un gesto del giocatore, non lo stato iniziale.
@@ -40,9 +50,11 @@ const GROUP := &"mains"
 
 var _acceso := true
 
-## Le lampade che erano accese quando la corrente è stata staccata, e che vanno
-## riaccese quando torna. È anche la memoria delle placche girate al buio.
+## Le lampade senza placca che erano accese allo stacco, e che tornano con la corrente.
 var _da_riaccendere: Array[Node3D] = []
+
+## Le superfici luminose spente dallo stacco: [mesh, superficie, materiale di prima].
+var _superfici_spente: Array = []
 
 
 func _ready() -> void:
@@ -74,47 +86,62 @@ func commuta() -> bool:
 
 func _stacca() -> void:
 	_acceso = false
+	_spegni_superfici()
 	_da_riaccendere.clear()
-	for n in _lampade():
+	var da_sole := _nodi(tornano)
+	for n in _nodi(luci):
 		if n.visible:
-			_da_riaccendere.append(n)
 			n.visible = false
+			if da_sole.has(n):
+				_da_riaccendere.append(n)
 
 
 func _riattacca() -> void:
 	_acceso = true
+	for voce in _superfici_spente:
+		if is_instance_valid(voce[0]):
+			(voce[0] as MeshInstance3D).set_surface_override_material(voce[1], voce[2])
+	_superfici_spente.clear()
 	for n in _da_riaccendere:
 		if is_instance_valid(n):
 			n.visible = true
 	_da_riaccendere.clear()
 
 
-## Come sarà quella lampada quando torna la corrente. Serve alle placche, che al
-## buio non possono leggere lo stato dalle lampade — sono tutte spente.
-func tornera_accesa(percorsi: Array[NodePath], base: Node) -> bool:
+## Se almeno una di queste lampade prende corrente dal quadro. LE ROSSE DELLA CUPOLA NO
+## (D-259): stanno fuori dall'elenco, e la loro placca le comanda anche al buio.
+func alimenta(percorsi: Array[NodePath], base: Node) -> bool:
+	var mie := _nodi(luci)
 	for p in percorsi:
-		var n := base.get_node_or_null(p) as Node3D
-		if n != null:
-			return _da_riaccendere.has(n)
+		if mie.has(base.get_node_or_null(p)):
+			return true
 	return false
 
 
-## Il giocatore ha girato una placca mentre la corrente è staccata: la lampada non
-## si accende, ma l'interruttore sì.
-func segna(percorsi: Array[NodePath], base: Node, accesa: bool) -> void:
-	for p in percorsi:
-		var n := base.get_node_or_null(p) as Node3D
-		if n == null:
+## SI SPEGNE L'EMISSIONE, NON IL PEZZO: nascondere la spia lascerebbe un buco nella
+## cassa del PC. Ogni superficie emissiva prende una copia del suo materiale con
+## l'energia a zero, che è la stessa variante di shader — niente compilazione a
+## metà partita — e quando la corrente torna riprende il materiale di prima.
+func _spegni_superfici() -> void:
+	_superfici_spente.clear()
+	for p in luminose:
+		var mi := get_node_or_null(p) as MeshInstance3D
+		if mi == null:
+			push_error("[rete] la superficie luminosa %s non c'è" % p)
 			continue
-		if accesa and not _da_riaccendere.has(n):
-			_da_riaccendere.append(n)
-		elif not accesa:
-			_da_riaccendere.erase(n)
+		for s in mi.get_surface_override_material_count():
+			var mat := mi.get_active_material(s) as BaseMaterial3D
+			if mat == null or not mat.emission_enabled:
+				continue
+			var spento := mat.duplicate() as BaseMaterial3D
+			spento.emission_energy_multiplier = 0.0
+			_superfici_spente.append([mi, s, mi.get_surface_override_material(s)])
+			mi.set_surface_override_material(s, spento)
 
 
-func _lampade() -> Array[Node3D]:
+func _nodi(percorsi: Array[NodePath]) -> Array[Node3D]:
 	var out: Array[Node3D] = []
-	for p in luci:
+	for p in percorsi:
 		var n := get_node_or_null(p) as Node3D
 		if n != null:
 			out.append(n)

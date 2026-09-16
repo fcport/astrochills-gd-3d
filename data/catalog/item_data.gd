@@ -20,8 +20,9 @@ extends Resource
 ## `PlayerProfile.owns()` registra (es. &"moka").
 @export var id: StringName = &""
 
-## La categoria del terminale a cui appartiene: &"personal" o &"facilities". L'MVP ha
-## solo queste due — le altre di `economia.md` non compaiono affatto.
+## La categoria del terminale a cui appartiene: &"personal", &"facilities" o &"catalogs".
+## I cataloghi (D-261) portano soggetti nel planetario; le altre categorie di
+## `economia.md` non compaiono affatto.
 @export var category: StringName = &""
 
 ## L'etichetta mostrata nel menu, in INGLESE (voce di software).

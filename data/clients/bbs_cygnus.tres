@@ -7,5 +7,5 @@ script = ExtResource("1_client")
 id = &"bbs_cygnus"
 name = "BBS Cygnus"
 multiplier = 1.4
-wanted_target = &"m45"
+wanted_target = &"m1"
 enabled = true

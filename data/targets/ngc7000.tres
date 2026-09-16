@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TargetData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/targets/target_data.gd" id="1_target"]
+
+[resource]
+script = ExtResource("1_target")
+id = &"ngc7000"
+short = "NGC 7000"
+full = "Nord America"
+type = &"NEB"
+diff = 3
+min_exp = 120
+ar_gradi = 314.7500
+dec_gradi = 44.3333
+catalogo = &"atlante_ngc_ic"
+desc = "Vasta nebulosa a emissione la cui forma ricorda i contorni del Nord America. Si estende per quasi 4 gradi di cielo, l'equivalente di 8 lune piene. Le strutture scure (come il \"Golfo del Messico\") sono nubi di polveri tra noi e il gas brillante."

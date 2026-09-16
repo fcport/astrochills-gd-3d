@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TargetData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/targets/target_data.gd" id="1_target"]
+
+[resource]
+script = ExtResource("1_target")
+id = &"m33"
+short = "M33"
+full = "Galassia del Triangolo"
+type = &"GAL"
+diff = 2
+min_exp = 80
+ar_gradi = 23.4621
+dec_gradi = 30.6599
+catalogo = &"messier_vol2"
+desc = "Terza galassia per dimensione del Gruppo Locale, dopo Via Lattea e Andromeda. A 2,7 milioni di anni-luce, una delle più lontane visibili a occhio nudo da cieli scuri. Spirale frontale con regioni HII gigantesche."

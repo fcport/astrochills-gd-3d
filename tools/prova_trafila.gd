@@ -46,6 +46,10 @@ const VISTE := {
 	# In cupola ma guardando il pavimento e la passerella: qui non c'è il cielo a
 	# fare da attore, e si vede solo quello che la sua luce illumina.
 	"cupola_giu": [Vector3(4.40, 0.0, 4.60), Vector3(2.20, 0.55, 2.20)],
+	# La pulsantiera pensile da un metro, e la consolle del PC da dietro la sedia: sono
+	# le viste in cui si giudica se a corrente staccata (CORRENTE=0) le spie si spengono.
+	"pulsantiera": [Vector3(1.10, 0.0, 4.80), Vector3(0.15, 1.50, 4.80)],
+	"spie_pc": [Vector3(7.60, 0.0, 2.30), Vector3(6.20, 0.55, 2.30)],
 	# Sulla passerella, all'altezza dell'oculare (2,29 m): è la posa in cui Federico
 	# ha fotografato la propria ombra proiettata sul tubo del telescopio.
 	"oculare": [Vector3(4.00, 0.59, 2.50), Vector3(2.60, 2.10, 2.50)],
@@ -134,6 +138,13 @@ func _process(d: float) -> void:
 				var l := get_tree().root.find_child("Luce_%s" % n, true, false)
 				if l != null:
 					l.get_node("Accesa").visible = true
+		# CORRENTE=0 stacca il quadro prima di guardare, premendo il fungo come farebbe il
+		# giocatore. Serve a vedere cosa resta acceso al buio, e le sorgenti in elenco al
+		# quadro non lo dicono: una superficie che brilla da sé non è una lampada.
+		if OS.get_environment("CORRENTE") == "0":
+			MainsButton.find_in(get_tree()).interact(p)
+			print("[trafila] corrente staccata, il quadro dice acceso = %s"
+				% Mains.find_in(get_tree()).acceso())
 		# APERTURA=1 apre la cupola prima di guardare. Si annuncia il FATTO sul bus,
 		# come farebbe la fase: così i battenti si muovono e la luce del cielo si
 		# accende per la stessa strada che percorrono in gioco, non per una

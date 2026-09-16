@@ -540,12 +540,8 @@ func _setup_terminal() -> void:
 	add_child(_terminal)
 
 
-## Apre o chiude il terminale, gated sull'attesa. È il tasto `terminal_open`.
-##
-## GATED SU `is_waiting()`: mai sovrapposto a una fase interattiva o alla
-## vendita/rivelazione — aprirlo lì e poi ripristinare rischierebbe di disturbare uno
-## stato vivo. Il menu post-foto NON conta come stato vivo da proteggere: è l'attesa, e
-## il terminale è un secondo programma aperto sopra di esso.
+## Apre o chiude il terminale. È il tasto `terminal_open`, con la guardia dell'icona
+## (`_open_terminal`).
 func _toggle_terminal() -> void:
 	if _terminal_open:
 		_close_terminal()
@@ -556,7 +552,8 @@ func _toggle_terminal() -> void:
 ## Apre il terminale in una finestra sua, o lo porta davanti se è già aperto. È ciò che
 ## fanno l'icona del desktop e il tasto `terminal_open`.
 ##
-## GATED SU `is_waiting()` come prima: mai sopra una fase interattiva o la vendita.
+## SI APRE SOPRA QUALUNQUE FASE (D-262), ma non sopra la rivelazione, la vendita o il
+## riepilogo: vedi `NightSession.allows_programs`.
 ##
 ## LA MUTUA ESCLUSIONE CON LA BBS NON C'È PIÙ, e la ragione per cui c'era è sparita col
 ## desktop: esisteva perché «due Control non si contendano il viewport», e adesso il
@@ -568,7 +565,7 @@ func _open_terminal() -> void:
 	if _terminal_open:
 		_crt.desktop().focus(_crt.desktop().window(&"terminal"))
 		return
-	if not _night.is_waiting():
+	if not _night.allows_programs():
 		return
 	# Riacceso all'apertura: parcheggiato era `DISABLED` e nascosto.
 	_terminal.show()
@@ -639,12 +636,8 @@ func _setup_bbs() -> void:
 	add_child(_bbs)
 
 
-## Apre o chiude la BBS, gated sull'attesa e MUTUAMENTE ESCLUSIVA col terminale. È il
-## tasto `bbs_open`.
-##
-## GATED SU `is_waiting()`, come il terminale: mai sovrapposta a una fase interattiva o
-## alla vendita/rivelazione. MUTUA ESCLUSIONE: si apre solo se il terminale è chiuso, così
-## due Control non si contendono il viewport. `activate()` emette `wait_activity_started`.
+## Apre o chiude la BBS. È il tasto `bbs_open`, con la guardia dell'icona (`_open_bbs`).
+## `activate()` emette `wait_activity_started`.
 func _toggle_bbs() -> void:
 	if _bbs_open:
 		_close_bbs()
@@ -653,14 +646,14 @@ func _toggle_bbs() -> void:
 
 
 ## Apre la BBS in una finestra sua, o la porta davanti. Gemella di `_open_terminal`, con
-## la stessa guardia sull'attesa e senza più la mutua esclusione.
+## la stessa guardia (D-262) e senza più la mutua esclusione.
 func _open_bbs() -> void:
 	if _bbs == null or _crt == null or _night == null:
 		return
 	if _bbs_open:
 		_crt.desktop().focus(_crt.desktop().window(&"bbs"))
 		return
-	if not _night.is_waiting():
+	if not _night.allows_programs():
 		return
 	_bbs.show()
 	_bbs.process_mode = Node.PROCESS_MODE_INHERIT

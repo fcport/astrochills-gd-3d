@@ -47,9 +47,8 @@ func sample(input: TargetingInput) -> Array[Dictionary]:
 			# QUI STA LA BUGIA, e sta tutta in questa riga: la disponibilità è una
 			# funzione del tempo e dell'indice, non della finestra del target.
 			&"available": sin((input.now_min / maxf(period_min, 1.0) + float(i) * 0.37) * TAU) > 0.0,
-			# La finestra dichiarata resta quella vera, e continua a essere scritta
-			# sul vetro: è la contraddizione che rende la bugia VISIBILE — «not
-			# visible now - 21:00-04:00» alle 22:00, con la finestra sotto gli occhi.
-			&"window": "%s-%s" % [t.vis_from, t.vis_to],
+			# La finestra non la sa: quelle scritte a mano non ci sono più, e la vera la
+			# calcola il cielo di `HonestCatalog` (D-261).
+			&"window": "--:--",
 		})
 	return out

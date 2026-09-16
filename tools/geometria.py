@@ -494,11 +494,67 @@ def blocchi_edificio():
     # IL SOLAIO SI RITIRA DI MEZZO MURO. I rettangoli di PAVIMENTI arrivano all'ASSE
     # dei muri, che e' giusto per i controlli ma non per il volume: cosi' com'e' la
     # lastra sbordava di 10 cm oltre la faccia esterna, e tutt'intorno all'edificio
-    # correva una fascia di graniglia a vista. I giunti che restano cadono sotto i
-    # muri, che sono spessi quanto il ritiro sommato dei due lati.
+    # correva una fascia di graniglia a vista.
+    #
+    # MA NON DOVE UN PAVIMENTO TOCCA L'ALTRO. Ritirandosi tutti e due, sotto il muro di
+    # confine restava una fessura larga quanto il muro, e il muro la copriva tranne
+    # dove c'e' una porta: sotto quella fra il corridoio e lo spazio divulgazione si
+    # vedeva il prato, tre centimetri piu' giu'. Sul lato che confina con l'altro
+    # rettangolo la lastra arriva all'asse, e le due si toccano li'.
+    def _confina(j, lato):
+        x0, z0, x1, z1 = PAVIMENTI[j]
+        for k, (a0, b0, a1, b1) in enumerate(PAVIMENTI):
+            if k == j:
+                continue
+            lungo_z = max(z0, b0) < min(z1, b1)
+            lungo_x = max(x0, a0) < min(x1, a1)
+            if ((lato == "x0" and abs(a1 - x0) < 1e-6 and lungo_z)
+                    or (lato == "x1" and abs(a0 - x1) < 1e-6 and lungo_z)
+                    or (lato == "z0" and abs(b1 - z0) < 1e-6 and lungo_x)
+                    or (lato == "z1" and abs(b0 - z1) < 1e-6 and lungo_x)):
+                return True
+        return False
+
     for j, (x0, z0, x1, z1) in enumerate(PAVIMENTI):
-        aggiungi((x0 + x1) / 2.0, -0.10, (z0 + z1) / 2.0,
-                 x1 - x0 - SP, 0.20, z1 - z0 - SP, "Pav%d" % j)
+        r = {lato: 0.0 if _confina(j, lato) else SP / 2.0 for lato in ("x0", "x1", "z0", "z1")}
+        lx0, lx1 = x0 + r["x0"], x1 - r["x1"]
+        lz0, lz1 = z0 + r["z0"], z1 - r["z1"]
+        aggiungi((lx0 + lx1) / 2.0, -0.10, (lz0 + lz1) / 2.0,
+                 lx1 - lx0, 0.20, lz1 - lz0, "Pav%d" % j)
+
+    # LE SOGLIE. Dove il pavimento resta ritirato sotto una porta - l'ingresso, che sta sul
+    # perimetro - il vano ha sotto il prato per tutto lo spessore del muro. Si chiude con
+    # una lastra di pietra a filo del pavimento, come i davanzali: e' la soglia di una
+    # porta vera. Si mette solo la parte che le lastre non coprono gia', cosi' due
+    # superfici non si sovrappongono e non tremano.
+    lastre = [(b[0] - b[3] / 2.0, b[2] - b[5] / 2.0, b[0] + b[3] / 2.0, b[2] + b[5] / 2.0)
+              for b in blocchi if b[6].startswith("Pav")]
+    for (px_, pz, w, o, t, _nm) in APERTURE:
+        if t != "porta":
+            continue
+        orizz = o == "h"
+        lungo0, lungo1 = (px_, px_ + w) if orizz else (pz, pz + w)
+        asse = pz if orizz else px_
+        scoperti = [(asse - SP / 2.0, asse + SP / 2.0)]
+        for (x0, z0, x1, z1) in lastre:
+            l0, l1, c0, c1 = (x0, x1, z0, z1) if orizz else (z0, z1, x0, x1)
+            if l0 > lungo0 + 1e-6 or l1 < lungo1 - 1e-6:
+                continue
+            restano = []
+            for (s0, s1) in scoperti:
+                if c1 <= s0 or c0 >= s1:
+                    restano.append((s0, s1))
+                    continue
+                if c0 > s0:
+                    restano.append((s0, c0))
+                if c1 < s1:
+                    restano.append((c1, s1))
+            scoperti = restano
+        for (s0, s1) in scoperti:
+            if orizz:
+                aggiungi((lungo0 + lungo1) / 2.0, -0.10, (s0 + s1) / 2.0, w, 0.20, s1 - s0, "Soglia")
+            else:
+                aggiungi((s0 + s1) / 2.0, -0.10, (lungo0 + lungo1) / 2.0, s1 - s0, 0.20, w, "Soglia")
     for j, (x0, z0, x1, z1) in enumerate(SOFFITTI):
         aggiungi((x0 + x1) / 2.0, H + SP_SOLAIO / 2, (z0 + z1) / 2.0, x1 - x0, SP_SOLAIO, z1 - z0, "Soff%d" % j)
         # tetto: sporge 30 cm oltre il filo dei muri

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TargetData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/targets/target_data.gd" id="1_target"]
+
+[resource]
+script = ExtResource("1_target")
+id = &"m27"
+short = "M27"
+full = "Nebulosa Manubrio"
+type = &"PLN"
+diff = 2
+min_exp = 50
+ar_gradi = 299.9016
+dec_gradi = 22.7212
+catalogo = &"messier_vol2"
+desc = "Prima nebulosa planetaria mai scoperta, da Messier nel 1764. La forma a manubrio (o \"torsolo di mela\") è dovuta all'asimmetria dell'espulsione di gas. A 1.360 anni-luce, una delle più vicine."

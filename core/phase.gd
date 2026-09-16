@@ -50,6 +50,11 @@ const CTX_COMMISSION_LINE := &"commission_line"
 ## catalogo con "M4" e "M42".
 const CTX_COMMISSION_TARGET := &"commission_target"
 
+## GLI ARTICOLI DEL GIOCATORE, come elenco di id (D-261). Il possesso sta nel profilo,
+## che le fasi non conoscono: lo copia qui l'orchestratore, e il planetario ci legge
+## quali cataloghi sono stati comprati.
+const CTX_OWNED_ITEMS := &"owned_items"
+
 
 ## Chiamato dall'orchestratore prima di aggiungere il nodo all'albero.
 func setup(_run: NightRun, _ctx: Dictionary) -> void:

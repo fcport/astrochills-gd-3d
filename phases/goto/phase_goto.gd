@@ -181,6 +181,7 @@ func _muovi(delta: float) -> void:
 ## dall'inquadratura mentre lo si centra. La correzione a mano si somma sopra.
 func _aggiorna_ingresso(_delta: float) -> void:
 	_truth_input.now_min = _run.elapsed_min
+	_truth_input.night_index = _run.night_index
 	var p := truth.target_position(_truth_input)
 	if is_nan(p.x):
 		return

@@ -10,3 +10,11 @@ extends RefCounted
 ## `run.elapsed_min`: minuti notte-relativi, così le finestre si confrontano
 ## senza incappare nel wrap di mezzanotte.
 var now_min: float = 0.0
+
+## La notte della storia, 1..20: dice che giorno è, e quindi com'è girato il cielo
+## alle stesse ore (D-261).
+var night_index: int = 1
+
+## Gli articoli del terminale che il giocatore possiede: i cataloghi comprati portano i
+## loro soggetti nel planetario (D-261).
+var owned: Array[StringName] = []

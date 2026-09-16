@@ -18,7 +18,8 @@ extends Resource
 ## matematica — vive nel dato, mai come `const` nel codice.
 @export var multiplier: float = 1.0
 
-## L'id del soggetto richiesto: uno dei sei target reali (m42/m13/m45/m31/m57/m8).
+## L'id del soggetto richiesto: uno di `data/targets/`, e che da questa cupola si veda
+## davvero (D-261).
 ## La commessa è applicabile solo se la foto ha esattamente questo target.
 @export var wanted_target: StringName = &""
 

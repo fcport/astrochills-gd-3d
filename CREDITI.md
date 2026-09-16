@@ -228,8 +228,9 @@ Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuz
 
 **Le foto delle stampe**: `assets/stampe/*.png`, le pagine che escono dalla stampante
 della sala di controllo (D-239). Le compone `tools/stampe_foto.py` a partire dalle PNG del
-prototipo Phaser (`phaser_astrochill/public/assets/photos`): M8, M13, M31, M42, M45 e M57,
-tre versioni ciascuna.
+prototipo Phaser (`phaser_astrochill/public/assets/photos`), tre versioni ciascuna: M1, M8,
+M13, M16, M22, M27, M31, M33, M42, M45, M51, M57, M82, M97, M104, NGC 869, NGC 891, NGC 2237,
+NGC 7000 e IC 1396. Le ultime quattordici sono arrivate con i cataloghi (D-261).
 **Fonte e licenza: non documentate.** Sono astrofotografie vere, e il prototipo le usa
 senza dire da dove vengono. Prima di distribuire il gioco vanno rintracciati autore e
 licenza di ognuna, e scritti qui.

@@ -213,6 +213,45 @@ def _base(rot_x, rot_z, cx, cy, cz, rot_y=0.0):
 ANTE_DAL_MODELLO = {"magazzino": "23_pmag"}
 
 
+SEGNAPOSTO_LUMINOSE = "@LUMINOSE@"
+
+
+def _luminose(testo):
+    """Le superfici emissive dei modelli posati, come elenco di NodePath per il quadro.
+
+    Si apre il glTF di ogni .glb istanziato nella scena: un pezzo e' luminoso se il suo
+    materiale ha un `emissiveFactor` non nero o una `emissiveTexture`. LE LAMPADE
+    RESTANO FUORI: i loro pezzi li comanda la placca, e il quadro riattaccando li
+    riaccenderebbe anche a interruttore spento.
+    """
+    import json, os, re, struct
+    radice = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    modelli = {m.group(2): m.group(1) for m in re.finditer(
+        r'\[ext_resource type="PackedScene" path="res://([^"]+\.glb)" id="([^"]+)"\]', testo)}
+    trovate = []
+    for m in re.finditer(r'\[node name="([^"]+)" parent="([^"]+)" instance=ExtResource\("([^"]+)"\)\]', testo):
+        nome, padre, rid = m.groups()
+        nodo = nome if padre == "." else "%s/%s" % (padre, nome)
+        if rid not in modelli or nodo.startswith("Luce_"):
+            continue
+        dati = open(os.path.join(radice, modelli[rid]), "rb").read()
+        gltf = json.loads(dati[20:20 + struct.unpack("<I", dati[12:16])[0]])
+        emissivi = {i for i, mat in enumerate(gltf.get("materials", []))
+                    if any(c > 0.001 for c in mat.get("emissiveFactor", [0, 0, 0]))
+                    or "emissiveTexture" in mat}
+        padri = {f: i for i, n in enumerate(gltf["nodes"]) for f in n.get("children", [])}
+        for i, n in enumerate(gltf["nodes"]):
+            if "mesh" not in n or not any(pr.get("material") in emissivi
+                                          for pr in gltf["meshes"][n["mesh"]]["primitives"]):
+                continue
+            catena, k = [n["name"]], i
+            while k in padri:
+                k = padri[k]
+                catena.insert(0, gltf["nodes"][k]["name"])
+            trovate.append('NodePath("../%s/%s")' % (nodo, "/".join(catena)))
+    return "[%s]" % ", ".join(sorted(trovate))
+
+
 def tscn():
     righe = ['[gd_scene load_steps=%d format=3]' % (3 + len(set((b[3], b[4], b[5]) for b in blocchi)) * 2), '',
              '[ext_resource type="PackedScene" path="res://world/player/player.tscn" id="1_player"]',
@@ -1990,6 +2029,8 @@ def tscn():
     # lampada che resta accesa a corrente staccata: il difetto piu' silenzioso che
     # questo impianto possa avere.
     _qx, _qy, _qz = 11.55, 1.45, 9.60
+    # le lampade che hanno una placca: tornando la corrente restano spente (D-260)
+    _con_placca = {n for p in punti_interruttori() for n in comandate_da(p[0])}
     righe += ['[node name="QuadroElettrico" type="Node3D" parent="."]',
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, %.3f, %.3f)'
               % (_qx, _qy, _qz),
@@ -2001,10 +2042,28 @@ def tscn():
               # per conto suo ogni luce della scena e pretende che dopo lo scatto
               # siano tutte spente: e' l'unico modo di accorgersi di una lampada
               # dimenticata qui dentro.
+              # TRANNE LE ROSSE DELLA CUPOLA (D-259). Federico: «la luce rossa e'
+              # indipendente dal generatore, anche se spento quello resta acceso». Le
+              # comanda solo la loro placca, anche a corrente staccata.
               'luci = [%s]' % ", ".join(
-                  ['NodePath("../%s/Accesa")' % nodo_luce[n] for n in sorted(nodo_luce)]
+                  ['NodePath("../%s/Accesa")' % nodo_luce[n] for n in sorted(nodo_luce)
+                   if n not in LUCI_ROSSE]
                   + ['NodePath("../%s")' % s_ for s_ in spie]
-                  + ['NodePath("../LuceMonitor")']), '',
+                  + ['NodePath("../LuceMonitor")']),
+              # QUELLO CHE TORNA DA SOLO CON LA CORRENTE (D-260): le lampade che nessuna
+              # placca comanda, le spie e la luce del monitor. Le plafoniere restano
+              # spente, e si riaccendono a mano.
+              'tornano = [%s]' % ", ".join(
+                  ['NodePath("../%s/Accesa")' % nodo_luce[n] for n in sorted(nodo_luce)
+                   if n not in LUCI_ROSSE and n not in _con_placca]
+                  + ['NodePath("../%s")' % s_ for s_ in spie]
+                  + ['NodePath("../LuceMonitor")']),
+              # E LE COSE CHE BRILLANO DA SE' (D-258): la spia del PC, i tasti della
+              # pulsantiera, le spie delle placche, l'insegna. Non sono luci, e la
+              # sonda cercava solo le luci: a corrente staccata restavano accese. Si
+              # leggono dai modelli in fondo, a scena scritta: un elenco fatto qui
+              # perderebbe le cose posate dopo il quadro.
+              'luminose = %s' % SEGNAPOSTO_LUMINOSE, '',
               '[node name="Modello" parent="QuadroElettrico" instance=ExtResource("42_quadro")]', '',
               # L'ANTA. Il corpo di collisione e' FRATELLO della mesh e non figlio,
               # come per i tasti della pulsantiera: il modello e' una scena
@@ -2074,7 +2133,8 @@ def tscn():
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %.3f, 0.000, %.3f)' % (21.7 * K, 17.0 * K), '', '',
               '[node name="Camera" parent="Player" index="1"]',
               'fov = 55.0', '']
-    return "\n".join(righe)
+    testo = "\n".join(righe)
+    return testo.replace(SEGNAPOSTO_LUMINOSE, _luminose(testo))
 
 
 def verifica_raccordi(tolleranza=0.03):
@@ -2089,6 +2149,38 @@ def verifica_raccordi(tolleranza=0.03):
         if abs(calpestio - cima) > tolleranza:
             problemi.append("  SCALINO           rampa a %.2f, passerella a %.2f: %.0f cm"
                             % (cima, calpestio, abs(calpestio - cima) * 100))
+    return problemi
+
+
+def verifica_soglie(passo=0.05):
+    """Sotto ogni porta c'e' qualcosa su cui camminare, per tutto lo spessore del muro.
+
+    IL DIFETTO CHE L'HA FATTO SCRIVERE. Il prato e' un terreno che corre sotto tutta la
+    casa, tre centimetri sotto i pavimenti, e i pavimenti si ritirano di mezzo muro. Sotto
+    la porta fra corridoio e spazio divulgazione i due rettangoli si ritiravano tutti e
+    due, e sotto l'ingresso il pavimento si fermava alla faccia interna: nel vano si vedeva
+    l'erba. I muri la coprivano ovunque tranne li', e nessun controllo guardava li'.
+    """
+    problemi = []
+    _, aperture, _, _, _, _ = scalati()
+    sotto = [(b[0] - b[3] / 2.0, b[2] - b[5] / 2.0, b[0] + b[3] / 2.0, b[2] + b[5] / 2.0)
+             for b in blocchi if b[6].startswith(("Pav", "Soglia"))]
+    for (px_, pz, w, o, t, nome) in aperture:
+        if t != "porta":
+            continue
+        n = max(2, int(w / passo))
+        for i in range(1, n):
+            lungo = w * i / n
+            for d in (-0.45, -0.25, 0.0, 0.25, 0.45):
+                x, z = (px_ + lungo, pz + d * SP) if o == "h" else (px_ + d * SP, pz + lungo)
+                if not any(x0 - 1e-6 <= x <= x1 + 1e-6 and z0 - 1e-6 <= z <= z1 + 1e-6
+                           for (x0, z0, x1, z1) in sotto):
+                    problemi.append("  SOGLIA SCOPERTA   %-20s in (%.2f, %.2f): sotto il vano"
+                                    " si vede il prato" % (nome, x, z))
+                    break
+            else:
+                continue
+            break
     return problemi
 
 
@@ -2549,7 +2641,7 @@ else:
 _tetti = [(b[0]-b[3]/2, b[2]-b[5]/2, b[0]+b[3]/2, b[2]+b[5]/2)
           for b in blocchi if b[6].startswith('TettoCup')]
 _testo_scena = io.open(out, encoding="utf-8").read()
-_ing = (verifica_ingombri() + verifica_raccordi() + verifica_ante()
+_ing = (verifica_ingombri() + verifica_raccordi() + verifica_soglie() + verifica_ante()
         + verifica_trappole() + verifica_arredi() + verifica_interruttori()
         + verifica_applique() + verifica_passerella() + verifica_plafoniere()
         + verifica_ripetizioni()

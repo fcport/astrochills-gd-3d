@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TargetData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/targets/target_data.gd" id="1_target"]
+
+[resource]
+script = ExtResource("1_target")
+id = &"ngc2237"
+short = "NGC 2237"
+full = "Nebulosa Rosetta"
+type = &"NEB"
+diff = 3
+min_exp = 120
+ar_gradi = 98.0083
+dec_gradi = 5.0500
+catalogo = &"atlante_ngc_ic"
+desc = "Vasta regione di idrogeno ionizzato attorno all'ammasso aperto NGC 2244. Le giovani stelle al centro illuminano la nebulosa e ne scolpiscono la cavità con il loro vento stellare. A 5.200 anni-luce, larga circa 130 anni-luce."

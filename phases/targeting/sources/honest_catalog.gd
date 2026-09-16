@@ -1,13 +1,22 @@
 ## La sorgente onesta della fase di targeting: dice sempre la verità.
 ##
-## L'aggettivo nel nome dice se e come mente (NFR23). Questa non mente: la
-## disponibilità che riporta è esattamente quella che l'ora corrente produce
-## rispetto alla finestra di visibilità di ogni target. Modello: la sorgente
-## onesta della fase polare.
+## L'aggettivo nel nome dice se e come mente (NFR23). Questa non mente: dove sta un
+## soggetto, e se questa cupola lo raggiunge, lo dice il cielo vero di quella notte a
+## quell'ora — ascensione retta e declinazione di catalogo, e il tempo siderale di
+## `Luna` (D-261). Modello: la sorgente onesta della fase polare.
 ##
 ## È QUI CHE I `.tres` DEI TARGET VENGONO LETTI, non nella fase (ADR-001): la
 ## fase riceve solo l'elenco già pronto da `sample()`. I dati sono `.tres`,
 ## iniettati via `@export`, mai JSON né `FileAccess`.
+##
+## DUE COSE TENGONO UN SOGGETTO FUORI DALL'ELENCO, e nessuna delle due è una bugia.
+##   - IL SUO CATALOGO NON È STATO COMPRATO. Un soggetto con `catalogo` compare solo
+##     se quell'articolo è fra quelli del giocatore.
+##   - DA QUI NON SI VEDE. Se in nessuna delle venti notti sta sopra l'orizzonte della
+##     cupola per almeno `MINUTI_MINIMI`, il planetario non lo offre: M42, M13, M8 e
+##     gli altri che a novembre da questo monte non si vedono. I loro dati restano,
+##     perché li porteranno in cielo gli orrori cosmici — con un'altra sorgente, che
+##     mente, e non con questa.
 class_name HonestCatalog
 extends TargetingTruthSource
 
@@ -18,21 +27,40 @@ extends TargetingTruthSource
 ## `phases/` non può conoscere `night/` (regole di dipendenza).
 const NIGHT_START_HOUR := 21
 
-## Minuti in un giorno, per il modulo che chiude il wrap di mezzanotte.
+## Minuti in un giorno, per scrivere la finestra con l'ora dell'orologio.
 const DAY_MIN := 1440
 
-## Gradi di angolo orario per ogni minuto di tempo: il cielo gira di quindici
-## gradi all'ora. Gemello della costante omonima in `HonestPointing`.
-const GRADI_AL_MINUTO := 0.25
+## Le notti della storia: un soggetto si offre se si vede almeno in una di queste.
+const NOTTI := 20
 
-## I sei DSO di base, iniettati dal `.tres`. La sorgente li legge, la fase no.
+## Quanto dura il turno, in minuti: dalle 21:00 alle 06:00.
+const DURATA_TURNO_MIN := 540
+
+## Ogni quanti minuti si guarda il cielo per trovare la finestra di una notte.
+const PASSO_MIN := 5
+
+## SOTTO UN'ORA NON È UN SOGGETTO. NGC 7000 la prima notte sta sopra la cupola
+## venticinque minuti, e dalla quinta mai: offrirlo vorrebbe dire mandare il
+## giocatore verso una posa che non comincia. M51, che sorge sopra la gronda solo
+## all'alba, a fine mese ci resta un'ora e mezza, e resta.
+const MINUTI_MINIMI := 60
+
+## Tutti i soggetti, iniettati dal `.tres`: quelli dell'osservatorio e quelli dei
+## cataloghi. La sorgente li legge, la fase no.
 @export var targets: Array[TargetData] = []
 
-## I target che hanno superato la validazione, con la loro finestra già in minuti
-## notte-relativi. Un target che non entra qui non esiste per il gioco.
+## I target che hanno superato la validazione. Un target che non entra qui non
+## esiste per il gioco.
 var _valid: Array[TargetData] = []
-var _window: Array[Vector2i] = []
+
+## Le sigle dei soggetti che da questa cupola non si vedono mai.
+var _nascosti := PackedStringArray()
 var _validated := false
+
+## Le finestre già calcolate: {night_index: {id: "HH:MM-HH:MM", o "" se mai}}.
+## Il cielo di una notte non cambia mentre la si gioca, e rifarne il conto sessanta
+## volte al secondo non lo renderebbe più vero.
+var _finestre: Dictionary = {}
 
 
 ## Firma golden (spec § Design Notes). L'elenco e la disponibilità nascono qui e
@@ -47,8 +75,12 @@ func sample(input: TargetingInput) -> Array[Dictionary]:
 		_validate()
 
 	var out: Array[Dictionary] = []
-	for i in _valid.size():
-		var t := _valid[i]
+	for t in _valid:
+		if not t.catalogo.is_empty() and not input.owned.has(t.catalogo):
+			continue
+		var alt := altezza_di(t, input.night_index, input.now_min)
+		var finestra := _finestra(t, input.night_index)
+		var available := alt >= SkyGeometry.ORIZZONTE_CUPOLA
 		out.append({
 			&"id": t.id,
 			&"short": t.short,
@@ -57,61 +89,75 @@ func sample(input: TargetingInput) -> Array[Dictionary]:
 			&"diff": t.diff,
 			&"min_exp": t.min_exp,
 			&"desc": t.desc,
-			&"in_window": _in_finestra(i, input.now_min),
-			&"available": _visible_at(i, input.now_min),
-			&"alt": _altezza_di(i, input.now_min),
-			&"window": "%s-%s" % [t.vis_from, t.vis_to],
+			# DUE RAGIONI DIVERSE PER NON POTERLO FOTOGRAFARE, e il vetro le dice
+			# diverse. «Non adesso» è un'attesa: stanotte passa sopra la cupola, e la
+			# finestra dice quando tornarci. «Non stanotte» è un rifiuto: il raggio
+			# esce sotto la gronda e trova la falda del tetto (misurato,
+			# `tools/prova_orizzonte.gd`). Un planetario che le confondesse
+			# manderebbe il giocatore ad aspettare una cosa che non arriva.
+			&"in_window": available or finestra.is_empty(),
+			&"available": available,
+			&"alt": alt,
+			&"window": finestra,
 		})
 	return out
 
 
-## Quanto è alto sull'orizzonte il target `i` adesso, in gradi.
-##
-## L'ANGOLO ORARIO SI RICAVA DALLA FINESTRA, e il modello è dichiarato in
-## `data/targets/target_data.gd`: il centro della finestra è il passaggio in
-## meridiano. Il conto vive anche in `phases/goto/sources/honest_pointing.gd`, e
-## le due copie devono dire la stessa cosa — se divergessero, il planetario
-## offrirebbe un soggetto che il GOTO non riesce a raggiungere. Il banco le
-## confronta.
-func _altezza_di(i: int, now_min: float) -> float:
-	var w := _window[i]
-	var meridiano := (float(w.x) + float(w.y)) * 0.5
-	return SkyGeometry.altezza((now_min - meridiano) * GRADI_AL_MINUTO,
-		_valid[i].dec_gradi)
+## Quanto è alto sull'orizzonte il soggetto, la notte `night_index` dopo `now_min`
+## minuti di turno, in gradi. Il GOTO lo chiede alla stessa `SkyGeometry`: un
+## soggetto offerto dal planetario deve essere quello che il telescopio raggiunge.
+static func altezza_di(t: TargetData, night_index: int, now_min: float) -> float:
+	return SkyGeometry.altezza(
+		SkyGeometry.angolo_orario(t.ar_gradi, night_index, now_min), t.dec_gradi)
 
 
-## Disponibile ⟺ `from_min <= now_min <= to_min`, tutti in minuti notte-relativi.
-##
-## Nessuna riconversione qui: gli estremi sono già stati calcolati e validati una
-## volta sola da `_validate()`. Se un target è arrivato fin qui, la sua finestra
-## è esprimibile.
-func _in_finestra(i: int, now_min: float) -> bool:
-	var w := _window[i]
-	return now_min >= w.x and now_min <= w.y
+## Le sigle dei soggetti che da questa cupola non si vedono in nessuna notte. Per il
+## banco e per le sonde.
+func nascosti() -> PackedStringArray:
+	if not _validated:
+		_validate()
+	return _nascosti
 
 
-## DUE RAGIONI DIVERSE PER NON POTERLO FOTOGRAFARE, e tenerle separate serve al
-## giocatore prima ancora che al collaudo. «Non è ancora sorto» è un'attesa: fra
-## due ore ci si torna. «È troppo basso per questa cupola» è un rifiuto: non
-## succederà stanotte e non succederà mai, perché il raggio esce sotto la gronda e
-## trova la falda del tetto (misurato, `tools/prova_orizzonte.gd`). Un planetario
-## che le confondesse manderebbe il giocatore ad aspettare una cosa che non arriva.
-func _visible_at(i: int, now_min: float) -> bool:
-	return (_in_finestra(i, now_min)
-		and _altezza_di(i, now_min) >= SkyGeometry.ORIZZONTE_CUPOLA)
+## La finestra di stanotte, "HH:MM-HH:MM", o "" se il soggetto non passa mai sopra
+## la cupola in questa notte.
+func _finestra(t: TargetData, night_index: int) -> String:
+	var notte: Dictionary = _finestre.get(night_index, {})
+	if not notte.has(t.id):
+		var sopra := _sopra(t, night_index)
+		notte[t.id] = "" if sopra.x < 0 else "%s-%s" % [_orologio(sopra.x), _orologio(sopra.y)]
+		_finestre[night_index] = notte
+	return notte[t.id]
+
+
+## Il primo e l'ultimo minuto di turno in cui il soggetto sta sopra la cupola, e per
+## quanti minuti in tutto: (primo, ultimo, quanti). Il primo è -1 se non ci sta mai.
+func _sopra(t: TargetData, night_index: int) -> Vector3i:
+	var primo := -1
+	var ultimo := -1
+	var quanti := 0
+	for m in range(0, DURATA_TURNO_MIN + 1, PASSO_MIN):
+		if altezza_di(t, night_index, float(m)) >= SkyGeometry.ORIZZONTE_CUPOLA:
+			if primo < 0:
+				primo = m
+			ultimo = m
+			quanti += PASSO_MIN
+	return Vector3i(primo, ultimo, quanti)
+
+
+## Minuti di turno in ora dell'orologio.
+static func _orologio(m: int) -> String:
+	var assoluto := (NIGHT_START_HOUR * 60 + m) % DAY_MIN
+	return "%02d:%02d" % [floori(assoluto / 60.0), assoluto % 60]
 
 
 ## IL FILTRO ALL'INGRESSO. Un target che non lo supera viene ESCLUSO, non
 ## degradato: un catalogo più corto è un guasto visibile, un catalogo pieno di
 ## voci sbagliate ma plausibili è il guasto che non si trova più.
-##
-## I `.tres` dei DSO sono scritti a mano e in crescita (arrivano da `dso_base.js`,
-## e i cataloghi dell'epica 3 ne porteranno altri): ogni forma di dato rotto qui
-## sotto è un refuso che qualcuno commetterà davvero.
 func _validate() -> void:
 	_validated = true
 	_valid.clear()
-	_window.clear()
+	_nascosti.clear()
 
 	for t in targets:
 		# Una casella vuota nell'array: l'inspector la crea da sola quando si
@@ -129,49 +175,30 @@ func _validate() -> void:
 			push_error("[targeting] target senza id ('%s'): saltato" % t.short)
 			continue
 
-		var from_min := _to_night_min(t.vis_from, t.short)
-		var to_min := _to_night_min(t.vis_to, t.short)
-		if from_min < 0 or to_min < 0:
+		# COORDINATE FUORI SCALA: un'ascensione retta in ore invece che in gradi, un
+		# segno perso sulla declinazione. Il primo refuso mette un soggetto dall'altra
+		# parte del cielo, e da lì non urla nessuno.
+		if t.ar_gradi < 0.0 or t.ar_gradi >= 360.0 or absf(t.dec_gradi) > 90.0:
+			push_error("[targeting] %s: coordinate fuori scala (AR %.2f, dec %.2f): saltato"
+				% [t.short, t.ar_gradi, t.dec_gradi])
 			continue
 
-		# Una finestra che attraversa l'inizio della notte NON È ESPRIMIBILE in
-		# minuti notte-relativi: `from` finisce in fondo alla giornata e `to`
-		# all'inizio, quindi `from <= now <= to` è falsa per ogni istante e il
-		# target sparirebbe dal cielo per tutta la notte, in silenzio. Succede
-		# con qualunque `vis_from` precedente alle 21:00 — un DSO circumpolare
-		# «05:00-22:00» è esattamente questo caso, e non è un dato assurdo.
-		if from_min > to_min:
-			push_error(
-				"[targeting] %s: la finestra %s-%s attraversa l'inizio della notte (%02d:00) e non è rappresentabile: saltato"
-				% [t.short, t.vis_from, t.vis_to, NIGHT_START_HOUR])
+		if _meglio_del_mese(t) < MINUTI_MINIMI:
+			_nascosti.append(t.short)
 			continue
 
 		_valid.append(t)
-		_window.append(Vector2i(from_min, to_min))
 
 	if _valid.is_empty() and not targets.is_empty():
 		push_error("[targeting] nessun target valido su %d: il catalogo è vuoto" % targets.size())
 
 
-## "HH:MM" da orologio -> minuti dall'inizio della notte. `-1` significa dato
-## rotto, e chi chiama deve escludere il target invece di usare il numero.
-##
-## Il valore di ripiego NON è zero. Zero è un'ora legittima — «disponibile dalle
-## 21:00» — e un dato rotto che si traveste da dato valido è precisamente il tipo
-## di guasto che questo progetto vuole far urlare invece che sussurrare.
-func _to_night_min(hhmm: String, who: String) -> int:
-	var parts := hhmm.split(":")
-	if parts.size() != 2 or not parts[0].is_valid_int() or not parts[1].is_valid_int():
-		push_error("[targeting] %s: finestra malformata '%s' (atteso HH:MM)" % [who, hhmm])
-		return -1
-
-	var hh := int(parts[0])
-	var mm := int(parts[1])
-	# `is_valid_int()` accetta "25", "-1" e "75": senza questo controllo un refuso
-	# di una cifra diventa un'ora plausibile e sbagliata — "25:00" si trasforma
-	# nell'01:00 e il target si spegne quattro ore prima del previsto.
-	if hh < 0 or hh > 23 or mm < 0 or mm > 59:
-		push_error("[targeting] %s: ora fuori scala '%s' (atteso 00:00-23:59)" % [who, hhmm])
-		return -1
-
-	return (hh * 60 + mm - NIGHT_START_HOUR * 60 + DAY_MIN) % DAY_MIN
+## Quanti minuti, nella notte migliore del mese, il soggetto sta sopra la cupola. Si
+## ferma appena arriva a `MINUTI_MINIMI`: quello che serve sapere è se ci arriva.
+func _meglio_del_mese(t: TargetData) -> int:
+	var meglio := 0
+	for n in range(1, NOTTI + 1):
+		meglio = maxi(meglio, _sopra(t, n).z)
+		if meglio >= MINUTI_MINIMI:
+			break
+	return meglio

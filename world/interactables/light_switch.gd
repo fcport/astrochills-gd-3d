@@ -65,13 +65,8 @@ func _ready() -> void:
 ## Com'è la luce adesso: lo dicono le lampade, non una variabile. Se non ne trova
 ## nessuna resta l'ultimo valore noto, che è l'unica risposta onesta.
 func _accesa() -> bool:
-	# SENZA CORRENTE LE LAMPADE NON DICONO NIENTE: sono tutte spente, e leggere lo
-	# stato da loro darebbe «spento» a ogni placca dell'edificio. Durante un
-	# blackout la posizione dell'interruttore la ricorda il quadro, che e' l'unico
-	# a sapere cosa si riaccendera' quando la corrente torna.
-	var quadro := Mains.find_in(get_tree())
-	if quadro != null and not quadro.acceso():
-		return quadro.tornera_accesa(luci, self)
+	# A CORRENTE STACCATA LE LAMPADE SONO SPENTE, e la placca dice «Accendi»: tornando la
+	# corrente restano spente (D-260), quindi e' la risposta vera anche dopo.
 	for percorso in luci:
 		var nodo := get_node_or_null(percorso)
 		if nodo != null:
@@ -103,12 +98,11 @@ func interact(by: Node3D) -> void:
 ## esce dal conto. Vale anche per le mesh del diffusore, che sono emissive: un
 ## neon spento che continua a brillare è peggio di nessun neon.
 func _applica(ora_accesa: bool) -> void:
-	# A CORRENTE STACCATA L'INTERRUTTORE SCATTA E LA LAMPADA NO, che e' quello che
-	# fa un impianto vero. La posizione non si perde: la tiene il quadro, e si vede
-	# quando la corrente torna.
+	# A CORRENTE STACCATA LA PLACCA NON FA NIENTE (D-260): la lampada non si accende, e
+	# quando la corrente torna resta spenta lo stesso. Le rosse della cupola non stanno
+	# sul quadro (D-259), e la loro placca le accende e le spegne anche al buio.
 	var quadro := Mains.find_in(get_tree())
-	if quadro != null and not quadro.acceso():
-		quadro.segna(luci, self, ora_accesa)
+	if quadro != null and not quadro.acceso() and quadro.alimenta(luci, self):
 		return
 	for percorso in luci:
 		var nodo := get_node_or_null(percorso)

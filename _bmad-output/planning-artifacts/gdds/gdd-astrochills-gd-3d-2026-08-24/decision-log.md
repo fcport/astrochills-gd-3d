@@ -8471,3 +8471,241 @@ sembra un prato. Verso la porta la lampada lo tinge d'ambra, ed è la luce, non 
 
 **Da verificare giocando:** se da vicino dodici al metro quadro bastano, e se a distanza le file
 dei ciuffi si leggono ancora come un campo seminato.
+
+
+## D-258 A corrente staccata le spie restavano accese
+
+Federico, il 15 settembre: «la luce rossa è indipendente dal generatore, anche se spento quello
+resta acceso, uguale il pc». Il generatore è il quadro in facciata. L'ho letta come un difetto,
+ed era una richiesta: per la luce rossa vale D-259. Le spie che si spengono col quadro restano.
+
+**IL QUADRO SPEGNEVA LE LAMPADE, NON QUELLO CHE BRILLA DA SÉ.** Negli scatti a corrente staccata
+cupola e monitor erano bui. Restavano accesi sei pezzi con un materiale emissivo dentro il loro
+`.glb`:
+- i tasti verde e rosso della pulsantiera;
+- la spia del PC, una mesh sola con i led della consolle;
+- in divulgazione, la spia e l'insegna;
+- le spie delle placche.
+
+Nessuno di questi è una `Light3D`, e `prova_rete` cercava solo le luci. In più accendeva soltanto
+le lampade accese all'avvio: le rosse della cupola nascono spente, e la sonda non le aveva mai
+viste accese.
+
+**IL QUADRO HA UN SECONDO ELENCO, `luminose`, E LO SCRIVE IL GENERATORE LEGGENDO I MODELLI.**
+`gen_blockout.py` apre il glTF di ogni `.glb` posato nella scena e prende i pezzi il cui materiale
+ha un `emissiveFactor` o una `emissiveTexture`. L'elenco si compone a scena scritta, così prende
+anche le cose posate dopo il quadro. Le lampade restano fuori: i loro pezzi li comanda la placca.
+Allo stacco ogni superficie prende una copia del suo materiale con l'energia dell'emissione a
+zero. Non si nasconde il pezzo, perché resterebbe un buco nella cassa, e la variante di shader è
+la stessa, quindi niente compilazione a metà partita. Al ritorno della corrente riprende il
+materiale di prima.
+
+**LA SONDA ADESSO VEDE ANCHE QUESTE.** `prova_rete` accende prima tutte le placche, poi cerca in
+tutta la scena ogni mesh visibile con un materiale standard emissivo e pretende che dopo lo stacco
+non ne brilli nessuna. Gli shader fatti a mano restano fuori: la fiamma del fornello va a gas, e il
+vetro del CRT lo nasconde il monitor. `prova_trafila` ha `CORRENTE=0`, che preme il fungo prima
+dello scatto, e due viste nuove, `pulsantiera` e `spie_pc`.
+
+**Misurato:** `prova_rete` passa. Con la corrente data ci sono 23 luci accese e 20 superfici che
+brillano: i bagliori delle 14 lampade più le sei nuove. A corrente staccata restano 0 luci e 0
+superfici, e ridando la corrente tornano 23 luci e 20 superfici. Il banco è verde. In
+`blockout.tscn` cambia una riga sola, l'elenco `luminose`. Negli scatti `pulsantiera` e `spie_pc`
+tasti e led sono accesi con la corrente e spenti senza.
+
+**Da verificare giocando:** se a corrente staccata c'è ancora qualcosa che si accende da solo e
+che non è un materiale standard.
+
+
+## D-259 La luce rossa della cupola non sta sul quadro
+
+Federico, il 15 settembre, dopo D-258: «ho cambiato idea il pc spegne lo schermo pure (ma non toglie
+lo stato di dov'era)». Il messaggio di prima era una richiesta, e D-258 l'aveva letto al contrario:
+la luce rossa non dipende dal generatore.
+
+**LE ROSSE DELLA CUPOLA ESCONO DALL'ELENCO DEL QUADRO.** `gen_blockout.py` toglie `LUCI_ROSSE`
+dalle `luci` del quadro. A corrente staccata restano come sono. La loro placca le comanda anche al
+buio: `LightSwitch` chiede al quadro con `alimenta()` se le sue lampade prendono corrente da lui, e
+se non la prendono le accende e le spegne direttamente. La spia della placca invece sta sul quadro,
+e si spegne.
+
+**IL PC SPEGNE LO SCHERMO E RESTA DOV'ERA.** Era già così: `crt_monitor.gd` nasconde il vetro e
+non tocca la fase. Dal D-258 si spengono anche le spie del PC. Adesso lo collauda `prova_rete`:
+quello che sta nel viewport del vetro prima dello stacco deve essere lo stesso quando la corrente
+torna.
+
+**LA SONDA DICE LE ROSSE PER NOME** (`SU_BATTERIA`), e non le chiede al generatore: una sonda che
+legge la stessa lista del quadro si darebbe ragione da sola.
+
+**Misurato:** `prova_rete` passa. Sul quadro, con tutte le placche accese, ci sono 20 luci e 17
+superfici che brillano: a corrente staccata sono 0 e 0, e poi tornano tutte. Le 3 luci rosse
+restano accese a corrente staccata, e al buio la placca della cupola le spegne e le riaccende. Lo
+schermo del PC si spegne, e ridando la corrente si riaccende con dentro quello di prima. Il banco
+è verde.
+
+**Da verificare giocando:** i tasti della pulsantiera si spengono col quadro (D-258). Se devono
+stare con la luce rossa, vanno tolti dall'elenco `luminose`.
+
+
+## D-260 Tornando la corrente le plafoniere restano spente
+
+Federico, il 15 settembre: «se la corrente si stacca, le luci deve comunque essere riaccesa». Alla
+domanda se, ridando corrente, le lampade si riaccendono da sole o restano spente, ha scelto
+**restano spente**.
+
+**SI RIACCENDONO A MANO, PLACCA PER PLACCA.** Prima il quadro ricordava cosa era acceso allo
+stacco e al ritorno lo riaccendeva. Adesso tornano da sole solo le cose che non hanno una placca:
+le due luci di fuori, le spie delle placche, la luce del monitor, e le superfici che brillano da
+sé (D-258). Il generatore scrive nel quadro l'elenco `tornano`, ricavato da quali lampade comanda
+ogni placca (`comandate_da`). Le rosse della cupola restano fuori dal quadro (D-259).
+
+**AL BUIO UNA PLACCA NON FA NIENTE.** Girata a corrente staccata, la lampada resta spenta, e
+quando la corrente torna resta spenta lo stesso. La placca dice «Accendi» perché lo stato lo
+leggono le lampade. Se ne vanno `segna()` e `tornera_accesa()`: il quadro ricordava la placca
+girata al buio e al ritorno riaccendeva quella stanza sola, fra tutte spente.
+
+**LA SONDA CHIEDE ALLE PLACCHE, NON AL QUADRO,** quali luci hanno un interruttore. Riattaccando,
+pretende che tornino le luci senza placca e che quelle con la placca restino spente. Poi preme
+la placca della sala: deve dire «Accendi» e accendere la sua stanza. Al buio la stessa placca
+non deve accendere niente.
+
+**Misurato:** `prova_rete` passa. Delle 20 luci del quadro accese, a corrente staccata non ne resta
+nessuna, e ridando la corrente ne tornano 11, cioè tutte e sole quelle senza placca. La placca
+della sala dice «Accendi la sala» e accende 3 luci. Al buio, premuta, non ne accende nessuna. Le 3
+rosse della cupola restano accese, e lo schermo del PC torna con dentro quello di prima. Il banco
+è verde.
+
+**Da verificare giocando:** se il giro al buio per riaccendere le stanze pesa troppo.
+
+
+## D-261 I cataloghi del 2D, e il cielo vero di novembre
+
+Federico, il 15 settembre: «bisogna che mi dai i cataloghi da aggiungere e comprare per vedere più
+roba». Sulle foto: «nella versione 2d non avevamo qualcosa?». Sugli oggetti che da qui non si
+vedono: «mi piacerebbe giustificarli di trama, tipo che gli orrori cosmici muovono le cose per
+renderle visibili anche se non lo sono realmente». Poi, alle domande, ha scelto:
+- gli oggetti impossibili compaiono «quando completi le quest per gli orrori cosmici»;
+- le commesse delle prime notti chiedono oggetti veri;
+- le foto degli oggetti impossibili pagano poco;
+- all'inizio ci sono più oggetti veri.
+
+**IL 2D I CATALOGHI LI AVEVA.** `catalogs.js` del prototipo ne vende tre che portano soggetti nella
+fase 6, con descrizioni già scritte e tre foto per soggetto: Messier vol. I (M1, M22, M51, M104),
+Messier vol. II (M16, M27, M33, M82, M97), Atlante NGC + IC (NGC 7000, NGC 869, NGC 891, NGC 2237,
+IC 1396). Arrivano tutti e tre. I cinque abbonamenti dello stesso file restano fuori, perché davano
+solo un +5-15% sulle vendite, e il GDD non prevede quel tipo di bonus.
+
+**OGNI SOGGETTO HA ASCENSIONE RETTA E DECLINAZIONE VERE, E LE FINESTRE SCRITTE A MANO SE NE
+VANNO.** Il modello di prima ricavava l'angolo orario dal centro della finestra, e con quel modello
+un oggetto della sera come M31, che culmina alle 21:11, non si poteva scrivere. Adesso
+`SkyGeometry.angolo_orario()` usa il tempo siderale di `Luna`, lo stesso con cui stanno in cielo
+Luna e pianeti, e planetario e GOTO fanno la stessa chiamata. D-237 è superata: M42 e M8 tornano
+alla loro declinazione, e M13 e M57 perdono le finestre inventate.
+
+**QUELLO CHE DA QUI NON SI VEDE NON SI OFFRE.** `HonestCatalog` tiene fuori un soggetto se in
+nessuna delle venti notti sta sopra i 47,7 gradi della cupola per almeno un'ora. Sono nove: M42,
+M13, M57, M8, M22, M104, M16, M27 e NGC 7000. Dati e stampe restano, perché li porteranno in cielo
+gli orrori cosmici. Quelle quest però non esistono ancora, né nel gioco né nel GDD, dove
+«Progressione e sblocchi» è da scrivere. Quando ci saranno, la bugia starà in una sorgente che
+mente, non in quella onesta, e le foto di quei soggetti andranno nel mercato delle anomalie, che
+paga poco perché le crede fotomontaggi. Deciso, non ancora fatto.
+
+**IL CATALOGO DI PARTENZA È M31, M45, M1 E IL DOPPIO AMMASSO**, tutti veri. M1 e NGC 869 escono dai
+loro cataloghi. Da comprare restano:
+- **Messier vol. I**, 4.000 lire: M51, e M22 e M104 nascosti.
+- **Messier vol. II**, 9.000 lire: M33, M82 e M97, e M16 e M27 nascosti.
+- **Atlante NGC + IC**, 14.000 lire: NGC 891, NGC 2237 e IC 1396, e NGC 7000 nascosto.
+
+I prezzi sono quelli del prototipo, cioè della scala che il gioco usa oggi: la moka costa 8.000, e
+lo scaglione più alto paga 15.000. Il ×10 di D-170 nel tuning non c'è ancora. Il «Catalogo NGC/IC
+su CD-ROM» dell'albero degli upgrade del GDD non è stato fatto.
+
+**IL POSSESSO ARRIVA ALLA FASE DAL CTX** (`Phase.CTX_OWNED_ITEMS`), come la commessa: `phases/` non
+legge il profilo. Il terminale ha la categoria CATALOGS, con i passi più stretti di due pixel. La
+striscia del planetario mostra quattro sigle alla volta, con una freccia dalla parte in cui ce ne
+sono altre. Le commesse: Coelum chiede M45, Astrofili Marche M31, BBS Cygnus M1. Le stampe nuove
+vengono dalle foto del 2D, con la stessa licenza non documentata delle prime sei (`CREDITI.md`).
+
+**Una trappola per dopo.** L'asterisco della commessa confronta la sigla maiuscola con l'id
+maiuscolo: «NGC 869» contro «NGC869» non combacia. Oggi nessuna commessa chiede un NGC.
+
+**Misurato:** il banco è verde. Conta 20 soggetti, i nove nascosti, quattro in partenza e undici
+con i tre cataloghi. Ho calcolato a parte, con le stesse formule, le disponibilità della prima
+notte alle 21:30, alle 02:00 e alle 04:30, e il banco le trova uguali. M1 sta sopra la cupola dalle
+23:10 alle 04:55. Fra planetario e GOTO lo scarto d'altezza è 0,000005 gradi. `prova_sync`, ora su
+M45, e `prova_slew` passano. `tools/scatta_cataloghi.tscn` fotografa la fase vera con i cataloghi
+passati dal ctx: undici soggetti, frecce nella striscia, tre categorie nel terminale.
+
+**Da verificare giocando:** con M1 spostato nella partenza, il Messier vol. I da solo dà un soggetto
+che sorge all'alba, e può sembrare vuoto.
+
+## D-262 Terminale e BBS si aprono sopra qualunque fase
+
+Federico: «perché terminal e bbs non posso avviarli?», e poi «sì, fallo». Si aprivano solo
+nell'attesa, cioè senza fase o con la posa che scatta. Durante l'accensione, il polare, il sync,
+il GOTO e il planetario l'icona non faceva niente, e non diceva perché. D-232 lo aveva lasciato
+aperto.
+
+**ORA SI APRONO SEMPRE, tranne sopra la rivelazione, la vendita e il riepilogo dell'alba.** Lo
+dice `NightSession.allows_programs`, che prende il posto di `is_waiting`. La regola di prima
+serviva a non mettere un programma sopra una fase interattiva. Da D-232 ogni programma ha la sua
+finestra, i tasti vanno a quella col fuoco, e la fase ascolta solo con MaxIm davanti: è la stessa
+ragione per cui era caduta la mutua esclusione fra terminale e BBS. Cade anche il divieto sopra
+il pannello di configurazione della posa.
+
+**IL POLARE GIRAVA LE VITI ANCHE SENZA FUOCO.** Sync, GOTO e fuoco chiedono
+`is_processing_unhandled_input()` prima di leggere `Input.get_axis`; il polare no, e le sue viti
+stanno su W A S D, che scorrono anche il terminale. Con il terminale aperto sopra il polare,
+scorrere l'elenco avrebbe disallineato la montatura. Ora ha la stessa guardia.
+
+**Da sapere:** la telemetria segna la BBS anche fuori dall'attesa, come segnava già la cupola.
+
+**Misurato:** il banco è verde, con un controllo nuovo: tasto della vite giù, fase che non
+ascolta, viti ferme; fase che ascolta, viti girate. `tools/prova_desktop` apre il terminale
+dall'icona durante la fase della cupola, la fase smette di ascoltare, la X lo chiude e lo
+riporta sotto `main`.
+
+## D-263 Sotto le porte c'è il pavimento, non il prato
+
+Federico, con uno scatto dal vano fra corridoio e spazio divulgazione: «perché c'è l'erba dentro
+l'osservatorio?». Il prato è un terreno che corre sotto tutta la casa, tre centimetri sotto i
+pavimenti, e i pavimenti si ritirano di mezzo muro perché la lastra non sbordi dalla facciata.
+Sotto due porte il vano restava senza pavimento per tutto lo spessore del muro:
+- **fra corridoio e spazio divulgazione**, dove i due rettangoli di `PAVIMENTI` si toccano e si
+  ritiravano tutti e due. Sotto il muro di confine correvano venti centimetri di prato, coperti
+  dal muro tranne che nel vano;
+- **all'ingresso**, sul perimetro, dove il pavimento si fermava alla faccia interna.
+
+**SUL LATO CHE CONFINA CON L'ALTRO RETTANGOLO LA LASTRA NON SI RITIRA**: arriva all'asse del muro,
+e le due si toccano lì. Verso fuori il ritiro resta.
+
+**SOTTO L'INGRESSO C'È UNA SOGLIA** a filo del pavimento, della pietra dei davanzali, come in una
+porta vera. Si mette solo dove le lastre non coprono già, così due superfici non si sovrappongono.
+
+**`verifica_soglie()` in `gen_blockout.py`** campiona ogni vano di porta per tutto lo spessore
+del muro, e segnala il punto in cui sotto non c'è né pavimento né soglia. Nessuno degli altri
+controlli guardava lì.
+
+**Tutti i modelli rifatti.** Il controllo di freschezza guarda la data di `geometria.py`, e
+cambiandola dava per vecchi nove modelli che dal pavimento non dipendono. Si sono ricostruiti
+nell'ordine di `assets/LEGGIMI.txt`, con l'osservatorio dopo cupola e telescopio.
+**Misurato:** prima del fix, su 95 punti campionati sotto ciascun vano, l'ingresso e la porta fra
+corridoio e spazio ne avevano 95 scoperti, le altre cinque porte zero. Dopo, zero dappertutto, e le
+lastre non si sovrappongono. `gen_blockout.py` dopo il reimport non segnala niente, e il banco è
+verde. `tools/scatta_soglie.tscn` apre le porte e fotografa i due vani: dal corridoio la graniglia
+continua sotto la porta, e all'ingresso la soglia chiude il vano, con il prato solo fuori.
+
+## D-264 Il limite della cella lo dice il manuale, non l'amico
+
+Federico ha riscritto la riga della pagina «3. Raffreddare la camera». Era «La cella scende al
+massimo di 38 gradi sotto l'aria della cupola: sotto i -32 non ci arriva, e se glielo chiedi
+balla». Adesso: «La cella può raffreddare il sensore fino a 38 °C sotto la temperatura dell'aria
+nella cupola. Non impostare valori inferiori a -32 °C: la camera non riuscirà a raggiungerli e la
+temperatura continuerà a oscillare».
+
+Il numero non cambia, cambia **la voce**: dove prima il quaderno dava del tu come un collega,
+qui ricopia il manuale della camera — imperativo, gradi con l'unità, niente figure. È la riga che
+racconta un limite dell'apparecchio, e un limite dell'apparecchio in un quaderno vero si trascrive
+da dove sta scritto.
+
+**Misurato:** il banco è verde, la pagina sta ancora dentro il foglio — il testo è il doppio,
+e il controllo delle pagine che sbordano è l'unico modo per saperlo senza aprire il quaderno.

@@ -7,5 +7,5 @@ script = ExtResource("1_client")
 id = &"astrofili_marche"
 name = "Astrofili Marche"
 multiplier = 0.6
-wanted_target = &"m13"
+wanted_target = &"m31"
 enabled = true

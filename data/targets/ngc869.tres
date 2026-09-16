@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="TargetData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/targets/target_data.gd" id="1_target"]
+
+[resource]
+script = ExtResource("1_target")
+id = &"ngc869"
+short = "NGC 869"
+full = "Doppio Ammasso del Perseo"
+type = &"OPEN"
+diff = 1
+min_exp = 20
+ar_gradi = 34.7500
+dec_gradi = 57.1333
+desc = "Due ammassi aperti molto vicini (NGC 869 e NGC 884) a circa 7.500 anni-luce. Insieme contengono centinaia di giovani stelle azzurre brillanti. Conosciuti da Ipparco già nel 130 a.C., ma esclusi dal catalogo Messier."

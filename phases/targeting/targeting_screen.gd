@@ -42,6 +42,12 @@ const MARGIN := 8
 ## dal monitor. Fra le due, la riga che si può togliere è quella che ripete.
 const STRIP_TOP := 14.0
 
+## Quante sigle mostra la striscia, e a che passo. Con i cataloghi (D-261) i soggetti
+## sono più di sei e le sigle arrivano a otto caratteri, «NGC 2237»: se ne vedono
+## quattro alla volta, attorno a quella corrente.
+const STRIP_VOCI := 4
+const STRIP_PASSO := 56.0
+
 ## Le due sponde fra cui vive la descrizione. Il numero massimo di righe si RICAVA
 ## da queste invece di essere battuto a mano, così spostare una sponda sposta anche
 ## il limite e non c'è modo che le due misure divergano.
@@ -157,13 +163,20 @@ func _draw_detail(t: Dictionary) -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, DESIGN_SIZE.x - MARGIN * 2, DESC_SIZE, max_lines, DIM)
 
 
-## La striscia indice: le sei sigle IN TESTA, con l'evidenza sulla corrente e il
+## La striscia indice: le sigle IN TESTA, con l'evidenza sulla corrente e il
 ## dimming su quelle non disponibili. È la mappa del carosello e insieme
 ## l'intestazione della schermata — vedi il perché su `STRIP_TOP`.
 func _draw_index_strip() -> void:
-	var x := float(MARGIN)
 	var y := STRIP_TOP
-	for i in _catalog.size():
+	var primo := clampi(_cursor - 1, 0, maxi(0, _catalog.size() - STRIP_VOCI))
+	var x := float(MARGIN) + 8.0
+	# LA FRECCIA DICE DA CHE PARTE CE NE SONO ALTRE: una striscia che taglia senza
+	# dirlo farebbe credere che il catalogo finisca lì.
+	if primo > 0:
+		_text(Vector2(MARGIN - 2, y), "<", FAINT, 10)
+	if primo + STRIP_VOCI < _catalog.size():
+		_text(Vector2(DESIGN_SIZE.x - MARGIN - 4, y), ">", FAINT, 10)
+	for i in range(primo, mini(_catalog.size(), primo + STRIP_VOCI)):
 		var entry := _catalog[i]
 		var short: String = entry.get(&"short", "")
 		var available: bool = entry.get(&"available", false)
@@ -177,9 +190,7 @@ func _draw_index_strip() -> void:
 		# questo si vede mentre si scorre, che è quando serve.
 		var mark := "*" if not _wanted.is_empty() and short.to_upper() == _wanted else ""
 		_text(Vector2(x, y), mark + short, color, 10)
-		# Passo fisso per sigla: M42/M13/... stanno tutte in <= 4 caratteri, sei
-		# voci entrano nei 256 px con margine.
-		x += 40.0
+		x += STRIP_PASSO
 
 
 func _text(pos: Vector2, s: String, color: Color, px: int) -> void:

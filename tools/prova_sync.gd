@@ -33,13 +33,15 @@ extends Node
 ## gradi. Un decimo di grado è quello che ottiene una persona che guarda.
 const CENTRATURA := 0.08
 
-## Il soggetto su cui si prova il GOTO. M13 sta alto: è raggiungibile da questa
-## cupola per una buona parte della notte, e la prova non deve rompersi
-## sull'orizzonte dell'edificio, che è misurato altrove.
-const SOGGETTO := &"m13"
+## Il soggetto su cui si prova il GOTO. Le Pleiadi stanno alte: da questa cupola si
+## raggiungono per buona parte della notte, e la prova non deve rompersi
+## sull'orizzonte dell'edificio, che è misurato altrove. Era M13, che a novembre da
+## qui non si vede (D-261).
+const SOGGETTO := &"m45"
 
-## A che ora si prova, in minuti dall'inizio della notte. M13 è dato per le
-## 22:00-03:00, quindi a 150 minuti (le 23:30) sta a mezz'ora dal meridiano.
+## A che ora si prova, in minuti dall'inizio della notte. La prima notte le Pleiadi
+## passano in meridiano verso le 00:25, quindi a 150 minuti (le 23:30) ne sono a
+## un'ora scarsa.
 const QUANDO := 150.0
 
 ## Quante notti si simulano per parte. Vedi il commento in `_gioca()`.

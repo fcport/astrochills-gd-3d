@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/catalog/item_data.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"atlante_ngc_ic"
+category = &"catalogs"
+label = "NGC + IC ATLAS"
+price = 14000
+blurb = "I cataloghi NGC e IC in un atlante solo: gli oggetti piu' deboli e piu' rari, quelli che Messier non aveva messo in lista. I suoi soggetti entrano nel planetario."
+implemented = true

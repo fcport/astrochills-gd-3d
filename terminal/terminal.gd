@@ -50,11 +50,12 @@ const SEL := Phosphor.SEL
 
 const CATALOG_PATH := "res://data/catalog/catalog.tres"
 
-## Le due categorie dell'MVP, nell'ordine di visualizzazione. NON esiste una terza:
-## le altre di `economia.md` non compaiono affatto. La coppia (chiave dato, titolo EN).
+## Le categorie, nell'ordine di visualizzazione. La coppia (chiave dato, titolo EN). La
+## terza sono i cataloghi, che portano soggetti nel planetario (D-261).
 const CATEGORIES := [
 	[&"personal", "PERSONAL"],
 	[&"facilities", "FACILITIES"],
+	[&"catalogs", "CATALOGS"],
 ]
 
 var _font: SystemFont
@@ -224,7 +225,7 @@ func _draw() -> void:
 	_draw_catalog()
 
 
-## Le due categorie e le loro voci numerate. Si itera `CATEGORIES`, non le righe: così
+## Le categorie e le loro voci numerate. Si itera `CATEGORIES`, non le righe: così
 ## PERSONAL e FACILITIES compaiono SEMPRE entrambe (AC3), anche se una restasse senza
 ## articoli in vendita — mostra `(none)` invece di sparire. Il numero è per l'occhio
 ## (menu numerato, AC2); il cursore resta l'indice piatto in `_rows`, in ordine di
@@ -235,7 +236,9 @@ func _draw_catalog() -> void:
 	for entry in CATEGORIES:
 		var cat: StringName = entry[0]
 		_text(Vector2(9, y), entry[1], DIM, 11)
-		y += 13
+		# PASSI PIÙ STRETTI DI DUE PIXEL, per far stare la terza categoria sopra la riga
+		# del messaggio (D-261).
+		y += 12
 		var any := false
 		for i in _rows.size():
 			var item := _rows[i]
@@ -250,11 +253,11 @@ func _draw_catalog() -> void:
 			var right := "OWNED" if owned else "%d L" % item.price
 			_text(Vector2(9, y), "%s %d. %s" % [mark, num, item.label], col, 12)
 			_text(Vector2(196, y), right, DIM if owned else col, 11)
-			y += 15
+			y += 13
 		if not any:
 			# Categoria senza articoli in vendita: resta a schermo, vuota — non sparisce.
 			_text(Vector2(9, y), "   (none)", DIM, 11)
-			y += 15
+			y += 13
 
 	# L'esito diegetico, in inglese, sul vetro — mai un modale.
 	if not _message.is_empty():

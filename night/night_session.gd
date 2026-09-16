@@ -307,31 +307,24 @@ func has_phase() -> bool:
 	return _phase != null or _summary != null or _stacking != null or _sale != null or _menu != null
 
 
-## Se la notte è nella finestra d'ATTESA: niente di INTERATTIVO a schermo. Nessuna
-## rivelazione, nessuna vendita, nessun riepilogo. Il menu post-foto può essere vivo — è
-## l'attesa, non un'interruzione — e sopra il menu si può aprire un secondo programma
-## del PC.
+## Se sul PC si possono aprire gli altri programmi, terminale e BBS, sopra quello che la
+## notte sta facendo. Sì, tranne quando lo schermo chiede di essere guardato: la
+## rivelazione, la vendita, il riepilogo dell'alba (D-262). Il menu post-foto non conta.
 ##
-## E UNA FASE CHE STA LAVORANDO NON INTERROMPE L'ATTESA: È L'ATTESA. Questa riga diceva
-## `_phase == null`, e la review dell'epica 3 l'ha trovata: durante la posa `_phase` è la
-## fase di imaging — è il meccanismo stesso che le fa continuare a contare mentre giri
-## per casa — quindi l'attesa risultava falsa proprio nell'unica finestra che l'epica 3
-## esiste per riempire. La BBS della storia 3.7, intitolata «leggere MENTRE LA POSA
-## GIRA», non era apribile durante la posa: si apriva solo davanti al menu post-foto,
-## cioè nei secondi in cui decidi se rifare lo scatto. Misurato con una sonda.
+## FINO A D-262 VALEVA SOLO NELL'ATTESA — nessuna fase, o la posa che scatta — e l'icona
+## cliccata durante il polare o il GOTO non faceva niente, senza dire perché. La regola
+## c'era per non mettere un programma sopra una fase interattiva; da quando ogni programma
+## ha la sua finestra (D-232) i tasti vanno solo a quella col fuoco, e la fase ascolta solo
+## con MaxIm davanti (`set_screen_focused`). È la ragione per cui era già caduta la mutua
+## esclusione fra terminale e BBS.
 ##
-## `is_working()` E NON `runs_in_background()`, che sarebbe stato il riflesso sbagliato:
-## la fase di imaging gira in background SEMPRE, anche mentre mostra il pannello di
-## configurazione — e sopra quel pannello un secondo programma non deve potersi aprire,
-## perché lì il giocatore sta lavorando. `is_working()` è vero da START in poi.
+## UNA FASE CHE LEGGE LA TASTIERA DA `_process` deve guardare
+## `is_processing_unhandled_input()`: `Input.get_axis` il fuoco non lo vede, e W A S D
+## scorrono anche il terminale. Polare, sync, GOTO e fuoco lo fanno.
 ##
-## Lo legge `main.gd` per decidere quando un tasto dedicato può aprire quel secondo
-## programma sul CRT. Questo file NON sa cosa sia: consegna solo il gancio.
-func is_waiting() -> bool:
-	# «Nessuna fase, oppure una che sta lavorando»: il pannello di configurazione della
-	# posa è l'unico stato di fase che l'attesa NON è.
-	var phase_leaves_room := _phase == null or _phase.is_working()
-	return phase_leaves_room and _stacking == null and _sale == null and _summary == null
+## Lo legge `main.gd`. Questo file NON sa cosa siano quei programmi: consegna solo il gancio.
+func allows_programs() -> bool:
+	return _stacking == null and _sale == null and _summary == null
 
 
 ## Ri-mostra sul CRT ciò che la notte sta mostrando ADESSO — il menu post-foto se c'è,
@@ -350,10 +343,10 @@ func reshow_current() -> void:
 		_crt.show_control(_menu)
 		set_player_present(_player_present)
 		return
-	# LA FASE CHE STAVA LAVORANDO SI RIPRENDE IL VETRO. Questo ramo non c'era, e fino
-	# alla review dell'epica 3 non poteva servire: `is_waiting()` non lasciava aprire
-	# niente sopra una fase. Adesso che la BBS si apre durante la posa, chiuderla senza
-	# questo ramo lascerebbe il CRT NERO al posto dell'avanzamento della sequenza.
+	# LA FASE SI RIPRENDE IL VETRO. Questo ramo non c'era, e fino alla review dell'epica 3
+	# non poteva servire: sopra una fase non si apriva niente. Adesso che terminale e BBS
+	# si aprono sopra qualunque fase (D-262), chiuderli senza questo ramo lascerebbe il CRT
+	# NERO al posto della fase.
 	if _phase != null and is_instance_valid(_phase):
 		_crt.show_control(_schermo_di(_phase))
 		set_player_present(_player_present)
@@ -838,6 +831,7 @@ func _enter_phase(scene: PackedScene) -> void:
 	# conoscerlo: vedi `Phase.CTX_COMMISSION_LINE`.
 	_ctx[Phase.CTX_COMMISSION_LINE] = _commission_line()
 	_ctx[Phase.CTX_COMMISSION_TARGET] = _commission_target()
+	_ctx[Phase.CTX_OWNED_ITEMS] = Game.profile.owned_items.duplicate() if Game.profile != null else []
 
 	# setup() PRIMA di entrare nell'albero, come vuole il contratto. `_ctx` è ciò
 	# che le fasi precedenti hanno lasciato nel proprio `payload`.

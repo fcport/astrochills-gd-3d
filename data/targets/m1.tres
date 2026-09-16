@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="TargetData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/targets/target_data.gd" id="1_target"]
+
+[resource]
+script = ExtResource("1_target")
+id = &"m1"
+short = "M1"
+full = "Nebulosa del Granchio"
+type = &"NEB"
+diff = 2
+min_exp = 70
+ar_gradi = 83.6331
+dec_gradi = 22.0145
+desc = "Resto della supernova del 1054, osservata dagli astronomi cinesi e arabi. Al centro pulsa una stella di neutroni che ruota 30 volte al secondo. È stato il primo oggetto del catalogo Messier."

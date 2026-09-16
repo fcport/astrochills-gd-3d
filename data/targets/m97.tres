@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TargetData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/targets/target_data.gd" id="1_target"]
+
+[resource]
+script = ExtResource("1_target")
+id = &"m97"
+short = "M97"
+full = "Nebulosa Gufo"
+type = &"PLN"
+diff = 2
+min_exp = 55
+ar_gradi = 168.6988
+dec_gradi = 55.0190
+catalogo = &"messier_vol2"
+desc = "Nebulosa planetaria con due regioni scure che ricordano gli occhi di un gufo. Scoperta nel 1781, si trova a 2.030 anni-luce. La stella centrale, una nana bianca, brilla appena di magnitudine 14."

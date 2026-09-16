@@ -150,6 +150,11 @@ func _screws() -> Vector2:
 
 
 func _turn_screws(delta: float) -> void:
+	# SI ASCOLTA SOLO A FINESTRA DAVANTI: vedi `phase_sync.gd`. Le viti stanno su W A S D,
+	# che scorrono anche il terminale e la BBS, apribili sopra il polare da D-262.
+	if not is_processing_unhandled_input():
+		_truth_input.seconds_since_correction += delta
+		return
 	var az := Input.get_axis(&"polar_az_dec", &"polar_az_inc")
 	var alt := Input.get_axis(&"polar_alt_dec", &"polar_alt_inc")
 

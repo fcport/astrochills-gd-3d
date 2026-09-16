@@ -69,6 +69,9 @@ func setup(run: NightRun, ctx: Dictionary) -> void:
 	# `photo/`, dove vivono le chiavi della commessa. Vedi `Phase.CTX_COMMISSION_LINE`.
 	_commission_line = String(ctx.get(Phase.CTX_COMMISSION_LINE, ""))
 	_commission_target = String(ctx.get(Phase.CTX_COMMISSION_TARGET, ""))
+	# I CATALOGHI COMPRATI arrivano dal `ctx` come la commessa: `phases/` non legge il
+	# profilo del giocatore (D-261).
+	_input.owned.assign(ctx.get(Phase.CTX_OWNED_ITEMS, []))
 
 
 func _ready() -> void:
@@ -98,6 +101,7 @@ func _process(_delta: float) -> void:
 		return
 
 	_input.now_min = _run.elapsed_min
+	_input.night_index = _run.night_index
 
 	_catalog = truth.sample(_input)  # UNICA assegnazione di _catalog — ADR-001
 

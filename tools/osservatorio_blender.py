@@ -58,7 +58,8 @@ PARTI = [
     (("TelaioMet",), "TelaiMetallo", (0.50, 0.54, 0.50)),
     (("Telaio",), "Telai", (0.30, 0.22, 0.15)),
     (("Anta",), "Ante", (0.38, 0.28, 0.19)),
-    (("Davanzale",), "Davanzali", (0.62, 0.60, 0.57)),
+    # La soglia della porta e' della pietra dei davanzali, come in una casa vera.
+    (("Davanzale", "Soglia"), "Davanzali", (0.62, 0.60, 0.57)),
     (("Vetro",), "Vetri", (0.55, 0.68, 0.72)),
 ]
 MURI = ("Muri", (0.80, 0.78, 0.74))

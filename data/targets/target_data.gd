@@ -4,8 +4,8 @@
 ## una Resource di soli `@export`, salvata e diffabile come `.tres`. La fase di
 ## targeting non la legge mai — la legge la sorgente di verità (ADR-001).
 ##
-## I dati nascono qui, in `.tres`, portati da `dso_base.js`: mai JSON, mai
-## `FileAccess` nel gameplay.
+## I dati nascono qui, in `.tres`: mai JSON, mai `FileAccess` nel gameplay. I testi
+## vengono da `dso_base.js` e `catalogs.js` del prototipo.
 class_name TargetData
 extends Resource
 
@@ -27,31 +27,23 @@ extends Resource
 ## Esposizione minima consigliata, in minuti. Segnaposto come `diff`.
 @export var min_exp: int = 0
 
-## Inizio della finestra di visibilità, "HH:MM" da orologio (non notte-relativo).
-## La conversione in minuti notte-relativi la fa la sorgente.
-@export var vis_from: String = ""
-
-## Fine della finestra di visibilità, "HH:MM".
-@export var vis_to: String = ""
-
-## DECLINAZIONE del soggetto, in gradi. Dato reale di catalogo (J2000).
+## ASCENSIONE RETTA del soggetto, in gradi (J2000). Dato reale di catalogo.
 ##
-## SERVE AL GOTO, e non al planetario: e' meta' di dove va portato il telescopio.
-## L'altra meta' - l'angolo orario - NON sta qui, e l'assenza e' una decisione:
-## l'ascensione retta di questi sei oggetti non e' compatibile con le finestre di
-## visibilita' che gli sono state scritte accanto. M42 e' un oggetto d'inverno,
-## M13 e M8 d'estate, M31 d'autunno: le sei finestre non appartengono alla stessa
-## notte, e non potrebbero. Mettere qui anche l'ascensione retta vorrebbe dire
-## avere due verita' che si contraddicono sullo stesso fatto, con il gioco che ne
-## sceglie una a caso.
-##
-## Quindi l'angolo orario si RICAVA dalla finestra, con un modello dichiarato: un
-## oggetto sta al meglio quando e' sul meridiano, e la finestra dice quando sta al
-## meglio - percio' il centro della finestra e' il passaggio in meridiano, e ci si
-## allontana di quindici gradi per ogni ora. Vedi
-## `phases/goto/sources/honest_pointing.gd`, che e' l'unico posto dove il conto
-## esiste.
+## C'È DAL D-261, e prima mancava apposta. I sei soggetti del prototipo avevano
+## finestre di visibilità scritte a mano che non appartenevano alla stessa notte —
+## M42 d'inverno, M13 e M8 d'estate — e mettergli accanto l'ascensione retta vera
+## avrebbe voluto dire due verità sullo stesso fatto. Le finestre se ne sono andate:
+## dove sta un soggetto, in che notte e a che ora, lo calcola
+## `SkyGeometry.angolo_orario()` da questo numero e dal tempo siderale di `Luna`.
+@export var ar_gradi: float = 0.0
+
+## DECLINAZIONE del soggetto, in gradi (J2000). Dato reale di catalogo: con
+## l'ascensione retta dice dove va portato il telescopio.
 @export var dec_gradi: float = 0.0
+
+## Il catalogo del terminale che porta questo soggetto nel planetario: l'id di un
+## articolo di `data/catalog/`. Vuoto per i soggetti che l'osservatorio ha già.
+@export var catalogo: StringName = &""
 
 ## Descrizione narrativa, in italiano — è contenuto per il giocatore.
 @export_multiline var desc: String = ""

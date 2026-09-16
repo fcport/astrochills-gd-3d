@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TargetData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/targets/target_data.gd" id="1_target"]
+
+[resource]
+script = ExtResource("1_target")
+id = &"m22"
+short = "M22"
+full = "Grande Ammasso del Sagittario"
+type = &"GLOB"
+diff = 1
+min_exp = 25
+ar_gradi = 279.0998
+dec_gradi = -23.9047
+catalogo = &"messier_vol1"
+desc = "Uno degli ammassi globulari più antichi e luminosi, a 10.400 anni-luce. È stato il primo globulare scoperto, nel 1665. Contiene almeno 70.000 stelle e due buchi neri di massa stellare."

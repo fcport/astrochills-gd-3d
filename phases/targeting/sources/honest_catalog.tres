@@ -1,14 +1,28 @@
-[gd_resource type="Resource" script_class="HonestCatalog" load_steps=8 format=3]
+[gd_resource type="Resource" script_class="HonestCatalog" load_steps=22 format=3]
 
-[ext_resource type="Script" path="res://phases/targeting/sources/honest_catalog.gd" id="1_catalog"]
-[ext_resource type="Resource" path="res://data/targets/m42.tres" id="2_m42"]
-[ext_resource type="Resource" path="res://data/targets/m13.tres" id="3_m13"]
-[ext_resource type="Resource" path="res://data/targets/m45.tres" id="4_m45"]
-[ext_resource type="Resource" path="res://data/targets/m31.tres" id="5_m31"]
-[ext_resource type="Resource" path="res://data/targets/m57.tres" id="6_m57"]
-[ext_resource type="Resource" path="res://data/targets/m8.tres" id="7_m8"]
+[ext_resource type="Script" path="res://phases/targeting/sources/honest_catalog.gd" id="1_src"]
+[ext_resource type="Resource" path="res://data/targets/m31.tres" id="2_m31"]
+[ext_resource type="Resource" path="res://data/targets/m45.tres" id="3_m45"]
+[ext_resource type="Resource" path="res://data/targets/m1.tres" id="4_m1"]
+[ext_resource type="Resource" path="res://data/targets/ngc869.tres" id="5_ngc869"]
+[ext_resource type="Resource" path="res://data/targets/m42.tres" id="6_m42"]
+[ext_resource type="Resource" path="res://data/targets/m13.tres" id="7_m13"]
+[ext_resource type="Resource" path="res://data/targets/m57.tres" id="8_m57"]
+[ext_resource type="Resource" path="res://data/targets/m8.tres" id="9_m8"]
+[ext_resource type="Resource" path="res://data/targets/m51.tres" id="10_m51"]
+[ext_resource type="Resource" path="res://data/targets/m22.tres" id="11_m22"]
+[ext_resource type="Resource" path="res://data/targets/m104.tres" id="12_m104"]
+[ext_resource type="Resource" path="res://data/targets/m33.tres" id="13_m33"]
+[ext_resource type="Resource" path="res://data/targets/m82.tres" id="14_m82"]
+[ext_resource type="Resource" path="res://data/targets/m97.tres" id="15_m97"]
+[ext_resource type="Resource" path="res://data/targets/m16.tres" id="16_m16"]
+[ext_resource type="Resource" path="res://data/targets/m27.tres" id="17_m27"]
+[ext_resource type="Resource" path="res://data/targets/ngc891.tres" id="18_ngc891"]
+[ext_resource type="Resource" path="res://data/targets/ngc2237.tres" id="19_ngc2237"]
+[ext_resource type="Resource" path="res://data/targets/ic1396.tres" id="20_ic1396"]
+[ext_resource type="Resource" path="res://data/targets/ngc7000.tres" id="21_ngc7000"]
 
 [resource]
 resource_local_to_scene = true
-script = ExtResource("1_catalog")
-targets = Array[TargetData]([ExtResource("2_m42"), ExtResource("3_m13"), ExtResource("4_m45"), ExtResource("5_m31"), ExtResource("6_m57"), ExtResource("7_m8")])
+script = ExtResource("1_src")
+targets = Array[TargetData]([ExtResource("2_m31"), ExtResource("3_m45"), ExtResource("4_m1"), ExtResource("5_ngc869"), ExtResource("6_m42"), ExtResource("7_m13"), ExtResource("8_m57"), ExtResource("9_m8"), ExtResource("10_m51"), ExtResource("11_m22"), ExtResource("12_m104"), ExtResource("13_m33"), ExtResource("14_m82"), ExtResource("15_m97"), ExtResource("16_m16"), ExtResource("17_m27"), ExtResource("18_ngc891"), ExtResource("19_ngc2237"), ExtResource("20_ic1396"), ExtResource("21_ngc7000")])

@@ -52,3 +52,11 @@ static func altezza_massima(dec_gradi: float) -> float:
 ## Il telescopio riesce a guardarlo da dentro questa cupola.
 static func raggiungibile(ha_gradi: float, dec_gradi: float) -> bool:
 	return altezza(ha_gradi, dec_gradi) >= ORIZZONTE_CUPOLA
+
+
+## L'ANGOLO ORARIO VERO di un'ascensione retta, la notte `night_index` dopo `now_min`
+## minuti di turno, in gradi (D-261). Il tempo siderale è quello di `Luna`, lo stesso
+## con cui Luna e pianeti stanno in cielo. Planetario e GOTO lo chiedono qui, e un
+## soggetto non può stare in un posto per l'uno e in un altro per l'altro.
+static func angolo_orario(ar_gradi: float, night_index: int, now_min: float) -> float:
+	return Luna.angolo_orario(ar_gradi, Luna.istante(night_index, now_min))

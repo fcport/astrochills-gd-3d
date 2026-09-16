@@ -112,7 +112,7 @@ testo = "Al computer, scheda COOL.
 
 Il sensore freddo fa foto pulite. S abbassa la temperatura voluta (SET), W la alza.
 
-La cella scende al massimo di 38 gradi sotto l'aria della cupola: sotto i -32 non ci arriva, e se glielo chiedi balla.
+La cella può raffreddare il sensore fino a 38 °C sotto la temperatura dell'aria nella cupola. Non impostare valori inferiori a -32 °C: la camera non riuscirà a raggiungerli e la temperatura continuerà a oscillare.
 
 Un buon valore sta fra -25 e -32. Poi aspetta che si calmi: SWING dice quanto oscilla. Sotto 0,15, INVIO.
 

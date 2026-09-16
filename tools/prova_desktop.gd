@@ -85,11 +85,22 @@ func _prova() -> void:
 	_riga("X chiude Photos", not d.is_window_open(&"photos"), "")
 	_riga("l'elenco non è orfano", _main._photos != null and _main._photos.get_parent() == _main, "")
 
-	# --- Il terminale rispetta l'attesa, come col tasto.
+	# --- Il terminale si apre sopra la fase (D-262), e la fase smette di ascoltare: W A S D
+	# scorrono il terminale, e sotto non devono girare niente.
 	await _clicca(d.rect_icon(1).get_center())
-	_riga("terminale aperto solo se la notte è in attesa",
-			d.is_window_open(&"terminal") == night.is_waiting(),
-			"attesa=%s aperto=%s" % [night.is_waiting(), d.is_window_open(&"terminal")])
+	var fase := night.current_phase()
+	_riga("terminale aperto sopra la fase", d.is_window_open(&"terminal"),
+			"fase %s" % [fase.key() if fase != null else "-"])
+	_riga("con il terminale davanti la fase non ascolta", not night._screen_focused, "")
+	_riga("e non legge i tasti", fase == null or not fase.is_processing_unhandled_input(), "")
+
+	# --- La X lo chiude e lo riporta a casa: aperto, coprirebbe i pulsanti di MaxIm che le
+	# righe dopo cliccano.
+	var term := d.window(&"terminal")
+	if term != null:
+		await _clicca(term.position + term.rect_close().get_center())
+	_riga("X chiude il terminale", not d.is_window_open(&"terminal"), "")
+	_riga("il terminale non è orfano", _main._terminal.get_parent() == _main, "")
 
 	# --- Il mouse muove la freccia, non la testa.
 	var yaw_prima: float = _desk._player.global_rotation.y

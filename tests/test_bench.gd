@@ -137,6 +137,8 @@ func _ready() -> void:
 	print("")
 	_check_desktop_window()
 	print("")
+	_check_viti_senza_fuoco()
+	print("")
 	_check_prints()
 	print("")
 	print("=== fine ===")
@@ -456,34 +458,60 @@ func _check_honest_catalog() -> void:
 	# `resource_local_to_scene` NON si verifica qui: la verifica una sola funzione,
 	# su un solo elenco (`SOURCE_PATHS`). Vedi `_check_local_to_scene`.
 	print("   dal .tres: %d target" % src.targets.size())
-	if src.targets.size() != 6:
-		print("   <-- ATTESO: 6 target di base")
+	if src.targets.size() != 20:
+		print("   <-- ATTESO: 20 target, quelli dell'osservatorio e quelli dei cataloghi (D-261)")
 
-	# I set attesi sono PINNATI: il banco non si limita a stampare la
-	# disponibilità, la confronta con ciò che deve essere. Senza il confronto una
-	# regressione sul wrap di mezzanotte o sul confine `<=` scorrerebbe via anche
-	# sotto gli occhi di chi legge.
-	#
-	# 21:30 = 30 min: disponibili esattamente {M42, M45, M31, M8}.
-	_assert_availability(src, 30.0, "21:30", PackedStringArray(["M42", "M45", "M31", "M8"]))
-	# 04:45 = 465 min: disponibili esattamente {M13, M57, M31}. M31 ha finestra
-	# fino alle 04:45 = 465 (stretta di un quarto d'ora per parte da D-237, perché
-	# alle 05:00 era sotto l'orizzonte della cupola), ed è il confine `465<=465`
-	# inclusivo — il punto più facile da rompere. Alle 05:00 M31 non c'è più.
-	_assert_availability(src, 465.0, "04:45", PackedStringArray(["M13", "M57", "M31"]))
-	_assert_availability(src, 480.0, "05:00", PackedStringArray(["M13", "M57"]))
-	# Il confine del wrap di mezzanotte per M8 (`vis_to = "00:00"` -> 180 min): a
-	# 180 deve essere disponibile (confine inclusivo), a 181 no. È la coppia che
-	# distingue `<=` da `<` proprio sul minuto che attraversa le 00:00.
-	_assert_available_contains(src, 180.0, "00:00", &"M8", true)
-	_assert_available_contains(src, 181.0, "00:01", &"M8", false)
+	# I SET ATTESI SONO PINNATI, e vengono dal cielo vero della prima notte (16
+	# novembre 1999, 43,9 N): calcolati a parte, con le stesse formule di `Luna`, prima
+	# di scriverli qui. Un conto dell'angolo orario che si rompe li sposta tutti.
+	var nascosti := src.nascosti()
+	var attesi_nascosti := PackedStringArray(["M42", "M13", "M57", "M8", "M22", "M104", "M16", "M27", "NGC 7000"])
+	print("   mai sopra la cupola in venti notti: {%s}%s" % [", ".join(nascosti),
+		"" if _same_set(nascosti, attesi_nascosti) else "   <-- ATTESO: {%s}" % ", ".join(attesi_nascosti)])
 
-	# LA MASCHERA DELL'ORIZZONTE, che e' l'altra meta' di `available` (D-191).
-	# Non si pinnano le sigle: si pretende la COERENZA fra i tre campi, cosi'
-	# questo controllo resta vero anche il giorno in cui lo strumento verra'
-	# alzato dentro la cupola e l'orizzonte scendera'.
+	const TUTTI := [&"messier_vol1", &"messier_vol2", &"atlante_ngc_ic"]
+	_assert_elenco(src, [], PackedStringArray(["M31", "M45", "M1", "NGC 869"]), "senza cataloghi")
+	_assert_elenco(src, TUTTI, PackedStringArray(["M31", "M45", "M1", "NGC 869", "M51", "M33",
+		"M82", "M97", "NGC 891", "NGC 2237", "IC 1396"]), "con i tre cataloghi")
+
+	_assert_availability(src, 30.0, "21:30", TUTTI,
+		PackedStringArray(["M31", "M45", "NGC 869", "M33", "NGC 891", "IC 1396"]))
+	_assert_availability(src, 300.0, "02:00", TUTTI,
+		PackedStringArray(["M45", "M1", "NGC 869", "M82", "NGC 891", "NGC 2237"]))
+	_assert_availability(src, 450.0, "04:30", TUTTI, PackedStringArray(["M1", "M82", "M97"]))
+	# IL CATALOGO NON COMPRATO NON C'È, anche quando il suo soggetto è alto: alle 04:30
+	# M82 e M97 stanno sopra la cupola, ma senza il secondo volume del Messier resta M1.
+	_assert_availability(src, 450.0, "04:30", [], PackedStringArray(["M1"]))
+
+	# La finestra scritta sul vetro: M1 la prima notte sorge sopra la gronda alle
+	# 23:10 e ci resta fino alle 04:55.
+	var finestra_m1 := ""
+	for entry in _campione(src, 30.0, []):
+		if entry.get(&"short", "") == "M1":
+			finestra_m1 = entry.get(&"window", "")
+	print("   finestra di M1 la prima notte: %s%s" % [finestra_m1,
+		"" if finestra_m1 == "23:10-04:55" else "   <-- ATTESO: 23:10-04:55"])
+
+	# LA MASCHERA DELL'ORIZZONTE (D-191): `available` e' esattamente «sopra la cupola»,
+	# e un soggetto non disponibile dice o quando tornare o che e' troppo basso.
 	_assert_horizon_mask(src, 30.0, "21:30")
 	_assert_horizon_mask(src, 300.0, "02:00")
+
+	# PLANETARIO E GOTO GUARDANO LO STESSO CIELO. Un soggetto offerto a un'altezza e
+	# raggiunto dal tubo a un'altra sarebbe il guasto che si scopre solo a GOTO fatto.
+	var tubo := _load_source("res://phases/goto/sources/honest_pointing.tres") as HonestPointing
+	if tubo != null:
+		var scarto := 0.0
+		for t in src.targets:
+			for notte in [1, 10, 20]:
+				for m in [0.0, 240.0, 540.0]:
+					var gi := GotoInput.new()
+					gi.target_id = t.id
+					gi.night_index = notte
+					gi.now_min = m
+					scarto = maxf(scarto, absf(tubo.target_altitude(gi) - HonestCatalog.altezza_di(t, notte, m)))
+		print("   planetario e GOTO: scarto massimo d'altezza %.6f gradi%s" % [scarto,
+			"" if scarto < 1e-4 else "   <-- ATTESO: 0, i due guardano cieli diversi"])
 
 	# Determinismo: stesso `now_min`, due chiamate, stessa lista/disponibilità.
 	var i := TargetingInput.new()
@@ -499,51 +527,38 @@ func _check_honest_catalog() -> void:
 ## da quello pinnato — coerente con gli altri check del banco: si stampa sempre,
 ## si segnala solo lo scostamento.
 func _assert_availability(
-	src: HonestCatalog, now_min: float, label: String, expected: PackedStringArray
+	src: HonestCatalog, now_min: float, label: String, owned: Array, expected: PackedStringArray
 ) -> void:
-	var i := TargetingInput.new()
-	i.now_min = now_min
 	var rows := PackedStringArray()
 	var actual := PackedStringArray()
-	for entry in src.sample(i):
+	for entry in _campione(src, now_min, owned):
 		var short: String = entry.get(&"short", "?")
-		# SI PINNA LA FINESTRA, NON LA DISPONIBILITA', e la differenza e' nata da
-		# una regressione vera: da quando il planetario tiene conto anche
-		# dell'orizzonte della cupola, `available` mescola due fatti — «e' nella
-		# sua finestra» e «questa cupola lo raggiunge». Confrontando il misto,
-		# questi controlli avrebbero smesso di collaudare il wrap di mezzanotte e
-		# il confine inclusivo, che sono la ragione per cui esistono.
-		var avail: bool = entry.get(&"in_window", false)
+		var avail: bool = entry.get(&"available", false)
 		rows.append("%s=%s" % [short, "sì" if avail else "no"])
 		if avail:
 			actual.append(short)
 	var note := ""
 	if not _same_set(actual, expected):
 		note = "   <-- ATTESO disponibili: {%s}" % ", ".join(expected)
-	print("   alle %s (now_min %.0f): %s%s" % [label, now_min, ", ".join(rows), note])
+	print("   alle %s, %d cataloghi (now_min %.0f): %s%s" % [label, owned.size(), now_min, ", ".join(rows), note])
 
 
-## Confine puntuale: una sola sigla, disponibile o no a un preciso `now_min`.
-## Serve per i minuti di frontiera (il wrap di mezzanotte), dove conta il singolo
-## target e non l'intero set.
-func _assert_available_contains(
-	src: HonestCatalog, now_min: float, label: String, short: StringName, expected: bool
-) -> void:
+## Le sigle che il planetario elenca con quei cataloghi, disponibili o no.
+func _assert_elenco(src: HonestCatalog, owned: Array, expected: PackedStringArray, label: String) -> void:
+	var got := PackedStringArray()
+	for entry in _campione(src, 30.0, owned):
+		got.append(entry.get(&"short", "?"))
+	print("   elenco %s: {%s}%s" % [label, ", ".join(got),
+		"" if _same_set(got, expected) else "   <-- ATTESO: {%s}" % ", ".join(expected)])
+
+
+## Il catalogo della prima notte a `now_min`, con quegli articoli posseduti.
+func _campione(src: HonestCatalog, now_min: float, owned: Array) -> Array[Dictionary]:
 	var i := TargetingInput.new()
 	i.now_min = now_min
-	var found := false
-	for entry in src.sample(i):
-		if StringName(entry.get(&"short", "")) == short:
-			# `in_window` e non `available`, per la ragione scritta poco sopra:
-			# questo controllo esiste per il confine del wrap di mezzanotte, e
-			# l'orizzonte della cupola non c'entra niente con quel confine.
-			found = entry.get(&"in_window", false)
-			break
-	var note := ""
-	if found != expected:
-		note = "   <-- ATTESO: %s = %s" % [short, "disponibile" if expected else "non disponibile"]
-	print("   confine %s (now_min %.0f): %s = %s%s" % [
-		label, now_min, short, "disponibile" if found else "non disponibile", note])
+	i.night_index = 1
+	i.owned.assign(owned)
+	return src.sample(i)
 
 
 ## `available` deve essere ESATTAMENTE «nella finestra E sopra l'orizzonte della
@@ -552,11 +567,9 @@ func _assert_available_contains(
 ## (la gemella sta in `HonestPointing`), e due copie che divergono farebbero
 ## offrire dal planetario un soggetto che il GOTO non raggiunge.
 func _assert_horizon_mask(src: HonestCatalog, now_min: float, label: String) -> void:
-	var i := TargetingInput.new()
-	i.now_min = now_min
 	var storti := PackedStringArray()
 	var sotto := PackedStringArray()
-	for entry in src.sample(i):
+	for entry in _campione(src, now_min, [&"messier_vol1", &"messier_vol2", &"atlante_ngc_ic"]):
 		var short: String = entry.get(&"short", "?")
 		var alt: float = entry.get(&"alt", 0.0)
 		var dentro: bool = entry.get(&"in_window", false)
@@ -1001,6 +1014,9 @@ func _check_item_catalog() -> void:
 		"personal implementati")
 	_report_category(catalog, &"facilities", PackedStringArray([]),
 		"facilities implementati")
+	# I CATALOGHI (D-261): tre, e si vendono tutti, perché i loro soggetti ci sono.
+	_report_category(catalog, &"catalogs", PackedStringArray(["messier_vol1", "messier_vol2", "atlante_ngc_ic"]),
+		"catalogs implementati")
 
 	# Il filtro spento (only_implemented = false) DEVE dare di più: è la prova che il
 	# filtro non è un no-op. personal senza filtro = moka + stufetta.
@@ -2476,6 +2492,35 @@ func _check_desktop_window() -> void:
 	var entra := d.work_area().encloses(Rect2(Desktop.WORK_POS, Desktop.WORK_SIZE))
 	print("   finestra di lavoro dentro il vetro 352x264: %s%s" % [entra, "" if entra else "   <-- ATTESO: true"])
 	d.free()
+
+
+## LE VITI DEL POLARE NON GIRANO CON UN'ALTRA FINESTRA DAVANTI (D-262). Stanno su W A S D,
+## gli stessi tasti che scorrono il terminale e la BBS, e da D-262 quei due si aprono sopra
+## il polare. `Input.get_axis` il fuoco non lo vede: la fase deve chiedere se sta
+## ascoltando, e se la domanda sparisce scorrere l'elenco del terminale disallinea la
+## montatura senza che nessuno se ne accorga.
+func _check_viti_senza_fuoco() -> void:
+	print("--- viti del polare con un'altra finestra davanti (D-262) ---")
+	var fase := load("res://phases/polar/phase_polar.tscn").instantiate() as PhasePolar
+	add_child(fase)
+	var az: float = fase._truth_input.azimuth
+	Input.action_press(&"polar_az_inc")
+
+	fase.set_process_unhandled_input(false)
+	fase._turn_screws(1.0)
+	var ferme := is_equal_approx(fase._truth_input.azimuth, az)
+	print("   tasto giù, fase che non ascolta: viti ferme %s%s" % [ferme,
+			"" if ferme else "   <-- ATTESO: true"])
+
+	fase.set_process_unhandled_input(true)
+	fase._turn_screws(1.0)
+	var girano: bool = fase._truth_input.azimuth > az
+	print("   tasto giù, fase che ascolta: viti girate %s%s" % [girano,
+			"" if girano else "   <-- ATTESO: true"])
+
+	Input.action_release(&"polar_az_inc")
+	remove_child(fase)
+	fase.free()
 
 
 ## Il quaderno delle procedure (D-233): ogni pagina sta sulla carta, e ogni fase del

@@ -58,7 +58,7 @@ func _monta() -> void:
 	# dentro il cercatore — che e' precisamente la cosa che deve far capire.
 	var run2 := NightRun.new()
 	run2.elapsed_min = 150.0
-	run2.selected_target_id = &"m13"
+	run2.selected_target_id = &"m45"
 	run2.sync_done = true
 	run2.sync_point_deg = Vector2(10.0, 38.8)
 	run2.pointing_error_deg = Vector2(0.18, -0.12)

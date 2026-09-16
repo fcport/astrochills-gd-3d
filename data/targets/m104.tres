@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TargetData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/targets/target_data.gd" id="1_target"]
+
+[resource]
+script = ExtResource("1_target")
+id = &"m104"
+short = "M104"
+full = "Galassia Sombrero"
+type = &"GAL"
+diff = 2
+min_exp = 90
+ar_gradi = 189.9976
+dec_gradi = -11.6231
+catalogo = &"messier_vol1"
+desc = "Galassia lenticolare vista quasi di taglio, con un'enorme banda oscura di polveri equatoriale. È circondata da un alone di centinaia di ammassi globulari. Al suo centro pulsa un buco nero supermassiccio da un miliardo di masse solari."

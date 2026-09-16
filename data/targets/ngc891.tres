@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TargetData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/targets/target_data.gd" id="1_target"]
+
+[resource]
+script = ExtResource("1_target")
+id = &"ngc891"
+short = "NGC 891"
+full = "Galassia di Perseo"
+type = &"GAL"
+diff = 3
+min_exp = 100
+ar_gradi = 35.6392
+dec_gradi = 42.3490
+catalogo = &"atlante_ngc_ic"
+desc = "Galassia spirale vista esattamente di taglio, a 30 milioni di anni-luce. Una sottile banda oscura di polvere taglia il disco da parte a parte. Probabilmente è molto simile a come apparirebbe la Via Lattea vista dall'esterno."

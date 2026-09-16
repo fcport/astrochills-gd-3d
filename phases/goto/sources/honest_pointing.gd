@@ -16,32 +16,19 @@
 ## motivo per cui gli osservatori sincronizzano di nuovo prima di ogni soggetto, e
 ## per cui vale la pena comprare il plate solving.
 ##
-## DOVE STA L'OGGETTO: L'ANGOLO ORARIO SI RICAVA DALLA FINESTRA. I sei soggetti
-## portano la declinazione vera di catalogo ma non l'ascensione retta, perché le
-## loro finestre di visibilità non appartengono alla stessa notte e le due cose si
-## contraddirebbero (vedi `data/targets/target_data.gd`). Il modello è dichiarato
-## e sta in una riga: **il centro della finestra è il passaggio in meridiano**, e
-## ci si allontana di quindici gradi per ogni ora. Un oggetto è al meglio quando è
-## alto, la finestra dice quando è al meglio, quindi la finestra dice quando passa
-## in meridiano. È coerente con i dati che ci sono invece di aggiungerne di
-## incompatibili.
+## DOVE STA L'OGGETTO: NEL CIELO VERO DI QUELLA NOTTE (D-261). Ogni soggetto porta
+## ascensione retta e declinazione di catalogo, e l'angolo orario viene dal tempo
+## siderale di `Luna` attraverso `SkyGeometry.angolo_orario()` — la stessa chiamata
+## del planetario, così un soggetto offerto è un soggetto che il tubo raggiunge.
 class_name HonestPointing
 extends GotoTruthSource
 
-## L'ora in cui comincia la notte. Duplicata dall'orologio (`NightClock`) e
-## VERIFICATA nel banco contro `NightClock.NIGHT_START_HOUR`, esattamente come fa
-## `HonestCatalog`: `phases/` non può conoscere `night/`, e una copia che diverga
-## in silenzio collauderebbe un gioco che non esiste.
-const NIGHT_START_HOUR := 21
-
-## Minuti in un giorno, per il modulo che chiude il wrap di mezzanotte.
-const DAY_MIN := 1440
-
-## Gradi di angolo orario per ogni minuto di tempo. Il cielo gira di quindici
-## gradi all'ora, cioè un quarto di grado al minuto.
+## Gradi di angolo orario per ogni minuto di tempo: quindici gradi all'ora. Il
+## puntamento non lo usa più — l'angolo orario viene dal tempo siderale vero — ma
+## `tools/prova_slew.gd` ci misura quanto deriva il cielo mentre la montatura corre.
 const GRADI_AL_MINUTO := 0.25
 
-## I sei DSO, iniettati dal `.tres`. Gli stessi che legge il targeting: la
+## Tutti i soggetti, iniettati dal `.tres`: gli stessi che legge il targeting. La
 ## sorgente li legge, la fase no.
 @export var targets: Array[TargetData] = []
 
@@ -90,27 +77,13 @@ func _cerca(id: StringName) -> TargetData:
 	return _indice.get(id, null) as TargetData
 
 
-## "HH:MM" da orologio in minuti dall'inizio della notte. Stessa conversione di
-## `HonestCatalog`, e per lo stesso motivo: le finestre attraversano mezzanotte.
-func _notte_relativo(hhmm: String) -> float:
-	var parti := hhmm.split(":")
-	if parti.size() != 2:
-		return NAN
-	var m := int(parti[0]) * 60 + int(parti[1])
-	return float(posmod(m - NIGHT_START_HOUR * 60, DAY_MIN))
-
-
+## Dove sta il soggetto adesso: (angolo orario, declinazione), in gradi.
 func target_position(input: GotoInput) -> Vector2:
 	var t := _cerca(input.target_id)
 	if t == null:
 		return Vector2(NAN, NAN)
-	var da := _notte_relativo(t.vis_from)
-	var a := _notte_relativo(t.vis_to)
-	if is_nan(da) or is_nan(a) or a <= da:
-		return Vector2(NAN, NAN)
-	# Il centro della finestra è il meridiano: da lì, un quarto di grado al minuto.
-	var meridiano := (da + a) * 0.5
-	return Vector2((input.now_min - meridiano) * GRADI_AL_MINUTO, t.dec_gradi)
+	return Vector2(SkyGeometry.angolo_orario(t.ar_gradi, input.night_index, input.now_min),
+		t.dec_gradi)
 
 
 ## La formula sta in `SkyGeometry` e non qui: la usa anche il planetario, e

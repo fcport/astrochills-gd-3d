@@ -27,3 +27,6 @@ var encoder_deg: Vector2 = Vector2.ZERO
 var sync_done: bool = false
 var sync_point_deg: Vector2 = Vector2.ZERO
 var sync_error_deg: Vector2 = Vector2.ZERO
+
+## La notte della storia, 1..20: con l'ora dice dove sta il soggetto (D-261).
+var night_index: int = 1

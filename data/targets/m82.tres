@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TargetData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/targets/target_data.gd" id="1_target"]
+
+[resource]
+script = ExtResource("1_target")
+id = &"m82"
+short = "M82"
+full = "Galassia Sigaro"
+type = &"GAL"
+diff = 2
+min_exp = 75
+ar_gradi = 148.9685
+dec_gradi = 69.6797
+catalogo = &"messier_vol2"
+desc = "Galassia \"starburst\" con tasso di formazione stellare circa 10 volte superiore alla media. La stretta interazione gravitazionale con la vicina M81 distorce il suo disco. Dal centro emette getti di gas a 600 km/s sopra e sotto il piano galattico."

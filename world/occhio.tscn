@@ -1,0 +1,12 @@
+; L'occhio nel cielo. La scena è solo il nodo con lo script: pelle, palpebre e bulbo
+; li costruisce `occhio.gd` in `_ready`, perché le palpebre cambiano forma mentre si
+; aprono e la pupilla è un conto dello shader. Non c'è un modello da importare.
+;
+; L'ORIGINE È IL CENTRO DEL BULBO, e il nodo guarda verso -Z: `colloca()` lo mette
+; nel cielo e lo gira verso chi guarda.
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://world/occhio.gd" id="1_occhio"]
+
+[node name="Occhio" type="Node3D"]
+script = ExtResource("1_occhio")

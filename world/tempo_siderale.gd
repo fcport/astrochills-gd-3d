@@ -78,10 +78,18 @@ const GRADI_AL_MINUTO := 0.25
 ## fotogrammi di controllo che `prova_rotazione.gd` salva a un'ora di distanza.
 @export var fermo := false
 
+## LA VIA LATTEA VERA: la mappa della NASA (`tools/prendi_via_lattea.py`). Senza, lo shader
+## disegna la fascia procedurale di prima.
+const MAPPA_VIA_LATTEA := "res://assets/textures/via_lattea/via_lattea.png"
+## Quanto si vede, con la mappa: uno. Il velo procedurale stava a 0,35 perché era una
+## gaussiana a caso, e più forte si notava che era a caso.
+const VIA_LATTEA_VERA := 1.0
+
 var _mat: ShaderMaterial
 var _polo := Vector3.UP
 var _gradi := 0.0
 var _scritto := INF
+var _notte_scritta := -1
 
 
 func _ready() -> void:
@@ -103,17 +111,53 @@ func _ready() -> void:
 		push_error("[system] tempo siderale: non trovo il materiale del cielo (%s)" % ambiente)
 		return
 	_mat.set_shader_parameter("polo_celeste", _polo)
+	if ResourceLoader.exists(MAPPA_VIA_LATTEA):
+		_mat.set_shader_parameter("via_lattea_mappa", load(MAPPA_VIA_LATTEA) as Texture2D)
+		_mat.set_shader_parameter("via_lattea_vera", 1.0)
+		_mat.set_shader_parameter("via_lattea", VIA_LATTEA_VERA)
+	else:
+		push_warning("[system] cielo: manca la Via Lattea (tools/prendi_via_lattea.py): "
+			+ "resta la fascia procedurale")
 
 
 func _process(_delta: float) -> void:
 	# NIENTE NOTTE, NIENTE CIELO: prima di `Game.start_night()` non c'è un tempo da
 	# convertire, e inventarne uno vorrebbe dire un cielo che gira nel menu.
 	var minuti: float = Game.run.elapsed_min if Game.run != null else 0.0
+	var notte: int = Game.run.night_index if Game.run != null else 1
+	if _mat != null and notte != _notte_scritta:
+		_notte_scritta = notte
+		_scrivi_equatore(notte)
 	_gradi = 0.0 if fermo else minuti * GRADI_AL_MINUTO
 	if _mat == null or is_equal_approx(_gradi, _scritto):
 		return
 	_scritto = _gradi
 	_mat.set_shader_parameter("giro", deg_to_rad(_gradi))
+
+
+## GLI ASSI DELLE COORDINATE EQUATORIALI nel sistema delle stelle, per la Via Lattea.
+##
+## Il sistema delle stelle è il mondo all'inizio della notte (`giro` zero), quindi basta
+## chiedere a `Luna` — che ha il tempo siderale vero e la latitudine di Montegrimano — dove
+## stavano a quell'istante l'ascensione retta zero e quella di sei ore sull'equatore. Il
+## polo lo scrive già `_ready`. OGNI NOTTE CAMBIA: alle nove di sera il cielo di dicembre è
+## quello di novembre girato di mezz'ora.
+##
+## Quello che resta approssimato, e si dichiara: da lì in poi il cielo gira dei quindici
+## gradi l'ora tondi di questo file e non dei 15,041 veri, e a fine notte la Via Lattea sta
+## quattro decimi di grado indietro rispetto alla Luna. È meno della sua larghezza di cento
+## volte.
+func _scrivi_equatore(notte: int) -> void:
+	var jd := Luna.istante(notte, 0.0)
+	_mat.set_shader_parameter("equatore_ar0", equatoriale(0.0, 0.0, jd))
+	_mat.set_shader_parameter("equatore_ar6", equatoriale(90.0, 0.0, jd))
+
+
+## Una direzione del cielo da ascensione retta e declinazione (gradi) all'istante `jd`, in
+## coordinate del mondo.
+static func equatoriale(ar_gradi: float, dec_gradi: float, jd: float) -> Vector3:
+	var aa := Luna.alt_az(Luna.angolo_orario(ar_gradi, jd), dec_gradi)
+	return Luna.direzione(aa.x, aa.y)
 
 
 ## Di quanto il cielo ha girato da inizio notte, in gradi.

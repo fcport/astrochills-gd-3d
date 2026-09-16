@@ -106,6 +106,9 @@ const RENDER_TUNING_PATH := "res://debug/render_tuning.gd"
 const LIE_INJECTOR_PATH := "res://debug/lie_injector.gd"
 const TIME_CONTROL_PATH := "res://debug/time_control.gd"
 const PARTITE_PATH := "res://debug/partite.gd"
+const TENTACOLO_PATH := "res://debug/tentacolo.gd"
+const OCCHIO_PATH := "res://debug/occhio.gd"
+const ORRORI_PATH := "res://debug/orrori.gd"
 
 ## IL DESKTOP DEL PC. Le icone sono dati di questo file e non del desktop, che non sa
 ## cosa ci sia dietro: l'id torna indietro in `icon_activated`, e qui si decide cosa
@@ -1169,6 +1172,27 @@ func _install_debug_tools() -> void:
 	var partite: Node = (load(PARTITE_PATH) as GDScript).new()
 	partite.name = "Partite"
 	add_child(partite)
+
+	# `F5`: quello che scende dal cielo, quando ci sarà. Per adesso e' un tasto che
+	# lo fa scendere e basta — vive tutto in `debug/tentacolo.gd`, e gli serve solo
+	# sapere dentro cosa mettere il nodo.
+	var tentacolo: Node = (load(TENTACOLO_PATH) as GDScript).new()
+	tentacolo.name = "Tentacolo"
+	tentacolo.configure(_world)
+	add_child(tentacolo)
+
+	# `F6`: l'occhio che si apre nel cielo. Stessa divisione del tentacolo.
+	var occhio: Node = (load(OCCHIO_PATH) as GDScript).new()
+	occhio.name = "Occhio"
+	occhio.configure(_world)
+	add_child(occhio)
+
+	# `Ctrl+F1`…`Ctrl+F8`: gli altri orrori cosmici. Stessa divisione: vivono in
+	# `world/orrori/`, e allo strumento serve solo sapere dentro cosa metterli.
+	var orrori: Node = (load(ORRORI_PATH) as GDScript).new()
+	orrori.name = "Orrori"
+	orrori.configure(_world)
+	add_child(orrori)
 
 	var overlay := (load(DEBUG_OVERLAY_PATH) as PackedScene).instantiate()
 	overlay.configure(self, render)

@@ -106,6 +106,11 @@ func dentro() -> bool:
 	return _dentro
 
 
+## La camera dell'oculare: appesa all'asse ottico, guarda dove guarda il tubo.
+func camera() -> Camera3D:
+	return _cam
+
+
 func _ccd_montata() -> bool:
 	var ccd := CcdCamera.find_in(get_tree())
 	return ccd != null and ccd.montata()

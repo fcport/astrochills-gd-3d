@@ -52,6 +52,34 @@ quest'ordine, e ci vogliono un paio di minuti.
    dando la colpa alle ombre mentre in scena c'era una cupola sfaccettata gia'
    sostituita.
 
+6. Quello che non e' l'edificio, e non passa dal blockout:
+
+       python tools/prendi_pelle.py
+       "D:/programs/blender5/blender.exe" --background --python tools/tentacolo_blender.py
+
+   Il TENTACOLO (assets/models/tentacolo.glb) non e' una stanza e non sta nella
+   scena: lo cala `debug/tentacolo.gd` col tasto F5, e se il .glb non c'e' il tasto
+   non fa niente. Il controllo di freschezza non lo guarda - guarda i modelli
+   dell'edificio - quindi questa riga e' l'unico posto in cui sta scritto. La
+   pelle (assets/textures/pelle-polpo) va presa PRIMA: il modellatore la incorpora,
+   e senza si ferma.
+
+   L'OCCHIO NEL CIELO (tasto F6) non ha un modello: pelle, palpebre e bulbo li
+   costruisce world/occhio.gd. Gli servono solo le texture, e le scrive la stessa
+   riga qui sopra: prendi_pelle.py fa anche assets/textures/iride-polpo, con i .import
+   che accendono le mipmap. Senza, l'occhio esce bianco e lo dice nel log.
+
+       "D:/programs/blender5/blender.exe" --background --python tools/braccio_umano_blender.py
+       "D:/programs/blender5/blender.exe" --background --python tools/prendi_via_lattea.py
+
+   Il BRACCIO UMANO delle braccia all'orizzonte (Ctrl+F4) e' il braccio di un corpo
+   del bundle Human Base Meshes di Blender Studio: lo script scarica il bundle da solo
+   in tools/__modelli_cache__/ e scrive assets/models/braccio_umano.glb. Senza, il
+   tasto apre l'orrore ma le braccia non ci sono, e lo dice nel log.
+
+   La VIA LATTEA (assets/textures/via_lattea) e' la mappa della NASA: senza, il cielo
+   disegna la vecchia fascia procedurale. Con Blender perche' il file e' un OpenEXR.
+
 NON SERVE RICORDARSI QUALI PASSI RIFARE: `gen_blockout.py` confronta le date degli
 script con quelle dei .glb che producono, e l'MD5 di ogni .glb con quello che la
 scena legge davvero. Se qualcosa e' vecchio lo dice per nome, con il comando da

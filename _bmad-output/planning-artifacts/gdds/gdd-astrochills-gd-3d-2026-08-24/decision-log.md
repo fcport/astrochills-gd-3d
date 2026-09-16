@@ -8709,3 +8709,421 @@ da dove sta scritto.
 
 **Misurato:** il banco è verde, la pagina sta ancora dentro il foglio — il testo è il doppio,
 e il controllo delle pagine che sbordano è l'unico modo per saperlo senza aprire il quaderno.
+
+## D-265 Un tentacolo non è una forma, è un'onda
+
+Federico: «fai scendere dal cielo un tentacolo gigantesco che arriva fin davanti all'osservatorio
+e oscilla come si animerebbe un vero tentacolo». Chiesto per **debug**: la cosa succederà più
+avanti nella storia, e prima di allora si vuole sapere se, quando succederà, si guarda.
+
+**LA MESH E' LA PARTE FACILE.** `tools/tentacolo_blender.py` la fa: 45 m, 3,70 di diametro alla
+base, 134 ventose su due file alternate, 5.000 triangoli. La forma non è inventata — è il braccio
+di *Octopus vulgaris*: rastremazione convessa, ventose **biseriali** (quattro file sarebbero un
+calamaro), la più grande non alla base ma attorno al sesto prossimale, sezione schiacciata sulla
+faccia orale. Le ventose non sono decorazione: senza, dal prato si vede un tubo che ondeggia e
+potrebbe essere una proboscide o un cavo.
+
+**QUELLO CHE CONTA SONO LE VENTIQUATTRO OSSA** che ci stanno dentro, e le tre regole che
+`world/tentacolo.gd` applica loro. Un braccio di polpo è un idrostato muscolare, e la sua unità di
+movimento è un'**onda di curvatura che parte dalla base e corre verso la punta**:
+
+1. **l'onda viaggia**: ogni punto fa quello che ha fatto il punto sopra di lui, ma dopo. Senza
+   ritardo il braccio si piega tutto insieme, ed è una bandiera;
+2. **l'onda accelera scendendo**, perché un'onda di flessione corre più veloce dove il corpo è
+   sottile: è il principio della frusta, e dà alla punta una vita sua;
+3. **le scale contano**: un pendolo di 45 m ha un periodo naturale di dodici secondi. I tre modi
+   sovrapposti hanno periodi di 17, 7,3 e 3,9 s, con rapporti non interi apposta — una cosa
+   enorme che oscilla una volta al secondo sembra piccola e vicina.
+
+**LA PUNTA TIENE IL POSTO.** L'inviluppo delle ampiezze cresce lungo il braccio e poi cala:
+il corpo si contorce, la punta resta dov'è arrivata. Un braccio che ARRIVA da qualche parte è una
+cosa che ha deciso; uno che sbandiera dappertutto è un nastro al vento.
+
+**Due difetti trovati dalla sonda, non a occhio.** L'inviluppo crollava dell'85% in sette metri e
+l'arricciatura della punta faceva tre giri e mezzo su cinque ossa: insieme chiedevano
+**quarantaquattro gradi** di piega per giunto, e su una piega così la pelle fa la grinza e si
+contano le ossa. Ora il calo comincia a metà braccio e l'arricciatura è quattro quinti di giro:
+**8,1 gradi**, sotto il limite di 12. E la prima misura del ritardo rispondeva **−12,07 s** —
+cioè la risposta giusta letta al contrario: su un segnale con periodo 17 s un ritardo di +4,6 e
+uno di −12,4 sono la stessa cosa, e la correlazione va cercata dentro mezzo periodo.
+
+**Sta in `debug/`, non in una fase**, e con lui il tasto: `F5` lo cala, ripremuto lo ritira, e
+quando sarà un fatto della storia `world/tentacolo.tscn` resta dov'è e lo chiamerà quella.
+**Nessuna collisione**: ci si cammina dentro. Quando servirà sarà una capsula per osso, e sarà una
+decisione di quella storia.
+
+**La tavolozza sta nel suo file** e non in `modellare.COLORI`: `verifica_freschezza()` considera
+`modellare.py` una sorgente di ogni modello, e due tinte per un oggetto solo facevano risultare
+vecchi tutti e dieci i .glb dell'edificio. Il telescopio ha la sua per lo stesso motivo.
+
+**Misurato** (`tools/prova_tentacolo.tscn`, headless): le ossa seguono la curva voluta a **0,000
+gradi**; l'onda arriva in fondo con **4,70 s** di ritardo contro i 4,6 previsti dal conto;
+piega massima 8,1 gradi; la punta resta fra 1,44 e 1,56 m sopra l'erba e gira entro 1,40 m
+dall'asse; 4,69 m di distanza dall'edificio. Premuto `F5` per davvero, il tentacolo compare a
+(10,6, 15,5). `tools/scatta_tentacolo.tscn` lo fotografa dal piazzale, dalla porta e sotto la
+punta, con l'occhio adattato al buio: dal piazzale sta accanto alla cupola, e la cupola culmina a
+5,9 m — il tentacolo è sette volte e mezzo quella.
+
+## D-266 Il tentacolo viene da oltre il cielo: duecento metri, e la punta pagata dall'attacco
+
+Federico, dopo averlo visto scendere: «deve venire da ancora più in alto. Talmente in alto che
+deve venire praticamente da oltre il cielo fino a dentro la scena». A 45 m la cosa cominciava in
+aria: alzando la testa si trovava il tappo, e la discesa da 62 m era una cosa che compariva sopra
+il prato, non una cosa che entrava dall'alto.
+
+**Duecento metri, discesa da trecento in ventiquattro secondi.** Il raggio non cresce all'infinito:
+la rastremazione del polpo, lasciata andare, a duecento metri avrebbe fatto un tubo di dieci, che
+si vede benissimo e sposta il problema più in alto. Una tangente iperbolica la lascia com'era nei
+primi metri — il pezzo basso resta quello approvato, 3,46 m di diametro a 45 m dalla punta contro
+i 3,70 di prima — e la piega verso un tetto di otto.
+
+**Cento ossa da due metri**, non ventiquattro da otto: l'arricciatura vive negli ultimi nove metri,
+e con ossa da otto ci sarebbe finita dentro intera. **Anelli fitti in punta e radi in cima** (da
+35 cm a 2 m): a passo fisso ne servivano seicento.
+
+**Tutto ciò che è un fatto della punta si misura in METRI, non in frazione di braccio.** La tenuta
+(gli ultimi 20 m), l'arricciatura (gli ultimi 9), e la portata di ciascun modo (quanti metri sotto
+l'attacco arriva ad ampiezza piena). In frazione, allungando il braccio si allunga anche il
+tratto fermo, e i modi veloci si trovano ad ampiezza piena a cento metri d'altezza, dove l'onda è
+corta: **32,8 gradi** di piega per giunto. L'increspatura veloce ora vive dove il corpo è sottile,
+come in un corpo vero.
+
+**Un errore mio, tradotto male.** Convertendo l'arricciatura da «radianti sul tratto» a «radianti
+al metro» ho moltiplicato per cinque: la stessa molla che la sonda aveva già bocciato una volta.
+Un radiante in nove metri, non cinque.
+
+**LA PUNTA RESTAVA SOSPESA, e la sonda diceva che era a terra.** Le ossa non si allungano: ognuna
+prende la direzione del suo tratto di curva ma resta lunga due metri, mentre il tratto, che si
+scosta di lato, è più lungo. I centimetri persi si sommano: a 45 m erano trenta, a 200 **quattro o
+cinque metri**. Lo scatto contro l'edificio mostrava la punta sopra il tetto; la sonda la dava a
+1,80 dall'erba, perché misurava la curva voluta e confrontava le ossa per **direzione**, che era
+giusta. Adesso si cammina la catena vera, si misura di quanto la punta è rimasta indietro e di
+tanto si sposta la radice: il debito lo paga l'attacco, a duecento metri, dove non guarda nessuno.
+La sonda confronta anche le **posizioni** delle ossa: 1 mm.
+
+**Da sapere:** guardando dritto in su, con la luce forzata, la fine si trova ancora — un nodo
+piccolo verso lo zenit, dove la colonna sale e si allontana. Con la luna vera è nero su nero.
+
+**Misurato** (`tools/prova_tentacolo.tscn`): pelle lunga 200,1 m contro i 200 dello script; ossa
+sulla curva a 0,034 gradi e 0,001 m; piega massima 11,3 gradi; l'onda scende fra 50 e 20 m
+d'altezza in 3,80 s, attesi 3,8; punta fra 1,43 e 1,57 m sopra l'erba; 4,63 m dall'edificio.
+`tools/scatta_tentacolo.tscn` stampa ora la posizione della punta accanto a ogni scatto, e
+`LUNA=3.5` alza la luce per vedere cosa c'è nel buio.
+
+## D-267 Fuori non si inciampa più, e il tentacolo ha una pelle e un chilometro e mezzo
+
+Federico, tre cose insieme: «mi manca la texture del tentacolone»; «quando cammino fuori trema
+tutto, sembra che inciampi su qualcosa ogni volta, come se l'erba facesse impatto»; «vorrei che
+il tentacolo venisse da ancora più in alto, deve essere proprio incomprensibile da dove arriva.
+Possibilmente farlo ancora più grande».
+
+**IL TREMORE ERA IL MARGINE DEL CORPO, NON L'ERBA.** `tools/prova_passi_prato.tscn` fa camminare
+il giocatore davvero: 47 scossoni in 23 metri di prato mosso, fino a 2,3 m/s di salto di velocità
+verticale in un passo di fisica; sulla fascia piatta lungo la facciata, stessa maglia, zero. Il
+corpo non si staccava mai: su passi isolati scendeva di due centimetri e al passo dopo risaliva.
+È il `safe_margin` da 2 cm del giocatore — la cura degli incastri sulla ringhiera, e non si
+tocca — sommato all'aggancio al pavimento di `move_and_slide()` dove il terreno cambia pendenza.
+Provato e scartato: margine a 1 mm (scossoni zero, ma tornano gli incastri), `HeightMapShape3D`
+al posto della trimesh (46), niente fermo sulle pendenze (295), niente aggancio (60 stacchi da
+terra). **La cura: `Player._resta_a_margine()`**, sul prato e solo lì, rimette il corpo a
+margine dal suolo con un raggio dopo ogni scivolamento. Una prima stesura con `test_move` non
+funzionava: nei passi in cui serviva rispondeva «nessun urto». **Misurato:** zero scossoni
+camminando e correndo in diagonale; la ringhiera dà gli stessi numeri di prima (salita in 45
+passi, giro in 246, 0 guasti).
+
+**LA PELLE È UN POLPO VERO**: una fotografia NOAA di pubblico dominio, *Octopus cyanea* a
+Papahānaumokuākea, ritagliata sul braccio da `tools/prendi_pelle.py`. Né ambientCG né Poly Haven
+hanno una pelle di cefalopode, solo cuoio. La foto perde la sua luce (divisa per una sua copia
+sfocata), diventa ripetibile sovrapponendo i margini — la prima stesura la fondeva con se stessa
+spostata di mezzo lato, e il disegno compariva due volte nella stessa piastrella — e viene tinta
+verso il grigio livido già approvato, tenendo un terzo della saturazione. Il rilievo è la
+luminanza: le papille chiare sono in rilievo, le bande scure sono solchi. **Sul tubo la pelle
+scala col raggio**, due giri di mappa attorno alla circonferenza a qualunque altezza, come in un
+animale vero; le UV stanno sugli angoli delle facce, così la cucitura non stira la mappa.
+
+**1500 METRI, IL DOPPIO DELLO SPESSORE, E LA PELLE CHE SI DISSOLVE.** A 200 m guardando in su la
+fine si trovava ancora. Adesso la pelle si sgrana con il retinato per pixel da 350 a 1000 metri
+dalla camera: la colonna sale, si allarga e sparisce nel cielo, e la cima a 1500 m non la
+raggiunge nessuno sguardo. La discesa parte da 1800 m e dura 42 secondi: per i primi venti non
+c'è niente, poi un pezzo di tentacolo prende corpo nel cielo. Niente nebbia: il mondo non ne ha,
+e aggiungerla vorrebbe dire cambiare il cielo di tutto il gioco. **Raddoppiato lo spessore**
+(7,4 m a 45 m dalla punta, 59 in cima), e con lui le ventose, che sono una frazione del raggio.
+
+**Le ossa si allungano salendo**: 2 m in punta, 45 in cima, novanta in tutto invece di
+settecentocinquanta. Lo script le misura dal modello invece di contarle. **I modi vivono sopra
+la punta** (`exp(-d / estensione)`), non sotto l'attacco: su un chilometro e mezzo le onde corte
+ad ampiezza piena non ci stanno dentro ossa da quaranta metri. **Un quarto movimento, il
+COLOSSO**: la colonna intera che ondeggia di 25 m in 40 secondi, sopra i 150 m dalla punta.
+
+**La grinza è tornata una terza volta**, e di nuovo l'ha trovata la sonda, che ora dice anche
+dove e quando: 16,6 gradi a 27 m dalla punta al secondo 0,8, dove il calo della tenuta incontra
+l'agitazione della discesa. Tenuta allungata a 45 m e foga a 0,35: 11,4 gradi.
+
+**Il tentacolo scende 7,5 m davanti alla facciata**, non più 6: a otto metri da terra è largo
+quasi due.
+
+**Misurato** (`tools/prova_tentacolo.tscn`): F5 lo fa comparire; 90 ossa, pelle lunga 1500,3 m;
+ossa sulla curva a 0,001 gradi e 0,001 m; punta fra 1,41 e 1,64 m sopra l'erba; 5,86 m
+dall'edificio; l'onda scende dai 50 ai 20 m in 3,23 s, attesi 3,2. `tools/scatta_tentacolo.tscn`
+lo fotografa mentre prende corpo a 358 m d'altezza, dal piazzale, sotto la punta e guardando in
+su, dove la colonna si curva e si sgrana nel cielo.
+
+## D-268 Un occhio si apre nel cielo, ed è l'occhio dello stesso polpo
+
+Federico: «altro orrore cosmico da mettere, cosmic eye of horror». Come il tentacolo (D-265), è
+**debug**: `F6` lo apre, `F6` lo chiude. `world/occhio.gd` resta per la storia,
+`debug/occhio.gd` sparirà.
+
+**È L'OCCHIO DI UN POLPO**, perché la creatura è una sola. La foto NOAA da cui viene la pelle del
+tentacolo (D-267) ha l'occhio a mezzo metro dal braccio: `tools/prendi_pelle.py` ne ritaglia
+anche l'iride — cromatofori rossi su un reticolo bianco — e la rende ripetibile. Copiati da un
+occhio di cefalopode: la **pupilla a barra orizzontale**, una fessura in luce e un rettangolo
+arrotondato al buio, che si stringe in un secondo quando le palpebre si aprono sulla Luna; la
+pupilla che **resta orizzontale anche con la testa inclinata**, come la tengono le statocisti — la
+testa è girata di dieci gradi apposta, e le palpebre sono storte mentre la fessura no; **niente
+battito di palpebre**, perché sott'acqua un occhio non si asciuga: la pelle si chiude sopra e
+basta; il bulbo che sporge da un orlo di pelle. **Inventati, e dichiarati**: la grandezza, la
+comparsa, e il comportamento (cerca a caso per sette secondi, poi trova la camera e non la molla).
+
+**NON C'È UN MODELLO.** Pelle, palpebre e bulbo li costruisce lo script: le palpebre cambiano forma
+mentre si aprono, e la pupilla è un conto dello shader. Tutto è in raggi del bulbo, e la scala è
+un numero solo: 380 m di raggio a 2600 m, cioè un occhio aperto largo quattordici gradi di cielo,
+ventotto Lune piene. Sta **fuori dalla porta, 26 gradi sull'orizzonte e 30 a sinistra dell'asse**:
+sull'asse scende il tentacolo, e sopra il tetto la Luna lo prenderebbe di spalle — una sagoma senza
+iride. **Il riflesso della Luna** sul bulbo bagnato è la cosa che lo fa leggere come occhio; sta in
+emissione perché la luce della Luna in scena ha lo speculare quasi spento.
+
+**TRE CORREZIONI GUARDANDO GLI SCATTI.** Le palpebre si aprivano spostando il margine intero, e da
+vicino era una palla con un taglio: ora l'apertura la fa un arco, e le pieghe si toccano ai canti.
+La pelle attorno finiva in un cerchio retinato perfetto, un'icona: ora il bordo è deformato da
+cinque onde con fasi che scorrono col raggio (la prima prova, con due, era una stella marina), e
+sparisce scurendosi prima di sgranarsi. Una riga di puntini attraversava il cielo: l'angolo
+passato per vertice saltava da +π a −π fra due spicchi, e ora si calcola per pixel. **E una dalla
+sonda**: con la pupilla al massimo la palpebra di sotto le passava a mezzo grado.
+
+**COMPARE SUBITO**, ed è la lezione del tentacolo, che per venti secondi non si vedeva e veniva
+ritirato da chi ripremeva il tasto: il fronte della pelle parte svelto dal centro e rallenta
+allargandosi, e al secondo 2 il bulbo chiuso è già mezzo disco.
+
+**Misurato** (`tools/prova_occhio.tscn`): F6 lo apre, F6 lo chiude e il nodo se ne va; centro a
+2600 m, 26,0° d'altezza e 30,0° d'azimut, punto più lontano a 3259 m con il `far` a 4000; bulbo al
+52% dopo due secondi; asse della pupilla mai oltre 0,00000 dall'orizzontale; cercando lo sguardo
+gira di 30,9° senza uscire dai 30,2°, poi aggancia la camera in 0,8 s e la ritrova in 0,85 s
+spostata di 350 m; chiuse, la palpebra di sopra copre l'altra di 4,0°; aperta e dilatata, la
+pupilla sta 3,2° dentro le palpebre; chiuso, svanisce in 14,4 s. `tools/scatta_occhio.tscn` lo
+fotografa mentre compare, si schiude, cerca, guarda, si chiude e svanisce.
+
+## D-269 L'occhio prende mezzo cielo
+
+Federico, guardato l'occhio di D-268: «non va male, mi piacerebbe però che fosse più in alto e che
+occupasse più spazio nel cielo, molto del cielo vorrei che fosse occupato da quest'occhio».
+
+**DA 26 A 50 GRADI, DA 14 A PIÙ DI 50 GRADI DI LARGHEZZA.** L'occhio aperto è largo cento Lune
+piene, e la pelle piena copre novanta gradi di cielo prima di sgranarsi. Chi esce dalla porta e
+guarda dritto ha la palpebra di sotto sopra la testa; alzando lo sguardo di trenta gradi ha davanti
+la pupilla.
+
+**NON SI POTEVA INGRANDIRE SOLTANTO: SI È AVVICINATO.** Quello che conta in cielo è il rapporto fra
+raggio e distanza. A 2600 m, per la stessa grandezza, la pelle sarebbe arrivata a cinque chilometri
+e mezzo, oltre i quattro a cui la camera smette di disegnare, e la testa sarebbe uscita mozzata da
+un cerchio. Adesso il bulbo ha 630 m di raggio e sta a 1400 m, e il punto più lontano della pelle è a
+3266 m. Alzare il `far` della camera avrebbe cambiato la profondità di tutto il gioco per una cosa di
+debug.
+
+**INGRANDITO, SI VEDEVANO DUE COSE CHE PRIMA ERANO SOTTO IL PIXEL.** La parete dentro l'orlo, che
+sale quasi dritta verso chi guarda, prendeva la pelle proiettata da davanti schiacciata in un filo:
+tutto attorno al bulbo c'erano striature nere. Ora la mappa è srotolata lungo il profilo, la distanza
+dal centro sulla mappa è la strada fatta sulla pelle, e non si stira mai più di un quinto. E la
+piastrella di pelle è scesa da 130 a 95 metri: più grande, le piastrelle si contavano.
+
+**Misurato** (`tools/prova_occhio.tscn`, tutto a posto con le misure nuove): centro a 1400 m e 50,0°;
+bulbo al 52% dopo due secondi; pupilla sempre orizzontale; aggancia la camera in 0,8 s; pupilla
+dilatata 3,2° dentro le palpebre. `tools/scatta_occhio.tscn` ha due scatti nuovi che non guardano
+l'occhio — uscendo dalla porta e alzando appena la testa — perché inquadrato al centro un occhio sta
+sempre bene, e la domanda era quanto cielo si prende quando non lo si cerca; e uno sul canto, dove le
+palpebre si incontrano sull'orlo. Con la luce vera di stanotte, Luna bassa a 24°, si legge ancora: più
+scuro, e la pupilla quasi tutta aperta.
+
+## D-270 Otto orrori cosmici, e uno è una citazione
+
+Federico, dopo tentacolo e occhio, ha chiesto altri orrori; fra quelli proposti ha tenuto «cielo e
+oculare tutti», ha scartato quelli sottili («una costellazione sbagliata», «il forum») perché non
+avevano molto senso, e ha aggiunto «magari una citazione al colore venuto dallo spazio di
+Lovecraft». Sono **debug** come i primi due: `Ctrl+F1`…`Ctrl+F8` (`debug/orrori.gd`), e vivono in
+`world/orrori/` per quando la storia li chiamerà. Un tasto apre, lo stesso tasto manda via, e il
+nodo si libera quando se n'è andato davvero (`Orrore`, lo stesso contratto del tentacolo).
+
+**CTRL, E GLI ALTRI STRUMENTI ADESSO LO IGNORANO.** Le F nude sono prese, con `Shift` c'è la
+taratura. Tempo, tentacolo e occhio rispondevano a qualunque F senza `Shift`: `Ctrl+F1` avrebbe
+anche rimesso il tempo a uno. La sonda lo controlla per ogni tasto.
+
+**IL CIELO È UNA CUPOLA A 3900 METRI** che segue la camera: dentro il `far`, fuori dall'occhio
+(3266) e dalle braccia (3680), quindi dietro a tutto. Nubi e inchiostro si **moltiplicano** sul
+cielo — non sono oggetti neri davanti alle stelle, è il cielo che si scurisce.
+
+1. **LE NUBI CHE PASSANO**: il display «passing clouds» di *Octopus cyanea* (Mather & Mather,
+   J. Zool. 2004), lo stesso polpo di pelle e iride. Bande scure a chiazze da un orizzonte
+   all'altro. La prima prova le teneva al 93% e le stelle restavano al 70%: non si vedevano;
+   ora nel cuore della banda le stelle non ci sono.
+2. **L'INCHIOSTRO**: prima lo pseudomorfo, il grumo che tiene la forma per qualche secondo, poi la
+   nube che si allarga come un fumo, col raggio che va con la radice del tempo (Derby, Mar. Drugs
+   2014). La nube sfatta era troppo rada per vedersi: la densità non scende sotto 0,85.
+3. **LE VENTOSE CONTRO IL CIELO**: un braccio premuto come contro il vetro di un acquario, ventose
+   biseriali col passo che cresce con la larghezza, l'infundibolo chiaro coi solchi attorno al
+   foro dell'acetabolo, un'onda di attacco che corre lungo il braccio. Non è illuminato dalla
+   scena: la sua luce è un sesto dell'energia della Luna. A metà era ancora un adesivo bianco.
+4. **LE BRACCIA ALL'ORIZZONTE**: il tentacolo di F5 capovolto, cinque volte, a 2600-3100 metri, con
+   la radice sotto il bordo del prato. Il tentacolo ha tre `@export` nuovi (`dissolve`,
+   `tiene_quanto`, `sfasatura`) con i valori di prima come base: la sua sonda dà gli stessi numeri.
+5. **L'OCCHIO NELL'OCULARE**: l'occhio di F6, piccolo e a tremila metri, su un **layer visivo** che la
+   camera del giocatore non disegna. È dichiarato: il campo dell'oculare è largo dodici gradi
+   invece di mezzo (D-212), e l'ingrandimento che non ha lo fa il layer. Inquadrata, la pupilla
+   si stringe; nell'oculare appare storta perché la vista di un'equatoriale è ruotata, mentre la
+   pupilla resta orizzontale nel mondo.
+6. **LA SAGOMA NELLA POSA**: un braccio nero dentro la foto stampata, NETTO — cioè rimasto fermo per
+   tutta l'esposizione. Si disegna sulla pagina di `assets/stampe/` a ogni nascita della stampa con
+   un seme fisso, solo dentro il riquadro della foto (trovato dai pixel), e il registro delle
+   stampe si ricorda `infestata`: dopo un riavvio è ancora lì. Il tasto stampa subito e arma la
+   prossima foto rivelata.
+7. **LA MONTATURA CHE SI MUOVE DA SOLA**, comandata direttamente e NON dal bus: il software non ha dato
+   nessun comando, ed è il punto. Va verso l'occhio di F6 se c'è, altrimenti verso un punto vuoto a
+   nord a 52°, dove la Luna illumina quello che l'oculare fa vedere; poi si corregge a scatti, come
+   chi insegue un oggetto che non è una stella. Il conto da verso a coordinate orarie è esatto
+   (0,0000°); sulla montatura vera resta il cono di 0,951° del tubo storto, che è voluto.
+8. **IL COLORE VENUTO DALLO SPAZIO**: la citazione. Cade una pietra nel prato, l'erba brilla e si
+   piega senza vento, al secondo tasto la luce si ritira e schizza in cielo senza scia, e resta la
+   cenere. Il racconto è di pubblico dominio (CREDITI.md). **La prima prova era un arcobaleno**, una
+   cosa allegra: il colore adesso è uno, che non sta fermo, mezzo spento. E il bolide e la
+   colonna erano sfere di due metri a seicento: un pixel. Da terra un bolide è una palla di fuoco
+   con la scia, e il bagliore è grande quanto la luce, non quanto il sasso.
+
+**Misurato** (`tools/prova_orrori.tscn`, tutto a posto): ogni tasto apre il suo orrore nel mondo,
+nessun altro strumento risponde, e ripremuto se ne va e libera il nodo; nubi accese al 100% e
+spente; inchiostro 6,6° al terzo secondo e 42° al trentesimo; il braccio delle ventose passa a 56°
+davanti a chi l'ha chiamato; le punte delle braccia a 27,7° sull'orizzonte e dentro la cupola;
+l'occhio dell'oculare sull'asse del tubo, invisibile alla camera del giocatore, pupilla da 0,42 a
+0,18; la sagoma sul 15% della foto e su zero pixel di carta, la stampa infestata esce, il registro se
+lo ricorda, la foto rivelata consuma l'infestazione; la montatura va e torna; l'erba si accende fino
+a 8 metri, diventa grigia al 100% e torna com'era. `tools/scatta_orrori.tscn` li fotografa tutti.
+
+## D-271 Cinque orrori rifatti: si devono capire
+
+Federico ha provato gli otto orrori di D-270 e ne ha bocciati cinque, tutti per la stessa
+ragione detta in cinque modi: non si capiva cosa stava succedendo, o si capiva ed era brutto.
+La regola che ne esce vale per quelli che verranno: **un orrore che bisogna spiegare non fa
+paura**, e il dettaglio giusto per chi fa questo mestiere non basta se prima non si legge la
+cosa.
+
+1. **L'OCCHIO NELL'OCULARE** (`Ctrl+F5`): «non vedo nulla, solo dopo un SACCO di tempo è
+   comparso l'occhio, ma si capisce pochissimo». Stava in cielo lungo l'asse del tubo, quindi
+   serviva la cupola aperta e girata (minuti), la pupilla era orizzontale nel mondo e storta
+   nella vista girata di un'equatoriale, e la Luna lo prendeva di taglio. Adesso **sta alla
+   bocca del tubo**, a sessanta centimetri, sempre visibile, con la pupilla dritta
+   nell'inquadratura (`Occhio.alto`) e una luce sua che illumina solo il suo layer. E fa un
+   gesto che si legge in mezzo secondo: guarda di lato, **scatta su di te**, si stringe.
+2. **LE BRACCIA** (`Ctrl+F4`): «sarebbe bello se fossero davvero braccia». Erano il tentacolo
+   di F5 capovolto, cento volte più lungo che largo: stecchi. Adesso sono **braccia di polpo
+   vere** (`world/orrori/braccio.gd`): lunghe quattordici volte il diametro, rastremate come
+   il braccio del modello, con le ventose biseriali chiare sulla faccia orale e la **punta
+   arrotolata a spirale logaritmica**. E si muovono come si allunga un braccio di polpo: una
+   piega che corre dalla base verso la punta (Gutfreund 1996, Sumbre 2001), quindi escono da
+   dietro l'orizzonte come riccioli e si srotolano. La forma la integra la CPU, la pelle la
+   piega uno shader.
+3. **LA POSA** (`Ctrl+F6`): «un po' becero, sembra che sto tentacolo faccia fotobombing».
+   Via la sagoma. Nella stampa adesso c'è **l'osservatorio visto dall'alto**, fotografato davvero
+   da una seconda camera nel momento in cui la stampa esce — di sbieco, da lontano: dritta dall'alto
+   era un rettangolo che non era di nessuno — e sviluppato come una posa lunga,
+   con sotto la sigla del soggetto. Niente di disegnato: il mondo vero, da un punto di vista
+   dove nessuno può stare. La foto si salva in `user://stampe/` perché è di quella notte, e il
+   registro delle stampe tiene `dall_alto` al posto di `infestata`.
+4. **LA MONTATURA** (`Ctrl+F7`): «difficile che si capisca cosa sta succedendo». Un telescopio
+   che va verso il cielo sta facendo il suo lavoro. Adesso **si gira verso chi gli sta accanto e
+   lo segue**: aspetta un istante quando ti sposti, poi parte alla velocità del motore. Mentre
+   hai l'occhio all'oculare sta fermo.
+5. **IL COLORE** (`Ctrl+F8`): «realizzazione TERRIBILE». Rifatto da capo, partendo da come le
+   cose si vedono:
+   - **il bolide** è verde in testa e arancio in coda, cresce, scoppia e accende il prato, e
+     lascia la traccia persistente; è corto perché un sasso che cade vicino viene verso di te;
+   - poi **il volo buio**, e l'impatto: zolla, erba schiacciata, pietra calda con la crosta
+     di fusione;
+   - **il colore è il magenta**, e non per gusto: è l'unico colore che l'occhio vede e che
+     nello spettro non c'è, perché nessuna lunghezza d'onda da sola lo produce. «Era solo per
+     analogia che lo chiamavano un colore». Brillano le punte dei ciuffi, a macchie e non a
+     cerchio, con un bagliore che striscia; i ciuffi tremano senza vento e si tendono;
+   - se ne va come un punto che accelera, senza scia, e lascia **erba afflosciata e polvere
+     grigia per terra** (una decalcomania col bordo calcolato come quello dell'erba). La prima
+     cenere era grigio chiaro, e sotto la Luna sembrava neve.
+
+**Misurato** (`tools/prova_orrori.tscn`, tutto a posto): l'occhio dell'oculare sta a 0,60 m
+dalla camera sull'asse, guarda a 25° da te e poi a meno di un grado, pupilla da 0,42 a 0,13,
+dritta nell'inquadratura; le braccia prima di salire stanno sotto il profilo del prato, salite
+arrivano ad almeno 22° con la radice nascosta, e la punta della più distesa gira in tutto di 151°
+(dritte, com'erano gli stecchi, sotto i trenta); la foto dall'alto copre
+tutto il riquadro e nessun pixel di carta, lo sviluppo tira fuori una foto buia, il file si
+rilegge; la montatura punta chi le sta accanto, resta ferma per cinque centimetri e lo segue
+per sette metri dopo un istante, e il conto vale anche sotto l'orizzonte; il colore passa alto
+davanti, il lampo arriva a 2,4, l'erba presa non è un cerchio, e andandosene lascia la cenere
+nell'erba e per terra e restituisce il prato. `tools/scatta_orrori.tscn` li fotografa tutti.
+
+## D-272 Braccia umane, un colore che fa luce, la Via Lattea vera
+
+**16 settembre 2026.** Tre risposte a D-271.
+
+1. **LE BRACCIA** (`Ctrl+F4`): «io pensavo a braccia umane». Le braccia di polpo erano la
+   lettura sbagliata della richiesta, e l'immagine giusta è più forte: un polpo gigante è un
+   mostro, una mano umana alta un chilometro è una cosa che non dovrebbe esistere.
+   - **La forma non si inventa**: è il braccio destro di "Body Male - Realistic" dal bundle
+     Human Base Meshes di Blender Studio (CC0), estratto e armato da
+     `tools/braccio_umano_blender.py`.
+   - **Le giunture le dice il modello**: chi l'ha scolpito ha diviso la pelle in face set,
+     uno per segmento e per falange, e il centro del confine fra due set è il perno. Lo
+     scheletro anatomico dello stesso bundle era la prima idea, ma è di un'altra persona in
+     un'altra posa: sovrapposto usciva di quattro centimetri. L'unica correzione è la nocca,
+     che sta dietro la plica interdigitale.
+   - **Si muove come una mano**: esce con le dita, si apre uscendo, poi si chiude e si
+     riapre. Le dita partono dal mignolo, la distale segue due terzi della prossimale
+     (Rijpkema e Girard 1991), aperta fa il ventaglio, il polso si piega all'indietro e in
+     avanti. Tornando giù si chiude.
+   - **Destre a destra e sinistre a sinistra**: un gomito si piega dalla parte del pollice, e
+     nella prima disposizione due braccia si incrociavano.
+   - **La mano aperta va sotto zero**: il corpo è scolpito con le dita rilassate, e a zero
+     restava un artiglio.
+2. **IL COLORE** (`Ctrl+F8`): «da migliorare molto». I passi erano giusti, la luce no: una
+   chiazza di nove metri, fioca come una tinta, che non illuminava niente e se ne andava come
+   una pallina.
+   - **Il colore si prende il prato** (fino a venti metri, e arriva alla porta) e brilla
+     sopra l'unità.
+   - **La luce arriva sul muro e sull'osservatorio.** L'aria sopra l'erba si accende con un
+     `FogVolume`.
+   - **Esce in una colonna che si versa nel cielo**, accende il paesaggio di quel colore e si
+     stacca da terra come un razzo: «non brillava più: si versava fuori».
+   - **L'ambiente si tocca finché l'orrore c'è.** Per bagliore e foschia l'orrore accende il
+     bloom e la nebbia volumetrica, con densità zero così la sola nebbia è la sua, e alla fine
+     li rimette com'erano; la sonda lo verifica.
+   - **Niente pause nel momento che conta.** La cenere si calcola quando si preme il tasto e
+     non alla partenza della colonna, che fermava per un attimo.
+   - **La cenere è polvere e non ghiaia**, e ricade in fiocchi.
+3. **LA VIA LATTEA**: «una cosa che manca molto nel cielo». C'era un velo procedurale su un
+   piano galattico scelto a caso, al 35%: non si vedeva, e dove si vedeva era nel posto
+   sbagliato.
+   - **È la mappa della NASA** (Deep Star Maps 2020, strato «milkyway»: il chiarore delle
+     stelle di Gaia, senza quelle brillanti), orientata col tempo siderale vero dell'inizio di
+     ogni notte da `TempoSiderale` e `Luna`.
+   - **Grigia come a occhio nudo** (i bastoncelli non vedono i colori), si spegne verso
+     l'orizzonte e sparisce col chiaro di luna.
+   - **Le stelle restano procedurali**: la mappa porta solo il chiarore.
+   - **Il mondo del gioco è specchiato** (+X est, +Z nord, già dichiarato in
+     `Luna.chiralita()`), e si è scelto di tenere le POSIZIONI vere: il Cigno sta dove sta
+     davvero, in accordo con Luna, pianeti e telescopio, ma la sua forma sullo schermo è allo
+     specchio come tutto il resto del cielo. Raddrizzare la forma avrebbe spostato ogni nube
+     dall'altra parte del meridiano.
+
+**Misurato.** `tools/prova_orrori.tscn` è tutto a posto.
+- *Braccia.* Prima di salire le punte stanno a −21°, salite le cime ad almeno 25° con la
+  spalla a −11°. Le dita chiuse vanno sul palmo (coseno da −0,03 a +0,87) e il ventaglio passa
+  da 61° a 17°.
+- *Colore.* Dopo trenta secondi il colore arriva a 17 m e la luce del prato a 37 m. La colonna
+  arriva a 1800 m, e l'ambiente torna identico.
+
+`tools/scatta_via_lattea.tscn` rilegge Deneb e Capella alle loro coordinate esatte prima di
+fotografare.

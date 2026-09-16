@@ -96,6 +96,10 @@ static var sprint_speed := 4.5
 ## controllo immediato senza far sembrare il giocatore su una pista di ghiaccio.
 const ACCELERATION := 12.0
 
+## Di quanto `_resta_a_margine()` può spostare il corpo in un passo, in metri. La
+## sega che toglie è alta quanto il `safe_margin`, due centimetri: oltre, non è lei.
+const RESTA_A_MARGINE_MAX := 0.03
+
 ## Radianti di rotazione per pixel del viewport del mondo.
 ##
 ## Del VIEWPORT, non della finestra: `WorldViewport` è un `SubViewportContainer`
@@ -581,6 +585,7 @@ func _physics_process(delta: float) -> void:
 	velocity.z = move_toward(velocity.z, target.z, ACCELERATION * delta)
 
 	move_and_slide()
+	_resta_a_margine()
 	_spingi_cio_che_urto()
 	_aggiorna_mira()
 	# LA MANO SI PUNTA DOPO `move_and_slide()`, cioè dopo che il corpo è dove sarà
@@ -590,6 +595,59 @@ func _physics_process(delta: float) -> void:
 	if _in_mano != null:
 		_in_mano.punta(_trasformata_mano(), _cam.global_transform)
 	_aggiorna_carica(delta)
+
+
+## Tiene il corpo SEMPRE alla stessa distanza dal pavimento: il suo `safe_margin`.
+##
+## CAMMINANDO FUORI TREMAVA TUTTO. Federico: «sembra che inciampi su qualcosa ogni
+## volta, è un po' come se l'erba facesse impatto». Misurato con
+## `tools/prova_passi_prato.gd`: 47 scossoni in 23 metri di prato — uno a ogni
+## spigolo dei triangoli da un metro del terreno — fino a 2,3 m/s di salto di
+## velocità verticale in un solo passo di fisica. Sulla fascia piatta lungo la
+## facciata, stessa maglia a quota zero: nessuno.
+##
+## COS'E'. Il corpo si tiene due centimetri staccato dalle superfici
+## (`safe_margin`, e quei due centimetri sono la cura degli inciampi sui giunti dei
+## muri: vedi `player.tscn`). Dove il terreno cambia pendenza l'aggancio al
+## pavimento di `move_and_slide()` lo porta A CONTATTO, e al passo dopo il recupero
+## lo rispinge fuori di due centimetri: una sega da zero a due centimetri, quindi
+## una camera che salta di un metro al secondo avanti e indietro. Sul piatto
+## l'aggancio non scatta e il corpo resta fermo a due centimetri, ed è per questo
+## che dentro non si sentiva. Il margine non è la colpa da sola — a un millimetro
+## gli scossoni spariscono, ma ritornano gli incastri sulla ringhiera — e non lo è
+## la forma del terreno: con una `HeightMapShape3D` al posto della trimesh gli
+## scossoni erano 46.
+##
+## LA CURA: dopo lo scivolamento, se si sta a terra SUL PRATO, si guarda con un
+## raggio dov'è l'erba sotto i piedi e si rimette il corpo esattamente a margine. È
+## la distanza a cui il motore stesso lo tiene sul piatto, quindi non si inventa
+## niente: si rende costante una distanza che il motore rendeva costante solo dove
+## il terreno è piano.
+##
+## UN RAGGIO E NON `test_move`, e la prima stesura usava `test_move`: nei passi in
+## cui il corpo era sceso a contatto — cioè gli unici in cui serviva — la prova
+## verso il basso a margine zero rispondeva «nessun urto», e la correzione non
+## scattava mai. Quarantacinque scossoni con la cura, quarantasette senza.
+##
+## SOLO SUL PRATO, e con un tetto di tre centimetri. Dentro la casa il difetto non
+## c'è, e un raggio dal centro della capsula su un gradino o su una soglia trova il
+## piano sbagliato: tirare giù il corpo lì vorrebbe dire staccarlo dallo spigolo su
+## cui poggia davvero. Il tetto è la stessa ragione detta in metri — la sega da
+## correggere è alta due centimetri, qualunque salto più grande è un'altra cosa.
+func _resta_a_margine() -> void:
+	if not is_on_floor() or velocity.y > 0.0:
+		return
+	var spazio := get_world_3d().direct_space_state
+	var domanda := PhysicsRayQueryParameters3D.create(
+		global_position + Vector3.UP * 0.3, global_position + Vector3.DOWN * 0.1)
+	domanda.collision_mask = collision_mask
+	domanda.exclude = [get_rid()]
+	var colpo := spazio.intersect_ray(domanda)
+	if colpo.is_empty() or not (colpo["collider"] is Prato):
+		return
+	var voluta: float = (colpo["position"] as Vector3).y + safe_margin
+	if absf(voluta - global_position.y) < RESTA_A_MARGINE_MAX:
+		global_position.y = voluta
 
 
 ## Porta capsula e occhio verso l'altezza voluta. `t` è quanto avvicinarsi in

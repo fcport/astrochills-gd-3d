@@ -1,0 +1,17 @@
+; Il tentacolo: il modello con lo scheletro dentro, e lo script che lo piega.
+;
+; NON HA COLLISIONE, ed è una scelta dichiarata in `tentacolo.gd`: è una cosa da
+; guardare, non contro cui sbattere. Ci si cammina dentro.
+;
+; L'ORIGINE DEL MODELLO STA IN CIMA, non alla base: questa cosa pende. Il nodo si
+; colloca nel punto di CIELO da cui scende, e `posa_sul_prato()` calcola quella
+; quota dalla pianta e dal franco che deve restare sotto la punta.
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://world/tentacolo.gd" id="1_tent"]
+[ext_resource type="PackedScene" path="res://assets/models/tentacolo.glb" id="2_modello"]
+
+[node name="Tentacolo" type="Node3D"]
+script = ExtResource("1_tent")
+
+[node name="Modello" parent="." instance=ExtResource("2_modello")]

@@ -1,4 +1,4 @@
-// IL CIELO DI UNA NOTTE DI LAVORO: stelle, un accenno di Via Lattea e il fondo.
+// IL CIELO DI UNA NOTTE DI LAVORO: stelle, la Via Lattea e il fondo.
 //
 // PERCHE' ESISTE. Fino a ieri il fondo della scena era un colore piatto quasi nero
 // (`background_mode = 1`): dalla vetrata della sala di controllo e dalla fenditura
@@ -58,7 +58,8 @@ uniform float raggio_stella : hint_range(0.05, 0.5) = 0.26;
 // La scala generale della luminosita' stellare.
 uniform float luminosita : hint_range(0.0, 8.0) = 1.0;
 
-// La Via Lattea: un velo, non una fascia da poster.
+// Quanto si vede la Via Lattea. Con la mappa vera (sotto) uno e' il cielo di un monte
+// dell'entroterra senza Luna; senza, e' il velo procedurale di prima.
 uniform float via_lattea : hint_range(0.0, 1.0) = 0.35;
 
 // QUANTO SI ALLARGA UNA STELLA PER STARE DENTRO UN PIXEL. Uno e' la correzione
@@ -79,6 +80,34 @@ uniform float antialias : hint_range(0.0, 1.0) = 1.0;
 // loro. Il valore non e' cambiato, quindi a inizio notte la fascia sta dove stava:
 // e' l'unico istante in cui il vecchio significato e il nuovo coincidono.
 uniform vec3 polo_galattico = vec3(0.42, 0.78, -0.46);
+
+// --- LA VIA LATTEA VERA ------------------------------------------------------
+//
+// LA MAPPA DELLA NASA (`tools/prendi_via_lattea.py`): il chiarore delle stelle di Gaia
+// troppo deboli per vederle una a una, in ascensione retta e declinazione J2000,
+// proiezione cilindrica con l'ascensione retta zero al centro che cresce verso sinistra.
+// Scritta come RADICE, quindi si rimette al quadrato. Senza file `via_lattea_vera` resta a
+// zero e si disegna la fascia procedurale di prima, che almeno non e' un buco.
+//
+// E' LA SOLA COSA DI QUESTO CIELO, CON LUNA E PIANETI, CHE STA DOVE STA DAVVERO. Le stelle
+// restano un campo plausibile; la Via Lattea invece si riconosce - d'autunno alle nove di
+// sera attraversa lo zenit da ovest a est, col Cigno che tramonta e l'Auriga che sorge - e
+// messa a caso sarebbe sbagliata per chiunque abbia alzato gli occhi una volta.
+uniform sampler2D via_lattea_mappa : hint_default_black, filter_linear_mipmap, repeat_enable;
+uniform float via_lattea_vera = 0.0;
+
+// DOVE STANNO L'ASCENSIONE RETTA ZERO E QUELLA DI SEI ORE, sull'equatore celeste, nel
+// sistema DELLE STELLE (`fisso`): con il polo celeste sono i tre assi delle coordinate
+// equatoriali. Li scrive `world/tempo_siderale.gd` dal tempo siderale vero dell'inizio
+// della notte, che e' l'istante in cui `fisso` coincide col mondo. Due direzioni e non un
+// angolo, per la stessa ragione del polo: nessuna convenzione da rispettare qui dentro.
+uniform vec3 equatore_ar0 = vec3(1.0, 0.0, 0.0);
+uniform vec3 equatore_ar6 = vec3(0.0, 0.0, -1.0);
+
+// Il chiarore uniforme delle stelle deboli lontano dal piano della Galassia, in frazione
+// del nucleo: esiste, ma nel cielo di una notte vera sta sotto la luce dell'aria, che e'
+// gia' il fondo. Si toglie, e resta la fascia.
+uniform float via_lattea_soglia = 0.02;
 
 // L'ASSE ATTORNO A CUI GIRA TUTTO IL CIELO: il polo celeste nord, in coordinate del
 // mondo. La sua ALTEZZA SULL'ORIZZONTE VALE LA LATITUDINE - 43,9 gradi, Montegrimano
@@ -275,6 +304,24 @@ float rumore(vec3 p) {
 		}
 	}
 	return n;
+}
+
+
+// LA VIA LATTEA VERA in una direzione del sistema delle stelle: luce lineare, uno al nucleo.
+//
+// IL LIVELLO DI MIPMAP SI SCEGLIE A MANO, dal cielo che sta in un pixel, e non dalle
+// derivate della coordinata: sulla cucitura dell'ascensione retta la u salta da uno a zero
+// fra due pixel vicini, e la scelta automatica prenderebbe l'ultima mipmap per quella
+// colonna, che e' una riga grigia dal polo all'orizzonte.
+vec3 via_lattea_vista(vec3 fisso, float pixel) {
+	vec3 n = normalize(polo_celeste);
+	float ar = atan(dot(fisso, equatore_ar6), dot(fisso, equatore_ar0));
+	float dec = asin(clamp(dot(fisso, n), -1.0, 1.0));
+	vec2 uv = vec2(fract(0.5 - ar / TAU), clamp(0.5 - dec / PI, 0.0, 1.0));
+	float texel = TAU / float(textureSize(via_lattea_mappa, 0).x);
+	float lod = max(0.0, log2(max(pixel, 1e-6) / texel));
+	vec3 e = textureLod(via_lattea_mappa, uv, lod).rgb;
+	return max(e * e - vec3(via_lattea_soglia), vec3(0.0));
 }
 
 
@@ -533,18 +580,33 @@ void sky() {
 	float su = clamp(dir.y, 0.0, 1.0);
 	vec3 fondo = mix(orizzonte, zenit, pow(su, 1.0 / caduta_orizzonte));
 
-	// La Via Lattea: la distanza angolare dal piano galattico, screziata.
-	float dal_piano = abs(dot(fisso, normalize(polo_galattico)));
-	float fascia = exp(-dal_piano * dal_piano * 26.0);
-	fascia *= 0.45 + 0.55 * rumore(fisso * 9.0);
-	fondo += vec3(0.85, 0.88, 1.00) * fascia * via_lattea * 0.010;
-
 	// QUANTO CIELO STA IN UN PIXEL, in radianti. Si misura invece di dichiararlo:
 	// dipende dalla risoluzione e dal campo visivo, e una costante scritta qui
 	// sarebbe giusta su un solo schermo. `dFdx` e `dFdy` dicono di quanto cambia la
 	// direzione di vista fra questo pixel e il suo vicino, che e' esattamente la
 	// domanda.
 	float pixel = 0.5 * (length(dFdx(dir)) + length(dFdy(dir)));
+
+	if (via_lattea_vera > 0.5) {
+		// LA VIA LATTEA A OCCHIO NUDO E' GRIGIA. La mappa ha i colori di una fotografia -
+		// le nubi di polvere brune, il nucleo dorato - ma una luce cosi' debole l'occhio la
+		// vede coi bastoncelli, che i colori non li distinguono: se ne tiene un filo.
+		vec3 vl = via_lattea_vista(fisso, pixel);
+		float grigio = dot(vl, vec3(0.2126, 0.7152, 0.0722));
+		vl = mix(vec3(grigio) * vec3(0.92, 0.96, 1.05), vl, 0.2);
+		// COME LE STELLE, si spegne guardando basso - l'aria - e sotto la Luna, di piu':
+		// una luce diffusa cosi' debole e' la prima cosa che il chiaro di luna si mangia,
+		// e con la luna piena la Via Lattea non c'e' piu'.
+		vl *= smoothstep(-0.02, 0.35, dir.y);
+		vl *= mix(1.0, 0.08, clamp(luna_chiarore, 0.0, 1.0));
+		fondo += vl * via_lattea * 0.065;
+	} else {
+		// La fascia procedurale: la distanza angolare dal piano galattico, screziata.
+		float dal_piano = abs(dot(fisso, normalize(polo_galattico)));
+		float fascia = exp(-dal_piano * dal_piano * 26.0);
+		fascia *= 0.45 + 0.55 * rumore(fisso * 9.0);
+		fondo += vec3(0.85, 0.88, 1.00) * fascia * via_lattea * 0.010;
+	}
 
 	vec3 stelle = strato(fisso, scala_a, densita_a, pixel)
 			+ strato(fisso, scala_b, densita_b, pixel);

@@ -27,6 +27,14 @@ Il modello arriva col treppiede da campagna e senza gerarchia; qui viene montato
 pilastro e riarticolato sui due assi equatoriali da `tools/telescopio_blender.py`. La
 licenza permette le modifiche e l'uso commerciale, a patto del credito qui sopra.
 
+**Human Base Meshes** (v1.4.1) — il braccio umano delle braccia all'orizzonte (`Ctrl+F4`).
+Autore: Blender Studio.
+Fonte: <https://www.blender.org/download/demo-files/#assets>
+Licenza: [CC0](https://creativecommons.org/publicdomain/zero/1.0/) — nessuna attribuzione richiesta.
+
+Lo scarica `tools/braccio_umano_blender.py`, che dal corpo "Body Male - Realistic" taglia il
+braccio destro alla spalla e lo arma con le giunture prese dai face set del modello.
+
 **Lavabo** — il lavabo a semicolonna del bagno.
 Autore: [Antonio Rossin](https://sketchfab.com/antoniorossin).
 Fonte: <https://sketchfab.com/3d-models/33cbd0ac6ae24bd292783a4e06fc4138>
@@ -276,6 +284,30 @@ Licenza: pubblico dominio (NASA), con la richiesta di citare la fonte.
 Le scarica `tools/prendi_luna.py`; la mappa del rilievo è ricavata dalle quote LOLA, senza
 esagerazione.
 
+**Deep Star Maps 2020** — la Via Lattea nel cielo (`assets/textures/via_lattea`).
+Autori: NASA/Goddard Space Flight Center Scientific Visualization Studio (visualizzazione di
+Ernie Wright, USRA), dai cataloghi Hipparcos-2, Tycho-2 e Gaia DR2.
+Fonte: <https://svs.gsfc.nasa.gov/4851/> — lo strato «milkyway», senza le stelle brillanti.
+Licenza: NASA, con la richiesta di citare la fonte come sotto.
+
+> NASA/Goddard Space Flight Center Scientific Visualization Studio. Gaia DR2: ESA/Gaia/DPAC.
+
+La scarica `tools/prendi_via_lattea.py`, che la dimezza, la sfuma di un texel e ne scrive la
+radice.
+
+**PMNM - He'e Octopus** — la pelle del tentacolo (`assets/textures/pelle-polpo`) e l'iride
+dell'occhio nel cielo (`assets/textures/iride-polpo`).
+Autore: Greg McFall/NOAA, Papahānaumokuākea Marine National Monument (Gardner Pinnacles,
+18 settembre 2011): un polpo diurno, *Octopus cyanea*.
+Fonte: <https://commons.wikimedia.org/wiki/File:PMNM_-_He%27e_Octopus_(27551309582).jpg>
+Licenza: pubblico dominio (NOAA, governo federale degli Stati Uniti).
+
+> Octopus skin texture from a photograph by Greg McFall/NOAA, Papahānaumokuākea Marine National Monument.
+
+La scarica `tools/prendi_pelle.py`, che ne ritaglia un quadrato di sola pelle, toglie la luce
+della foto, la rende ripetibile e la tinge verso il grigio livido del tentacolo; e dall'occhio
+dello stesso polpo ritaglia un quadrato d'iride, sotto la pupilla.
+
 ## Effemeridi
 
 **Keplerian Elements for Approximate Positions of the Major Planets** — le orbite dei
@@ -288,3 +320,11 @@ Sono i sei elementi orbitali di ciascun pianeta e le loro derive per secolo, ada
 minimi quadrati sulle effemeridi DE405 per l'intervallo 1800-2050. Non è un file scaricato:
 la tabella sta in chiaro dentro `core/pianeti.gd`, che è il posto giusto per trenta numeri
 che non cambieranno mai e senza i quali quel file non calcola niente.
+
+## Citazioni
+
+**The Colour Out of Space** — H. P. Lovecraft, pubblicato su *Amazing Stories* nel 1927.
+L'orrore di `Ctrl+F8` (`world/orrori/colore.gd`) ne è una citazione dichiarata: la pietra
+che cade, l'erba che brilla di notte e si muove senza vento, il colore che risale al cielo,
+la cenere grigia. Due frasi del racconto, tradotte, stanno nella testata di quel file.
+Licenza: pubblico dominio (pubblicato negli Stati Uniti nel 1927; l'autore è morto nel 1937).

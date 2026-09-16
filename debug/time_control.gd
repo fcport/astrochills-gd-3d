@@ -58,7 +58,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not (event is InputEventKey):
 		return
 	var key := event as InputEventKey
-	if not key.pressed or key.echo or key.shift_pressed:
+	# CON CTRL SONO GLI ORRORI (`debug/orrori.gd`), non il tempo
+	if not key.pressed or key.echo or key.shift_pressed or key.ctrl_pressed:
 		return
 	if not STEPS.has(key.keycode):
 		return

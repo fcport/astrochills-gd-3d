@@ -30,6 +30,9 @@ tuning_override.cfg
 # zip di ambientCG scaricati da tools/prendi_texture.py: si rifanno da soli
 tools/__texture_cache__/
 
+# il bundle Human Base Meshes scaricato da tools/braccio_umano_blender.py (50 MB)
+tools/__modelli_cache__/
+
 # --- prodotti rigenerabili: modelli e texture ---
 # I .glb pesano settanta megabyte perche' incorporano le texture, e li rifa' uno
 # script che sta qui dentro: committarli vuol dire aggiungere settanta megabyte

@@ -84,6 +84,12 @@ var livello := 1
 var notte := 0
 var foto := 0
 
+## SE AL POSTO DELLA FOTO C'È L'OSSERVATORIO VISTO DALL'ALTO (`world/orrori/dall_alto.gd`):
+## dove sta l'immagine, in `user://`. È un fatto della stampa e non della pagina: la pagina
+## di `assets/stampe/` è la stessa per tutti, la foto dall'alto è di quella notte. Lo tiene
+## il registro, come il muro a cui è appesa. Vuota, la stampa è quella di sempre.
+var dall_alto := ""
+
 var stato: Stato = Stato.LIBERA
 
 ## Dove torna una stampa staccata dal muro o strappata dalla stampante: la radice del
@@ -97,7 +103,8 @@ var _col: CollisionShape3D
 
 ## Una stampa della foto, o `null` se di quel soggetto a quel livello non c'è la pagina.
 ## Nasce fuori dall'albero: chi la chiede la mette dove deve stare.
-static func crea(soggetto: StringName, livello_foto: int, notte_foto: int, id_foto: int) -> Stampa:
+static func crea(soggetto: StringName, livello_foto: int, notte_foto: int, id_foto: int,
+		foto_dall_alto := "") -> Stampa:
 	if not ResourceLoader.exists(PAGINA % [soggetto, livello_foto]):
 		return null
 	var s := Stampa.new()
@@ -105,6 +112,7 @@ static func crea(soggetto: StringName, livello_foto: int, notte_foto: int, id_fo
 	s.livello = livello_foto
 	s.notte = notte_foto
 	s.foto = id_foto
+	s.dall_alto = foto_dall_alto
 	s.name = "Stampa_%s" % soggetto
 	return s
 
@@ -112,7 +120,13 @@ static func crea(soggetto: StringName, livello_foto: int, notte_foto: int, id_fo
 func _ready() -> void:
 	mass = MASSA
 	nome = "la stampa di %s" % _sigla()
-	_davanti = _faccia(load(PAGINA % [target_id, livello]) as Texture2D, false)
+	var pagina := load(PAGINA % [target_id, livello]) as Texture2D
+	if dall_alto != "" and pagina != null:
+		# se il file non c'è più, la stampa esce com'era: meglio M51 che un foglio bianco
+		var vista := VistaDallAlto.carica(dall_alto)
+		if vista != null:
+			pagina = ImageTexture.create_from_image(VistaDallAlto.componi(pagina.get_image(), vista))
+	_davanti = _faccia(pagina, false)
 	_dietro = _faccia(load(RETRO) as Texture2D, true)
 	_col = CollisionShape3D.new()
 	_col.name = "Col"
@@ -358,6 +372,8 @@ func ricordo(radice: Node) -> Dictionary:
 		&"target": target_id, &"livello": livello, &"notte": notte, &"foto": foto,
 		&"appesa": stato == Stato.APPESA, &"xf": global_transform,
 	}
+	if dall_alto != "":
+		r[&"dall_alto"] = dall_alto
 	if stato == Stato.APPESA and get_parent() != null and radice != null:
 		r[&"su"] = String(radice.get_path_to(get_parent()))
 		r[&"xf_su"] = transform

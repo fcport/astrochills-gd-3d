@@ -210,6 +210,16 @@ const RIPESCAGGIO := [0.15, 0.25, 0.35, 0.50, 0.65, 0.80, 1.00]
 ## arrendeva a meta' ripescaggio.
 const RIPESCAGGI_MAX := 6
 
+## ENTRO QUANTI METRI UNA COSA CHE TREMA È FERMA.
+##
+## IL FATTO CHE L'HA RESA NECESSARIA. La camera CCD lasciata sopra il pozzo del pilastro
+## finiva sul pieno che lo tappa, a filo della passerella, e ci restava a vibrare: 8,7
+## centimetri al secondo di velocità, due millimetri di spostamento, per tredici secondi.
+## La rete giudicava ferma una cosa dalla velocità, e quella non lo era mai: non la
+## guardava, e da lì non ci si arrivava. Girata la montatura verso il nord vero (D-276),
+## `prova_ccd.gd` ci perdeva tre pose su quattordici; prima una.
+const FERMA_ENTRO := 0.03
+
 ## QUANTO DEV'ESSERE GRANDE IL PAVIMENTO ATTORNO A UN POSTO perché sia un posto e
 ## non un'ISOLA, in metri quadri.
 ##
@@ -258,6 +268,9 @@ var _quieta_da := 0.0
 var _gia_guardata := false
 ## Dov'era quando la rete l'ha guardata: se striscia via, la si riguarda.
 var _dove_guardata := Vector3.ZERO
+## Da dove ha cominciato a stare ferma: FERMA VUOL DIRE CHE NON SE NE VA, non che la sua
+## velocità è zero. Vedi `FERMA_ENTRO`.
+var _ferma_qui := Vector3.INF
 
 ## Quante volte la rete l'ha gia' spostata da quando e' stata lasciata. Serve a
 ## non fare la spola: nelle fessure peggiori il posto buono piu' vicino e' esso
@@ -645,7 +658,13 @@ func _physics_process(delta: float) -> void:
 	if _in_volo and (get_contact_count() > 0 or _fuori_dalla_rete()):
 		_in_volo = false
 		angular_damp = SMORZAMENTO_GIRO
-	var in_moto := _fuori_dalla_rete() or linear_velocity.length() > 0.05
+	# SI MUOVE SE SE NE VA, non se trema: esce da `FERMA_ENTRO` attorno a dove si era
+	# fermata. Per restare dentro tre centimetri per `QUIETE` secondi bisogna andare più
+	# piano di cinque centimetri al secondo, che era la soglia di velocità di prima.
+	var se_ne_va := _ferma_qui == Vector3.INF or global_position.distance_to(_ferma_qui) > FERMA_ENTRO
+	if se_ne_va:
+		_ferma_qui = global_position
+	var in_moto := _fuori_dalla_rete() or se_ne_va
 	if in_moto:
 		_mosso = true
 	if si_puo_perdere or in_moto:
@@ -657,7 +676,7 @@ func _physics_process(delta: float) -> void:
 			_ripescaggi = 0
 		return
 	# E SI RIGUARDA SE NEL FRATTEMPO E' STRISCIATA VIA. «Ferma» qui vuol dire
-	# sotto i cinque centimetri al secondo, e una cosa che striscia a quattro
+	# meno di cinque centimetri al secondo, e una cosa che striscia a quattro
 	# centimetri al secondo per due secondi se ne va di otto: abbastanza da
 	# passare dal calpestio al fondo del pozzo. Guardata una volta sola, la rete
 	# rispondeva sulla posizione di prima. Misurato: due pose su dieci in

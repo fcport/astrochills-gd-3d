@@ -19,12 +19,13 @@
 ## finisce.
 ##
 ## COSA SUCCEDE, IN QUEST'ORDINE:
-##   1. IL BOLIDE, davanti a chi guarda: una testa verdastra con la scia arancio, corta perché
-##      viene verso di te, che cresce e scoppia in un lampo che accende il prato; dopo, per
-##      qualche secondo, resta la traccia. (`world/shaders/orrore_bolide.gdshader`)
-##   2. IL VOLO BUIO: un sasso che ha smesso di bruciare cade per qualche secondo senza luce.
-##      Poi colpisce il prato, a una dozzina di metri dalla porta: una zolla di terra per
-##      aria, l'erba schiacciata, la pietra mezza sepolta e calda.
+##   1. LA PIETRA ARRIVA, ed è la stessa dal primo istante all'ultimo. Un punto di luce alto
+##      davanti a chi guarda, a cinque chilometri, che cresce: viene verso di te. Accende il
+##      paesaggio e fa girare le ombre degli alberi, lascia dietro una scia di fumo, e negli
+##      ultimi secondi la si vede scendere sopra il prato. (`world/shaders/orrore_scia.gdshader`)
+##   2. L'IMPATTO, a una dozzina di metri dalla porta: un lampo, il terreno che trema, zolle e
+##      terra per aria, un polverone, e un cratere bruciato col bordo di terra smossa. Dentro,
+##      mezza sepolta, la meteorite incandescente che fuma, e si raffredda.
 ##   3. IL COLORE. Raffreddandosi, nelle crepe e nei globuli della pietra compare il colore; e
 ##      il colore entra nell'erba, a macchie, allargandosi fino a prendersi il prato. Brillano
 ##      i fili, il bagliore striscia fra un ciuffo e l'altro, i ciuffi tremano senza vento;
@@ -45,12 +46,20 @@
 ## e la nebbia volumetrica dell'ambiente — con densità zero, così la sola nebbia è la sua — e
 ## alla fine li rimette come li ha trovati.
 ##
+## LA TERZA STESURA HA RIFATTO L'ARRIVO. Il bolide era un segno dipinto sul cielo, poi il
+## buio, e poi un sasso compariva nel prato: «la parte del meteorite è semplicemente idiotica,
+## poi compare così magicamente sto sasso». Adesso non c'è niente di dipinto sul cielo: quello
+## che vola è la pietra, nel mondo, e quello che resta nel prato è quella pietra. Ed è una
+## meteorite VERA, GRO 17102,0, scansionata dalla NASA (`tools/meteorite_blender.py`) — la
+## sfera deformata di prima era «una merda».
+##
 ## NIENTE SUONO, e non per dimenticanza: il progetto non tiene suoni sintetizzati, e il
 ## tonfo di una pietra non si inventa.
 class_name OrroreColore
 extends Orrore
 
-const SHADER_BOLIDE := "res://world/shaders/orrore_bolide.gdshader"
+const SHADER_SCIA := "res://world/shaders/orrore_scia.gdshader"
+const METEORITE := "res://assets/models/meteorite.glb"
 const SHADER_BAGLIORE := "res://world/shaders/orrore_bagliore.gdshader"
 const SHADER_PIETRA := "res://world/shaders/orrore_pietra.gdshader"
 const SHADER_COLONNA := "res://world/shaders/orrore_colonna.gdshader"
@@ -59,27 +68,33 @@ const SHADER_COLONNA := "res://world/shaders/orrore_colonna.gdshader"
 ## dall'asse su cui scende il tentacolo.
 const DOVE := Vector2(1.5, 20.5)
 
-## IL BOLIDE: da dove a dove passa nel cielo di chi guarda (gradi di azimut in più rispetto a
-## dove guarda, gradi d'altezza), in quanto tempo, quanto dura la traccia dopo.
-const BOLIDE_DA := Vector2(26.0, 42.0)
-const BOLIDE_A := Vector2(8.0, 24.0)
-const BOLIDE_DURA := 3.0
-const TRACCIA_DURA := 3.5
-## Quanta luce fa il lampo sul prato, al massimo: più della Luna piena.
+## LA PIETRA CHE ARRIVA: da che punto del cielo di chi guarda (gradi di azimut in più
+## rispetto a dove guarda, gradi d'altezza visti dalla buca), da quanto lontano, in quanto
+## tempo, e a che velocità tocca terra. Rallenta scendendo, come rallenta un sasso che
+## attraversa l'aria: parte a milleduecento metri al secondo e arriva a duecentocinquanta,
+## quindi l'ultimo centinaio di metri sopra il prato dura mezzo secondo e SI VEDE.
+const ARRIVA_DA := Vector2(22.0, 30.0)
+const PARTENZA := 5200.0
+const ARRIVO := 7.0
+const VELOCITA_ARRIVO := 250.0
+## Quanto è ingrandita: il campione vero è lungo tredici centimetri, e qui ne fa novanta.
+const SCALA := 7.0
+## Di quanto sta sepolta, in frazione della sua altezza.
+const SEPOLTA := 0.35
+## Quanta luce fa sul paesaggio, al massimo, e di che colore: un metallo che brucia.
 const LAMPO := 2.4
-const COLORE_LAMPO := Color(0.82, 1.0, 0.86)
+const COLORE_LAMPO := Color(1.0, 0.9, 0.72)
 
-## Il volo buio, dal lampo all'impatto.
-const VOLO := 2.4
-
-## L'impatto: quanto erba schiaccia, per quanto la pietra resta calda.
-const BUCA := 0.8
-const CALDA := 3.0
+## L'impatto: quanto è largo il cratere, per quanto la pietra resta calda, e quanto trema chi
+## guarda (in metri di spostamento della camera, al primo istante).
+const BUCA := 2.2
+const CALDA := 8.0
+const SCOSSA := 0.06
 
 ## IL COLORE NELL'ERBA: dopo quanto dall'impatto compare, fin dove arriva e con che passo —
 ## si avvicina a `FIN_DOVE` metri senza arrivarci —, in quanto si accende, in quanto i ciuffi
 ## si tendono.
-const COMPARE := 3.0
+const COMPARE := 8.0
 const FIN_DOVE := 20.0
 const ALLARGA_TAU := 14.0
 const SI_ACCENDE_IN := 10.0
@@ -109,7 +124,7 @@ const AMBIENTE := ["glow_enabled", "glow_intensity", "glow_strength", "glow_bloo
 	"volumetric_fog_density", "volumetric_fog_ambient_inject", "volumetric_fog_emission_energy",
 	"volumetric_fog_length"]
 
-enum Fase { CADE, VOLA, BRILLA, SI_RACCOGLIE, SALE, CENERE, TORNA }
+enum Fase { CADE, BRILLA, SI_RACCOGLIE, SALE, CENERE, TORNA }
 
 var _fase := Fase.CADE
 var _t_fase := 0.0
@@ -126,12 +141,25 @@ var _buca := 0.0
 var _forza_prima := 0.0
 var _tende_prima := 0.0
 
-var _cielo: MeshInstance3D
-var _mat_cielo: ShaderMaterial
 var _testa := Vector3.UP
+var _da_dove := Vector3.UP
+var _mezza_altezza := 0.45
+var _scia: MeshInstance3D
+var _mat_scia: ShaderMaterial
+var _cratere: Decal
+var _fumo: GPUParticles3D
+var _tempo_impatto := -1.0
+var _scossa := 0.0
+var _scossa_camera: Camera3D
+var _rng := RandomNumberGenerator.new()
 var _lampo: DirectionalLight3D
 var _pietra: MeshInstance3D
 var _mat_pietra: ShaderMaterial
+## LA PIETRA È UN SOLIDO, da quando tocca terra a quando si sbriciola: prima ci si passava
+## attraverso. La forma è l'involucro convesso della scansione, alla scala della pietra.
+var _solido: StaticBody3D
+var _forma_solido: CollisionShape3D
+var _forma_pietra: Shape3D
 var _polvere: GPUParticles3D
 var _luce: OmniLight3D
 var _bagliore: MeshInstance3D
@@ -153,20 +181,16 @@ func _comincia() -> void:
 	var prato := trova(get_tree().root, "Prato") as Prato
 	var suolo := 0.0
 	if prato != null:
-		suolo = prato.position.y + FormaPrato.altezza(DOVE, prato.piatti, prato.recinto)
+		suolo = prato.position.y + FormaPrato.altezza(DOVE, prato.sito())
 		var erba := prato.get_node_or_null("Erba") as GeometryInstance3D
 		_erba = erba.material_override as ShaderMaterial if erba != null else null
 	if _erba == null:
 		push_warning("il colore: nel prato non c'è erba da accendere")
 	_dove = Vector3(DOVE.x, suolo, DOVE.y)
 
+	_rng.seed = 1882
 	var az0 := azimut_di(_davanti())
-	_mat_cielo = ShaderMaterial.new()
-	_mat_cielo.shader = load(SHADER_BOLIDE) as Shader
-	_mat_cielo.set_shader_parameter("inizio", verso(az0 + BOLIDE_DA.x, BOLIDE_DA.y))
-	_mat_cielo.set_shader_parameter("fine", verso(az0 + BOLIDE_A.x, BOLIDE_A.y))
-	_cielo = _cupola("Bolide", _mat_cielo)
-	_cielo.top_level = true
+	_da_dove = verso(az0 + ARRIVA_DA.x, ARRIVA_DA.y)
 
 	_lampo = DirectionalLight3D.new()
 	_lampo.name = "Lampo"
@@ -179,11 +203,48 @@ func _comincia() -> void:
 	_mat_pietra.shader = load(SHADER_PIETRA) as Shader
 	_pietra = MeshInstance3D.new()
 	_pietra.name = "Pietra"
-	_pietra.mesh = _sasso()
 	_pietra.material_override = _mat_pietra
-	_pietra.visible = false
+	_pietra.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_pietra.extra_cull_margin = PARTENZA
+	_meteorite(_pietra)
 	add_child(_pietra)
-	_pietra.global_position = _dove + Vector3.UP * 0.05
+	_pietra.top_level = true
+	_solido = StaticBody3D.new()
+	_solido.name = "Solido"
+	# ci si sbatte e il raggio del giocatore ci si ferma; e ci si possono posare le cose
+	_solido.collision_layer = Interactable.LAYER_WORLD | Corazza.LAYER_APPOGGI
+	_solido.collision_mask = 0
+	_forma_solido = CollisionShape3D.new()
+	_forma_solido.shape = _forma_pietra
+	_forma_solido.disabled = true
+	_solido.add_child(_forma_solido)
+	add_child(_solido)
+	_solido.top_level = true
+
+	_mat_scia = ShaderMaterial.new()
+	_mat_scia.shader = load(SHADER_SCIA) as Shader
+	_scia = MeshInstance3D.new()
+	_scia.name = "Scia"
+	_scia.mesh = _nastro()
+	_scia.material_override = _mat_scia
+	_scia.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_scia.extra_cull_margin = PARTENZA
+	add_child(_scia)
+	_scia.top_level = true
+	_scia.global_transform = Transform3D(Basis.IDENTITY, _dove + Vector3.UP * _mezza_altezza)
+	_mat_scia.set_shader_parameter("direzione", _da_dove)
+	_mat_scia.set_shader_parameter("lunghezza", PARTENZA)
+	_mat_scia.set_shader_parameter("velocita_arrivo", VELOCITA_ARRIVO)
+	_mat_scia.set_shader_parameter("velocita_partenza", velocita_partenza())
+
+	_cratere = _scava_il_cratere()
+	add_child(_cratere)
+	_cratere.global_position = _dove
+	_cratere.visible = false
+
+	_fumo = _fumo_della_pietra()
+	add_child(_fumo)
+	_fumo.global_position = _dove + Vector3.UP * 0.5
 
 	_polvere = _zolla()
 	add_child(_polvere)
@@ -193,8 +254,10 @@ func _comincia() -> void:
 	_luce.name = "Luce"
 	_luce.light_energy = 0.0
 	_luce.omni_range = 5.0
-	_luce.shadow_enabled = false
+	# CON LE OMBRE: scendendo accende il prato e le ombre degli alberi girano
+	_luce.shadow_enabled = true
 	add_child(_luce)
+	_luce.top_level = true
 	_luce.global_position = _dove + Vector3.UP * 0.6
 
 	_mat_bagliore = ShaderMaterial.new()
@@ -270,7 +333,7 @@ func _comincia() -> void:
 	_fiocchi.global_position = _dove + Vector3.UP * 4.0
 
 	_accendi_ambiente()
-	_bolide(0.0)
+	_vola(0.0)
 	Log.debug("orrori", "il colore: cade una pietra in (%.1f, %.1f)" % [DOVE.x, DOVE.y])
 
 
@@ -282,27 +345,21 @@ func _congeda() -> void:
 
 func _avanza(delta: float) -> void:
 	_t_fase += delta
-	var cam := _camera()
-	if cam != null:
-		_cielo.global_position = cam.global_position
 	var tinta := tinta_del_colore(_tempo)
+	_trema(delta)
+	if _tempo_impatto >= 0.0:
+		var dopo := _tempo - _tempo_impatto
+		_mat_scia.set_shader_parameter("dopo", dopo)
+		_scia.visible = dopo < 40.0
 	match _fase:
 		Fase.CADE:
-			_bolide(_t_fase / BOLIDE_DURA)
-			if _t_fase >= BOLIDE_DURA:
-				_mat_cielo.set_shader_parameter("luce", 0.0)
-				_mat_cielo.set_shader_parameter("scia", 0.0)
-				_lampo.light_energy = 0.0
-				_vai(Fase.VOLA)
-		Fase.VOLA:
-			_traccia(_t_fase)
-			if _t_fase >= VOLO:
+			_vola(_t_fase)
+			if _t_fase >= ARRIVO:
 				_impatto()
 				_vai(Fase.BRILLA)
 				if _in_uscita:
 					_vai(Fase.SI_RACCOGLIE)
 		Fase.BRILLA:
-			_traccia(VOLO + _t_fase)
 			_brilla(delta)
 		Fase.SI_RACCOGLIE:
 			_dall_impatto += delta
@@ -318,6 +375,9 @@ func _avanza(delta: float) -> void:
 			_luce.light_color = tinta
 			_accendi_il_prato(_raggio_preso * (1.0 - 0.8 * g), tinta, 1.0 + 0.4 * f)
 			if _t_fase >= SI_TENDE + SI_RITIRA:
+				# il bagliore torna quello della luce che sale, dopo essere stato la testa della pietra
+				_mat_bagliore.set_shader_parameter("lato", 2.5)
+				_mat_bagliore.set_shader_parameter("minimo", 0.05)
 				_bagliore.visible = true
 				_colonna.visible = true
 				_vai(Fase.SALE)
@@ -341,7 +401,7 @@ func _avanza(delta: float) -> void:
 		Fase.TORNA:
 			_cenere = 1.0 - smoothstep(0.0, TORNA, _t_fase)
 			_buca = BUCA * _cenere
-			_pietra.scale = Vector3.ONE * maxf(_cenere, 0.01)
+			_pietra.scale = Vector3.ONE * SCALA * maxf(_cenere, 0.01)
 			if _t_fase >= TORNA:
 				_raggio = 0.0
 				_raggio_preso = 0.0
@@ -366,6 +426,9 @@ func _vai(fase: Fase) -> void:
 		# fermava per un attimo proprio nel momento che conta
 		if _raggio_preso > 0.5 and _cenere_per_terra == null:
 			_stendi_la_cenere()
+	# sbriciolandosi la pietra rimpicciolisce fino a sparire: il solido se ne va subito
+	if fase == Fase.TORNA and _forma_solido != null:
+		_forma_solido.set_deferred("disabled", true)
 	_fase = fase
 	_t_fase = 0.0
 
@@ -422,42 +485,96 @@ func _accendi_il_prato(raggio: float, tinta: Color, forza: float) -> void:
 	_mat_foschia.emission = tinta * 0.35 * forza * tremola
 
 
-## Il bolide alla frazione `f` della sua strada.
-func _bolide(f: float) -> void:
-	var t := clampf(f, 0.0, 1.0)
-	# CRESCE, E ALLA FINE SCOPPIA
-	var scoppio := exp(-pow((t - 0.93) / 0.045, 2.0))
-	_mat_cielo.set_shader_parameter("testa", t)
-	_mat_cielo.set_shader_parameter("luce", 0.35 + 1.6 * t * t + 5.0 * scoppio)
-	_mat_cielo.set_shader_parameter("scia", 0.6 + 1.0 * t)
-	_mat_cielo.set_shader_parameter("traccia", smoothstep(0.3, 0.95, t))
-	var a := (_mat_cielo.get_shader_parameter("inizio") as Vector3)
-	var b := (_mat_cielo.get_shader_parameter("fine") as Vector3)
-	_testa = a.slerp(b, t).normalized()
-	# IL LAMPO ACCENDE IL PRATO: una luce che arriva da dove sta la testa, e che cresce con lei
-	_lampo.light_energy = LAMPO * (0.08 * t + scoppio)
-	_lampo.global_basis = Basis.looking_at(-_testa, Vector3.UP if absf(_testa.y) < 0.99 else Vector3.BACK)
+static func velocita_partenza() -> float:
+	return 2.0 * PARTENZA / ARRIVO - VELOCITA_ARRIVO
 
 
-## La traccia che resta dopo, `t` secondi dopo lo scoppio.
-func _traccia(t: float) -> void:
-	var resta := exp(-t / TRACCIA_DURA * 3.0)
-	_mat_cielo.set_shader_parameter("traccia", resta)
-	_cielo.visible = resta > 0.01
+## Quanti metri mancano alla buca `t` secondi dopo la partenza: la velocità scende in linea
+## retta da quella di partenza a quella d'arrivo, e la strada fatta in `ARRIVO` secondi è
+## esattamente `PARTENZA`.
+static func strada(t: float) -> float:
+	var v0 := velocita_partenza()
+	var tt := clampf(t, 0.0, ARRIVO)
+	return maxf(PARTENZA - (v0 * tt - (v0 - VELOCITA_ARRIVO) * tt * tt / (2.0 * ARRIVO)), 0.0)
+
+
+## LA PIETRA IN VOLO, `t` secondi dopo la partenza.
+func _vola(t: float) -> void:
+	var s := strada(t)
+	var dove := _dove + Vector3.UP * _mezza_altezza + _da_dove * s
+	# rotola piano su se stessa, come un sasso lanciato
+	var giro := Basis.from_euler(Vector3(t * 1.3, t * 0.7, t * 0.4))
+	_pietra.global_transform = Transform3D(giro.scaled(Vector3.ONE * SCALA), dove)
+	_mat_pietra.set_shader_parameter("calore", 1.0)
+	_mat_scia.set_shader_parameter("testa", s)
+	var cam := _camera()
+	if cam != null:
+		_testa = (dove - cam.global_position).normalized()
+	# LA TESTA DI LUCE: il metallo e l'aria che bruciano attorno alla pietra. Da lontano è un
+	# punto che non scende mai sotto qualche pixel; avvicinandosi cresce.
+	_bagliore.visible = true
+	_bagliore.global_position = dove
+	_mat_bagliore.set_shader_parameter("tinta", Color(1.0, 0.82, 0.55))
+	_mat_bagliore.set_shader_parameter("lato", 6.0)
+	# TRE GRADI AL MINIMO: più piccolo, a tre chilometri il nucleo stava sotto il pixel e la
+	# pietra in arrivo non si vedeva affatto
+	_mat_bagliore.set_shader_parameter("minimo", 0.045)
+	_mat_bagliore.set_shader_parameter("forza", clampf(pow(2500.0 / maxf(s, 1.0), 0.8), 2.0, 8.0))
+	# IL PAESAGGIO SI ACCENDE: da lontano una direzionale che viene da dove sta la pietra, da
+	# vicino una luce vera che scende sul prato e muove le ombre
+	var vicino := clampf(pow(900.0 / maxf(s, 1.0), 1.5), 0.02, 1.0)
+	_lampo.light_color = COLORE_LAMPO
+	_lampo.light_energy = LAMPO * vicino * (1.0 - smoothstep(60.0, 20.0, s))
+	_lampo.global_basis = Basis.looking_at(-_da_dove, Vector3.UP if absf(_da_dove.y) < 0.99 else Vector3.BACK)
+	_luce.global_position = dove
+	_luce.light_color = COLORE_LAMPO
+	_luce.omni_range = 140.0
+	_luce.light_energy = 9.0 * clampf(pow(140.0 / maxf(s, 1.0), 2.0), 0.0, 1.0)
 
 
 func _impatto() -> void:
 	_dall_impatto = 0.0
-	_pietra.visible = true
+	_tempo_impatto = _tempo
+	# MEZZA SEPOLTA, un po' storta, dove è arrivata
+	var storta := Basis.from_euler(Vector3(0.35, 1.9, -0.2))
+	_pietra.global_transform = Transform3D(storta.scaled(Vector3.ONE * SCALA),
+		_dove + Vector3.UP * _mezza_altezza * (1.0 - 2.0 * SEPOLTA))
+	# il solido non si scala: la sua forma è già grande quanto la pietra
+	_solido.global_transform = Transform3D(storta, _pietra.global_position)
+	_forma_solido.set_deferred("disabled", false)
 	_mat_pietra.set_shader_parameter("calore", 1.0)
+	_mat_scia.set_shader_parameter("testa", 0.0)
 	_buca = BUCA
+	_cratere.visible = true
 	_polvere.restart()
 	_polvere.emitting = true
 	_polverone.restart()
 	_polverone.emitting = true
-	_luce.light_color = Color(1.0, 0.55, 0.25)
-	_luce.light_energy = 3.0
+	_fumo.emitting = true
+	_lampo.light_energy = 0.0
+	_luce.global_position = _dove + Vector3.UP * 1.5
+	_luce.omni_range = 60.0
+	_luce.light_color = Color(1.0, 0.8, 0.55)
+	_luce.light_energy = 14.0
+	_scossa = 1.0
+	_testa = Vector3.ZERO
 	Log.debug("orrori", "il colore: la pietra è nel prato")
+
+
+## IL TERRENO TREMA: la camera di chi guarda si sposta a scatti per un attimo, e torna.
+func _trema(delta: float) -> void:
+	if _scossa <= 0.0:
+		return
+	var cam := _camera()
+	if cam == null:
+		return
+	_scossa_camera = cam
+	_scossa = maxf(_scossa - delta * 1.3, 0.0)
+	var forza := SCOSSA * _scossa * _scossa
+	if _scossa <= 0.0:
+		forza = 0.0
+	cam.h_offset = _rng.randf_range(-1.0, 1.0) * forza
+	cam.v_offset = _rng.randf_range(-1.0, 1.0) * forza
 
 
 func _brilla(delta: float) -> void:
@@ -472,9 +589,19 @@ func _brilla(delta: float) -> void:
 	var colore := smoothstep(COMPARE * 0.5, COMPARE + 4.0, t)
 	_mat_pietra.set_shader_parameter("calore", calore)
 	_mat_pietra.set_shader_parameter("colore", colore)
+	# il lampo dell'impatto si allarga e si spegne; la luce torna sulla pietra
+	_bagliore.visible = t < 1.5
+	_bagliore.global_position = _dove + Vector3.UP * 0.8
+	_mat_bagliore.set_shader_parameter("lato", 5.0)
+	_mat_bagliore.set_shader_parameter("forza", 8.0 * exp(-t / 0.18))
+	_luce.omni_range = lerpf(6.0, 60.0, exp(-t / 0.6))
+	_luce.global_position = _dove + Vector3.UP * lerpf(2.6, 1.5, exp(-t / 0.6))
+	_fumo.amount_ratio = clampf(calore * 1.4, 0.0, 1.0)
 	# prima il calore dell'impatto, poi il colore, fioco e mai fermo
 	var tremola := 0.75 + 0.25 * sin(_tempo * 2.3) * sin(_tempo * 0.71 + 1.0)
-	var caldo := 3.0 * exp(-t / 0.35) + 0.3 * calore
+	# LA LUCE STA SOPRA LA PIETRA, non addosso: a novanta centimetri la bruciava di bianco, e la
+	# pietra la sua luce la fa già da sola
+	var caldo := 14.0 * exp(-t / 0.25) + 0.5 * calore
 	var viola := 0.35 * colore * tremola
 	_luce.light_energy = caldo + viola
 	_luce.light_color = Color(1.0, 0.55, 0.25).lerp(tinta_del_colore(_tempo), clampf(viola / maxf(caldo + viola, 0.001), 0.0, 1.0))
@@ -503,6 +630,9 @@ func _exit_tree() -> void:
 	_buca = 0.0
 	_scrivi_erba()
 	_spegni_ambiente()
+	if _scossa_camera != null and is_instance_valid(_scossa_camera):
+		_scossa_camera.h_offset = 0.0
+		_scossa_camera.v_offset = 0.0
 
 
 ## IL BAGLIORE E LA NEBBIA DELL'AMBIENTE, accesi finché il colore c'è. L'ambiente è uno solo
@@ -567,75 +697,203 @@ func _stendi_la_cenere() -> void:
 	_cenere_per_terra.global_position = _dove
 
 
-## LA ZOLLA: la terra che la pietra solleva entrando. Poca, scura, e ricade.
+## LE ZOLLE: la terra che la pietra solleva entrando, scura, che vola e ricade.
 func _zolla() -> GPUParticles3D:
 	var p := GPUParticles3D.new()
 	p.name = "Zolla"
 	p.one_shot = true
 	p.emitting = false
-	p.amount = 90
-	p.lifetime = 1.6
-	p.explosiveness = 0.96
-	p.visibility_aabb = AABB(Vector3(-6.0, -1.0, -6.0), Vector3(12.0, 10.0, 12.0))
+	p.amount = 320
+	p.lifetime = 2.8
+	p.explosiveness = 0.97
+	p.visibility_aabb = AABB(Vector3(-25.0, -2.0, -25.0), Vector3(50.0, 25.0, 50.0))
 	var pm := ParticleProcessMaterial.new()
 	pm.direction = Vector3.UP
-	pm.spread = 38.0
-	pm.initial_velocity_min = 2.0
-	pm.initial_velocity_max = 6.5
+	pm.spread = 42.0
+	pm.initial_velocity_min = 4.0
+	pm.initial_velocity_max = 14.0
 	pm.gravity = Vector3(0.0, -9.8, 0.0)
 	pm.scale_min = 0.5
-	pm.scale_max = 1.4
+	pm.scale_max = 2.4
 	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
-	pm.emission_sphere_radius = 0.25
+	pm.emission_sphere_radius = 0.6
+	var sparisce := CurveTexture.new()
+	var curva := Curve.new()
+	curva.add_point(Vector2(0.0, 1.0))
+	curva.add_point(Vector2(0.85, 1.0))
+	curva.add_point(Vector2(1.0, 0.0))
+	sparisce.curve = curva
+	pm.scale_curve = sparisce
 	p.process_material = pm
-	var q := QuadMesh.new()
-	q.size = Vector2(0.06, 0.06)
-	var m := StandardMaterial3D.new()
-	m.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
-	m.albedo_color = Color(0.20, 0.16, 0.12)
-	m.roughness = 1.0
-	q.material = m
-	p.draw_pass_1 = q
+	p.draw_pass_1 = _quadrato_morbido(0.16, Color(0.20, 0.15, 0.11))
 	return p
 
 
-## IL POLVERONE: la terra fine che resta in aria dopo l'impatto, e si allarga piano.
+## IL POLVERONE: la terra fine che resta in aria dopo l'impatto, si allarga e si posa piano.
+## Non è una luce, è terra: prende la Luna e il rosso della pietra, e copre quello che ha
+## dietro.
 func _nuvola_di_polvere() -> GPUParticles3D:
 	var p := GPUParticles3D.new()
 	p.name = "Polverone"
 	p.one_shot = true
 	p.emitting = false
-	p.amount = 28
-	p.lifetime = 4.0
-	p.explosiveness = 0.9
-	p.visibility_aabb = AABB(Vector3(-8.0, -1.0, -8.0), Vector3(16.0, 8.0, 16.0))
+	p.amount = 48
+	p.lifetime = 10.0
+	p.explosiveness = 0.92
+	p.visibility_aabb = AABB(Vector3(-20.0, -1.0, -20.0), Vector3(40.0, 16.0, 40.0))
 	var pm := ParticleProcessMaterial.new()
 	pm.direction = Vector3.UP
-	pm.spread = 70.0
-	pm.initial_velocity_min = 0.6
-	pm.initial_velocity_max = 2.2
-	pm.gravity = Vector3(0.0, -0.3, 0.0)
-	pm.damping_min = 0.8
-	pm.damping_max = 1.4
+	pm.spread = 80.0
+	pm.initial_velocity_min = 1.0
+	pm.initial_velocity_max = 5.0
+	pm.gravity = Vector3(0.0, -0.15, 0.0)
+	pm.damping_min = 0.9
+	pm.damping_max = 1.6
 	pm.scale_min = 0.8
 	pm.scale_max = 1.6
 	var cresce := CurveTexture.new()
 	var curva := Curve.new()
 	curva.add_point(Vector2(0.0, 0.35))
-	curva.add_point(Vector2(1.0, 1.0))
+	curva.add_point(Vector2(1.0, 1.4))
 	cresce.curve = curva
 	pm.scale_curve = cresce
 	var sfuma := GradientTexture1D.new()
 	var g := Gradient.new()
-	g.set_color(0, Color(1.0, 1.0, 1.0, 0.55))
+	g.set_color(0, Color(1.0, 1.0, 1.0, 0.75))
 	g.set_color(1, Color(1.0, 1.0, 1.0, 0.0))
 	sfuma.gradient = g
 	pm.color_ramp = sfuma
 	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
-	pm.emission_sphere_radius = 0.4
+	pm.emission_sphere_radius = 0.8
 	p.process_material = pm
-	p.draw_pass_1 = _quadrato_morbido(1.4, Color(0.30, 0.26, 0.22))
+	p.draw_pass_1 = _quadrato_morbido(4.5, Color(0.42, 0.36, 0.30))
 	return p
+
+
+## IL FUMO DELLA PIETRA: finché è calda fuma, sempre meno.
+func _fumo_della_pietra() -> GPUParticles3D:
+	var p := GPUParticles3D.new()
+	p.name = "Fumo"
+	p.emitting = false
+	p.amount = 70
+	p.lifetime = 8.0
+	p.visibility_aabb = AABB(Vector3(-12.0, -1.0, -12.0), Vector3(24.0, 25.0, 24.0))
+	var pm := ParticleProcessMaterial.new()
+	pm.direction = Vector3.UP
+	pm.spread = 14.0
+	pm.initial_velocity_min = 0.8
+	pm.initial_velocity_max = 1.8
+	pm.gravity = Vector3(0.12, 0.2, 0.05)
+	pm.turbulence_enabled = true
+	pm.turbulence_noise_strength = 0.8
+	pm.turbulence_noise_scale = 3.0
+	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
+	pm.emission_sphere_radius = 0.35
+	var cresce := CurveTexture.new()
+	var curva := Curve.new()
+	curva.add_point(Vector2(0.0, 0.3))
+	curva.add_point(Vector2(1.0, 2.6))
+	cresce.curve = curva
+	pm.scale_curve = cresce
+	var sfuma := GradientTexture1D.new()
+	var g := Gradient.new()
+	g.set_color(0, Color(1.0, 1.0, 1.0, 0.5))
+	g.set_color(1, Color(1.0, 1.0, 1.0, 0.0))
+	sfuma.gradient = g
+	pm.color_ramp = sfuma
+	p.process_material = pm
+	p.draw_pass_1 = _quadrato_morbido(1.2, Color(0.46, 0.46, 0.48))
+	return p
+
+
+## IL CRATERE: una decalcomania sul terreno, fatta pixel per pixel. Al centro la terra
+## bruciata e scura dove la pietra è entrata, attorno l'anello di terra smossa più chiara, e
+## fuori i raggi di terra buttata, che si diradano. Le proporzioni sono quelle dei crateri
+## piccoli: il bordo sta a poco più di metà del raggio, i raggi arrivano a due volte.
+func _scava_il_cratere() -> Decal:
+	var n := 192
+	var lato := BUCA * 2.6
+	var img := Image.create(n, n, false, Image.FORMAT_RGBA8)
+	for y in n:
+		for x in n:
+			var q := (Vector2(x + 0.5, y + 0.5) / n - Vector2(0.5, 0.5)) * 2.0
+			var r := q.length()
+			var giro := atan2(q.y, q.x)
+			var grana := _rumore(q * 9.0) * 0.6 + _rumore(q * 23.0) * 0.4
+			var c := Color(0.0, 0.0, 0.0, 0.0)
+			# il fondo bruciato
+			var fondo := 1.0 - smoothstep(0.34, 0.46, r + (grana - 0.5) * 0.08)
+			# l'anello di terra smossa
+			var anello := smoothstep(0.30, 0.44, r) * (1.0 - smoothstep(0.50, 0.66, r + (grana - 0.5) * 0.1))
+			# i raggi: bande di terra lungo il giro, che si diradano allontanandosi
+			var raggi := smoothstep(0.45, 0.8, _rumore(Vector2(giro * 4.0, 3.0)) * 0.7 + _rumore(Vector2(giro * 13.0, r * 3.0)) * 0.3)
+			raggi *= smoothstep(0.5, 0.62, r) * (1.0 - smoothstep(0.62, 1.0, r)) * smoothstep(0.35, 0.6, grana)
+			var terra := Color(0.26, 0.21, 0.16).lerp(Color(0.34, 0.28, 0.21), grana)
+			var bruciata := Color(0.07, 0.055, 0.045).lerp(Color(0.13, 0.10, 0.08), grana)
+			c = terra
+			c.a = maxf(anello, raggi * 0.85)
+			c = c.lerp(bruciata, fondo)
+			c.a = maxf(c.a, fondo * 0.97)
+			img.set_pixel(x, y, c)
+	var d := Decal.new()
+	d.name = "Cratere"
+	d.texture_albedo = ImageTexture.create_from_image(img)
+	d.size = Vector3(lato, 2.5, lato)
+	d.cull_mask = 1
+	d.normal_fade = 0.5
+	return d
+
+
+## LA METEORITE: la mesh del modello scansionato, con la sua texture passata allo shader.
+func _meteorite(dentro: MeshInstance3D) -> void:
+	var scena := load(METEORITE) as PackedScene
+	if scena == null:
+		push_warning("il colore: manca %s — lancia tools/meteorite_blender.py" % METEORITE)
+		var sfera := SphereMesh.new()
+		sfera.radius = 0.06
+		sfera.height = 0.12
+		dentro.mesh = sfera
+		var palla := SphereShape3D.new()
+		palla.radius = 0.06 * SCALA
+		_forma_pietra = palla
+		return
+	var modello := scena.instantiate()
+	var fonte: MeshInstance3D = null
+	for n in modello.find_children("*", "MeshInstance3D", true, false):
+		fonte = n as MeshInstance3D
+		break
+	if fonte != null:
+		dentro.mesh = fonte.mesh
+		var mat := fonte.mesh.surface_get_material(0) as BaseMaterial3D
+		if mat != null:
+			_mat_pietra.set_shader_parameter("pelle", mat.albedo_texture)
+		_mezza_altezza = fonte.mesh.get_aabb().size.y * 0.5 * SCALA
+		var involucro := fonte.mesh.create_convex_shape(true, true) as ConvexPolygonShape3D
+		var punti := involucro.points
+		for k in punti.size():
+			punti[k] *= SCALA
+		involucro.points = punti
+		_forma_pietra = involucro
+	modello.free()
+
+
+## LA SCIA: un nastro lungo tutta la strada, dalla buca al punto di partenza. I pezzi sono più
+## fitti vicino alla buca, dove la si guarda da pochi metri, e radi lassù.
+func _nastro() -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var pezzi := 240
+	for i in pezzi:
+		var a := PARTENZA * pow(float(i) / pezzi, 2.2)
+		var b := PARTENZA * pow(float(i + 1) / pezzi, 2.2)
+		var pa := _da_dove * a
+		var pb := _da_dove * b
+		for v in [[pa, a, -1.0], [pb, b, -1.0], [pb, b, 1.0], [pa, a, -1.0], [pb, b, 1.0], [pa, a, 1.0]]:
+			st.set_uv(Vector2(v[1], v[2]))
+			st.add_vertex(v[0])
+	var m := st.commit()
+	m.custom_aabb = AABB(Vector3.ONE * -PARTENZA, Vector3.ONE * PARTENZA * 2.0)
+	return m
 
 
 ## I FIOCCHI: la cenere che ricade dopo che il colore se n'è andato, lenta, a sbandate.
@@ -689,28 +947,6 @@ func _quadrato_morbido(lato: float, tinta: Color) -> QuadMesh:
 	return q
 
 
-## UN SASSO, non una palla: una sfera spostata dal rumore, larga una trentina di centimetri,
-## mezza nel terreno.
-func _sasso() -> ArrayMesh:
-	var sfera := SphereMesh.new()
-	sfera.radius = 0.17
-	sfera.height = 0.28
-	sfera.radial_segments = 18
-	sfera.rings = 10
-	var arr := sfera.get_mesh_arrays()
-	var v: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
-	var rumore := FastNoiseLite.new()
-	rumore.seed = 1882
-	rumore.frequency = 5.0
-	for i in v.size():
-		v[i] = v[i] * (1.0 + 0.32 * rumore.get_noise_3dv(v[i]))
-	arr[Mesh.ARRAY_VERTEX] = v
-	var st := SurfaceTool.new()
-	st.create_from_arrays(arr, Mesh.PRIMITIVE_TRIANGLES)
-	st.generate_normals()
-	return st.commit()
-
-
 ## LA TINTA DEL COLORE A UN ISTANTE, per le luci: il magenta di `colore_tinta`, che scivola
 ## piano verso il viola e verso il rosa.
 static func tinta_del_colore(t: float) -> Color:
@@ -758,9 +994,21 @@ func dove() -> Vector3:
 	return _dove
 
 
-## Dove sta la testa del bolide, come verso del cielo.
+## Da che parte sta la pietra in volo, vista da chi guarda; zero quando è arrivata.
 func testa_del_bolide() -> Vector3:
 	return _testa
+
+
+func pietra() -> MeshInstance3D:
+	return _pietra
+
+
+func solido() -> StaticBody3D:
+	return _solido
+
+
+func cratere() -> Decal:
+	return _cratere
 
 
 func raggio() -> float:

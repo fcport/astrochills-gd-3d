@@ -41,8 +41,7 @@ const GRUPPO := &"stampante"
 ## mezz'aria, e scriverla a ogni rimbalzo vorrebbe dire dieci salvataggi per un gesto.
 const ATTESA_SALVATAGGIO := 1.5
 
-## SE LA PROSSIMA FOTO RIVELATA USCIRÀ CON L'OSSERVATORIO VISTO DALL'ALTO al posto del
-## soggetto: lo accende `world/orrori/posa.gd`, e la prima foto che esce lo consuma.
+## SE LA PROSSIMA FOTO RIVELATA USCIRÀ CON L'OCCHIO al posto del soggetto: lo accende `world/orrori/posa.gd`, e la prima foto che esce lo consuma.
 var infesta_la_prossima := false
 
 ## Le foto rivelate che aspettano il loro turno.
@@ -101,28 +100,18 @@ func _misura_fessura() -> void:
 
 func _su_foto_rivelata(photo_id: int, target_id: StringName, image_tier: int) -> void:
 	var notte := Game.run.night_index if Game.run != null else 0
-	if infesta_la_prossima:
-		infesta_la_prossima = false
-		accoda_dall_alto(target_id, image_tier, notte, photo_id)
-		return
-	accoda(target_id, image_tier, notte, photo_id)
-
-
-## Come `accoda()`, ma prima si fotografa l'osservatorio dall'alto, ADESSO: la stampa ha
-## dentro il mondo di quando è uscita. Ci vogliono tre fotogrammi; se non si può scattare
-## (in headless) la stampa esce com'è.
-func accoda_dall_alto(target_id: StringName, livello: int, notte: int, foto: int) -> void:
-	var img := await VistaDallAlto.scatta(get_parent(), VistaDallAlto.centro(get_tree()))
-	accoda(target_id, livello, notte, foto, VistaDallAlto.salva(img))
+	var occhio := infesta_la_prossima
+	infesta_la_prossima = false
+	accoda(target_id, image_tier, notte, photo_id, occhio)
 
 
 ## Mette in coda una stampa. È quello che fa una foto rivelata; lo fa anche chi vuole una
 ## stampa senza passare da una notte intera — `world/orrori/posa.gd`.
 func accoda(target_id: StringName, livello: int, notte: int, foto: int,
-		dall_alto := "") -> void:
+		occhio := false) -> void:
 	_coda.append({
 		&"target": target_id, &"livello": livello, &"notte": notte, &"foto": foto,
-		&"dall_alto": dall_alto,
+		&"occhio": occhio,
 	})
 	_prossima()
 
@@ -133,7 +122,7 @@ func _prossima() -> void:
 	while not _coda.is_empty():
 		var voce: Dictionary = _coda.pop_front()
 		var s := Stampa.crea(voce[&"target"], voce[&"livello"], voce[&"notte"], voce[&"foto"],
-			String(voce.get(&"dall_alto", "")))
+			bool(voce.get(&"occhio", false)))
 		if s == null:
 			Log.info("stampa", "nessuna pagina per «%s» al livello %d: la foto non si stampa"
 				% [voce[&"target"], voce[&"livello"]])
@@ -180,11 +169,17 @@ func _esci() -> void:
 ##
 ## UNA COSA APPESA A CIÒ CHE NON C'È PIÙ resta dov'era, ferma. Il muro può essere sparito
 ## da un modello rifatto; farla cadere per terra direbbe «si è staccata», e non è vero.
+## SE LA STAMPA RICORDATA ERA INFESTATA. Le stampe della stesura di prima ricordavano la foto
+## dall'alto (`dall_alto`, un file in `user://`): erano infestate, e ora escono con l'occhio.
+static func _infestata(v: Dictionary) -> bool:
+	return bool(v.get(&"occhio", false)) or String(v.get(&"dall_alto", "")) != ""
+
+
 func ripristina(voci: Array) -> void:
 	var radice := get_parent()
 	for v: Dictionary in voci:
 		var s := Stampa.crea(StringName(v.get(&"target", &"")), int(v.get(&"livello", 1)),
-			int(v.get(&"notte", 0)), int(v.get(&"foto", 0)), String(v.get(&"dall_alto", "")))
+			int(v.get(&"notte", 0)), int(v.get(&"foto", 0)), _infestata(v))
 		if s == null:
 			continue
 		s.mondo = radice

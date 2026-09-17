@@ -54,6 +54,22 @@ SET = {
     "prato": ("Ground037", (51, 66, 43),
               "Terreno erboso rado con chiazze di terra, per il prato attorno\n"
               "all'osservatorio."),
+    # IL TERRENO FUORI DAL PRATO (`world/panorama.gd`). Dove passa una sterrata e dove c'e'
+    # il bosco lo dicono OpenStreetMap e WorldCover (`prendi_panorama.py`); qui c'e' di
+    # cosa sono fatti.
+    #   * LA STRADA BIANCA delle foto del sito: calcare pestato, chiaro, con i sassi piatti
+    #     affioranti e la polvere. Gravel023 e' ghiaia bianca sciolta da vialetto, pulita;
+    #     Ground081 e' un sentiero di ghiaia grigio-beige compattata, ed e' questa. TINTA
+    #     CHIARA, perche' nelle foto la sterrata e' la cosa piu' chiara del paesaggio: la
+    #     riflettanza del calcare e' quattro volte quella di un prato.
+    #   * IL SOTTOBOSCO DI NOVEMBRE: foglie secche marroni sopra la terra. E' quello che c'e'
+    #     sotto un bosco ceduo spoglio, e un prato verde sotto gli alberi nudi sarebbe maggio.
+    "sterrata": ("Ground081", (170, 164, 150),
+                 "Strada bianca: ghiaia calcarea compattata, per le sterrate attorno\n"
+                 "all'osservatorio."),
+    "sottobosco": ("ScatteredLeaves009", (88, 70, 52),
+                   "Foglie secche sulla terra, per il suolo del bosco spoglio attorno\n"
+                   "all'osservatorio."),
     "pavimento": ("Terrazzo013", None,
                   "Graniglia: il pavimento degli edifici pubblici italiani di quegli anni,"
                   " e non c'e' niente che dati meglio un interno del 1999."),
@@ -113,6 +129,12 @@ SET = {
                  "data la stanza. Con un monitor bianco o nero la stanza si sposta di\n"
                  "dieci anni."),
 }
+
+# LE CARTELLE CHE VOGLIONO LE MIPMAP, scritte in un .import prima che Godot importi. Il
+# terreno del panorama si guarda radente fino a trecento metri, e una mappa da mille pixel
+# senza mipmap su un pendio lontano scintilla a ogni passo. Le altre no: stanno sui muri
+# di una stanza, e il loro import l'ha deciso l'editor.
+CON_MIPMAP = {"sterrata", "sottobosco"}
 
 MAPPE = {"_Color.jpg": "color.jpg", "_Roughness.jpg": "roughness.jpg",
          "_NormalGL.jpg": "normal.jpg", "_Metalness.jpg": "metallic.jpg"}
@@ -217,6 +239,15 @@ def prendi(cartella):
     io.open(os.path.join(fuori, "FONTE.txt"), "w", encoding="utf-8").write(
         "%s da ambientCG (https://ambientcg.com/view?id=%s)\n"
         "Licenza CC0: nessuna attribuzione richiesta. 1K JPG.\n%s\n\n%s\n%s" % (asset, asset, righello(asset), perche, nota))
+    if cartella in CON_MIPMAP:
+        for nome in scritte:
+            via = os.path.join(fuori, nome)
+            res = "res://" + os.path.relpath(via, RADICE).replace(os.sep, "/")
+            righe = ["[remap]", "", 'importer="texture"', 'type="CompressedTexture2D"', "",
+                     "[deps]", "", 'source_file="%s"' % res, "", "[params]", "",
+                     "compress/mode=0", "mipmaps/generate=true", "detect_3d/compress_to=0",
+                     "compress/normal_map=%d" % (1 if nome == "normal.jpg" else 0), ""]
+            io.open(via + ".import", "w", encoding="utf-8", newline="\n").write(NL.join(righe))
     print("%-15s <- %-13s %s" % (cartella, asset, ", ".join(sorted(scritte))))
 
 

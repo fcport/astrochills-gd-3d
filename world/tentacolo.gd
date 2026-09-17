@@ -561,7 +561,7 @@ func posa_sul_prato(x: float, z: float, franco: float) -> void:
 	var prato := _trova_prato(get_tree().root)
 	if prato != null:
 		suolo = prato.position.y + FormaPrato.altezza(
-			Vector2(x, z), prato.piatti, prato.recinto)
+			Vector2(x, z), prato.sito())
 	position = Vector3(x, suolo + LUNGHEZZA + franco, z)
 
 

@@ -26,17 +26,18 @@ const PASSO_FISICA := 1.0 / 60.0
 ## pendenza (vedi la testata).
 const SCOSSONE := 0.35
 
-## I tratti: nome, partenza, arrivo (x, z). Il prato mosso sta a z = 19, lontano
-## dall'edificio e dall'auto; la fascia piatta a z = 11, un metro e mezzo fuori dalla
-## facciata sud, dove `FormaPrato` tiene il terreno a zero.
+## I tratti: nome, partenza, arrivo (x, z). Il prato mosso sta a z = -5, dietro
+## l'edificio sul lato della valle, dentro la rete vera e lontano dal ciglio; la fascia
+## piatta a z = 11, un metro e mezzo fuori dalla facciata con la porta, dove `FormaPrato`
+## tiene il terreno a zero.
 ##
 ## LA DIAGONALE DI CORSA attraversa gli spigoli di traverso — i triangoli sono tagliati
 ## lungo una diagonale, e un tratto parallelo agli assi ne incontra solo di due tipi —
 ## e a velocità quasi doppia: è il caso in cui l'aggancio al pavimento ha più strada
 ## da recuperare in un passo.
 const TRATTI := [
-	["prato mosso", Vector2(-3.0, 19.0), Vector2(20.0, 19.0), false],
-	["diagonale corsa", Vector2(-3.0, 24.0), Vector2(19.0, 15.0), true],
+	["prato mosso", Vector2(-3.0, -5.0), Vector2(19.0, -5.0), false],
+	["diagonale corsa", Vector2(-5.0, -1.0), Vector2(17.0, -13.0), true],
 	["fascia piatta", Vector2(1.0, 11.0), Vector2(17.0, 11.0), false],
 ]
 
@@ -70,7 +71,7 @@ func _prova() -> void:
 		print("[passi] manca il giocatore o il prato: la prova non vale")
 		get_tree().quit(1)
 		return
-	var q := FormaPrato.quote(prato.estensione, prato.piatti, prato.recinto)
+	var q := FormaPrato.quote(prato.sito())
 	# MANOPOLE PER CERCARE IL COLPEVOLE: rimettono il corpo com'era in altri momenti
 	# senza toccare la scena. `MARGINE` è il `safe_margin`, `AGGANCIO` il
 	# `floor_snap_length`.

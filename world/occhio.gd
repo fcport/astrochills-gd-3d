@@ -1,24 +1,21 @@
 ## L'OCCHIO che si apre nel cielo, grande come un pezzo di cielo, e guarda te.
 ##
-## È L'OCCHIO DI UN POLPO, e non per gusto: è la stessa creatura del tentacolo, con la
-## stessa pelle (`assets/textures/pelle-polpo`), e l'iride viene dalla STESSA
-## fotografia — il polpo di Greg McFall/NOAA ha l'occhio a mezzo metro dal braccio da
-## cui è stata presa la pelle (`tools/prendi_pelle.py`). Quello che si vede è copiato
-## da lì e da quello che si sa di un occhio di cefalopode; il resto è dichiarato qui
-## sotto come inventato.
+## LA PELLE E LE PALPEBRE SONO DI UN POLPO, la stessa creatura del tentacolo, con la
+## stessa pelle (`assets/textures/pelle-polpo`, il polpo di Greg McFall/NOAA). L'IRIDE È
+## L'OCCHIO COSMICO, lo stesso che esce nella stampa (`world/orrori/occhio_nella_posa.gd`):
+## una nebulosa con una pupilla, e chi l'ha visto in cielo lo riconosce sulla carta.
 ##
 ## COPIATO:
-##   * L'IRIDE: cromatofori rossi su un reticolo bianco, dalla foto, con il filo
-##     dorato che nella foto corre lungo il bordo della pupilla.
-##   * LA PUPILLA A BARRA ORIZZONTALE, che in piena luce è una fessura e al buio un
-##     rettangolo arrotondato (Douglas, Williamson & Wagner, «The pupillary response
-##     of cephalopods», J. Exp. Biol. 2005). Si stringe in meno di un secondo: qui ci
-##     mette `PUPILLA_TAU`.
-##   * LA PUPILLA RESTA ORIZZONTALE ANCHE SE LA TESTA È INCLINATA: un polpo ruota il
-##     bulbo per tenerla parallela all'orizzonte, e a guidarlo sono le statocisti, non
-##     la vista. Per questo la testa qui è girata di `ROLLIO` — le palpebre e la pelle
-##     sono storte, la fessura no — ed è il dettaglio che fa sembrare la cosa un
-##     animale invece che un disegno.
+##   * L'IRIDE: l'immagine di «Cosmic Eye of Horror» (Huntaer87, CC-BY), resa da
+##     `tools/occhio_cosmico_blender.py`. La prima stesura aveva l'iride del polpo della
+##     foto, ripetuta a piastrelle, e da sotto era un anello di macchie tutte uguali.
+##   * LA PUPILLA SI STRINGE ALLA LUCE in meno di un secondo: qui ci mette `PUPILLA_TAU`.
+##     È tonda come nell'immagine, e si stringe stirando l'iride vera
+##     (`occhio_bulbo.gdshader`).
+##   * IL BULBO NON GIRA CON LA TESTA: un polpo ruota l'occhio per tenerlo dritto
+##     sull'orizzonte, guidato dalle statocisti. Per questo la testa qui è girata di
+##     `ROLLIO` — le palpebre e la pelle sono storte, l'occhio no — ed è il dettaglio che
+##     fa sembrare la cosa un animale invece che un disegno.
 ##   * NON SBATTE LE PALPEBRE. Sott'acqua un occhio non si asciuga: un polpo l'occhio
 ##     lo CHIUDE, tirandoci sopra la pelle attorno, e basta. Nella foto la piega di
 ##     sopra copre un terzo del bulbo; qui la piega di sopra scende e quella di sotto
@@ -207,9 +204,10 @@ const SACCADE_TAU := 0.07
 const INSEGUE_TAU := 0.45
 const SACCADE_DA := 0.05
 
-## La pupilla, in raggi del bulbo (mezza larghezza, mezza altezza), al buio e in luce.
-const PUPILLA_LARGA := Vector2(0.58, 0.42)
-const PUPILLA_STRETTA := Vector2(0.50, 0.10)
+## La pupilla, in raggi del bulbo, al buio e in luce: tonda, quindi i due numeri sono uguali.
+## Al buio è il doppio di quella dell'immagine, in luce due terzi.
+const PUPILLA_LARGA := Vector2(0.40, 0.40)
+const PUPILLA_STRETTA := Vector2(0.12, 0.12)
 const PUPILLA_TAU := 0.9
 ## Anche con la Luna piena allo zenit è notte: la pupilla resta per un quarto aperta.
 const PUPILLA_LUNA := 0.75
@@ -219,7 +217,7 @@ const SHADER_BULBO := "res://world/shaders/occhio_bulbo.gdshader"
 const PELLE_COLORE := "res://assets/textures/pelle-polpo/color.jpg"
 const PELLE_NORMALE := "res://assets/textures/pelle-polpo/normal.jpg"
 const PELLE_RUVIDITA := "res://assets/textures/pelle-polpo/roughness.jpg"
-const IRIDE := "res://assets/textures/iride-polpo/color.jpg"
+const IRIDE := "res://assets/textures/occhio_cosmico/occhio.png"
 
 enum Fase { NIENTE, COMPARE, CHIUSO, SI_APRE, APERTO, SI_CHIUDE, SVANISCE }
 
@@ -556,7 +554,7 @@ func _istanza(nome: String, padre: Node3D) -> MeshInstance3D:
 ## esce bianco e lo dice.
 func _texture(via: String) -> Texture2D:
 	if not ResourceLoader.exists(via):
-		push_warning("occhio: manca %s — rilancia tools/prendi_pelle.py" % via)
+		push_warning("occhio: manca %s — vedi assets/LEGGIMI.txt" % via)
 		return null
 	return load(via) as Texture2D
 
@@ -570,9 +568,7 @@ func _disegna() -> void:
 		_mesh_palpebra(_giu.mesh as ArrayMesh, false)
 
 	_bulbo.global_basis = Basis.looking_at(_sguardo, alto).scaled(Vector3.ONE * raggio)
-	var p := pupilla()
-	_mat_bulbo.set_shader_parameter("pupilla_largo", p.x)
-	_mat_bulbo.set_shader_parameter("pupilla_alto", p.y)
+	_mat_bulbo.set_shader_parameter("pupilla_raggio", pupilla().y)
 	_mat_bulbo.set_shader_parameter("testa_inversa", _testa.global_basis.orthonormalized().inverse())
 	_mat_bulbo.set_shader_parameter("centro", global_position)
 	_mat_bulbo.set_shader_parameter("su_apertura", lerpf(CHIUSA, APERTA_BASE, _apertura))

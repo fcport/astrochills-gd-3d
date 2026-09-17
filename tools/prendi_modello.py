@@ -91,6 +91,13 @@ MODELLI = {
                         "Ciuffi d'erba per il prato attorno all'osservatorio. Si\n"
                         "fotografano in una texture (tools/erba_blender.py): a novembre\n"
                         "sull'Appennino un prato e' questo, meta' verde e meta' paglia."),
+    # LA RETE DEL RECINTO. Nelle foto del sito (Street View, marzo) il recinto e' una
+    # rete metallica a maglia romboidale plastificata verde, su paletti, alta un metro
+    # e mezzo: la recinzione di un terreno pubblico italiano. Il gioco aveva quattro
+    # muri grigi alti uno e quaranta. Questa e' la rete, con i pali e il tubo in cima.
+    "modular_chainlink_fence": ("1k",
+                                "Rete metallica a maglia romboidale su pali, a moduli: il\n"
+                                "recinto del prato, che nelle foto del sito e' questo."),
 }
 
 
@@ -121,6 +128,61 @@ DA_OGA = {
         " e presi separatamente danno o un computer grigio o una figura senza forma."
         " La versione DAE li avrebbe insieme, ma Blender 5 non importa piu' Collada."),
 }
+
+
+# Objaverse: cartella -> (url del .glb, pagina, autore, licenza, credito, perche')
+#
+# SKETCHFAB SENZA ACCOUNT. Il download di Sketchfab vuole la sessione (vedi A_MANO
+# qui sotto), ma nel 2022 l'Allen Institute ha archiviato ottocentomila suoi modelli a
+# licenza Creative Commons nel dataset Objaverse, su Hugging Face, e lo tiene aperto:
+# il .glb si scarica con un GET. La licenza resta quella dell'autore su Sketchfab, e
+# il credito e' dovuto come per gli altri (CREDITI.md).
+#
+# GLI ALBERI DEL PANORAMA. A novembre sull'Appennino gli alberi sono spogli, e le
+# foto del sito lo dicono anche a marzo: alberi nudi lungo la sterrata, il bosco
+# ceduo sul versante. Poly Haven ha solo alberi con le foglie e conifere da
+# diciassette milioni di facce; quelli che seguono sono stati cercati per nome
+# ("bare tree", "winter oak", "leafless") e guardati uno per uno, e se ne tengono
+# due: un set di querce fatte per un gioco, e una scansione di un albero vero.
+# Scartati: un vecchio albero da frutto scansionato (un milione di triangoli, e un
+# melo non sta su un crinale), due alberi senza texture, e tre alberi "morti" che
+# sembrano morti e non spogli.
+DA_OBJAVERSE = {
+    "querce_spoglie": (
+        "https://huggingface.co/datasets/allenai/objaverse/resolve/main/glbs/000-129/"
+        "750fac732a8c453e9dd748f1396275fa.glb",
+        "https://sketchfab.com/3d-models/3-english-oak-set-quercus-robur-updated-750fac732a8c453e9dd748f1396275fa",
+        "Yag1z", "CC-BY-4.0",
+        'This work is based on "3 English Oak Set (Quercus Robur) *Updated" '
+        "(https://sketchfab.com/3d-models/3-english-oak-set-quercus-robur-updated-750fac732a8c453e9dd748f1396275fa) "
+        "by Yag1z (https://sketchfab.com/Yag1z) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "Tre querce spoglie, circa novemila triangoli l'una, tronco e rami con le"
+        " carte dei rametti. Farnia e non roverella, ma d'inverno la sagoma e' la"
+        " stessa: tronco storto, rami che partono bassi, chioma larga di rametti."),
+    "albero_scansionato": (
+        "https://huggingface.co/datasets/allenai/objaverse/resolve/main/glbs/000-073/"
+        "fabc5ef137854b369152062b59444159.glb",
+        "https://sketchfab.com/3d-models/free-tree-fullsize-photogrammetry-scan-2-draft-fabc5ef137854b369152062b59444159",
+        "Epic_Tree_Store", "CC-BY-4.0",
+        'This work is based on "Free Tree fullsize photogrammetry scan 2 Draft" '
+        "(https://sketchfab.com/3d-models/free-tree-fullsize-photogrammetry-scan-2-draft-fabc5ef137854b369152062b59444159) "
+        "by Epic_Tree_Store (https://sketchfab.com/johngreenstone) licensed under "
+        "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "Un albero vero scansionato, spoglio: tronco dritto e chioma fitta di rametti,"
+        " quello che sta lungo la sterrata nelle foto del sito. 472 mila triangoli:"
+        " lo riduce tools/alberi_blender.py."),
+}
+
+
+def prendi_objaverse(cartella):
+    url, pagina, autore, licenza, credito, perche = DA_OBJAVERSE[cartella]
+    fuori = os.path.join(DEST, cartella)
+    prendi_url(url, os.path.join(fuori, cartella + ".glb"))
+    io.open(os.path.join(fuori, "FONTE.txt"), "w", encoding="utf-8").write(
+        "\n".join(["%s da Sketchfab (%s), preso dall'archivio Objaverse" % (cartella, pagina),
+                   "Autore: %s. Licenza: %s." % (autore, licenza), credito, "", perche, ""]))
+    print("%-26s %s (Objaverse, %s)" % (cartella, cartella + ".glb", licenza))
 
 
 # Sketchfab: cartella -> (zip atteso, pagina, autore, licenza, credito, perche')
@@ -684,6 +746,14 @@ def prendi_url(url, percorso):
         f.write(r.read())
 
 
+# LE MAPPE CHE IL glTF NON PORTA. Poly Haven scrive il colore del glTF da 1k in JPEG, e un
+# JPEG non ha trasparenza: la maglia della rete arriva come una lastra piena, e l'opacita'
+# sta in un file a parte. Si prende qui, e la unisce al colore chi prepara il modello.
+MAPPE_IN_PIU = {
+    "modular_chainlink_fence": ("wire_opacity",),
+}
+
+
 def prendi(slug):
     risoluzione, perche = MODELLI[slug]
     url = "https://api.polyhaven.com/files/%s" % slug
@@ -697,6 +767,10 @@ def prendi(slug):
     for relativo, sotto in voce.get("include", {}).items():
         prendi_url(sotto["url"], os.path.join(fuori, relativo.replace("/", os.sep)))
         presi.append(relativo)
+    for mappa in MAPPE_IN_PIU.get(slug, ()):
+        png = dati[mappa][risoluzione]["png"]
+        prendi_url(png["url"], os.path.join(fuori, "textures", os.path.basename(png["url"])))
+        presi.append(os.path.basename(png["url"]))
     io.open(os.path.join(fuori, "FONTE.txt"), "w", encoding="utf-8").write(
         "%s da Poly Haven (https://polyhaven.com/a/%s), %s\n"
         "Licenza CC0: nessuna attribuzione richiesta.\n\n%s\n" % (slug, slug, risoluzione, perche))
@@ -705,11 +779,14 @@ def prendi(slug):
 
 
 if __name__ == "__main__":
-    for s in (sys.argv[1:] or (sorted(MODELLI) + sorted(DA_OGA) + sorted(A_MANO))):
+    for s in (sys.argv[1:] or (sorted(MODELLI) + sorted(DA_OGA) + sorted(DA_OBJAVERSE)
+                               + sorted(A_MANO))):
         if s in MODELLI:
             prendi(s)
         elif s in DA_OGA:
             prendi_oga(s)
+        elif s in DA_OBJAVERSE:
+            prendi_objaverse(s)
         elif s in A_MANO:
             if not prendi_a_mano(s):
                 sys.exit(1)

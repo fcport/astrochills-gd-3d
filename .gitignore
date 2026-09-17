@@ -33,6 +33,9 @@ tools/__texture_cache__/
 # il bundle Human Base Meshes scaricato da tools/braccio_umano_blender.py (50 MB)
 tools/__modelli_cache__/
 
+# rilievi, satellite e mappe scaricati da tools/prendi_panorama.py (settecento megabyte)
+tools/__panorama_cache__/
+
 # --- prodotti rigenerabili: modelli e texture ---
 # I .glb pesano settanta megabyte perche' incorporano le texture, e li rifa' uno
 # script che sta qui dentro: committarli vuol dire aggiungere settanta megabyte
@@ -47,6 +50,7 @@ tools/__modelli_cache__/
 # .glb aprendoli: derivati di derivati, e non si torna indietro a mano.
 assets/models/
 assets/textures/
+assets/panorama/
 
 # le cartelle __pycache__ dei moduli di tools/, che finiscono accanto a chi li importa
 __pycache__/

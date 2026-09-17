@@ -9127,3 +9127,426 @@ nell'erba e per terra e restituisce il prato. `tools/scatta_orrori.tscn` li foto
 
 `tools/scatta_via_lattea.tscn` rilegge Deneb e Capella alle loro coordinate esatte prima di
 fotografare.
+
+
+## D-273 Attorno all'osservatorio c'è Monte San Lorenzo vero: il terreno, il bosco spoglio, la rete, i paesi accesi
+
+**16 settembre 2026.** Federico, con cinque fotogrammi di Street View presi dalla sterrata
+davanti al cancello: «bisogna fare attorno all'osservatorio il suo panorama […] non fare
+modellazioni pezzotte in 3d tu, prendi modelli e texture online, non mettere il trattore».
+
+**Prima oltre il prato non c'era niente.** Il profilo all'orizzonte era il bordo del prato
+stesso: quarantotto metri d'erba sospesi nel cielo, e quattro muri grigi al posto del
+recinto.
+
+**IL TERRENO NON SI MODELLA: SI MISURA.** L'osservatorio esiste: in OpenStreetMap è l'edificio
+«Osservatorio Monte San Lorenzo», a 43,84860 N 12,47988 E, sul versante sud del monte a 536
+metri. `tools/prendi_panorama.py` scarica cinque fonti e le porta negli assi del gioco.
+
+| Fonte | Cosa dà | Licenza |
+|---|---|---|
+| TINITALY 1.1 (INGV), tessera w48575 | il terreno nudo a 10 m, vicino | CC-BY 4.0 |
+| Copernicus DEM GLO-30 | la superficie a 30 m, fino a 45 km | Copernicus |
+| Sentinel-2 L2A, scena del 19/11/2020 | il colore: novembre, boschi spogli e campi arati | Copernicus |
+| ESA WorldCover 2021 | dove sono gli alberi e dove le case | CC-BY 4.0 |
+| OpenStreetMap | le strade, l'edificio | ODbL |
+
+I crediti sono in `CREDITI.md`, sezione «Il paesaggio».
+
+- **L'osservatorio vero sta sul centro della pianta** (9,5; 4,75), e la sua quota è lo zero.
+- **Nord +Z ed est +X, come il cielo** (D-272). Il panorama è allo specchio delle foto: il
+  bosco che nelle foto sta a destra della strada, in gioco sta a sinistra. È la stessa
+  scelta del cielo, e deve esserlo: la Luna sorge dietro la collina vera.
+- **Distanze e direzioni vere dall'osservatorio**, con una proiezione azimutale
+  equidistante. La curvatura della Terra si toglie in altezza, rifrazione compresa: a 30 km
+  sono 61 m.
+- **Da lontano si fa la media**: un vertice a 40 km copre un chilometro, e legge la quota
+  media di quel chilometro.
+- **Le due fonti di quota combaciano**: sul terreno aperto fra 3 e 10 km Copernicus sta 0,4 m
+  sopra TINITALY. Dove si toccano si sfumano in due chilometri.
+- **Si toglie la luce della foto.** Il satellite ha visto i versanti col Sole a 26 gradi. La
+  foto va come l'ombreggiatura alla 0,39 (misurato), perché metà della luce di una mattina
+  di novembre viene dal cielo. Dividere per tutta l'ombra rovesciava il rilievo: la
+  correlazione con l'ombra passava da +0,19 a −0,40. Con l'esponente 0,35 va a zero.
+- **Il nero nei boschi a nord c'è davvero.** Nella scena Sentinel-2 lo zero su tre bande
+  non è un buco. Trattato come vuoto, la bicubica lo allargava in quadrati da 40 m.
+
+**DUE PEZZI DI TERRENO, PERCHÉ SONO DUE PROBLEMI** (`world/panorama.gd`).
+
+- **La griglia vicina** copre 800 m a passi di 5, e ci si cammina sopra fino a 790 m.
+  Con la collisione nei primi 250, cioè tre minuti a piedi, si arrivava dove il terreno si
+  vede e non regge.
+  - Dove incontra il prato ne prende la quota (`FormaPrato`) e in 40 m arriva a quella vera;
+    sotto il prato sta 35 cm più giù.
+  - **Il prato è stato visto affogato nel terreno vero** al primo scatto. In un `.tscn` una
+    proprietà di tipo nodo vuole `node_paths`, senza la quale resta vuota senza errori.
+- **Gli anelli lontani** vanno da 700 m a 45 km: 212 anelli per 720 settori.
+  - **Non scrivono la profondità e si disegnano dal più lontano al più vicino.** Con la
+    camera che parte da 5 cm, a 30 km due creste distanti un chilometro hanno la stessa
+    profondità: l'ordine sta negli indici e vale da tutto il prato.
+  - **Stanno fra i trasparenti per primi**, altrimenti il cielo li coprirebbe.
+  - Dove si sovrappongono alla griglia stanno 4 m sotto, così vince la griglia.
+- **La camera vede fino a 50 km** (`player.tscn`, `far`): con i 4 km di prima le montagne
+  oltre la valle venivano tagliate.
+- **Il giocatore resta a margine anche sul terreno di fuori** (`Player._resta_a_margine`),
+  come sul prato (D-267).
+
+**DI COSA È FATTO IL TERRENO** (`panorama_vicino.gdshader`). Il satellite a 10 m è un campo
+intero, e a venti metri dal prato era una macchia olivastra. Allora il satellite dice DOVE,
+cioè di quanto un campo è più chiaro o più scuro della media, e quattro trame dicono DI COSA:
+
+- l'erba del prato, con la sua fase, così sul bordo le due trame combaciano;
+- **la strada bianca**: Ground081, ghiaia calcarea compattata, tinta chiara come nelle foto,
+  sulle sterrate di OSM;
+- l'asfalto sulle strade asfaltate;
+- **il sottobosco di novembre**: ScatteredLeaves009, foglie secche, dove WorldCover vede
+  alberi.
+
+Fra 60 e 260 m la trama sparisce e resta il satellite.
+
+**GLI ALBERI SONO MODELLI VERI E SPOGLI.** Poly Haven ha solo alberi con le foglie e conifere
+da diciassette milioni di facce. Sketchfab ne ha di spogli, ma il download vuole l'account:
+gli stessi modelli CC-BY sono nell'archivio Objaverse su Hugging Face, che si scarica con un
+GET (`prendi_modello.DA_OBJAVERSE`).
+
+- **Una scansione fotogrammetrica** di un albero spoglio col tronco dritto, quello delle foto
+  lungo la sterrata, e **tre querce spoglie** fatte per un gioco.
+- `tools/alberi_blender.py` li separa e li mette in piedi a 9-13 m. Alle querce sostituisce i
+  rami con le gemme rosse (da lontano sembravano fiori) con quelli nudi dello stesso autore.
+- **Sono 66.467**, uno ogni sette metri dove WorldCover vede copertura arborea, fino a 1,5
+  km, e nessuno dentro il recinto.
+- **Entro 60 m sono la scansione in 3D.** Le querce hanno il tronco ritorto e le radici
+  fuori terra, e da dieci metri sembravano creature.
+- **Oltre, la foto di fianco su due rettangoli incrociati**, come l'erba.
+- **Tre difetti visti negli scatti:**
+  - **la scansione arrivava senza luce** (`KHR_materials_unlit`) e di notte brillava bianca;
+  - **le sagome a soglia erano macchie piene**, e adesso sono a retino;
+  - **da lontano i rametti sparivano**, perché la mipmap li media col vuoto: la copertura si
+    rialza per livello di mipmap (`copertura_sottile.gdshaderinc`).
+
+**IL RECINTO È LA RETE DELLE FOTO**: maglia romboidale verde su pali, alta un metro e mezzo
+(`world/recinto.gd`).
+
+- **La rete di Poly Haven è alta due metri e mezzo**: `tools/recinto_blender.py` la taglia
+  invece di schiacciarla, così la maglia resta un rombo.
+- **Il glTF di Poly Haven porta il colore in JPEG, senza la trasparenza**: la mappa di
+  opacità si scarica a parte (`MAPPE_IN_PIU`) e si unisce al colore.
+- **Il filo è di tre millimetri**, meno di un pixel a quattro metri. Con la trasparenza a
+  soglia sparivano le maglie e restavano i pali; col retino e la copertura rialzata si vede
+  la rete.
+- **I muri `Rec` restano, invisibili**: sono la collisione su cui sono misurati i percorsi a
+  piedi.
+
+**I PAESI DI NOTTE.** Un lampione al sodio ogni 40 m dove WorldCover vede costruito, con la
+probabilità della frazione di costruito, fino a 30 km: 67.189 celle.
+
+- **Restano i 1.709 che dall'osservatorio si vedono**: lo script tira un raggio dall'occhio a
+  ogni lampione sulla superficie Copernicus, che ha gli alberi.
+- **Sono punti larghi due pixel e mezzo**, arancio sodio, che si affievoliscono col quadrato
+  della distanza fra un tetto e un pavimento.
+- **Non scrivono la profondità**, come gli anelli: chi è dietro una collina l'ha già tolto il
+  raggio.
+
+**Misurato.**
+- *Banco verde*, con il nuovo `_check_panorama`: le misure ripetute fra gli script Blender e
+  il gioco coincidono, la quota vera sull'osservatorio è 0,000, gli anelli cominciano dentro
+  la griglia, l'ancora è il centro dell'edificio.
+- *Sonde:* `prova_macchina` (a piedi dalla porta si arriva ancora all'auto),
+  `prova_passi_prato` (zero scossoni) e `prova_orrori` passano tutte.
+- *Scatti:* `tools/scatta_panorama.tscn` fotografa otto viste, anche con un Sole finto
+  (`GIORNO=1`) per giudicare quote e cuciture.
+- *Fotogrammi:* fra 92 e 144 al secondo nelle otto viste.
+- *Avvio:* con il panorama, la scena è pronta in 3,7 s su questa macchina.
+
+**Non fatto, e lo dicono le foto:**
+- il cancello, il pilastro di cemento con la targa, il palo della luce col filo, il pozzetto
+  e la staccionata di legno sul ciglio;
+- il raccordo fra il varco del recinto (a nord-est in gioco) e la sterrata vera, che passa a
+  nord-ovest.
+
+**Da verificare giocando:**
+- se il panorama allo specchio disturba chi conosce il posto;
+- fin dove ci si allontana: la collisione finisce a 790 m, e oltre si cade;
+- la luminosità delle luci dei paesi e della strada bianca sotto la Luna;
+- il colore dell'orrore di `Ctrl+F8`, che tinge prato ed erba ma non il terreno di fuori.
+
+## D-274 Nella stampa, al posto del soggetto, un occhio
+
+**16 settembre 2026.** «Non piace che la stampa faccia vedere l'osservatorio, è un po'
+banalotto ormai». Terza stesura dell'orrore di `Ctrl+F6`, dopo il braccio nero che faceva
+«fotobombing» (D-271) e l'osservatorio visto dall'alto.
+
+Fra le proposte (la galassia che manca, il cielo che gira attorno a lei, un occhio), Federico
+ha ricordato di aver già messo fra i modelli **«Cosmic Eye of Horror»** (Huntaer87, Sketchfab,
+CC-BY 4.0). Il modello è un disco a lente con un'iride che sembra una nebulosa, filamenti
+azzurri e un bordo violaceo punteggiato di stelle. Messo al posto del soggetto, sotto la sigla
+M51, lo si guarda come una nebulosa finché non ci si accorge che guarda. Ed è un'idea da
+astrofotografo: la nebulosa Elica la chiamano davvero «l'occhio di Dio».
+
+- **Un render e non il modello.** La texture è un atlante generato a pezzi, quindi l'occhio
+  intero esiste solo sul modello: `tools/occhio_cosmico_blender.py` lo rende di fronte, una
+  volta, senza luci, perché una nebulosa in foto non ha ombre.
+- **Entra nella foto invece di appoggiarcisi.** Il bordo sfuma nel cielo come un alone, la luce
+  si porta a quella del soggetto che copre, sopra ci va il rumore del fondo della stessa foto,
+  e le stelle del campo che gli stavano davanti restano davanti.
+- **Dove e quanto grande lo dice la foto**: il baricentro della luce sopra il fondo e il raggio
+  che ne contiene i nove decimi. Le pagine sono una trentina, ognuna col soggetto in un posto
+  diverso, e una posizione scritta a mano ne sbaglierebbe la metà.
+- **Niente file in `user://`.** La composizione viene sempre uguale dalla pagina e dalla foto,
+  quindi il registro ricorda solo `occhio`. Le stampe salvate con la stesura di prima
+  (`dall_alto`) tornano con l'occhio. `world/orrori/dall_alto.gd` è cancellato.
+
+**Misurato** (`tools/prova_orrori.tscn`, tutto a posto). Su M51, IC 1396 e M13 l'occhio sta
+nella foto con un raggio fra il 42 e il 46% del lato corto. Copre dal 92 al 98% del suo disco,
+non tocca un pixel di carta, lascia davanti tutte le stelle (8, 13, 6) e viene identico due
+volte. `_confronto/33_occhio_tutte.png` ne mostra sei pagine.
+
+## D-275 Quattro correzioni guardando il gioco: l'occhio, la luce rossa, le mani, la meteorite
+
+**16 settembre 2026.** Quattro cose viste giocando, con due fotografie.
+
+1. **L'OCCHIO NEL CIELO** (`F6`, e con lui quello dell'oculare): «i pattern sono un po' troppo
+   uguali tutti, e l'occhio che compare sarebbe bello che fosse quello che poi va anche nella
+   stampa».
+   - **L'iride è l'occhio cosmico della stampa** (D-274), proiettata sul bulbo. La pupilla
+     resta viva e diventa tonda come nell'immagine: allargandosi e stringendosi STIRA l'iride
+     lungo il raggio, invece di disegnarci sopra un cerchio nero. L'iride del polpo era un
+     quadrato di foto ripetuto tre volte, e da sotto era un anello di macchie tutte uguali.
+   - **La pelle non si ripete**: piastrelle esagonali, ognuna con un pezzo di foto spostato e
+     girato a caso (Mikkelsen, JCGT 2022), e sopra chiazze larghe di chiaro e scuro.
+2. **LA LUCE ROSSA CHE PASSA IL MURO**: «perché la luce rossa compenetra per terra oltre il
+   muro?». Le lampade rosse della cupola hanno le ombre, ma l'erba si illumina PER VERTICE, e
+   in Godot l'illuminazione per vertice le ombre delle omni e delle spot non le riceve.
+   - **Adesso l'erba si illumina per pixel**, e la luce si ferma al muro perché c'è l'ombra: è
+     la cosa vera, non una che le somiglia. «Il concetto era che la luce non doveva andare oltre
+     il muro».
+   - **Costa zero e non cambia il prato**: cento fotogrammi al secondo prima e cento dopo, e il
+     prato sotto la Luna resta identico. La prima prova diceva che per pixel il prato si scuriva
+     di quattro volte, ed era un errore di misura: quel chiaro in più ERA la luce rossa che
+     passava il muro.
+   - **La prima correzione era un'altra**, e si è buttata: l'erba su uno strato visivo suo, che
+     le luci di dentro escludevano con `light_cull_mask`. Toglieva il sintomo dove si vedeva —
+     ma quelle lampade avrebbero continuato ad attraversare il muro su tutto il resto.
+3. **LE MANI** (`Ctrl+F4`): «fanno tutte lo stesso movimento, non va bene». Adesso i gesti
+   sono sette, e sono gesti che si riconoscono da lontano: stringere, chiamare con l'indice,
+   l'artiglio, le dita a onda, tendersi tremando, indicare chi guarda, girare il palmo.
+   - **Ognuna fa la sua cosa**: ogni braccio comincia da un gesto diverso, poi sceglie il
+     successivo con un dado suo e per una durata sua, passando da uno all'altro in due secondi
+     e mezzo, e ondeggia sulla spalla con periodi suoi.
+4. **LA METEORITE** (`Ctrl+F8`): «la parte del meteorite è semplicemente idiotica, poi compare
+   così magicamente sto sasso, ed è una merda». Rifatta da capo.
+   - **Quello che vola è la pietra, nel mondo, dal primo istante all'ultimo.** Un punto di luce a
+     cinque chilometri, alto davanti a chi guarda, che cresce venendo verso di lui, accende il
+     paesaggio con una luce che muove le ombre, lascia una scia di fumo che resta in cielo per
+     mezzo minuto, e rallenta scendendo: arriva a 250 m/s, quindi l'ultimo tratto sopra il prato
+     dura mezzo secondo e si vede.
+   - **All'impatto**: un lampo, la camera che trema, zolle e polverone, un cratere bruciato col
+     bordo di terra smossa e i raggi, il fumo che sale finché la pietra è calda.
+   - **La pietra è una meteorite vera**: GRO 17102,0, ferrosa, raccolta in Antartide nel 2017 e
+     scansionata dalla NASA (Astromaterials 3D, pubblico dominio). Fra sette scansioni guardate
+     affiancate è quella che si riconosce subito, bruna e con le impronte di pollice; ingrandita
+     sette volte, a novanta centimetri.
+   - **Si raffredda come un metallo**: le impronte di pollice restano incandescenti più a lungo
+     delle creste, e la luce va col cubo del calore. La prima taratura confrontava la luminanza
+     LINEARE della texture con soglie misurate in sRGB, tutta la pelle risultava fossetta, e la
+     pietra era una macchia arancio senza forma.
+
+**Misurato** (`tools/prova_orrori.tscn`, tutto a posto).
+- *Mani.* In un minuto fanno 6 gesti diversi, e in nessun istante tutte e cinque fanno lo
+  stesso. Le due più simili differiscono in media di 26°.
+- *Meteorite.* Al primo secondo sta a 30° d'altezza e 22° di lato. Scende senza salti,
+  accende il paesaggio fino a 2,4 e resta esattamente nella buca, con il cratere.
+- *Luce oltre il muro.* Con le lampade libere e l'erba per vertice il rosso passa il muro; per
+  pixel no, e i fotogrammi al secondo non cambiano.
+- *Altre sonde.* `tools/prova_occhio.tscn`: pupilla dritta e dentro le palpebre.
+
+## D-276 Il posto vero attorno all'edificio: il nord a 45 gradi, il recinto della carta, la terrazza senza gradino
+
+**17 settembre 2026.** Federico, dopo il panorama di D-273: «qui boh c'è un gradino... non si
+capisce benissimo cosa dovrebbe succedere», e poi, con una foto dal prato: «la mappa iniziale e
+quello che è stato aggiunto dopo non ha il minimo senso come sono collegati». Fra ricucire la
+pianta di prima e rifare il posto com'è, ha scelto il posto com'è.
+
+**TRE COSE NON SI PARLAVANO.**
+1. **L'edificio vero è girato di 45 gradi**, col lato lungo da sud-ovest a nord-est
+   (OpenStreetMap, Carta Tecnica Regionale). Nel gioco sta dritto lungo x, e la sterrata vera
+   gli arrivava addosso in diagonale.
+2. **Recinto, varco e auto erano inventati** quando fuori non c'era niente: un rettangolo, il
+   varco a nord-est, l'auto dentro. La sterrata vera passa a nord-ovest, e il varco dava sul
+   bosco.
+3. **Il gradino**: il prato stava a quota sua e il terreno vero sotto, 35 cm più giù. Misurato
+   ai raggi, tutto il bordo del prato era un salto da 35 a 58 cm.
+
+**IL NORD È UN NUMERO SOLO, 45 GRADI** (`NORD` in `geometria.py`, `Luna.NORD`; il banco le
+confronta). A girare è il mondo e non l'edificio, perché tutto il gioco - stanze, luci, sonde -
+è scritto negli assi dell'edificio. Il numero entra in tre posti:
+- **il cielo**: `Luna.direzione` e il suo inverso `Luna.azimut`, il polo di `TempoSiderale` e
+  dello shader, l'orrore della montatura;
+- **la montatura**: `telescopio_blender.py` gira l'asse polare di tanto
+  (`prova_rotazione`: insegue esatta);
+- **il panorama**: `prendi_panorama.py` gira dentro `latlon` e `piano`, e il resto - rilievo,
+  satellite, strade, alberi, luci - gira insieme senza saperlo.
+
+**LA CUPOLA RESTA DALL'ALTRA PARTE, e si dichiara.** Il mondo del gioco è allo specchio (D-272).
+Con una rotazione si fa combaciare la porta con il cancello oppure la cupola con il nord-est,
+non tutte e due. Si è scelta la porta, perché è da lì che si arriva: dal cancello l'edificio si
+vede come nella foto di Street View, con la cupola a sinistra, e l'impronta di OpenStreetMap
+cade su quella del gioco.
+
+**IL POSTO È MISURATO, IN ASSI DELL'EDIFICIO** (`geometria.py`, il posto vero):
+- **la rete ha cinque lati**, letti sulla Carta Tecnica Regionale 2019, che disegna recinto ed
+  edificio nello stesso rilievo;
+- **il cancello** è un'anta di quattro metri sul lato sud-ovest, subito dopo lo spigolo ovest,
+  dove arriva la sterrata; lì Street View mostra il pilastro con la targa;
+- **la ghiaia**: il piazzale fra il cancello e la facciata, fino al cordolo, e lo slargo fuori
+  dal cancello (ortofoto AGEA 2022 e foto);
+- **il viottolo d'erba** lungo la rete a sud-ovest, dalla carta: OpenStreetMap non ce l'ha;
+- **l'auto sta fuori, sullo slargo**, lungo la sterrata: in Street View le macchine e il
+  trattore stanno lì.
+
+**LE QUOTE: IL PAVIMENTO NON STA SUL RILIEVO.** TINITALY a dieci metri è il pendio di prima
+della casa.
+- **Dalla foto presa al cancello**: gronda e zoccolo della facciata si incontrano
+  all'orizzonte 3,4 m sopra lo zoccolo. La camera di Street View sta a due metri e mezzo, quindi
+  lo slargo sta un metro sopra il pavimento, e il pavimento 2,3 m sopra il pendio di TINITALY.
+- **La prima taratura prendeva il punto sbagliato**: il punto della sterrata di OpenStreetMap
+  più vicino al cancello, che sta tredici metri più su. L'auto finiva su un rialzo di novanta
+  centimetri.
+
+**IL PRATO È LA TERRAZZA, E ATTORNO IL PENDIO VERO** (`FormaPrato`):
+- **dentro la rete** il pendio conta per il 60%, fra −0,3 e +1 m, con le onde di prima e i
+  piani sotto l'edificio e sotto l'auto;
+- **fuori** c'è il rilievo vero, tenuto dentro un cono a 45 gradi che scende dal ciglio, come
+  una scarpata di riporto. Verso la valle il terreno sta sei metri sotto il ciglio, ed è la
+  scarpata che si vede dal cancello oltre la rete. La prima stesura sfumava su dodici metri
+  fissi, poi diciotto: faceva un muro del 125% dove la valle scende di tredici metri in
+  quindici;
+- **sul bordo della maglia il prato è la griglia del panorama al millimetro**: legge la stessa
+  superficie a triangoli (`PanoramaDati.quota_griglia`). I lati stanno sulle righe della
+  griglia, e sotto il prato la griglia non c'è: le due maglie si toccano su una linea;
+- **il prato si veste come la griglia**: stessa trama, stesso satellite, la ghiaia dove dicono
+  le maschere. L'erba cresce solo dentro la rete e tre metri oltre, e non sulla ghiaia;
+- **l'auto si posa dove sta la sterrata** (`Prato.SUL_TERRENO`, `Macchina._posa_sul_prato`).
+  Il modello scendeva della quota del nodo invece che di mezza altezza: con l'auto a quota zero
+  erano lo stesso numero;
+- **la collisione della rete** sono cinque muri invisibili girati lungo i lati, alti quattro
+  metri e mezzo: il terreno ora sale e scende lungo la rete.
+
+**LA CAMERA CCD SI PERDEVA SUL PIENO DEL POZZO, E LA ROTAZIONE L'HA FATTO VEDERE.** Girata la
+montatura, `prova_ccd` perdeva tre pose su quattordici. Rimessa a nord zero, una su tredici: il
+difetto c'era già.
+- **La camera restava a vibrare sul pieno** che tappa il pozzo del pilastro, a 8,7 cm/s senza
+  spostarsi di due millimetri. La rete di sicurezza giudicava ferma una cosa dalla velocità, e
+  non la guardava mai.
+- **Adesso ferma vuol dire che non se ne va** (`Carryable.FERMA_ENTRO`, tre centimetri).
+
+**Misurato.**
+- *Banco*: sul bordo il prato si scosta dal terreno vero di 0,0000 m; impronte fuori quota 0;
+  il vano del cancello è di 4,0 m; 14.318 ciuffi, nessuno sulla ghiaia o sulla scarpata;
+  pendenza massima dentro la rete 18%, sulla scarpata 113%.
+- *Sonde*: `prova_ccd` 0 pose perse su 14. Passano `prova_rotazione`, `prova_luna`,
+  `prova_pianeti`, `prova_puntamento`, `prova_slew`, `prova_sync`, `prova_solve`, `prova_cupola`,
+  `prova_oculare`, `prova_passi_prato`, `prova_orrori`, `prova_tentacolo`, `prova_occhio`,
+  `prova_varchi` e le sonde delle cose che si prendono in mano. `prova_macchina`: l'auto si
+  vede da 96 punti e dalla nascita ci si arriva a piedi, passando dal cancello.
+  `prova_prop` segnala la moka fuori dal layer degli interagibili: queste modifiche non la
+  toccano.
+- *Panorama*: 1.794 luci dei paesi visibili (erano 1.709), 70.248 alberi. Di notte, fra 59 e
+  118 fotogrammi al secondo nelle sette viste nuove di `scatta_panorama.tscn`; col materiale
+  del panorama sul prato o col suo, gli stessi.
+
+**Non fatto, e lo dicono le foto:**
+- il cancello vero, il pilastro con la targa, il palo della luce, il pozzetto e la staccionata
+  sul ciglio;
+- il filare di alberi fra la sterrata e la rete: WorldCover, a dieci metri, non lo vede;
+- la cupola a nord-est, che una rotazione non può dare.
+
+**Da verificare giocando:**
+- quanto è chiara la ghiaia di notte;
+- se la scarpata verso la valle, a 45 gradi, invita a scendere o a stare dentro.
+
+## D-277 La meteorite caduta è un solido
+
+**17 settembre 2026.** Federico, giocando `Ctrl+F8`: «il meteorite venuto dallo spazio non ha
+un hitbox». Era solo una mesh, e ci si passava attraverso.
+
+- **Adesso ha un corpo** (`OrroreColore._solido`), con l'involucro convesso della scansione
+  di GRO 17102,0 alla scala della pietra. Non è una forma inventata: è quella della pietra.
+- **Esiste da quando tocca terra a quando si sbriciola.** Prima, in volo, non serve; nella
+  fase in cui rimpicciolisce fino a sparire, un solido che resta grande sarebbe un muro
+  invisibile.
+- **Sta sul layer del mondo e su quello degli appoggi**: ci si sbatte, il raggio del giocatore
+  ci si ferma, e ci si possono posare le cose.
+
+**Misurato** (`tools/prova_orrori.tscn`, tutto a posto): un raggio che scende da sopra si
+ferma sulla pietra, 57 cm sopra la buca, e non sull'erba.
+
+## D-278 Le mani grandi si muovono piano, la ghiaia ha i sassi giusti, e MaxIm dice NOT ENOUGH TIME
+
+**17 settembre 2026.** Tre cose viste giocando.
+
+1. **LE MANI** (`Ctrl+F4`): «le mani fanno cose ridicole». Filmate fotogramma per fotogramma
+   dalla porta, i difetti erano due, e si sommavano.
+   - **Gesticolavano coi tempi di una persona.** D-275 aveva dato ai gesti i periodi di una
+     mano vera: chiamare con l'indice ogni secondo e mezzo, tremare cinque volte al secondo.
+     Una cosa grande che si muove svelta si legge piccola. Adesso i tempi di un gesto sono
+     quelli di una mano vera, e la mano grande li fa più piano della radice di quante volte
+     è più grande: è la similitudine di Froude, con cui il cinema gira i modellini. Per
+     braccia da uno a un chilometro e mezzo sono da 39 a 46 volte: chiamare dura mezzo minuto
+     e il tremito diventa un ondeggiare lento. La salita, ventidue secondi, era già su quella
+     scala.
+   - **Spuntavano dietro gli alberi del recinto.** Da D-273 attorno c'è il terreno vero, e le
+     braccia stavano ancora su una quota zero che là non c'è. Dalla porta verso nord la
+     collina e il bosco coprono il cielo fino a quaranta gradi: delle braccia restavano le
+     dita sopra gli alberi a trenta metri, e sembravano mani di persona dietro la siepe.
+   - **Adesso escono dal terreno vero, dove lo si vede lontano** (`OrroreBraccia`). Ogni
+     braccio sta sulla quota del punto da cui spunta. L'orizzonte attorno a chi le chiama si
+     misura su terreno, alberi del panorama e, con i raggi, su quello che si vede: edificio,
+     cupola, rete. Le braccia vanno nella direzione libera più vicina allo sguardo, e se lo
+     spicchio è stretto si stringono fra loro. La prima stesura non guardava l'edificio, e
+     dalla porta le mandava dietro la casa, verso la valle.
+   - **Le sinistre finivano a destra.** Il mondo è allo specchio (D-272): azimut più grande
+     vuol dire più a sinistra sullo schermo. Contate come in una bussola, le braccia piegavano
+     il gomito verso il centro, e strette nello spicchio due si incrociavano a X.
+2. **LA GHIAIA DEL PIAZZALE**: «il pavimento non ha senso rispetto all'edificio». Erano due
+   errori sulla stessa foto, e un terzo sopra.
+   - **La foto della sterrata è larga il doppio di quanto è alta** (Ground081, 1024 x 512), e
+     lo shader la stendeva su un quadrato: ogni sasso lungo il doppio.
+   - **Il righello era di due metri e mezzo.** ambientCG non dichiara la misura, e si legge
+     sui sassi: la grana fine del battuto fa tre pixel, e in un misto stabilizzato sono
+     quattro millimetri. Un metro e trenta: sassolini da un centimetro, sassi da tre a
+     cinque, la lastra più grande ventiquattro. Prima, davanti alla porta, c'erano lastre da
+     mezzo metro.
+   - **Ripetuta ogni metro e trenta la foto disegnava righe**, e si campiona a piastrelle
+     esagonali come la pelle del polpo (D-275). Il codice è uno solo, in
+     `esagoni.gdshaderinc`.
+   - **Il satellite non schiarisce più le strade.** La tinta della ghiaia è già quella
+     misurata sulle foto. Moltiplicata per quanto il campo è più chiaro della media, sulle
+     strade bianche era sempre al tetto di una volta e mezza.
+3. **NOT ENOUGH TIME**: «c'è bisogno che se uno sta per cominciare una sessione di fotografia e
+   non la può finire in serata, MaxIm DL ti dica "not enough time" lampeggiante, altrimenti
+   sei uno scemo che aspetta».
+   - **All'alba la posa si smonta** e i frame se ne vanno con lei: una sequenza che non ci sta
+     non consegna niente.
+   - **Il pannello della sequenza confronta i minuti di notte che prende con quelli che
+     mancano all'alba** (`PhaseImaging.fits_tonight`). Se non ci stanno lampeggia `NOT ENOUGH
+     TIME - dawn in Nm`, in configurazione e, per i frame che mancano, in posa.
+   - **Avvisa e non blocca START**: il conto lo fa il pannello, la decisione chi è seduto.
+   - **In configurazione il pannello si ridisegna da solo quando la sequenza smette di
+     starci**: il tempo passa anche mentre si gira la manopola.
+
+**Misurato.**
+- *Mani* (`tools/prova_orrori.tscn`, tutto a posto). Chiamate dalla porta guardando nord,
+  escono 51 gradi più a sinistra, sopra il cancello e la valle. Salite, la spalla più alta
+  sta 241 m sotto terra e il polso più basso 4,1° sopra l'orizzonte; le cime stanno almeno
+  a 22°. La prova nuova boccia un polso sotto i tre gradi, e dalla porta verso nord la
+  disposizione di prima ne aveva sotto zero.
+- *Ghiaia* (`tools/scatta_panorama.tscn`, vista nuova `facciata`). Le righe sul piazzale non
+  si vedono più; di notte fra 82 e 145 fotogrammi al secondo nelle otto viste.
+- *NOT ENOUGH TIME.* Banco: la sequenza di default, quaranta minuti, ci sta a inizio notte e
+  non a mezz'ora dall'alba. Sul pannello disegnato l'avviso sta acceso mezzo secondo e spento
+  mezzo.
+- *Altre sonde*: banco, `prova_occhio` (la pelle usa l'include nuovo), `prova_staccata`,
+  `prova_desktop`.
+
+**Da verificare giocando:** se le mani, così lente, si capisce che si muovono.

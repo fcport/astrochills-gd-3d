@@ -120,6 +120,11 @@ var _done := false
 ## dopo, e la posa partiva come se la camera ci fosse.
 var _camera := true
 
+## Se, l'ultima volta che il pannello di configurazione si è ridisegnato, la sequenza
+## finiva prima dell'alba. Serve a ridisegnarlo quando smette di starci: il pannello non si
+## ridisegna a ogni frame, e il tempo passa anche mentre si gira la manopola.
+var _ci_stava := true
+
 ## La posa è morta perché la camera se n'è andata.
 ##
 ## NON È `_done`, che dice soltanto «non c'è più niente da far avanzare». Questo
@@ -196,6 +201,13 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+	# IN CONFIGURAZIONE L'UNICA COSA CHE CAMBIA DA SOLA è quanto manca all'alba: il pannello
+	# si ridisegna quando la sequenza smette di starci, e basta.
+	if not _started and not _done and _run != null and is_instance_valid(_screen):
+		if fits_tonight() != _ci_stava:
+			_screen.set_readout(_config_readout())
+		return
+
 	# SOLO IN RUN. In configurazione non c'è nulla da far avanzare: il pannello si
 	# ridisegna dai comandi, non ogni frame. `_screen` è protetto quanto `truth`: se
 	# il nodo unico si perde — rinominato, spostato, liberato dall'host — senza
@@ -299,6 +311,34 @@ func score() -> int:
 ## entrambi i campi: cambiano quanto integri, e quanto integri è la foto.
 func total_min() -> float:
 	return float(_frames_total) * float(_exposure) / 60.0
+
+
+## Quanti minuti di notte prende la sequenza configurata, da START all'ultimo frame.
+func sequence_night_min() -> float:
+	return float(_frames_total) * _game_min_per_frame()
+
+
+## Quanti minuti di notte restano prima dell'alba. Senza notte, infiniti: non si inventa
+## un'alba che non c'è.
+func night_left_min() -> float:
+	if _run == null:
+		return INF
+	return maxf(Tuning.night_length_min - _run.elapsed_min, 0.0)
+
+
+## SE LA SEQUENZA FINISCE PRIMA DELL'ALBA. All'alba la fase si smonta a posa in corso e
+## i frame se ne vanno con lei (`_exit_tree`): una sequenza che non ci sta non consegna
+## niente, e chi la avvia aspetta per niente. Federico: «c'è bisogno che se uno sta per
+## cominciare una sessione di fotografia e non la può finire in serata, MaxIm DL ti dica
+## "not enough time" lampeggiante, altrimenti sei uno scemo che aspetta».
+##
+## NON FERMA START: avvisa. Il pannello dice il conto, e decidere resta di chi è seduto.
+## In posa vale per i frame che mancano.
+func fits_tonight() -> bool:
+	if _started:
+		var left: int = maxi(_frames_total - int(_state.get(&"frames_done", 0)), 0)
+		return float(left) * _game_min_per_frame() <= night_left_min()
+	return sequence_night_min() <= night_left_min()
 
 
 ## Quanti minuti di GIOCO dura un frame. La posa dura quanto integra — un frame da
@@ -406,6 +446,7 @@ func _exit_tree() -> void:
 
 
 func _config_readout() -> Dictionary:
+	_ci_stava = fits_tonight()
 	return {
 		&"running": false,
 		&"field": _field,
@@ -419,6 +460,10 @@ func _config_readout() -> Dictionary:
 		&"total_min": total_min(),
 		&"min_exp": _min_exp,
 		&"score": exposure_score(total_min(), _min_exp),
+		# QUANTO PRENDE DELLA NOTTE, e se ci sta: minuti di notte, non d'integrazione.
+		&"night_min": sequence_night_min(),
+		&"night_left_min": night_left_min(),
+		&"not_enough_time": not _ci_stava,
 		# Se si può premere START. Il pannello lo dice al posto del footer dei
 		# comandi: un tasto che non fa niente e non spiega è peggio di un tasto che
 		# manca.
@@ -450,6 +495,8 @@ func _run_readout() -> Dictionary:
 	# e la sorgente di verità non deve sapere quanto pesa un frame sull'orologio.
 	var left: int = maxi(_frames_total - int(_state.get(&"frames_done", 0)), 0)
 	out[&"remaining_min"] = float(left) * _game_min_per_frame()
+	out[&"night_left_min"] = night_left_min()
+	out[&"not_enough_time"] = not fits_tonight()
 	return out
 
 

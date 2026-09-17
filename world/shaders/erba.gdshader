@@ -1,14 +1,24 @@
 // L'erba del prato: il ciuffo fotografato da tools/erba_blender.py, su due
 // rettangoli incrociati (world/prato.gd).
 //
-// È ps1.gdshader con tre cose in più e nessuna in meno. La texture con la
+// È ps1.gdshader con tre cose in più e una in meno. La texture con la
 // trasparenza A SOGLIA: un filo d'erba ha il bordo netto, e un bordo sfumato
 // vorrebbe dire ordinare migliaia di rettangoli trasparenti. La variante e la tinta
 // di ogni ciuffo, che arrivano dal MultiMesh in INSTANCE_CUSTOM. E le due facce: un
 // rettangolo d'erba si guarda da tutte e due le parti.
+//
+// QUELLO CHE MANCA È `vertex_lighting`, ED È LA RIGA CHE FACEVA PASSARE LA LUCE
+// ATTRAVERSO I MURI. Illuminata per vertice, l'erba non riceve le ombre delle lampade
+// (in Godot l'illuminazione per vertice le ombre delle omni e delle spot non le ha), e
+// la luce rossa della cupola accendeva i ciuffi fuori, lungo la facciata. Federico:
+// «il concetto era che la luce non doveva andare oltre il muro». Per pixel le ombre ci
+// sono e la luce si ferma dove si deve fermare. Misurato: cento fotogrammi al secondo
+// prima e cento dopo — sono ciuffi piccoli su uno schermo da 640 per 360, e il prato
+// sotto la Luna resta identico (il buio in più della prima prova era proprio il rosso
+// che non c'è più).
 
 shader_type spatial;
-render_mode vertex_lighting, diffuse_lambert, specular_disabled, cull_disabled;
+render_mode diffuse_lambert, specular_disabled, cull_disabled;
 
 // Le varianti in fila, da sinistra a destra.
 uniform sampler2D ciuffi : source_color, filter_nearest, repeat_disable;

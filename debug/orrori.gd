@@ -11,7 +11,7 @@
 ##   Ctrl+F3  le ventose contro il cielo           `world/orrori/ventose.gd`
 ##   Ctrl+F4  le braccia all'orizzonte             `world/orrori/braccia.gd`
 ##   Ctrl+F5  l'occhio nell'oculare                `world/orrori/nell_oculare.gd`
-##   Ctrl+F6  la posa dall'alto                   `world/orrori/posa.gd`
+##   Ctrl+F6  l'occhio nella posa                 `world/orrori/posa.gd`
 ##   Ctrl+F7  la montatura che ti segue            `world/orrori/montatura.gd`
 ##   Ctrl+F8  il colore venuto dallo spazio        `world/orrori/colore.gd`
 ##
@@ -27,7 +27,7 @@ const ORRORI := {
 	KEY_F3: ["res://world/orrori/ventose.gd", "le ventose contro il cielo"],
 	KEY_F4: ["res://world/orrori/braccia.gd", "le braccia all'orizzonte"],
 	KEY_F5: ["res://world/orrori/nell_oculare.gd", "l'occhio nell'oculare"],
-	KEY_F6: ["res://world/orrori/posa.gd", "la posa dall'alto"],
+	KEY_F6: ["res://world/orrori/posa.gd", "l'occhio nella posa"],
 	KEY_F7: ["res://world/orrori/montatura.gd", "la montatura che ti segue"],
 	KEY_F8: ["res://world/orrori/colore.gd", "il colore venuto dallo spazio"],
 }

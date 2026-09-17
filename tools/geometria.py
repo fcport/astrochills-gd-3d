@@ -1842,6 +1842,97 @@ DEC_RIPOSO_GRADI = -20.0
 # l'altezza del polo sull'orizzonte VALE la latitudine - e' la stessa cosa detta due
 # volte, ed e' il controllo piu' semplice che il modello sia montato dritto.
 LATITUDINE = 43.9
+
+# DOVE STA IL NORD VERO, come azimut del gioco (gradi da +Z verso +X). L'edificio vero ha
+# il lato lungo a 45 gradi, da sud-ovest a nord-est (OpenStreetMap, e la Carta Tecnica
+# Regionale del 2019), e la porta sul lato che guarda la sterrata, a nord-ovest. Nel gioco
+# l'edificio sta dritto - lungo x, porta verso +Z - e resta com'e': a girare e' il resto
+# del mondo, il cielo, la montatura e il panorama, tutti e tre di questo numero. Prima
+# valeva zero, e la sterrata vera arrivava in diagonale su un recinto che non era il suo.
+NORD = 45.0
+
+# ------------------------------------------------------------------ il posto vero
+# IL RECINTO, IL CANCELLO, LA GHIAIA E L'AUTO STANNO DOVE STANNO DAVVERO. Prima erano un
+# rettangolo con un varco a nord-est scelto quando fuori non c'era niente, e il panorama
+# vero ci ha portato attorno una sterrata che passava a nord-ovest senza entrarci.
+#
+# DA DOVE. La Carta Tecnica Regionale 2019 (Regione Marche, 1:10.000) disegna recinto ed
+# edificio nello stesso rilievo: le distanze fra i due valgono anche se la carta sta un
+# paio di metri di lato rispetto a OpenStreetMap. La ghiaia e lo slargo del cancello sono
+# dall'ortofoto AGEA 2022 e dalle foto di Street View dalla sterrata.
+#
+# IN ASSI DELL'EDIFICIO: u lungo il lato lungo (verso nord-est, cioe' +x), v verso la
+# porta (nord-ovest, +z), in metri dal centro della pianta. Resta un difetto che una
+# rotazione non toglie: nel gioco la cupola sta a -x, in quello vero a nord-est. Il
+# mondo del gioco e' allo specchio (D-272): si puo' far combaciare la porta con il
+# cancello o la cupola, non tutte e due, e la porta e' come si arriva.
+_PX_EDIF = [v * K for s_ in PERIMETRO for v in (s_[0], s_[2])]
+_PZ_EDIF = [v * K for s_ in PERIMETRO for v in (s_[1], s_[3])]
+CENTRO_EDIFICIO = ((min(_PX_EDIF) + max(_PX_EDIF)) / 2.0, (min(_PZ_EDIF) + max(_PZ_EDIF)) / 2.0)
+
+
+def dal_centro(uv):
+    """Da assi dell'edificio (u, v) a pianta di gioco (x, z)."""
+    return (round(CENTRO_EDIFICIO[0] + uv[0], 3), round(CENTRO_EDIFICIO[1] + uv[1], 3))
+
+
+# I cinque spigoli della rete, in giro: ovest (dove c'e' il cancello), nord, est, sud-est,
+# sud. Letti sulla carta a un decimetro, che e' meno della riga con cui e' disegnata.
+RECINTO_UV = [(-12.0, 19.2), (17.3, 15.5), (11.9, -20.6), (5.7, -25.9), (-18.4, -14.2)]
+RECINTO = [dal_centro(p) for p in RECINTO_UV]
+# IL CANCELLO: un'anta sola di sbarre, quattro metri, sul lato sud-ovest appena dopo lo
+# spigolo ovest, col pilastro di cemento sullo spigolo (Street View: il pilastro con la
+# targa sta dove la rete lungo la strada gira). Dall'angolo verso sud.
+CANCELLO_LARGO = 4.0
+def _cancello():
+    (ax_, az_), (bx_, bz_) = RECINTO[0], RECINTO[-1]
+    lungo = ((bx_ - ax_) ** 2 + (bz_ - az_) ** 2) ** 0.5
+    t = CANCELLO_LARGO / lungo
+    return (RECINTO[0], (round(ax_ + (bx_ - ax_) * t, 3), round(az_ + (bz_ - az_) * t, 3)))
+CANCELLO = _cancello()
+# QUANTO LO SLARGO DAVANTI AL CANCELLO STA SOPRA IL PAVIMENTO, in metri, a DAVANTI_AL_CANCELLO
+# metri fuori dal vano. Dalla foto di Street View presa li': le linee della gronda e dello
+# zoccolo della facciata si incontrano all'orizzonte, cioe' all'altezza dell'obiettivo, 3,4 m
+# sopra lo zoccolo (la gronda sta a tre metri), e la camera di Street View sta a due metri e
+# mezzo da terra. TINITALY non lo sa: a dieci metri il rilievo e' il pendio di prima della
+# casa. Lo usa `prendi_panorama.py` per decidere di quanto il pavimento sta sopra quel
+# pendio.
+STRADA_SUL_PAVIMENTO = 1.0
+DAVANTI_AL_CANCELLO = 3.0
+
+
+def davanti_al_cancello():
+    """Il punto dello slargo dove stava la camera: fuori dal vano, a meta'."""
+    (ax_, az_), (bx_, bz_) = CANCELLO
+    mx, mz = (ax_ + bx_) / 2.0, (az_ + bz_) / 2.0
+    dx, dz = bx_ - ax_, bz_ - az_
+    lungo = (dx * dx + dz * dz) ** 0.5
+    nx, nz = -dz / lungo, dx / lungo
+    # verso fuori: lontano dal centro della rete
+    cx = sum(p[0] for p in RECINTO) / len(RECINTO)
+    cz = sum(p[1] for p in RECINTO) / len(RECINTO)
+    if (mx + nx - cx) ** 2 + (mz + nz - cz) ** 2 < (mx - cx) ** 2 + (mz - cz) ** 2:
+        nx, nz = -nx, -nz
+    return (mx + nx * DAVANTI_AL_CANCELLO, mz + nz * DAVANTI_AL_CANCELLO)
+# IL PASSO DELLA GRIGLIA DEL PANORAMA, in metri: lo scrive `prendi_panorama.py`, e il prato
+# ci deve stare sulle righe (`gen_blockout.py`, MARGINE_PRATO).
+PASSO_RILIEVO = 5.0
+# LA GHIAIA: il piazzale fra il cancello e la facciata, fermato a monte dal cordolo che
+# corre quattro metri dentro la rete lungo la strada, e lo slargo fuori dal cancello fino
+# alla sterrata, dove si lascia la macchina.
+PIAZZALE_UV = [(-11.6, 18.8), (-9.5, 15.3), (12.0, 12.4), (12.0, 5.3), (-10.2, 5.3), (-12.3, 15.3)]
+SLARGO_UV = [(-12.0, 19.4), (-12.8, 15.2), (-17.0, 15.8), (-23.0, 21.0), (-22.0, 25.5), (-10.0, 25.0)]
+PIAZZALE = [dal_centro(p) for p in PIAZZALE_UV]
+SLARGO = [dal_centro(p) for p in SLARGO_UV]
+# IL VIOTTOLO D'ERBA che parte dallo slargo, scende lungo la rete a sud-ovest e gira
+# attorno al recinto verso est (Carta Tecnica, la carrareccia; Street View, la foto lungo
+# la rete). OpenStreetMap non ce l'ha.
+VIOTTOLO_UV = [(-21.2, 24.0), (-19.8, -14.2), (-1.4, -32.6), (17.0, -34.0), (42.4, -31.2),
+               (60.8, -26.9), (79.2, -22.7), (94.7, -29.8), (106.1, -43.9)]
+VIOTTOLO = [dal_centro(p) for p in VIOTTOLO_UV]
+# L'AUTO sullo slargo, lungo la sterrata, a sette metri dal cancello: dove la gente la
+# lascia (Street View: due macchine e un trattore, tutti fuori).
+AUTO_UV = (-19.0, 22.0)
 # (nome, x, z, nx, nz, quota). Le esterne stanno piu' in alto, sopra l'architrave.
 APPLIQUE = [
     ("cupola1", 2.60, 0.10, 0.0, +1.0, H_APPLIQUE),   # muro nord, sopra il varco

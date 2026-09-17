@@ -21,7 +21,7 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        H_APPLIQUE, NOME_LOCALE, LUCE_MONITOR, SEMPRE_ACCESE,
                        H_INTERRUTTORE, L_PLACCA, A_PLACCA, SP_PLACCA,
                        ATTIVITA_CUPOLA, CUPOLA, SALA_TELESCOPIO,
-                       AR_RIPOSO_GRADI, DEC_RIPOSO_GRADI, LATITUDINE, MOKA, QUADERNO,
+                       AR_RIPOSO_GRADI, DEC_RIPOSO_GRADI, LATITUDINE, NORD, MOKA, QUADERNO,
                        FUOCHI, H_GRIGLIA, MANOPOLE, MANOPOLA_FUOCO,
                        CASSA_MONITOR, VETRO_MONITOR, SEDILE_MONITOR,
                        BOMBATURA_MONITOR, FRANCO_VETRO,
@@ -35,10 +35,13 @@ _R = DOME_R
 import math as _m
 
 # IL POLO CELESTE NORD, in coordinate del gioco. L'altezza sull'orizzonte vale la
-# LATITUDINE - e' la stessa cosa detta due volte - e l'azimut e' il nord, che in
-# questo modello sta verso +Z: lo dice la misura del telescopio, che a declinazione
-# 90 punta ad azimut -1 (`world/telescope_mount.gd`). Il cielo gira attorno a questo.
-POLO_CELESTE = (0.0, _m.sin(_m.radians(LATITUDINE)), _m.cos(_m.radians(LATITUDINE)))
+# LATITUDINE - e' la stessa cosa detta due volte - e l'azimut e' il nord vero, che nel
+# gioco sta a NORD gradi da +Z (`geometria.py`): lo dice la misura del telescopio, il cui
+# asse polare il modellatore gira dello stesso numero (`world/telescope_mount.gd`). Il
+# cielo gira attorno a questo.
+POLO_CELESTE = (_m.sin(_m.radians(NORD)) * _m.cos(_m.radians(LATITUDINE)),
+                _m.sin(_m.radians(LATITUDINE)),
+                _m.cos(_m.radians(NORD)) * _m.cos(_m.radians(LATITUDINE)))
 
 # Gli spigoli della elle, letti dal perimetro e non ricopiati: servono al volume
 # «dentro l'edificio». Le x del perimetro sono tre (0, il risvolto, il fondo est) e
@@ -112,26 +115,73 @@ for (_cx, _cy, _cz, _sx, _sy, _sz, _nome, *_r) in collisioni_infissi():
 blocchi.extend(arredi())
 
 # ---------------------------------------------------------------- esterno: prato, recinto, auto
-# IL PRATO NON E' PIU' UN BLOCCO. Era una scatola verde da 48 x 44 m, generata qui
-# insieme ai muri; adesso e' il nodo `Prato` (world/prato.gd), un terreno che sale e
-# scende con l'erba sopra, continuo con il pavimento interno cosi' uscendo non si cade.
-# Il rettangolo e la quota sono quelli della scatola.
-PRATO = (22.0 * K - 48.0 * K, 22.0 * K - 44.0 * K, 96.0 * K, 88.0 * K)   # x, z, lati
+# IL POSTO E' QUELLO VERO: recinto, cancello, ghiaia e auto stanno in `geometria.py`, misurati
+# sulla Carta Tecnica Regionale e sull'ortofoto, e li legge anche `prendi_panorama.py`.
+from geometria import (RECINTO, CANCELLO, PIAZZALE, SLARGO, AUTO_UV, STRADA_SUL_PAVIMENTO,
+                       CENTRO_EDIFICIO, PASSO_RILIEVO, dal_centro)
+
 QUOTA_PRATO = -0.03   # 3 cm sotto i pavimenti: niente z-fighting sulla soglia
 
-# recinto del prato (h 1,4), con un varco per il cancello sul lato sud-est
-REC_X0, REC_Z0, REC_X1, REC_Z1 = -10.0 * K, -8.0 * K, 54.0 * K, 52.0 * K
-H_REC = 1.40
-for (rx0, rz0, rx1, rz1, nm) in [
-    (REC_X0, REC_Z0, REC_X1, REC_Z0, "RecN"),
-    (REC_X0, REC_Z1, 40.0 * K, REC_Z1, "RecS"),      # varco del cancello da x=40 a x=54
-    (REC_X0, REC_Z0, REC_X0, REC_Z1, "RecO"),
-    (REC_X1, REC_Z0, REC_X1, REC_Z1, "RecE"),
-]:
-    if abs(rz1 - rz0) < 0.01:
-        aggiungi((rx0 + rx1) / 2.0, H_REC / 2, rz0, abs(rx1 - rx0), H_REC, 0.15, nm)
-    else:
-        aggiungi(rx0, H_REC / 2, (rz0 + rz1) / 2.0, 0.15, H_REC, abs(rz1 - rz0), nm)
+# IL PRATO NON E' PIU' UN BLOCCO, e non e' piu' nemmeno il rettangolo di prima: e' il nodo
+# `Prato` (world/prato.gd), la terrazza del recinto con la scarpata fino al terreno vero.
+# Il rettangolo copre la rete, l'auto e MARGINE_PRATO metri attorno - la scarpata di
+# `FormaPrato.SCARPATA`, diciotto, piu' una casella del panorama - e I SUOI LATI STANNO SULLE
+# RIGHE DELLA GRIGLIA DEL PANORAMA, che sotto il prato non c'e': a meta' di una casella
+# lungo il bordo resterebbe un buco.
+MARGINE_PRATO = 23.0
+
+
+def _sulle_righe(v, origine, verso):
+    k = (v - origine) / PASSO_RILIEVO
+    k = _m.floor(k + 1e-6) if verso < 0 else _m.ceil(k - 1e-6)
+    return origine + k * PASSO_RILIEVO
+
+
+AUTO_XZ = dal_centro(AUTO_UV)
+_xs = [x for x, z in RECINTO] + [AUTO_XZ[0]]
+_zs = [z for x, z in RECINTO] + [AUTO_XZ[1]]
+_px0 = _sulle_righe(min(_xs) - MARGINE_PRATO, CENTRO_EDIFICIO[0], -1)
+_pz0 = _sulle_righe(min(_zs) - MARGINE_PRATO, CENTRO_EDIFICIO[1], -1)
+_px1 = _sulle_righe(max(_xs) + MARGINE_PRATO, CENTRO_EDIFICIO[0], +1)
+_pz1 = _sulle_righe(max(_zs) + MARGINE_PRATO, CENTRO_EDIFICIO[1], +1)
+PRATO = (_px0, _pz0, _px1 - _px0, _pz1 - _pz0)   # x, z, lati
+
+# LA COLLISIONE DELLA RETE: un muro invisibile per ogni tratto, lungo il lato e girato come
+# lui, con il vano del cancello aperto. ALTO QUATTRO METRI E MEZZO, da due sotto il pavimento:
+# la rete vera sta sulla terrazza e sulla scarpata, che vanno da mezzo metro sotto a un metro
+# sopra, e un muro alto un metro e quaranta a quota zero lasciava passare sopra dove il
+# terreno sale.
+H_REC = 4.6
+Y_REC = 0.3
+
+
+def _dist_segmento(p, a, b):
+    ax_, az_ = a
+    dx, dz = b[0] - ax_, b[1] - az_
+    t = max(0.0, min(1.0, ((p[0] - ax_) * dx + (p[1] - az_) * dz) / max(dx * dx + dz * dz, 1e-12)))
+    return _m.dist(p, (ax_ + t * dx, az_ + t * dz))
+
+
+def tratti_rete():
+    """I lati della rete meno il vano del cancello: la stessa regola di `Recinto.tratti`."""
+    fatti = []
+    n = len(RECINTO)
+    for k in range(n):
+        a, b = RECINTO[k], RECINTO[(k + 1) % n]
+        if not all(_dist_segmento(q, a, b) < 0.01 for q in CANCELLO):
+            fatti.append((a, b))
+            continue
+        primo, secondo = sorted(CANCELLO, key=lambda q: _m.dist(q, a))
+        if _m.dist(a, primo) > 0.05:
+            fatti.append((a, primo))
+        if _m.dist(secondo, b) > 0.05:
+            fatti.append((secondo, b))
+    return fatti
+
+
+for ((_x0, _z0), (_x1, _z1)) in tratti_rete():
+    aggiungi((_x0 + _x1) / 2.0, Y_REC, (_z0 + _z1) / 2.0, _m.hypot(_x1 - _x0, _z1 - _z0), H_REC, 0.15,
+             "Rec", rot_y=_m.atan2(_z1 - _z0, _x1 - _x0))
 
 # L'AUTO NON E' UN BLOCCO, ED E' LA STESSA REGOLA DEL LETTO DI PRIMA: e' un
 # INTERAGIBILE - ci si sale per andare a casa, cioe' per far cominciare la notte
@@ -141,26 +191,34 @@ for (rx0, rz0, rx1, rz1, nm) in [
 # prompt. Sta qui sotto, nodo `Macchina`, con la sua mesh e la sua forma.
 #
 # LE MISURE SONO QUELLE DELLA 500: 2,97 x 1,30 x 1,32 (`tools/cinquecento_blender.py`
-# si ferma se il modello non le rispetta), a una ventina di metri dall'ingresso,
-# dentro il recinto e a due passi dal varco del cancello. Il nodo sta a mezza altezza,
-# dove la collisione ha il centro, e il modello - che ha l'origine sotto le ruote -
-# scende di altrettanto. Il muso guarda est: la portiera del guidatore, a sinistra,
-# e' dalla parte da cui si arriva a piedi.
-AUTO_DOVE = (46.0 * K, 0.65, 50.0 * K)
+# si ferma se il modello non le rispetta). STA FUORI DAL CANCELLO, sullo slargo della
+# sterrata, dove la gente la lascia davvero, e quindi alla quota della sterrata. Il nodo
+# sta a mezza altezza, dove la collisione ha il centro, e il modello - che ha l'origine
+# sotto le ruote - scende di altrettanto. Il muso guarda +x, lungo la sterrata.
+AUTO_DOVE = (AUTO_XZ[0], STRADA_SUL_PAVIMENTO + 0.65, AUTO_XZ[1])
 AUTO_QUANTO = (2.97, 1.30, 1.32)
 
 # LE IMPRONTE SU CUI IL PRATO RESTA PIATTO, come x, z, lati: i due corpi della elle,
 # che hanno i pavimenti a quota zero, e l'auto, che ci poggia sopra. Un terreno che
-# salisse li' dentro spunterebbe dai pavimenti o solleverebbe la macchina.
+# salisse li' dentro spunterebbe dai pavimenti o solleverebbe la macchina. Con la quota di
+# ciascuna, in coordinate del prato: l'edificio a zero, l'auto sulla sterrata.
 IMPRONTE_A_TERRA = [
     (0.0, 0.0, _DX0, _DZ1),
     (_DX0, _DZ0, _DX1 - _DX0, _DZ1 - _DZ0),
     (AUTO_DOVE[0] - AUTO_QUANTO[0] / 2, AUTO_DOVE[2] - AUTO_QUANTO[2] / 2,
      AUTO_QUANTO[0], AUTO_QUANTO[2]),
 ]
+# L'AUTO NON HA UNA QUOTA SUA: sta sulla sterrata dove sta, e il prato la legge dal terreno
+# (`Prato.SUL_TERRENO`). Una quota scritta qui la metteva su un rialzo o in una buca.
+QUOTE_IMPRONTE = [0.0, 0.0, -9999.0]
 # E li' l'erba non cresce, con un quarto di metro in piu': un ciuffo largo quaranta
 # centimetri piantato a filo del muro ci entrerebbe per meta'.
 SENZA_ERBA = [(x - 0.25, z - 0.25, lx + 0.5, lz + 0.5) for (x, z, lx, lz) in IMPRONTE_A_TERRA]
+
+
+def _punti(elenco):
+    """Un poligono scritto come lo legge un .tscn."""
+    return "PackedVector2Array(%s)" % ", ".join("%.3f, %.3f" % p for p in elenco)
 
 
 def _rettangoli(elenco):
@@ -298,6 +356,8 @@ def tscn():
              '[ext_resource type="Script" path="res://world/dome_shutter.gd" id="27_cupola"]',
              '[ext_resource type="Script" path="res://world/interactables/macchina.gd" id="28_auto"]',
              '[ext_resource type="Script" path="res://world/prato.gd" id="66_prato"]',
+             '[ext_resource type="Script" path="res://world/panorama.gd" id="72_panorama"]',
+             '[ext_resource type="Script" path="res://world/recinto.gd" id="73_recinto"]',
              '[ext_resource type="PackedScene" path="res://assets/models/cinquecento.glb" id="67_cinquecento"]',
              '[ext_resource type="Script" path="res://world/indoors_volume.gd" id="32_dentro"]',
              '[ext_resource type="Script" path="res://world/dome_activity.gd" id="33_attivita"]',
@@ -783,12 +843,13 @@ def tscn():
               # sappia che ora e' in cielo, e leggerlo accanto all'ambiente su cui
               # scrive e' il modo in cui un .tscn generato resta leggibile.
               #
-              # LA LATITUDINE ARRIVA DA `geometria.py`, come il vettore del polo
-              # nello shader: due letture della stessa riga, non due numeri.
+              # LA LATITUDINE E IL NORD ARRIVANO DA `geometria.py`, come il vettore
+              # del polo nello shader: due letture della stessa riga, non due numeri.
               '[node name="TempoSiderale" type="Node" parent="."]',
               'script = ExtResource("57_siderale")',
               'ambiente = NodePath("../WorldEnvironment")',
-              'latitudine = %.1f' % LATITUDINE, '']
+              'latitudine = %.1f' % LATITUDINE,
+              'azimut_del_polo = %.1f' % NORD, '']
     usati = {}
     # `*resto` e non tre nomi: non tutte le sorgenti di blocchi hanno le stesse
     # rotazioni - infissi e arredi ne dichiarano meno - e chiedere dieci valori a
@@ -799,7 +860,9 @@ def tscn():
         usati[nome] = usati.get(nome, 0) + 1
         nn = "%s_%d" % (nome, usati[nome])
         n = idx[(round(sx, 3), round(sy, 3), round(sz, 3))]
-        visibile = nome.startswith("Rec")
+        # NESSUN BLOCCO SI VEDE PIU'. Gli ultimi erano i muri del recinto: adesso il
+        # recinto e' la rete di `world/recinto.gd`, e questi restano la sua collisione.
+        visibile = False
         righe += ['[node name="%s" type="StaticBody3D" parent="."]' % nn,
                   'transform = %s' % _base(rot, rotz, cx, cy, cz, roty), '',
                   ] + ([] if not visibile else [
@@ -1872,7 +1935,9 @@ def tscn():
               'prompt_text = "Torna a casa"',
               'enabled = false', '',
               '[node name="Modello" parent="Macchina" instance=ExtResource("67_cinquecento")]',
-              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, %.3f, 0)' % -AUTO_DOVE[1], '',
+              # il modello scende di mezza altezza, non della quota del nodo: l'auto non sta
+              # piu' a terra a zero, e con la quota intera finiva un metro sotto la sterrata
+              'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, %.3f, 0)' % -(AUTO_QUANTO[1] / 2), '',
               '[node name="Col" type="CollisionShape3D" parent="Macchina"]',
               'shape = SubResource("s_auto")', '',
               # IL PRATO, che non e' piu' un blocco: un terreno che sale e scende e si costruisce
@@ -1883,11 +1948,38 @@ def tscn():
               'transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, %.3f, 0)' % QUOTA_PRATO,
               'script = ExtResource("66_prato")',
               'estensione = Rect2(%.3f, %.3f, %.3f, %.3f)' % PRATO,
-              'recinto = Rect2(%.3f, %.3f, %.3f, %.3f)'
-              % (REC_X0, REC_Z0, REC_X1 - REC_X0, REC_Z1 - REC_Z0),
+              'recinto = %s' % _punti(RECINTO),
               'piatti = Array[Rect2]([%s])' % _rettangoli(IMPRONTE_A_TERRA),
+              'quote_piatti = PackedFloat32Array(%s)' % ", ".join("%.3f" % q for q in QUOTE_IMPRONTE),
               'senza_erba = Array[Rect2]([%s])' % _rettangoli(SENZA_ERBA),
+              'ghiaia = Array[PackedVector2Array]([%s, %s])' % (_punti(PIAZZALE), _punti(SLARGO)),
               'materiale = SubResource("mat_prato")', '',
+              # IL PANORAMA: il terreno vero di Monte San Lorenzo tutto attorno, fino a
+              # quarantacinque chilometri (`world/panorama.gd`, i numeri da
+              # `tools/prendi_panorama.py`). Del prato prende la forma lungo il bordo.
+              # `node_paths` e' come un .tscn dice che `prato` e' un nodo e non un percorso:
+              # senza, Godot lascia la proprieta' vuota e il terreno vero copre il prato.
+              '[node name="Panorama" type="StaticBody3D" parent="." node_paths=PackedStringArray("prato")]',
+              'script = ExtResource("72_panorama")',
+              'prato = NodePath("../Prato")',
+              'righello_prato = %.3f' % _righello("prato"),
+              # LA STERRATA NON DICHIARA LA MISURA (Ground081), e si legge sui sassi: la
+              # grana fine del battuto fa tre pixel, e in un misto stabilizzato sono quattro
+              # millimetri. Un metro e trenta per i 1024 pixel del lato lungo: i sassolini
+              # vengono da uno, i sassi da tre a cinque centimetri, la lastra piu' grande
+              # ventiquattro. A due metri e mezzo - e stirata il doppio sul lato corto, che
+              # lo shader non sapeva - sul piazzale davanti alla facciata erano lastre da
+              # mezzo metro: «il pavimento non ha senso rispetto all'edificio».
+              'righello_sterrata = %.3f' % _righello("sterrata", 1.3),
+              'righello_sottobosco = %.3f' % _righello("sottobosco"),
+              'righello_asfalto = %.3f' % _righello("tetto"), '',
+              # LA RETE DEL RECINTO (`world/recinto.gd`), sugli stessi lati dei blocchi `Rec`
+              # qui sopra, che restano come sua collisione, e con lo stesso vano del cancello.
+              '[node name="Recinto" type="Node3D" parent="." node_paths=PackedStringArray("prato")]',
+              'script = ExtResource("73_recinto")',
+              'spigoli = %s' % _punti(RECINTO),
+              'cancello = %s' % _punti(CANCELLO),
+              'prato = NodePath("../Prato")', '',
               # --- LA MOKA, e con lei il negozio smette di essere vuoto --------
               #
               # ERA STATA TOLTA DA D-183, e la riga diceva perche': tre scatole

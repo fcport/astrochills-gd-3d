@@ -101,14 +101,14 @@ func _puntalo(verso: Vector3) -> void:
 ## DA UN VERSO DEL MONDO AD ANGOLO ORARIO E DECLINAZIONE, in gradi.
 ##
 ## Trigonometria sferica classica, al contrario di `SkyGeometry.altezza`: altezza e azimut
-## dal verso (nord +Z, est +X, come `Luna.direzione`), poi le coordinate orarie alla
+## dal verso (col nord vero di `Luna.direzione`), poi le coordinate orarie alla
 ## latitudine dell'osservatorio. L'angolo orario cresce verso ovest, come quello che la
 ## montatura riceve dal GOTO. Vale anche sotto l'orizzonte, ed è dove sta chi è in cupola.
 ## La sonda lo verifica sulla montatura vera, puntandola e chiedendole dove guarda.
 static func equatoriali(v: Vector3) -> Vector2:
 	var d := v.normalized()
 	var alt := asin(clampf(d.y, -1.0, 1.0))
-	var az := atan2(d.x, d.z)
+	var az := deg_to_rad(Luna.azimut(d))
 	var lat := deg_to_rad(SkyGeometry.LATITUDINE)
 	var sin_dec := sin(alt) * sin(lat) + cos(alt) * cos(lat) * cos(az)
 	var dec := asin(clampf(sin_dec, -1.0, 1.0))

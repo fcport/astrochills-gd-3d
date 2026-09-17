@@ -88,6 +88,11 @@ const FUSO := 1.0
 ## differenza fra l'ora del quadrante e l'ora del cielo, che a Montegrimano vale
 ## dieci minuti, cioè due gradi e mezzo di cielo.
 const LATITUDINE := 43.9
+## DOVE STA IL NORD VERO nel gioco: l'azimut `atan2(x, z)` verso cui guarda. L'edificio
+## vero ha il lato lungo a quarantacinque gradi, e nel gioco sta dritto lungo x: a girare è
+## il cielo. Copia di `NORD` in `tools/geometria.py`, da cui il modellatore gira l'asse
+## polare del telescopio e il panorama il terreno; il banco le confronta.
+const NORD := 45.0
 const LONGITUDINE := 12.47
 
 ## L'inclinazione dell'asse terrestre sull'eclittica, in gradi, all'epoca J2000.
@@ -358,18 +363,25 @@ static func crescente(eta_giorni: float) -> bool:
 	return eta_giorni < SINODICO * 0.5
 
 
-## UNA DIREZIONE DEL CIELO IN COORDINATE DEL MONDO.
+## UNA DIREZIONE DEL CIELO IN COORDINATE DEL MONDO, da altezza e azimut VERI (gradi dal
+## nord verso l'est).
 ##
-## LA CONVENZIONE È QUELLA DELLA CUPOLA, e non è negoziabile qui: azimut
-## `atan2(x, z)`, zero al nord, che in questo modello sta verso +Z — lo dice la
-## misura del telescopio, che a declinazione 90 punta ad azimut −1
-## (`world/dome_azimuth.gd`, `world/telescope_mount.gd`). Quindi +X è l'est.
+## LA CONVENZIONE È QUELLA DELLA CUPOLA, e non è negoziabile qui: nel mondo l'azimut è
+## `atan2(x, z)`, e il nord vero sta a `NORD` gradi da +Z — lo dice la misura del
+## telescopio, che a declinazione 90 punta lì (`world/dome_azimuth.gd`,
+## `world/telescope_mount.gd`). L'est sta novanta gradi più in là, verso +X.
 ## Un segno sbagliato qui farebbe sorgere la Luna a ovest, e sarebbe l'unico
 ## difetto di questo file che si vede a occhio.
 static func direzione(alt_gradi: float, az_gradi: float) -> Vector3:
 	var a := deg_to_rad(alt_gradi)
-	var z := deg_to_rad(az_gradi)
+	var z := deg_to_rad(az_gradi + NORD)
 	return Vector3(cos(a) * sin(z), sin(a), cos(a) * cos(z))
+
+
+## L'azimut vero, in gradi da nord verso est, di un verso del mondo: l'inverso di
+## `direzione()`.
+static func azimut(v: Vector3) -> float:
+	return fposmod(rad_to_deg(atan2(v.x, v.z)) - NORD, 360.0)
 
 
 ## Il giorno giuliano (numero intero, mezzogiorno UT) di una data gregoriana.

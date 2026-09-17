@@ -58,9 +58,10 @@ const GRADI_AL_MINUTO := 0.25
 @export var latitudine := 43.9
 
 ## L'azimut del polo, in gradi, misurato come `atan2(x, z)` — la convenzione di
-## `DomeAzimuth`. Zero è il nord, che in questo modello sta verso +Z: lo dice la
-## misura del telescopio, che a declinazione 90 punta ad azimut -1.
-@export var azimut_del_polo := 0.0
+## `DomeAzimuth`. È il nord vero, che nel gioco sta a `Luna.NORD` gradi da +Z: lo dice la
+## misura del telescopio, il cui asse polare il modellatore gira dello stesso numero.
+## Lo scrive `gen_blockout.py` da `NORD` in `geometria.py`.
+@export var azimut_del_polo := 45.0
 
 ## A VERO IL CIELO STA FERMO, com'era prima che questo file esistesse.
 ##

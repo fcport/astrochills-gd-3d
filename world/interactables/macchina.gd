@@ -35,6 +35,29 @@ const GROUP := &"macchina"
 
 func _ready() -> void:
 	add_to_group(GROUP)
+	_posa_sul_prato()
+
+
+## L'AUTO STA SULLA STERRATA, alla quota a cui la sterrata sta lì. Il generatore non la sa:
+## la dice il terreno vero del panorama, attraverso la forma del prato, che sotto l'auto
+## tiene un piano. Il nodo sta a mezza altezza e il modello scende di altrettanto.
+func _posa_sul_prato() -> void:
+	var prato := _prato(get_tree().root)
+	var modello := get_node_or_null("Modello") as Node3D
+	if prato == null or modello == null:
+		return
+	var p := Vector2(global_position.x, global_position.z)
+	global_position.y = prato.global_position.y + FormaPrato.altezza(p, prato.sito()) - modello.position.y
+
+
+func _prato(n: Node) -> Prato:
+	if n is Prato:
+		return n as Prato
+	for f in n.get_children():
+		var trovato := _prato(f)
+		if trovato != null:
+			return trovato
+	return null
 
 
 ## L'auto della scena, o `null` se non ce n'è.

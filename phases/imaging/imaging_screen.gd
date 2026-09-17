@@ -25,6 +25,9 @@ const FAINT := Phosphor.FAINT
 ## Il margine sinistro del testo, come nelle altre viste.
 const MARGIN := 8
 
+## Quanto dura un acceso e uno spento dell'avviso che lampeggia, in millisecondi.
+const LAMPO_MS := 500
+
 ## Larghezza massima della barra di avanzamento, in colonne. Sta dentro i 256 px del
 ## CRT (con parentesi e margine) anche al numero massimo di frame; oltre questa
 ## soglia la barra scala invece di crescere carattere per carattere.
@@ -41,12 +44,27 @@ var _state: Dictionary = {}
 
 var _font: SystemFont
 
+## Se l'avviso che lampeggia è acceso adesso.
+var _lampo := false
+
 
 func _ready() -> void:
 	custom_minimum_size = DESIGN_SIZE
 	size = DESIGN_SIZE
 	_font = SystemFont.new()
 	_font.font_names = PackedStringArray(["Consolas", "Courier New", "monospace"])
+
+
+## L'AVVISO LAMPEGGIA, e un lampeggio è l'unica cosa che questa vista ridisegna da sola:
+## tutto il resto cambia quando la fase chiama `set_readout`. Senza avviso non si
+## ridisegna niente.
+func _process(_delta: float) -> void:
+	if not bool(_state.get(&"not_enough_time", false)):
+		return
+	var acceso := Time.get_ticks_msec() % (2 * LAMPO_MS) < LAMPO_MS
+	if acceso != _lampo:
+		_lampo = acceso
+		queue_redraw()
 
 
 ## Unico ingresso della vista. La fase chiama questo e basta.
@@ -107,12 +125,13 @@ func _draw_config() -> void:
 			FG if enough else DIM, 12)
 	else:
 		_text(Vector2(MARGIN, 108), "TOTAL    %dm" % roundi(total), DIM, 12)
-	_text(Vector2(MARGIN, 128), "QUALITY  %d" % score, FG, 12)
+	_text(Vector2(MARGIN, 124), "QUALITY  %d" % score, FG, 12)
 
 	# È anche quanto dura l'attesa: la posa occupa la notte per lo stesso tempo che
 	# integra. Detto qui perché è il costo della scelta, non un dettaglio tecnico.
-	_text(Vector2(MARGIN, 148), "the sequence will take %dm of the night" % roundi(total),
-		DIM, 10)
+	_text(Vector2(MARGIN, 140), "the sequence will take %dm of the night"
+		% roundi(float(_state.get(&"night_min", total))), DIM, 10)
+	_not_enough_time(154)
 
 	_text(Vector2(MARGIN, 168), "W/S FIELD  A/D VALUE", DIM, 10)
 
@@ -165,6 +184,7 @@ func _draw_run() -> void:
 		_text(Vector2(MARGIN, 120), "SEQUENCE COMPLETE", FG, 12)
 	else:
 		_text(Vector2(MARGIN, 120), "working...", DIM, 12)
+	_not_enough_time(146)
 
 	_text(Vector2(MARGIN, 184), "YOU CAN WALK AWAY", DIM, 10)
 
@@ -193,6 +213,15 @@ func _draw_lost() -> void:
 	_text(Vector2(MARGIN, 152), "to connect it again", FAINT, 10)
 
 	_text(Vector2(MARGIN, 184), "ENTER OK", DIM, 12)
+
+
+## NOT ENOUGH TIME, lampeggiante, con l'alba accanto: la sequenza non finisce prima che la
+## notte finisca, e chi la avvia aspetterebbe per niente. Spento, la riga resta vuota.
+func _not_enough_time(y: int) -> void:
+	if not bool(_state.get(&"not_enough_time", false)) or not _lampo:
+		return
+	_text(Vector2(MARGIN, y), "NOT ENOUGH TIME - dawn in %dm"
+		% roundi(float(_state.get(&"night_left_min", 0.0))), FG, 12)
 
 
 func _text(pos: Vector2, s: String, color: Color, px: int) -> void:

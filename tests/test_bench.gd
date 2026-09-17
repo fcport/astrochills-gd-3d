@@ -127,6 +127,8 @@ func _ready() -> void:
 	print("")
 	_check_prato()
 	print("")
+	_check_panorama()
+	print("")
 	_check_macchie()
 	print("")
 	_check_luna()
@@ -143,6 +145,100 @@ func _ready() -> void:
 	print("")
 	print("=== fine ===")
 	get_tree().quit()
+
+
+## IL PANORAMA: i numeri scritti in tre posti devono dire la stessa cosa, e le quote vere
+## devono combaciare con il gioco dove si toccano (D-273).
+##
+## `tools/prendi_panorama.py`, `tools/alberi_blender.py` e `tools/recinto_blender.py`
+## scrivono misure che `world/panorama.gd` e `world/recinto.gd` ripetono: si leggono i
+## sorgenti Python e si confrontano, come il lato del ciuffo d'erba. E le quote: la griglia
+## vicina deve valere zero sull'osservatorio, gli anelli devono cominciare dentro la griglia
+## (o fra le due resterebbe un anello di cielo), il recinto deve essere lo stesso del prato.
+func _check_panorama() -> void:
+	print("-- Panorama: le misure in tre file coincidono, e le quote vere toccano il gioco (D-273)")
+	var stato := (load("res://world/blockout.tscn") as PackedScene).get_state()
+	var recinto_prato := PackedVector2Array()
+	var recinto_rete := PackedVector2Array()
+	var estensione := Rect2()
+	var nodi := {}
+	for i in stato.get_node_count():
+		var nome := stato.get_node_name(i)
+		nodi[nome] = true
+		for k in stato.get_node_property_count(i):
+			if nome == "Prato" and stato.get_node_property_name(i, k) == "recinto":
+				recinto_prato = stato.get_node_property_value(i, k)
+			if nome == "Prato" and stato.get_node_property_name(i, k) == "estensione":
+				estensione = stato.get_node_property_value(i, k)
+			if nome == "Recinto" and stato.get_node_property_name(i, k) == "spigoli":
+				recinto_rete = stato.get_node_property_value(i, k)
+	print("   nodi Panorama e Recinto in blockout.tscn: %s, %s%s" % [nodi.has("Panorama"), nodi.has("Recinto"),
+		"" if nodi.has("Panorama") and nodi.has("Recinto") else "   <-- ATTESO: rigenerare con tools/gen_blockout.py"])
+	print("   rete di %d spigoli sul recinto del prato di %d%s" % [recinto_rete.size(), recinto_prato.size(),
+		"" if recinto_rete == recinto_prato and recinto_rete.size() >= 3 else "   <-- ATTESO: lo stesso poligono"])
+
+	# IL NORD E' SCRITTO DUE VOLTE, in `core/luna.gd` e in `tools/geometria.py`, da cui lo
+	# leggono il telescopio, il cielo e il panorama. Diversi, la montatura inseguirebbe un
+	# cielo girato di lato e la Luna sorgerebbe dietro la collina sbagliata.
+	var geometria := FileAccess.get_file_as_string("res://tools/geometria.py")
+	var riga_nord := RegEx.create_from_string("(?m)^NORD = ([0-9.+-]+)").search(geometria)
+	var nord := float(riga_nord.get_string(1)) if riga_nord != null else NAN
+	print("   nord vero: Luna %.1f, geometria.py %.1f%s" % [Luna.NORD, nord,
+		"" if is_equal_approx(nord, Luna.NORD) else "   <-- ATTESO: uguali"])
+
+	for voce in [["res://tools/alberi_blender.py", "LATO_M", Panorama.LATO_SAGOMA],
+			["res://tools/alberi_blender.py", "BASE_M", Panorama.BASE_SAGOMA],
+			["res://tools/recinto_blender.py", "LARGO_M", Recinto.MODULO]]:
+		var sorgente := FileAccess.get_file_as_string(voce[0])
+		var trovata := RegEx.create_from_string("(?m)^%s = ([0-9.]+)" % voce[1]).search(sorgente)
+		var valore := float(trovata.get_string(1)) if trovata != null else -1.0
+		print("   %s: gioco %.2f, %s %.2f%s" % [voce[1], voce[2], voce[0].get_file(), valore,
+			"" if is_equal_approx(valore, voce[2]) else "   <-- ATTESO: uguali"])
+
+	var dati := load(Panorama.DATI) as PanoramaDati
+	if dati == null:
+		print("   dati del panorama: mancano   <-- ATTESO: lancia tools/prendi_panorama.py")
+		return
+	var n := dati.vicino_lato
+	var c := n / 2
+	var raggi := dati.lontano_raggi
+	var crescenti := true
+	for k in raggi.size() - 1:
+		crescenti = crescenti and raggi[k + 1] > raggi[k]
+	print("   griglia %d x %d (%d quote), anelli %d x %d (%d quote)%s" % [n, n, dati.vicino_quote.size(),
+		raggi.size(), dati.lontano_settori, dati.lontano_quote.size(),
+		"" if dati.vicino_quote.size() == n * n and dati.lontano_quote.size() == raggi.size() * dati.lontano_settori
+			and crescenti else "   <-- ATTESO: tante quote quanti vertici, raggi crescenti"])
+	# LO ZERO E' IL PAVIMENTO, e il pavimento sta sopra il pendio che TINITALY vede sotto
+	# l'edificio: di quanto, lo dice la sterrata al cancello (`prendi_panorama.py`).
+	print("   il rilievo sotto l'osservatorio sta %.2f m sotto il pavimento%s" % [-dati.vicino_quote[c * n + c],
+		"" if dati.vicino_quote[c * n + c] <= 0.0 and dati.vicino_quote[c * n + c] > -6.0
+			else "   <-- ATTESO: fra zero e sei metri sotto, e' la terrazza su un pendio"])
+	# IL PRATO STA SULLE RIGHE DELLA GRIGLIA: sotto il prato la griglia non c'e', e un lato
+	# a meta' casella lascerebbe un buco lungo tutto il bordo.
+	var da := (estensione.position - dati.ancora) / dati.vicino_passo
+	var quante := estensione.size / dati.vicino_passo
+	var storto := absf(da.x - roundf(da.x)) + absf(da.y - roundf(da.y)) \
+		+ absf(quante.x - roundf(quante.x)) + absf(quante.y - roundf(quante.y))
+	print("   prato %s sulle righe della griglia: %s%s" % [estensione, storto < 1e-3,
+		"" if storto < 1e-3 else "   <-- ATTESO: si', o lungo il bordo del prato resta un buco"])
+	print("   gli anelli cominciano a %.0f m, la griglia finisce a %.0f%s" % [raggi[0], dati.vicino_mezzo,
+		"" if raggi[0] < dati.vicino_mezzo - dati.vicino_passo * 2.0 else "   <-- ATTESO: dentro la griglia"])
+	# L'ANCORA E' IL CENTRO DELL'EDIFICIO: lo ridice il prato con le sue impronte.
+	var edificio := Rect2()
+	for i in stato.get_node_count():
+		if stato.get_node_name(i) != "Prato":
+			continue
+		for k in stato.get_node_property_count(i):
+			if stato.get_node_property_name(i, k) == "piatti":
+				var piatti: Array = stato.get_node_property_value(i, k)
+				edificio = piatti[0]
+				edificio = edificio.merge(piatti[1])
+	print("   ancora %s, centro dell'edificio %s%s" % [dati.ancora, edificio.get_center(),
+		"" if dati.ancora.distance_to(edificio.get_center()) < 0.5 else "   <-- ATTESO: lo stesso punto"])
+	print("   alberi %d, luci dei paesi %d%s" % [dati.alberi.size(), dati.luci.size(),
+		"" if dati.alberi.size() == dati.alberi_varianti.size() and dati.luci.size() == dati.luci_potenza.size()
+			else "   <-- ATTESO: una variante per albero, una potenza per luce"])
 
 
 ## La sorgente onesta deve essere una funzione pura dell'input: stesso input,
@@ -745,6 +841,26 @@ func _check_imaging_setup() -> void:
 	if int(ro_def.get(&"frame_count", -1)) != PhaseImaging.FRAMES_DEFAULT:
 		print("      <-- ATTESO: frame_count = %d" % PhaseImaging.FRAMES_DEFAULT)
 	defaults.free()
+
+	# 4) NOT ENOUGH TIME: la sequenza di default (20 x 120 s) prende quaranta minuti di
+	# notte. A inizio notte ci sta; a mezz'ora dall'alba no, e il pannello lo deve dire.
+	var presto := PhaseImaging.new()
+	presto.setup(run, {&"target_id": &"m42"})
+	var ro_presto := presto._config_readout()
+	var sera_tardi := NightRun.new()
+	sera_tardi.elapsed_min = Tuning.night_length_min - 30.0
+	var tardi := PhaseImaging.new()
+	tardi.setup(sera_tardi, {&"target_id": &"m42"})
+	var ro_tardi := tardi._config_readout()
+	print("   sequenza da %dm: a inizio notte not_enough_time %s, a 30m dall'alba %s" % [
+		roundi(float(ro_tardi.get(&"night_min", -1.0))), ro_presto.get(&"not_enough_time"),
+		ro_tardi.get(&"not_enough_time")])
+	if bool(ro_presto.get(&"not_enough_time", true)):
+		print("      <-- ATTESO: a inizio notte la sequenza ci sta")
+	if not bool(ro_tardi.get(&"not_enough_time", false)):
+		print("      <-- ATTESO: a 30m dall'alba NOT ENOUGH TIME")
+	presto.free()
+	tardi.free()
 
 
 ## L'aggregazione della qualità della foto: media intera dei punteggi di fase, `0`
@@ -2609,15 +2725,19 @@ func _check_quaderno() -> void:
 		"" if mancano.is_empty() else "   <-- ATTESO: una pagina per ogni fase"])
 
 
-## Il prato (D-249): piatto dove qualcosa poggia a terra, mai sotto la quota dei
-## pavimenti, mai più ripido di quanto si cammini, e senza erba dentro i muri.
+## Il prato (D-249, D-276): piatto dove qualcosa poggia a terra, col bordo esattamente sul
+## terreno vero del panorama, mai più ripido di quanto si cammini dentro la rete, e senza
+## erba dentro i muri, sulla ghiaia o sulla scarpata.
 ##
 ## LE IMPRONTE SI LEGGONO DALLA SCENA GENERATA, non si ribattono qui: è la scena che il
 ## gioco carica, e un'impronta ricopiata resterebbe giusta il giorno che l'edificio si
 ## sposta. Si legge lo STATO del .tscn, senza istanziarlo: basta il nodo `Prato`.
 func _check_prato() -> void:
-	print("-- Prato: piatto dove si poggia, mai sotto zero, pendenze, erba fuori dai muri (D-249)")
-	const PENDENZA_MASSIMA := 0.35
+	print("-- Prato: piatto dove si poggia, il bordo sul terreno vero, pendenze, erba (D-249, D-276)")
+	const PENDENZA_DENTRO := 0.35
+	# LA SCARPATA E' A QUARANTACINQUE GRADI (`FormaPrato.PENDIO_SCARPATA`), e sul ciglio,
+	# dove la terrazza piega, un metro di maglia ne prende un po' di piu'.
+	const PENDENZA_SCARPATA := 1.2
 	var prato := Prato.new()
 	var stato := (load("res://world/blockout.tscn") as PackedScene).get_state()
 	var trovato := false
@@ -2627,48 +2747,69 @@ func _check_prato() -> void:
 		trovato = true
 		for k in stato.get_node_property_count(i):
 			var nome := stato.get_node_property_name(i, k)
-			if nome in ["estensione", "recinto", "piatti", "senza_erba", "seme", "ciuffi_per_m2"]:
+			if nome in ["estensione", "recinto", "piatti", "quote_piatti", "senza_erba", "ghiaia",
+					"erba_oltre", "seme", "ciuffi_per_m2", "transform"]:
 				prato.set(nome, stato.get_node_property_value(i, k))
+	if not trovato:
+		prato.free()
+		print("   nessun nodo Prato in blockout.tscn   <-- ATTESO: rigenerare con tools/gen_blockout.py")
+		return
+	var sito := prato.sito()
 	var est := prato.estensione
-	var rec := prato.recinto
 	var piatti := prato.piatti
 	var senza := prato.senza_erba
+	var ghiaia := prato.ghiaia
+	var rete := prato.recinto
+	var oltre := prato.erba_oltre
 	var seme := prato.seme
 	var densita := prato.ciuffi_per_m2
 	prato.free()
-	if not trovato:
-		print("   nessun nodo Prato in blockout.tscn   <-- ATTESO: rigenerare con tools/gen_blockout.py")
-		return
-	print("   prato %s, recinto %s, %d impronte piatte" % [est, rec, piatti.size()])
+	print("   prato %s, rete di %d spigoli, %d impronte piatte, terreno vero: %s" % [est, rete.size(),
+		piatti.size(), sito.rilievo != null])
 
-	# Sulle impronte il terreno è a zero: agli angoli, a metà dei lati e al centro.
+	# Sulle impronte il terreno sta alla loro quota: agli angoli, a metà dei lati e al centro.
 	var sollevati := 0
-	for r in piatti:
+	for k in piatti.size():
+		var r := piatti[k]
 		for p in [r.position, r.end, r.get_center(), Vector2(r.position.x, r.end.y),
 				Vector2(r.end.x, r.position.y)]:
-			if absf(FormaPrato.altezza(p, piatti, rec)) > 1e-6:
+			if absf(FormaPrato.altezza(p, sito) - sito.quote_piatti[k]) > 1e-4:
 				sollevati += 1
-	print("   punti delle impronte sollevati: %d%s" % [sollevati,
+	print("   punti delle impronte fuori quota: %d%s" % [sollevati,
 		"" if sollevati == 0 else "   <-- ATTESO: 0, l'edificio o l'auto non poggerebbero"])
 
-	var q := FormaPrato.quote(est, piatti, rec)
+	# IL BORDO DEL PRATO E' IL TERRENO VERO, al millimetro: e' il gradino che si vedeva.
+	var q := FormaPrato.quote(sito)
 	var n := FormaPrato.vertici(est)
-	var minimo := INF
-	var massimo := -INF
-	var ripida := 0.0
-	for j in n.y:
+	var gradino := 0.0
+	if sito.rilievo != null:
 		for i in n.x:
+			for j in [0, n.y - 1]:
+				var p := est.position + Vector2(i, j) * FormaPrato.PASSO
+				gradino = maxf(gradino, absf(q[j * n.x + i] + sito.base - sito.rilievo.quota_griglia(p)))
+		for j in n.y:
+			for i in [0, n.x - 1]:
+				var p := est.position + Vector2(i, j) * FormaPrato.PASSO
+				gradino = maxf(gradino, absf(q[j * n.x + i] + sito.base - sito.rilievo.quota_griglia(p)))
+		print("   sul bordo il prato si scosta dal terreno vero di %.4f m%s" % [gradino,
+			"" if gradino < 0.001 else "   <-- ATTESO: zero, o tutto attorno al prato torna il gradino"])
+	else:
+		print("   terreno vero: manca   <-- ATTESO: lancia tools/prendi_panorama.py")
+
+	var ripida_dentro := 0.0
+	var ripida := 0.0
+	for j in n.y - 1:
+		for i in n.x - 1:
 			var h := q[j * n.x + i]
-			minimo = minf(minimo, h)
-			massimo = maxf(massimo, h)
-			if i + 1 < n.x:
-				ripida = maxf(ripida, absf(q[j * n.x + i + 1] - h) / FormaPrato.PASSO)
-			if j + 1 < n.y:
-				ripida = maxf(ripida, absf(q[(j + 1) * n.x + i] - h) / FormaPrato.PASSO)
-	print("   quote da %.2f a %.2f m%s" % [minimo, massimo,
-		"" if minimo >= 0.0 else "   <-- ATTESO: mai sotto zero, il recinto resterebbe sospeso"])
-	print("   pendenza massima %.0f%% (%.1f gradi)%s" % [ripida * 100.0, rad_to_deg(atan(ripida)),
-		"" if ripida <= PENDENZA_MASSIMA else "   <-- ATTESO: al massimo %.0f%%" % (PENDENZA_MASSIMA * 100.0)])
+			var salto := maxf(absf(q[j * n.x + i + 1] - h), absf(q[(j + 1) * n.x + i] - h)) / FormaPrato.PASSO
+			ripida = maxf(ripida, salto)
+			var p := est.position + Vector2(i, j) * FormaPrato.PASSO
+			# dentro vuol dire con tutta la casella dentro: sulla rete comincia il ciglio
+			if FormaPrato.distanza_poligono(p, rete) < -1.5:
+				ripida_dentro = maxf(ripida_dentro, salto)
+	print("   pendenza massima dentro la rete %.0f%%, sulla scarpata %.0f%%%s" % [ripida_dentro * 100.0,
+		ripida * 100.0, "" if ripida_dentro <= PENDENZA_DENTRO and ripida <= PENDENZA_SCARPATA
+			else "   <-- ATTESO: al massimo %.0f%% e %.0f%%" % [PENDENZA_DENTRO * 100.0, PENDENZA_SCARPATA * 100.0]])
 
 	# LA QUOTA SU CUI SI POSANO I CIUFFI È QUELLA DELLA MAGLIA: dentro un quadrato non
 	# esce mai dalle quote dei suoi quattro vertici, e su un vertice è la sua.
@@ -2689,16 +2830,38 @@ func _check_prato() -> void:
 		fuori_maglia, sul_vertice,
 		"" if fuori_maglia == 0 and sul_vertice < 1e-5 else "   <-- ATTESO: 0 e 0, i ciuffi galleggerebbero"])
 
-	var ciuffi := FormaPrato.ciuffi(seme, densita, est, senza)
+	var ciuffi := FormaPrato.ciuffi(seme, densita, est, senza, rete, oltre, ghiaia)
 	var dentro := 0
+	var fuori_posto := 0
 	for c in ciuffi:
 		if FormaPrato._escluso(c[0], senza):
 			dentro += 1
-	var ancora := FormaPrato.ciuffi(seme, densita, est, senza)
+		if FormaPrato._sulla_ghiaia(c[0], ghiaia) or FormaPrato.distanza_poligono(c[0], rete) > oltre:
+			fuori_posto += 1
+	var ancora := FormaPrato.ciuffi(seme, densita, est, senza, rete, oltre, ghiaia)
 	var uguali: bool = ancora.size() == ciuffi.size() and (ciuffi.is_empty() or ancora[0][0] == ciuffi[0][0])
-	print("   %d ciuffi, %d dentro l'edificio o sotto l'auto, stesso seme stesso prato: %s%s" % [
-		ciuffi.size(), dentro, uguali,
-		"" if dentro == 0 and uguali and ciuffi.size() > 1000 else "   <-- ATTESO: migliaia, 0, true"])
+	print("   %d ciuffi, %d dentro l'edificio o sotto l'auto, %d sulla ghiaia o sulla scarpata, stesso seme stesso prato: %s%s" % [
+		ciuffi.size(), dentro, fuori_posto, uguali,
+		"" if dentro == 0 and fuori_posto == 0 and uguali and ciuffi.size() > 1000
+			else "   <-- ATTESO: migliaia, 0, 0, true"])
+
+	# IL CANCELLO SI ATTRAVERSA: fra i tratti di rete c'e' un vano largo quanto il cancello.
+	var recinto_stato := {}
+	for i in stato.get_node_count():
+		if stato.get_node_name(i) != "Recinto":
+			continue
+		for k in stato.get_node_property_count(i):
+			recinto_stato[stato.get_node_property_name(i, k)] = stato.get_node_property_value(i, k)
+	var tratti := Recinto.tratti(recinto_stato.get("spigoli", PackedVector2Array()),
+		recinto_stato.get("cancello", PackedVector2Array()))
+	var perimetro := 0.0
+	for k in rete.size():
+		perimetro += rete[k].distance_to(rete[(k + 1) % rete.size()])
+	var tirata := 0.0
+	for t in tratti:
+		tirata += (t[0] as Vector2).distance_to(t[1])
+	print("   rete tirata per %.1f m su %.1f: il vano del cancello e' di %.1f m%s" % [tirata, perimetro,
+		perimetro - tirata, "" if absf(perimetro - tirata - 4.0) < 0.05 else "   <-- ATTESO: quattro metri"])
 
 	# IL LATO DEL CIUFFO È SCRITTO IN DUE FILE, uno GDScript e uno Python: si legge il
 	# secondo e si confrontano. Diversi, l'erba sarebbe tutta più grande o più piccola.

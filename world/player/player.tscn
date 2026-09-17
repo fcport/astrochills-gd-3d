@@ -65,6 +65,11 @@
 ; `project.godot`, sezione `layer_names/3d_physics`): il corpo sta su un layer
 ; suo perché il raggio dell'interazione, che cerca mondo e interagibili, non
 ; possa mai colpire il giocatore stesso.
+;
+; LA CAMERA VEDE FINO A CINQUANTA CHILOMETRI (`far`): il panorama arriva a quarantacinque
+; (`world/panorama.gd`), e con i quattro di prima le montagne oltre la valle venivano
+; tagliate. Il piano vicino resta quello di sempre: è lui che decide la precisione della
+; profondità, e per questo gli anelli lontani non la usano.
 [gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://world/player/player.gd" id="1_player"]
@@ -89,6 +94,7 @@ shape = SubResource("CapsuleShape3D_player")
 [node name="Camera" type="Camera3D" parent="."]
 unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.65, 0)
+far = 50000.0
 
 [node name="Prossimita" type="OmniLight3D" parent="Camera"]
 script = ExtResource("4_prossimita")

@@ -149,28 +149,29 @@ func _ventose() -> void:
 func _braccia() -> void:
 	_dalla_porta(0.0, 12.0)
 	var o: OrroreBraccia = _orrori.premi(KEY_F4)
+	# LE BRACCIA NON ESCONO PER FORZA DOVE SI GUARDA: vanno dove l'orizzonte è libero
+	# (`OrroreBraccia._dove_si_vede`), e dalla porta verso nord c'è il bosco. Si guarda loro.
+	var centro := o.bracci()[2].global_position
+	var az := Orrore.azimut_di(Vector3(centro.x - DA.x, 0.0, centro.z - DA.z))
+	_dalla_porta(az, 12.0)
 	await _aspetta(12.0)
 	await _foto("braccia_escono")
 	await _aspetta(14.0)
 	await _foto("braccia_salgono")
 	await _aspetta(14.0)
 	await _foto("braccia")
-	# da vicino la mano del secondo, il più vicino: aperta, e poi quando stringe
-	var b := o.bracci()[1]
-	var mano := func() -> Vector3:
+	# DA VICINO, UNA MANO PER VOLTA: ognuna fa il suo gesto
+	for k in o.bracci().size():
+		var b := o.bracci()[k]
 		var p := b.punte_nel_mondo()
-		return (p[2] + b.polso_nel_mondo()) * 0.5
-	_guarda(DA, mano.call(), 16.0)
-	await _aspetta(1.0)
-	await _foto("braccia_mano")
-	var attesa := 0.0
-	while b.chiusa() < BraccioUmano.STRETTA - 0.02 and attesa < BraccioUmano.CICLO * 1.5:
-		await _aspetta(0.5)
-		attesa += 0.5
-	_guarda(DA, mano.call(), 16.0)
-	await _aspetta(1.0)
-	await _foto("braccia_stringono")
-	_dalla_porta(-35.0, 14.0)
+		_guarda(DA, (p[2] + b.polso_nel_mondo()) * 0.5, 14.0)
+		await _aspetta(0.6)
+		await _foto("braccia_mano_%d_%s" % [k + 1, String(BraccioUmano.Gesto.keys()[b.gesto()]).to_lower()])
+	await _aspetta(14.0)
+	_dalla_porta(az, 12.0)
+	await _aspetta(0.6)
+	await _foto("braccia_dopo")
+	_dalla_porta(az - 35.0, 14.0)
 	await _aspetta(4.0)
 	await _foto("braccia_di_lato")
 	o.queue_free()
@@ -180,26 +181,35 @@ func _colore() -> void:
 	var dove := Vector3(OrroreColore.DOVE.x, 0.0, OrroreColore.DOVE.y)
 	var verso_caduta := Vector3(dove.x - DA.x, 0.0, dove.z - DA.z).normalized()
 	var az := Orrore.azimut_di(verso_caduta)
-	# si guarda verso la caduta, alto: il bolide passa lì davanti
-	_dalla_porta(az, 30.0)
+	# si guarda verso dove arriva: alto, davanti
+	_dalla_porta(az + 12.0, 22.0)
 	var o: OrroreColore = _orrori.premi(KEY_F8)
-	await _aspetta(1.6)
-	await _foto("colore_bolide")
-	await _aspetta(1.15)
-	await _foto("colore_scoppia")
-	_guarda(DA, dove + Vector3.UP * 0.5)
-	await _aspetta(0.05)
-	await _foto("colore_lampo")
-	# il volo buio, poi l'impatto
-	while o.fase() != "BRILLA":
+	await _aspetta(2.0)
+	await _foto("colore_arriva")
+	await _aspetta(2.5)
+	await _foto("colore_si_avvicina")
+	# l'ultimo tratto sopra il prato: si guarda la buca, largo
+	_guarda(DA, dove + Vector3.UP * 6.0, 80.0)
+	while o.fase() == "CADE" and o.tempo() < OrroreColore.ARRIVO - 0.45:
 		await get_tree().process_frame
-	await _aspetta(0.25)
+	await _foto("colore_scende")
+	while o.fase() == "CADE":
+		await get_tree().process_frame
+	await _aspetta(0.08)
 	await _foto("colore_impatto")
-	await _aspetta(5.0)
-	var vicino := dove - verso_caduta * 2.5 + Vector3(0.6, 0.0, 0.0)
-	_guarda(vicino, dove + Vector3.UP * 0.1, 60.0)
+	await _aspetta(1.2)
+	await _foto("colore_polverone")
+	await _aspetta(4.0)
+	await _foto("colore_fuma")
+	var vicino := dove - verso_caduta * 4.5 + Vector3(1.2, 0.0, 0.0)
+	_guarda(vicino, dove + Vector3.UP * 0.2, 55.0)
 	await _aspetta(1.0)
 	await _foto("colore_pietra")
+	await _aspetta(10.0)
+	await _foto("colore_pietra_fredda")
+	_dalla_porta(az + 12.0, 22.0)
+	await _aspetta(1.0)
+	await _foto("colore_scia")
 	await _aspetta(28.0)
 	_guarda(DA, dove + Vector3.UP * 0.3)
 	await _aspetta(0.5)
@@ -266,20 +276,22 @@ func _posa() -> void:
 	var pazienza := 0
 	while pazienza < 3000:
 		for n in get_tree().get_nodes_in_group(Stampa.GRUPPO):
-			if (n as Stampa).dall_alto != "":
+			if (n as Stampa).occhio:
 				s = n as Stampa
 		if s != null and s.stato == Stampa.Stato.ATTACCATA:
 			break
 		pazienza += 1
 		await get_tree().physics_frame
 	if s == null:
-		print("[orrori] posa: nessuna stampa dall'alto")
+		print("[orrori] posa: nessuna stampa con l'occhio")
 		return
-	var pagina := (load(Stampa.PAGINA % [s.target_id, s.livello]) as Texture2D).get_image()
-	VistaDallAlto.componi(pagina, VistaDallAlto.carica(s.dall_alto)).save_png(
-		ProjectSettings.globalize_path(CARTELLA + "30_orrori_posa_pagina.png"))
-	VistaDallAlto.carica(s.dall_alto).save_png(
-		ProjectSettings.globalize_path(CARTELLA + "30_orrori_posa_foto.png"))
+	# LE PAGINE, ingrandite a quattro volte senza sfumare: una galassia, una nebulosa, un ammasso
+	for pagina_di in [[&"m51", 2], [&"ic1396", 2], [&"m13", 3], [&"m42", 1]]:
+		var pagina := (load(Stampa.PAGINA % pagina_di) as Texture2D).get_image()
+		var composta := OcchioNellaPosa.componi(pagina, 7)
+		composta.resize(composta.get_width() * 4, composta.get_height() * 4, Image.INTERPOLATE_NEAREST)
+		composta.save_png(ProjectSettings.globalize_path(
+			CARTELLA + "30_orrori_posa_pagina_%s.png" % pagina_di[0]))
 	await _aspetta(0.5)
 	await _foto("posa_stampa")
 	_guarda(piedi, fessura.origin + fessura.basis.y * 0.14, 30.0)

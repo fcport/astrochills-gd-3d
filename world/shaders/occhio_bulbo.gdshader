@@ -1,15 +1,21 @@
 // IL BULBO dell'occhio nel cielo: l'iride, la pupilla, e la Luna che ci si specchia.
 //
 // La geometria è una sfera di raggio uno, girata da `world/occhio.gd` verso quello che
-// guarda: la pupilla sta sempre sul suo -Z. Tutto quello che ha una forma qui dentro -
-// la pupilla, il suo bordo, l'ombra delle palpebre - si calcola dalla posizione sulla
-// sfera, perché sono cose che CAMBIANO: la pupilla si allarga e si stringe, le
-// palpebre si aprono. Una texture le congelerebbe.
+// guarda: la pupilla sta sempre sul suo -Z. Quello che CAMBIA - quanto è larga la pupilla,
+// l'ombra delle palpebre - si calcola qui dalla posizione sulla sfera.
 //
-// LA PUPILLA È UNA BARRA ORIZZONTALE, e resta orizzontale. È quella di un polpo:
-// una fessura in piena luce, un rettangolo arrotondato al buio. Il file dell'occhio
-// tiene il bulbo senza rollio anche quando la testa è inclinata, che è quello che fa
-// un polpo vero con le statocisti; qui basta disegnarla lungo l'asse X del bulbo.
+// L'IRIDE È L'OCCHIO COSMICO, lo stesso che esce nella stampa al posto del soggetto
+// (`world/orrori/occhio_nella_posa.gd`): Federico, «l'occhio che compare sarebbe bello che
+// fosse quello che poi va anche nella stampa». È l'immagine che rende
+// `tools/occhio_cosmico_blender.py`, proiettata sulla faccia davanti del bulbo. La prima
+// stesura era l'iride di un polpo, un quadrato di foto ripetuto tre volte: da sotto era un
+// anello di macchie tutte uguali.
+//
+// LA PUPILLA SI ALLARGA E SI STRINGE SULL'IRIDE VERA. Nell'immagine la pupilla è larga
+// `iride_pupilla` del disco; quando qui è più larga o più stretta non si disegna un
+// cerchio nero sopra, si STIRA l'iride lungo il raggio fra la pupilla e il bordo, che è
+// quello che fa un'iride vera: i filamenti vicino alla pupilla si accorciano quando si
+// allarga, e si allungano quando si stringe.
 //
 // IL RIFLESSO DELLA LUNA non è un effetto: una superficie bagnata e liscia specchia
 // la sorgente più forte del cielo, e di notte è quella. È anche la cosa che fa
@@ -19,24 +25,18 @@
 shader_type spatial;
 render_mode cull_back;
 
-uniform sampler2D iride : source_color, hint_default_white, filter_linear_mipmap, repeat_enable;
+uniform sampler2D iride : source_color, hint_default_black, filter_linear_mipmap, repeat_disable;
 
-// Quante piastrelle dell'iride ci stanno da un bordo all'altro del bulbo. Nella foto
-// la parte scoperta dell'iride è larga una trentina di cellule, e una piastrella ne ha
-// una quindicina: la parte scoperta è un raggio e sei decimi, quindi tre.
-uniform float piastrelle = 3.0;
+// Quanto è largo sul bulbo il disco dell'immagine, in raggi del bulbo; quanto è largo il
+// disco nell'immagine, in frazione del lato; e quanto è larga, in frazione del disco, la
+// pupilla che l'immagine ha già.
+uniform float iride_raggio = 0.9;
+uniform float iride_disco = 0.4902;
+uniform float iride_pupilla = 0.20;
 
-// La pupilla, in raggi del bulbo: mezza larghezza e mezza altezza. Le muove lo
-// script, da buio a luce.
-uniform float pupilla_largo = 0.55;
-uniform float pupilla_alto = 0.40;
-// L'esponente della superellisse: due è un'ellisse, alto è un rettangolo. Tre è la
-// barra con i capi tondi.
-uniform float pupilla_forma = 3.0;
-
-// Il filo dorato lungo il bordo della pupilla: nella foto c'è, sotto la fessura.
-uniform vec3 bordo_colore : source_color = vec3(0.60, 0.50, 0.26);
-uniform float bordo_spessore = 0.022;
+// La pupilla di adesso, in raggi del bulbo. La muove lo script, da buio a luce.
+uniform float pupilla_raggio = 0.18;
+uniform vec3 pupilla_colore : source_color = vec3(0.012, 0.012, 0.022);
 
 uniform float rugosita = 0.22;
 
@@ -91,18 +91,22 @@ void fragment() {
 	}
 	vec3 p = normalize(locale);
 
-	vec3 colore = texture(iride, p.xy * piastrelle * 0.5 + 0.5).rgb;
-
-	// la pupilla, solo sulla faccia davanti
-	float n = pupilla_forma;
-	float s = pow(pow(abs(p.x) / pupilla_largo, n) + pow(abs(p.y) / pupilla_alto, n), 1.0 / n);
-	float aa = max(fwidth(s), 1e-4);
+	// l'iride, solo sulla faccia davanti; dietro non la vede nessuno
+	vec2 q = p.xy / iride_raggio;
+	float rr = length(q);
+	float pr = clamp(pupilla_raggio / iride_raggio, 0.02, 0.9);
+	float aa = max(fwidth(rr), 1e-4);
+	// il raggio nell'immagine: fra pupilla e bordo si stira, fuori dal disco resta il bordo
+	float nel_disco = mix(iride_pupilla, 1.0, clamp((rr - pr) / (1.0 - pr), 0.0, 1.0));
+	vec2 verso = rr > 1e-5 ? q / rr : vec2(1.0, 0.0);
+	vec2 uv = vec2(0.5) + verso * vec2(1.0, -1.0) * min(nel_disco, 0.985) * iride_disco;
+	vec3 colore = texture(iride, uv).rgb;
+	// oltre il disco il bulbo è il bordo scuro dell'iride, che sfuma nel buio
+	colore *= 1.0 - 0.75 * smoothstep(1.0, 1.25, rr);
 	float davanti = step(p.z, 0.0);
-	float dentro = (1.0 - smoothstep(1.0 - aa, 1.0 + aa, s)) * davanti;
-	float fuori_di = (s - 1.0) * min(pupilla_largo, pupilla_alto);
-	float bordo = (1.0 - smoothstep(0.0, bordo_spessore, fuori_di)) * step(0.0, fuori_di) * davanti;
-	colore = mix(colore, bordo_colore, bordo * 0.85);
-	colore = mix(colore, vec3(0.004, 0.004, 0.006), dentro);
+	float dentro = (1.0 - smoothstep(pr - aa, pr + aa, rr)) * davanti;
+	colore = mix(colore, pupilla_colore, dentro);
+	colore *= davanti;
 
 	// l'ombra delle palpebre, vicino ai margini
 	vec3 d = normalize(testa_inversa * (mondo - centro));

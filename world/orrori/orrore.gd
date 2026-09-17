@@ -116,14 +116,15 @@ func _davanti() -> Vector3:
 
 
 ## Un verso del cielo da azimut (gradi, da nord verso est) e altezza (gradi), con la
-## convenzione di `Luna.direzione()`: nord +Z, est +X.
+## convenzione di `Luna.direzione()`: il nord vero sta a `Luna.NORD` gradi da +Z.
 static func verso(azimut: float, altezza: float) -> Vector3:
 	return Luna.direzione(altezza, azimut)
 
 
-## L'azimut, in gradi, di un verso del mondo.
+## L'azimut, in gradi, di un verso del mondo: lo stesso nord di `verso()`, o un orrore
+## messo davanti a chi guarda finirebbe quarantacinque gradi di lato.
 static func azimut_di(v: Vector3) -> float:
-	return rad_to_deg(atan2(v.x, v.z))
+	return Luna.azimut(v)
 
 
 ## La cupola del cielo: una sfera vista da dentro, che segue la camera. Il materiale lo

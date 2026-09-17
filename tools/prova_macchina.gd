@@ -113,8 +113,11 @@ func _davanti(giocatore: Player, auto: Macchina) -> void:
 	var chi := {}
 	for dx in range(-INTORNO, INTORNO + 1):
 		for dz in range(-INTORNO, INTORNO + 1):
-			var p := Vector3(auto.global_position.x + dx * PASSO, 0.0,
-				auto.global_position.z + dz * PASSO)
+			# I PIEDI SUL TERRENO, non a quota zero: l'auto sta sulla sterrata fuori dal
+			# cancello, quasi due metri sopra il pavimento, e a zero si era sotto terra
+			var x := auto.global_position.x + dx * PASSO
+			var z := auto.global_position.z + dz * PASSO
+			var p := Vector3(x, _suolo(giocatore, x, z, auto.global_position.y), z)
 			if _dentro_qualcosa(giocatore, p):
 				occupati += 1
 				continue
@@ -148,6 +151,16 @@ func _davanti(giocatore: Player, auto: Macchina) -> void:
 		print("[macchina] ok: il prompt compare da %d punti, il più vicino a %.2f m (%s)"
 			% [buoni, migliore, _v(da_dove)])
 		print("[macchina] la riga dice: «%s»" % auto.prompt())
+
+
+## La quota del terreno in (x, z), sotto l'auto e il giocatore.
+func _suolo(giocatore: Player, x: float, z: float, attorno: float) -> float:
+	var spazio := giocatore.get_world_3d().direct_space_state
+	var giu := PhysicsRayQueryParameters3D.create(Vector3(x, attorno - 0.5, z), Vector3(x, attorno - 20.0, z))
+	giu.collision_mask = Interactable.LAYER_WORLD
+	giu.exclude = [giocatore.get_rid()]
+	var suolo := spazio.intersect_ray(giu)
+	return (suolo["position"] as Vector3).y if not suolo.is_empty() else attorno
 
 
 ## CI SI ARRIVA A PIEDI? Si allaga il pavimento camminabile a partire da dove il

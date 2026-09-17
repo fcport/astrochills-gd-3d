@@ -47,14 +47,16 @@ if QUI not in sys.path:
     sys.path.insert(0, QUI)
 from modellare import uv_a_scatola, applica_texture   # noqa: E402
 from geometria import (R_PASS, W_PASS, H_PASS, SP_PASS,   # noqa: E402
-                       AR_RIPOSO_GRADI, DEC_RIPOSO_GRADI, LATITUDINE)
+                       AR_RIPOSO_GRADI, DEC_RIPOSO_GRADI, LATITUDINE, NORD)
 
 RADICE = os.path.dirname(QUI)
 USCITA = os.path.join(RADICE, "assets", "models", "telescopio.glb")
 MODELLO = os.path.join(RADICE, "assets", "models", "esterni", "telescopio_riflettore")
 
 # LATITUDINE arriva da geometria.py: la leggono anche il gioco e i controlli
-AZIMUT = 0.0           # dove guarda il polo: 0 = verso -Y di Blender, il nord del blockout
+# dove guarda il polo: 0 = verso -Y di Blender, cioe' +Z del gioco. Il nord vero sta a NORD
+# gradi da li' (`geometria.py`): l'edificio vero e' girato di tanto, e nel gioco sta dritto.
+AZIMUT = math.radians(NORD)
 
 # --- il pilastro, l'unica cosa che modelliamo noi ----------------------------
 H_PILASTRO, D_PILASTRO = 0.75, 0.50

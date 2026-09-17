@@ -341,7 +341,7 @@ func _prova() -> void:
 		# quando è arrivata: quota sull'erba, distanza dall'edificio, giro della punta
 		if float(n) * PASSO > DA_QUANDO:
 			var suolo: float = prato.position.y + FormaPrato.altezza(
-				Vector2(punta.x, punta.z), prato.piatti, prato.recinto)
+				Vector2(punta.x, punta.z), prato.sito())
 			punta_minima = minf(punta_minima, punta.y - suolo)
 			punta_massima = maxf(punta_massima, punta.y - suolo)
 			ampiezza_punta = maxf(ampiezza_punta,

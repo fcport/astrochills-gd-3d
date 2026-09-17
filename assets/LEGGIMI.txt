@@ -80,6 +80,44 @@ quest'ordine, e ci vogliono un paio di minuti.
    La VIA LATTEA (assets/textures/via_lattea) e' la mappa della NASA: senza, il cielo
    disegna la vecchia fascia procedurale. Con Blender perche' il file e' un OpenEXR.
 
+       "D:/programs/blender5/blender.exe" --background --python tools/occhio_cosmico_blender.py
+
+   L'OCCHIO NELLA POSA (Ctrl+F6) e' un render del modello "Cosmic Eye of Horror" che sta
+   in assets/models/esterni/_da_scaricare/cosmic_eye_of_horror.zip (CC-BY: il credito e'
+   in CREDITI.md). Scrive assets/textures/occhio_cosmico/occhio.png; senza, la stampa
+   infestata esce normale e lo dice nel log.
+
+       "D:/programs/blender5/blender.exe" --background --python tools/meteorite_blender.py
+
+   La METEORITE del colore venuto dallo spazio (Ctrl+F8) e' GRO 17102,0 della NASA: lo
+   script la scarica in tools/__modelli_cache__/meteorite/ e scrive
+   assets/models/meteorite.glb. Senza, la pietra e' una pallina e lo dice nel log.
+
+7. IL PANORAMA: il terreno vero attorno all'osservatorio, gli alberi e la rete del
+   recinto. Non passa dal controllo di freschezza, e l'ordine conta:
+
+       python tools/prendi_panorama.py
+       python tools/prendi_modello.py querce_spoglie albero_scansionato modular_chainlink_fence
+       python tools/prendi_texture.py sterrata sottobosco
+       "D:/programs/blender5/blender.exe" --background --python tools/alberi_blender.py
+       "D:/programs/blender5/blender.exe" --background --python tools/recinto_blender.py
+
+   prendi_panorama.py scarica SETTECENTO MEGABYTE la prima volta (rilievi, una scena
+   Sentinel-2 intera, la mappa WorldCover) in tools/__panorama_cache__/, e dopo gira
+   in un minuto e mezzo; scrive assets/panorama/. alberi_blender.py scrive gli alberi
+   in 3D (assets/models/alberi.glb) e le loro foto (assets/panorama/alberi_sagome.png),
+   recinto_blender.py la rete (assets/models/recinto.glb). Poi il reimport del passo 5.
+
+   IL NORD, IL RECINTO E LA GHIAIA STANNO IN tools/geometria.py (NORD, RECINTO, PIAZZALE,
+   SLARGO, VIOTTOLO, STRADA_SUL_PAVIMENTO): cambiato uno di quei numeri si rilancia
+   prendi_panorama.py, e per NORD anche telescopio_blender.py e osservatorio_blender.py,
+   poi gen_blockout.py. Il panorama li legge per girare il terreno e disegnare la ghiaia,
+   il generatore per la rete, l'auto e il prato (D-276).
+
+   SENZA assets/panorama/ il prato resta la sua terrazza nel vuoto, e il log lo dice. Senza gli
+   alberi il terreno c'e' ma e' calvo; senza la rete i muri del recinto ci sono ancora,
+   ma invisibili.
+
 NON SERVE RICORDARSI QUALI PASSI RIFARE: `gen_blockout.py` confronta le date degli
 script con quelle dei .glb che producono, e l'MD5 di ogni .glb con quello che la
 scena legge davvero. Se qualcosa e' vecchio lo dice per nome, con il comando da

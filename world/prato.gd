@@ -2,7 +2,12 @@
 ##
 ## PRIMA ERA UNA SCATOLA da quarantotto metri per quarantaquattro, verde e piatta,
 ## generata insieme ai muri. Adesso è una maglia da un metro che sale e scende come
-## dice `FormaPrato`, con sopra qualche migliaio di ciuffi d'erba.
+## dice `FormaPrato` - la terrazza del recinto e la scarpata fino al terreno vero - con
+## sopra qualche migliaio di ciuffi d'erba.
+##
+## IL COLORE DEL TERRENO LO DÀ IL PANORAMA: la stessa trama della sua griglia, con la
+## ghiaia e il viottolo dove dicono le sue maschere (`Panorama._griglia`). Col materiale
+## suo il prato era un tappeto d'erba diverso da tutto quello che gli stava attorno.
 ##
 ## QUELLO CHE SI VEDE E QUELLO SU CUI SI CAMMINA SONO LA STESSA MAGLIA: la collisione
 ## nasce dagli stessi triangoli della mesh, e i ciuffi si posano sulla maglia, non
@@ -18,6 +23,9 @@ extends StaticBody3D
 const TEXTURE_CIUFFI := "res://assets/textures/erba_ciuffi.png"
 const SHADER_ERBA := preload("res://world/shaders/erba.gdshader")
 
+## Una quota di impronta che vuol dire «dove il terreno già sta» (`quote_piatti`).
+const SUL_TERRENO := -9999.0
+
 ## Il lato del rettangolo di un ciuffo, in metri: è il lato della fotografia di
 ## `tools/erba_blender.py` (LATO_M), e il banco controlla che i due numeri coincidano.
 ## Diversi, l'erba verrebbe tutta più grande o più piccola del vero.
@@ -32,21 +40,35 @@ const INTERRATO := 0.015
 const VERDE := Color(0.70, 1.0, 0.70)
 const SECCO := Color(1.0, 0.95, 0.80)
 
-## Il rettangolo di prato, in pianta: x, z, larghezza, profondità.
-@export var estensione := Rect2(-13.0, -11.0, 48.0, 44.0)
-## Il recinto: dentro il prato è appena mosso, fuori sale.
-@export var recinto := Rect2(-5.0, -4.0, 32.0, 30.0)
+## Il rettangolo di prato, in pianta: x, z, larghezza, profondità. I LATI STANNO SULLE
+## RIGHE DELLA GRIGLIA DEL PANORAMA, che sotto il prato non c'è: un lato a metà di una
+## sua casella lascerebbe un buco lungo tutto il bordo. Lo controlla il banco.
+@export var estensione := Rect2(-35.5, -45.25, 90.0, 95.0)
+## La rete, come poligono chiuso: dentro la terrazza, fuori la scarpata.
+@export var recinto := PackedVector2Array()
 ## Le impronte attorno a cui il terreno resta piatto: l'edificio e l'auto.
 @export var piatti: Array[Rect2] = []
+## A che quota sta ogni impronta, in coordinate del prato: l'edificio a zero. `SUL_TERRENO`
+## vuol dire dove il posto già sta, al centro dell'impronta: è l'auto sulla sterrata.
+@export var quote_piatti := PackedFloat32Array()
 ## Dove l'erba non cresce: sotto l'edificio, che ha i pavimenti, e sotto l'auto.
 @export var senza_erba: Array[Rect2] = []
+## La ghiaia, dove l'erba non cresce: il piazzale e lo slargo del cancello.
+@export var ghiaia: Array[PackedVector2Array] = []
+## Fin dove l'erba passa la rete, in metri: oltre è la scarpata, col terreno del panorama.
+@export var erba_oltre := 3.0
 @export var materiale: Material
 @export var seme := 1999
 @export var ciuffi_per_m2 := 12.0
 
 
+var _sito: FormaPrato.Sito
+var _q := PackedFloat32Array()
+
+
 func _ready() -> void:
-	var q := FormaPrato.quote(estensione, piatti, recinto)
+	var q := FormaPrato.quote(sito())
+	_q = q
 	var mesh := _terreno(q)
 	var vista := MeshInstance3D.new()
 	vista.name = "Terreno"
@@ -58,6 +80,37 @@ func _ready() -> void:
 	forma.shape = mesh.create_trimesh_shape()
 	add_child(forma)
 	_erba(q)
+
+
+## Quello che decide la forma del prato: le misure del generatore, e il terreno vero del
+## panorama, che il prato legge prima che il panorama si costruisca.
+func sito() -> FormaPrato.Sito:
+	if _sito != null:
+		return _sito
+	_sito = FormaPrato.Sito.new()
+	_sito.estensione = estensione
+	_sito.recinto = recinto
+	_sito.base = position.y
+	if ResourceLoader.exists(Panorama.DATI):
+		var dati := load(Panorama.DATI) as PanoramaDati
+		if dati != null and dati.vicino_lato > 0:
+			_sito.rilievo = dati
+	# le impronte che stanno dove stanno: la quota del posto al loro centro, senza piatti
+	var quote := quote_piatti.duplicate()
+	for k in mini(quote.size(), piatti.size()):
+		if quote[k] <= SUL_TERRENO + 1.0:
+			quote[k] = FormaPrato.altezza(piatti[k].get_center(), _sito)
+	_sito.piatti = piatti
+	_sito.quote_piatti = quote
+	return _sito
+
+
+## La quota del terreno nel mondo, in un punto del prato, come la disegna la maglia. NAN
+## fuori: lì il terreno è la griglia del panorama.
+func quota_mondo(p: Vector2) -> float:
+	if _q.is_empty() or not estensione.has_point(p):
+		return NAN
+	return position.y + FormaPrato.quota(p, estensione, _q)
 
 
 ## La maglia del terreno. Le NORMALI SI CALCOLANO DALLE QUOTE VICINE e non dal verso dei
@@ -101,7 +154,8 @@ func _erba(q: PackedFloat32Array) -> void:
 	mat.shader = SHADER_ERBA
 	mat.set_shader_parameter("ciuffi", foto)
 	mat.set_shader_parameter("varianti", float(FormaPrato.VARIANTI))
-	var dove := FormaPrato.ciuffi(seme, ciuffi_per_m2, estensione, senza_erba)
+	var dove := FormaPrato.ciuffi(seme, ciuffi_per_m2, estensione, senza_erba, recinto, erba_oltre,
+		ghiaia)
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_custom_data = true

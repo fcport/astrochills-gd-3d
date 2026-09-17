@@ -27,6 +27,34 @@ Il modello arriva col treppiede da campagna e senza gerarchia; qui viene montato
 pilastro e riarticolato sui due assi equatoriali da `tools/telescopio_blender.py`. La
 licenza permette le modifiche e l'uso commerciale, a patto del credito qui sopra.
 
+**Cosmic Eye of Horror** — l'occhio che esce nella stampa al posto del soggetto (`Ctrl+F6`).
+Autore: [Huntaer87](https://sketchfab.com/huntaer87).
+Fonte: <https://sketchfab.com/3d-models/cosmic-eye-of-horror-06da91d166d844b98bac8484652301cf>
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> This work is based on "Cosmic Eye of Horror"
+> (https://sketchfab.com/3d-models/cosmic-eye-of-horror-06da91d166d844b98bac8484652301cf)
+> by Huntaer87 (https://sketchfab.com/huntaer87) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
+Nel gioco non c'è il modello ma una sua immagine: `tools/occhio_cosmico_blender.py` lo rende di
+fronte, senza luci, in `assets/textures/occhio_cosmico/occhio.png`, e il gioco lo sfuma e lo
+sviluppa dentro la foto stampata.
+
+**GRO 17102,0 (Astromaterials 3D)** — la meteorite del colore venuto dallo spazio (`Ctrl+F8`).
+Autori: NASA Astromaterials Acquisition & Curation Office, Astromaterials 3D. Una meteorite
+ferrosa IAB raccolta dall'ANSMET sui Grosvenor Mountains (Antartide) nel 2017, fotografata e
+ricostruita in 3D.
+Fonte: <https://ares.jsc.nasa.gov/astromaterials3d/sample-details.htm?sample=GRO17102-0>
+Licenza: pubblico dominio (NASA), con la richiesta di citare la fonte come sotto.
+
+> NASA/These 3D reconstructed image data were produced at the Antarctic Meteorite Sample Laboratory
+> Facility for Astromaterials 3D in NASA's Acquisition & Curation Office and were funded by NASA
+> Planetary Data Archiving, Restoration, and Tools Program, Proposal No.: 15-PDART15_2-0041.
+
+La scarica `tools/meteorite_blender.py` (il modello a bassa risoluzione), che la centra, la
+riduce a un terzo dei triangoli e ne porta la texture a 2048.
+
 **Human Base Meshes** (v1.4.1) — il braccio umano delle braccia all'orizzonte (`Ctrl+F4`).
 Autore: Blender Studio.
 Fonte: <https://www.blender.org/download/demo-files/#assets>
@@ -232,6 +260,83 @@ Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuz
 > by Sousinho (https://sketchfab.com/sousinho) licensed under CC-BY-4.0
 > (http://creativecommons.org/licenses/by/4.0/)
 
+**3 English Oak Set (Quercus Robur) \*Updated** — tre querce spoglie, gli alberi lontani
+del panorama (sagome fotografate da `tools/alberi_blender.py`, che ai rami con le gemme
+sostituisce quelli nudi dello stesso modello).
+Autore: [Yag1z](https://sketchfab.com/Yag1z).
+Fonte: <https://sketchfab.com/3d-models/3-english-oak-set-quercus-robur-updated-750fac732a8c453e9dd748f1396275fa>,
+scaricato dall'archivio [Objaverse](https://huggingface.co/datasets/allenai/objaverse).
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> This work is based on "3 English Oak Set (Quercus Robur) *Updated"
+> (https://sketchfab.com/3d-models/3-english-oak-set-quercus-robur-updated-750fac732a8c453e9dd748f1396275fa)
+> by Yag1z (https://sketchfab.com/Yag1z) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
+**Free Tree fullsize photogrammetry scan 2 Draft** — l'albero spoglio scansionato: quelli
+vicini al recinto in 3D, e una delle sagome lontane. `tools/alberi_blender.py` gli toglie
+la zolla, lo porta a tredici metri e ne riduce la copia in 3D al cinque per cento.
+Autore: [Epic_Tree_Store](https://sketchfab.com/johngreenstone).
+Fonte: <https://sketchfab.com/3d-models/free-tree-fullsize-photogrammetry-scan-2-draft-fabc5ef137854b369152062b59444159>,
+scaricato dall'archivio [Objaverse](https://huggingface.co/datasets/allenai/objaverse).
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> This work is based on "Free Tree fullsize photogrammetry scan 2 Draft"
+> (https://sketchfab.com/3d-models/free-tree-fullsize-photogrammetry-scan-2-draft-fabc5ef137854b369152062b59444159)
+> by Epic_Tree_Store (https://sketchfab.com/johngreenstone) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
+## Il paesaggio
+
+Il panorama attorno all'osservatorio (`world/panorama.gd`) è fatto di dati veri,
+scaricati e trasformati da `tools/prendi_panorama.py`. Quattro licenze su cinque chiedono
+il credito.
+
+**TINITALY 1.1** — il rilievo a dieci metri attorno all'osservatorio (tessera w48575).
+Autori: Tarquini S., Isola I., Favalli M., Battistini A., Dotta G., Istituto Nazionale di
+Geofisica e Vulcanologia (INGV).
+Fonte: <https://tinitaly.pi.ingv.it/>
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> Tarquini S., Isola I., Favalli M., Battistini A., Dotta G. (2023). TINITALY, a digital
+> elevation model of Italy with a 10 meters cell size (Version 1.1). Istituto Nazionale di
+> Geofisica e Vulcanologia (INGV). https://doi.org/10.13127/tinitaly/1.1
+
+**Copernicus DEM GLO-30** — il rilievo lontano, fino a quarantacinque chilometri.
+Fonte: <https://registry.opendata.aws/copernicus-dem/>
+Licenza: licenza Copernicus DEM, uso libero anche commerciale con il credito.
+
+> Produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space
+> GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved.
+
+**Sentinel-2 L2A** — il colore del terreno: la scena S2B_32TQP del 19 novembre 2020.
+Fonte: <https://registry.opendata.aws/sentinel-2-l2a-cogs/>
+Licenza: dati Copernicus Sentinel, liberi e aperti, con il credito.
+
+> Contains modified Copernicus Sentinel data 2020.
+
+**ESA WorldCover 2021** — dove stanno gli alberi e dove le luci dei paesi.
+Fonte: <https://esa-worldcover.org/>
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> © ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed
+> by ESA WorldCover consortium.
+
+**OpenStreetMap** — le strade attorno all'osservatorio, e dove sta l'edificio.
+Fonte: <https://www.openstreetmap.org/>
+Licenza: [ODbL](https://opendatacommons.org/licenses/odbl/) — **attribuzione obbligatoria**.
+
+> © OpenStreetMap contributors
+
+**Regione Marche, Geoportale** — il recinto, il cancello, la ghiaia e il viottolo attorno
+all'edificio (D-276): la Carta Tecnica Regionale 2019 (1:10.000) e l'ortofoto AGEA 2022,
+consultate dal servizio WMS del Geoportale. Nel gioco non c'è nessuna delle due immagini:
+ci sono le misure che se ne sono prese, scritte in `tools/geometria.py`.
+Fonte: <https://www.regione.marche.it/Regione-Utile/Paesaggio-Territorio-Urbanistica/Cartografia>
+Licenza: da verificare sul Geoportale; il servizio WMS non dichiara vincoli di accesso.
+
+> Cartografia: Regione Marche — Carta Tecnica Regionale 2019; ortofoto AGEA 2022.
+
 ## Immagini
 
 **Le foto delle stampe**: `assets/stampe/*.png`, le pagine che escono dalla stampante
@@ -262,6 +367,12 @@ script scrivono accanto a ogni cartella scaricata.
 Modelli guardati per decidere come deve essere fatta una cosa, e mai scaricati né
 usati. Stanno qui perché il giorno in cui il segnaposto diventerà un modello vero
 si riparta da dove si era guardato, invece che da capo.
+
+- **Il sito dell'osservatorio** (D-273): cinque fotogrammi di Google Street View
+  (© 2025 Google) dalla sterrata davanti al cancello, mandati da Federico il 16
+  settembre 2026. Hanno deciso la rete verde del recinto, gli alberi spogli lungo la
+  strada, la strada bianca e il bosco sul versante. Non sono nel gioco né nel
+  repository.
 
 - **Quadro della cupola** (i due pulsanti a muro, D-171): *Old Soviet Electrical
   Junction Box (220V)* di uliana, Sketchfab, CC-BY —

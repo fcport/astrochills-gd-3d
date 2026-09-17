@@ -14,20 +14,21 @@
 ##   F1 LE NUBI stanno sulla camera e si accendono e si spengono del tutto.
 ##   F2 L'INCHIOSTRO esce grumo e diventa nube: piccolo al terzo secondo, largo al trentesimo.
 ##   F3 LE VENTOSE passano alte DAVANTI a chi le ha chiamate, non allo zenit né dietro.
-##   F4 LE BRACCIA escono da sotto il profilo del prato, salgono sopra l'orizzonte con la
-##      spalla nascosta e il palmo verso chi guarda, stanno dentro la cupola degli altri
-##      orrori, e la mano si apre a ventaglio e si chiude con le dita sul palmo.
+##   F4 LE BRACCIA escono da sotto il terreno vero, dove da chi le chiama l'orizzonte è
+##      basso, salgono con la spalla sotto terra e il palmo verso chi guarda, stanno dentro
+##      la cupola degli altri orrori, ogni mano fa gesti suoi coi tempi di una mano grande,
+##      e la mano si apre a ventaglio e si chiude con le dita sul palmo.
 ##   F5 L'OCCHIO NELL'OCULARE lo vede la camera dell'oculare e non quella del giocatore, sta
 ##      davanti alla bocca del tubo, guarda altrove e poi scatta su chi guarda, la pupilla è
 ##      orizzontale nell'inquadratura e si stringe.
-##   F6 LA FOTO DALL'ALTO sta nel riquadro e non sulla carta, lo sviluppo tira fuori una foto
-##      buia, il file si salva e si ricarica, la stampa esce, e la prossima foto rivelata
-##      consuma l'infestazione una volta sola.
+##   F6 L'OCCHIO NELLA POSA sta nella foto sopra il soggetto e non sulla carta, lascia davanti
+##      le stelle, viene uguale ogni volta, la stampa esce e se lo ricorda, e la prossima
+##      foto rivelata consuma l'infestazione una volta sola.
 ##   F7 LA MONTATURA punta chi le sta accanto e lo segue quando si sposta, non per un passo;
 ##      il conto da verso a coordinate orarie si prova piazzando la montatura vera, anche
 ##      sotto l'orizzonte.
-##   F8 IL COLORE: il bolide passa alto davanti, il lampo accende il prato, la pietra cade e
-##      schiaccia l'erba, il colore si allarga a macchie e non a cerchio fino a prendersi il
+##   F8 IL COLORE: la pietra arriva alta davanti e scende senza salti accendendo il paesaggio,
+##      resta nel cratere che ha fatto, il colore si allarga a macchie e non a cerchio fino a prendersi il
 ##      prato, illumina attorno con bagliore e foschia, se ne va in una colonna che arriva al
 ##      cielo, lascia la cenere — nell'erba e per terra — e alla fine restituisce il prato e
 ##      l'ambiente com'erano.
@@ -238,15 +239,24 @@ func _braccia() -> void:
 	var da := _camera.global_position
 	var alto := func(p: Vector3) -> float:
 		return rad_to_deg(asin((p - da).normalized().y))
+	var terreno := Orrore.trova(get_tree().root, "Panorama") as Panorama
+	if terreno == null:
+		_guasto("braccia: nel mondo non c'è il panorama")
+		return
+	# quanto un punto sta sopra il terreno che ha sotto: negativo, sotto terra
+	var fuori := func(p: Vector3) -> float:
+		return p.y - terreno.quota(Vector2(p.x, p.z))
 	tutti.call(PASSO)
 	var prima := -INF
 	for b in bracci:
 		for p in b.punte_nel_mondo():
-			prima = maxf(prima, alto.call(p))
+			prima = maxf(prima, fuori.call(p))
 	_avanti(o, 11.0 + BraccioUmano.DURATA_SALE + 2.0, tutti)
 	var piu_basso := INF
 	var piu_lontano := 0.0
 	var spalla_piu_alta := -INF
+	var polso_piu_basso := INF
+	var cerchio := OrroreBraccia.orizzonte(da, terreno, o.get_world_3d().direct_space_state)
 	for b in bracci:
 		if b.uscito() < 0.99:
 			_guasto("braccia: un braccio non è salito del tutto (%.2f)" % b.uscito())
@@ -258,18 +268,30 @@ func _braccia() -> void:
 			cima = maxf(cima, alto.call(p))
 			piu_lontano = maxf(piu_lontano, p.distance_to(da))
 		piu_basso = minf(piu_basso, cima)
-		spalla_piu_alta = maxf(spalla_piu_alta, alto.call(b.spalla_nel_mondo()))
+		spalla_piu_alta = maxf(spalla_piu_alta, fuori.call(b.spalla_nel_mondo()))
+		# QUANTO IL POLSO STA SOPRA L'ORIZZONTE, terreno e alberi, verso quel braccio
+		var polso := b.polso_nel_mondo()
+		var sopra: float = alto.call(polso) - OrroreBraccia.orizzonte_verso(cerchio, Orrore.azimut_di(polso - da))
+		polso_piu_basso = minf(polso_piu_basso, sopra)
 		# IL PALMO VERSO CHI GUARDA: una mano di taglio è una lama
 		var verso_di_me := (da - b.polso_nel_mondo()).normalized()
 		if b.palmo_nel_mondo().dot(verso_di_me) < 0.5:
 			_guasto("braccia: %s non mostra il palmo" % b.name)
-	print("[orrori] braccia: prima di salire le punte arrivano a %.1f°; salite, le cime stanno almeno a %.1f°, la spalla più alta a %.1f°, il punto più lontano a %.0f m" % [
-		prima, piu_basso, spalla_piu_alta, piu_lontano])
-	# QUATTRO GRADI E MEZZO: il profilo del prato, dalla porta, scende di quattro
-	if prima > -4.5:
-		_guasto("braccia: prima di salire si vedono già sopra l'orizzonte")
-	if spalla_piu_alta > -4.5:
-		_guasto("braccia: la spalla si vede sopra il profilo del prato")
+	var az_sguardo := Orrore.azimut_di(-_camera.global_basis.z)
+	var az_braccia := Orrore.azimut_di(bracci[2].global_position - da)
+	print("[orrori] braccia: prima di salire le punte stanno %.0f m sotto terra; salite, le cime stanno almeno a %.1f°, la spalla più alta %.0f m sotto terra, il polso più basso %.1f° sopra l'orizzonte, il punto più lontano a %.0f m; escono a %.0f° da dove si guarda" % [
+		-prima, piu_basso, -spalla_piu_alta, polso_piu_basso, piu_lontano,
+		wrapf(az_braccia - az_sguardo, -180.0, 180.0)])
+	if prima > 0.0:
+		_guasto("braccia: prima di salire le punte stanno già fuori dal terreno")
+	if spalla_piu_alta > 0.0:
+		_guasto("braccia: la spalla sta fuori dal terreno")
+	# DALLA PORTA VERSO NORD COLLINA E BOSCO coprono il cielo fino a quaranta gradi, e i polsi,
+	# a venti, ci restavano dietro: fuori dagli alberi del recinto spuntavano le dita, e
+	# sembravano mani di persona dietro la siepe. Tre gradi: la mano intera e l'attacco
+	# dell'avambraccio, anche nello spicchio stretto fra la casa e il bosco.
+	if polso_piu_basso < 3.0:
+		_guasto("braccia: un polso resta dietro il terreno o gli alberi vicini")
 	if piu_basso < 8.0:
 		_guasto("braccia: una cima resta sotto gli otto gradi")
 	if piu_lontano > Orrore.CUPOLA:
@@ -277,11 +299,64 @@ func _braccia() -> void:
 	# LA MANO SI APRE E SI CHIUDE, e chiudendosi le dita vanno SUL PALMO. È la misura che
 	# dice se le ossa si piegano dalla parte giusta: con il verso sbagliato le dita si
 	# rovesciano all'indietro, e il pugno misurato sul polso sembrerebbe lo stesso.
+	# OGNI MANO FA LA SUA COSA: per un minuto si guarda che gesto fa ognuna e come ha la
+	# mano, e due braccia non devono fare la stessa cosa. Si misura sulla prossimale
+	# dell'indice e sul polso, che sono quello che cambia fra un gesto e l'altro.
+	var gesti_visti := {}
+	var tutte_uguali := 0
+	var campioni: Array = []
+	for _b in bracci:
+		campioni.append(PackedFloat32Array())
+	for i in int(60.0 / PASSO):
+		tutti.call(PASSO)
+		if i % 15 != 0:
+			continue
+		var adesso := {}
+		for k in bracci.size():
+			var bk := bracci[k]
+			gesti_visti[bk.gesto()] = true
+			adesso[bk.gesto()] = true
+			var pose: PackedFloat32Array = bk.get("_posa_ora")
+			campioni[k].append(pose[3 * 3 + 1])
+			campioni[k].append(pose[15])
+		if adesso.size() == 1:
+			tutte_uguali += 1
+	var piu_simili := INF
+	for a0 in bracci.size():
+		for a1 in range(a0 + 1, bracci.size()):
+			var diff := 0.0
+			for j in campioni[a0].size():
+				diff += absf(campioni[a0][j] - campioni[a1][j])
+			piu_simili = minf(piu_simili, diff / maxf(campioni[a0].size(), 1))
+	print("[orrori] braccia: in un minuto %d gesti diversi, istanti con tutte le mani nello stesso gesto %d; le due mani più simili differiscono in media di %.0f°" % [
+		gesti_visti.size(), tutte_uguali, piu_simili])
+	if gesti_visti.size() < 5:
+		_guasto("braccia: le mani fanno pochi gesti")
+	# I TEMPI DI UNA MANO GRANDE: la radice di quante volte è più grande di una vera
+	var lente := PackedFloat32Array()
+	for bk in bracci:
+		lente.append(bk.lentezza())
+	print("[orrori] braccia: fanno i gesti da %.0f a %.0f volte più piano di una mano vera" % [
+		Array(lente).min(), Array(lente).max()])
+	if Array(lente).min() < 20.0:
+		_guasto("braccia: le mani gesticolano coi tempi di una persona")
+	if tutte_uguali > 0:
+		_guasto("braccia: a un certo punto tutte le mani fanno la stessa cosa")
+	if piu_simili < 10.0:
+		_guasto("braccia: due mani fanno lo stesso movimento")
+
+	# LA MANO SI APRE E SI CHIUDE, e chiudendosi le dita vanno SUL PALMO. È la misura che
+	# dice se le ossa si piegano dalla parte giusta: con il verso sbagliato le dita si
+	# rovesciano all'indietro, e il pugno misurato sul polso sembrerebbe lo stesso.
 	var b0 := bracci[1]
+	b0.fai(BraccioUmano.Gesto.STRINGE)
 	var aperta := {}
 	var chiusa := {}
-	for i in int(BraccioUmano.CICLO / PASSO) + 1:
+	var lento := b0.lentezza()
+	for i in int(((BraccioUmano.TRANSIZIONE + BraccioUmano.STRINGE_PERIODO_MAX) * lento + 1.0) / PASSO):
 		tutti.call(PASSO)
+		if i * PASSO < BraccioUmano.TRANSIZIONE * lento:
+			continue
 		var c := b0.chiusa()
 		if c < BraccioUmano.APERTA + 0.01 and aperta.is_empty():
 			aperta = _mano(b0)
@@ -397,58 +472,56 @@ func _oculare() -> void:
 # --- F6 ------------------------------------------------------------------------------
 
 func _posa() -> void:
-	var pagina := (load(Stampa.PAGINA % [&"m51", 2]) as Texture2D).get_image()
-	if pagina.is_compressed():
-		pagina.decompress()
-	var r := VistaDallAlto.riquadro_foto(pagina)
-	var finta := Image.create(VistaDallAlto.TENUTA.x, VistaDallAlto.TENUTA.y, false, Image.FORMAT_RGB8)
-	finta.fill(Color(0.45, 0.55, 0.35))
-	var composta := VistaDallAlto.componi(pagina, finta)
-	var fuori := 0
-	var dentro := 0
-	for y in pagina.get_height():
-		for x in pagina.get_width():
-			if pagina.get_pixel(x, y) != composta.get_pixel(x, y):
-				if r.has_point(Vector2i(x, y)):
-					dentro += 1
-				else:
-					fuori += 1
-	var quota := float(dentro) / float(maxi(r.get_area(), 1))
-	# LO SVILUPPO: una foto quasi nera deve venire fuori
-	var buia := Image.create(VistaDallAlto.SCATTO.x, VistaDallAlto.SCATTO.y, false, Image.FORMAT_RGBA8)
-	for y in buia.get_height():
-		for x in buia.get_width():
-			var v := 0.01 + 0.04 * float(x) / buia.get_width()
-			buia.set_pixel(x, y, Color(v, v * 1.1, v * 0.9))
-	var sviluppata := VistaDallAlto.sviluppa(buia, 1)
-	var media_prima := 0.0
-	var media_dopo := 0.0
-	var contati := 0
-	for y in range(0, buia.get_height(), 4):
-		for x in range(0, buia.get_width(), 4):
-			media_prima += buia.get_pixel(x, y).get_luminance()
-			contati += 1
-	media_prima /= contati
-	for y in sviluppata.get_height():
-		for x in sviluppata.get_width():
-			media_dopo += sviluppata.get_pixel(x, y).get_luminance()
-	media_dopo /= sviluppata.get_height() * sviluppata.get_width()
-	var via := VistaDallAlto.salva(sviluppata)
-	var riletta := VistaDallAlto.carica(via)
-	print("[orrori] posa: foto in %s, cambiata al %d%%, %d pixel cambiati sulla carta; sviluppo da %.3f a %.3f di luminanza; salvata in %s" % [
-		r, int(quota * 100.0), fuori, media_prima, media_dopo, via])
-	if r.size.x < 150 or r.size.y < 80:
-		_guasto("posa: il riquadro della foto non si trova")
-	if fuori > 0:
-		_guasto("posa: la foto dall'alto è uscita dal riquadro sulla carta")
-	if quota < 0.9:
-		_guasto("posa: la foto dall'alto non copre il riquadro")
-	if sviluppata.get_size() != VistaDallAlto.TENUTA or media_dopo < media_prima * 4.0:
-		_guasto("posa: lo sviluppo non tira fuori una foto buia")
-	if riletta == null or riletta.get_size() != sviluppata.get_size():
-		_guasto("posa: la foto salvata non si ricarica")
-	if via != "":
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(via))
+	# LA COMPOSIZIONE, su tre pagine diverse: una galassia, una nebulosa che riempie il campo,
+	# un ammasso globulare piccolo. Nessun pixel cambia sulla carta; l'occhio sta dentro la
+	# foto, sopra il soggetto, e non è un disco incollato — le stelle di davanti restano.
+	var peggio_fuori := 0
+	for pagina_di in [[&"m51", 2], [&"ic1396", 2], [&"m13", 3]]:
+		var pagina := (load(Stampa.PAGINA % pagina_di) as Texture2D).get_image()
+		if pagina.is_compressed():
+			pagina.decompress()
+		pagina.convert(Image.FORMAT_RGBA8)
+		var r := OcchioNellaPosa.riquadro_foto(pagina)
+		var sogg := OcchioNellaPosa.soggetto(pagina, r)
+		var composta := OcchioNellaPosa.componi(pagina, 7)
+		var ancora := OcchioNellaPosa.componi(pagina, 7)
+		var fuori := 0
+		var cambiati := 0
+		var stelle_rimaste := 0
+		var stelle := 0
+		var centro: Vector2 = sogg[&"centro"]
+		var raggio: float = sogg[&"raggio"]
+		for y in pagina.get_height():
+			for x in pagina.get_width():
+				var prima := pagina.get_pixel(x, y)
+				var dopo := composta.get_pixel(x, y)
+				if not prima.is_equal_approx(dopo):
+					if r.has_point(Vector2i(x, y)):
+						cambiati += 1
+					else:
+						fuori += 1
+				if Vector2(x + 0.5, y + 0.5).distance_to(centro) < raggio * 0.5 and OcchioNellaPosa._stella(pagina, x, y):
+					stelle += 1
+					if dopo.get_luminance() >= prima.get_luminance() - 0.01:
+						stelle_rimaste += 1
+		peggio_fuori = maxi(peggio_fuori, fuori)
+		var disco := PI * raggio * raggio
+		print("[orrori] posa: %s, foto in %s, occhio al centro %s con raggio %.0f px (%.0f%% del lato corto); cambiati %d pixel nella foto (%.0f%% del disco), %d sulla carta; stelle davanti %d su %d" % [
+			pagina_di[0], r, centro.round(), raggio, 100.0 * raggio / mini(r.size.x, r.size.y),
+			cambiati, 100.0 * cambiati / disco, fuori, stelle_rimaste, stelle])
+		# le foto sono orizzontali o verticali: M13 sta in piedi
+		if maxi(r.size.x, r.size.y) < 150 or mini(r.size.x, r.size.y) < 80:
+			_guasto("posa: il riquadro della foto di %s non si trova" % pagina_di[0])
+		if cambiati < disco * 0.6:
+			_guasto("posa: l'occhio non copre il soggetto di %s" % pagina_di[0])
+		if not r.has_point(Vector2i(centro)):
+			_guasto("posa: l'occhio di %s è fuori dalla foto" % pagina_di[0])
+		if stelle_rimaste < stelle:
+			_guasto("posa: l'occhio copre le stelle che gli stanno davanti in %s" % pagina_di[0])
+		if composta.get_data() != ancora.get_data():
+			_guasto("posa: la stessa stampa non viene uguale due volte")
+	if peggio_fuori > 0:
+		_guasto("posa: l'occhio è uscito dalla foto sulla carta")
 
 	var stampante := Stampante.find_in(get_tree())
 	var prima := get_tree().get_nodes_in_group(Stampa.GRUPPO).size()
@@ -458,16 +531,17 @@ func _posa() -> void:
 	for _f in 8:
 		await get_tree().process_frame
 	var dopo := get_tree().get_nodes_in_group(Stampa.GRUPPO).size()
-	var dall_alto := 0
+	var con_occhio := 0
 	for n in get_tree().get_nodes_in_group(Stampa.GRUPPO):
-		if (n as Stampa).dall_alto != "":
-			dall_alto += 1
-			if (n as Stampa).ricordo(stampante.get_parent()).get(&"dall_alto", "") == "":
-				_guasto("posa: il registro non si ricorda la foto dall'alto")
-	print("[orrori] posa: premuto il tasto, stampe da %d a %d, %d con la foto dall'alto (in headless la foto non si scatta)" % [
-		prima, dopo, dall_alto])
-	if dopo <= prima:
-		_guasto("posa: premuto il tasto, non esce nessuna stampa")
+		if (n as Stampa).occhio:
+			con_occhio += 1
+			if not bool((n as Stampa).ricordo(stampante.get_parent()).get(&"occhio", false)):
+				_guasto("posa: il registro non si ricorda l'occhio")
+	print("[orrori] posa: premuto il tasto, stampe da %d a %d, %d con l'occhio" % [prima, dopo, con_occhio])
+	if dopo <= prima or con_occhio == 0:
+		_guasto("posa: premuto il tasto, non esce una stampa con l'occhio")
+	if not Stampante._infestata({&"dall_alto": "user://stampe/vecchia.png"}):
+		_guasto("posa: una stampa della stesura di prima non torna infestata")
 	if not stampante.infesta_la_prossima:
 		_guasto("posa: la prossima foto rivelata non è armata")
 	Events.photo_revealed.emit(9999, &"m51", 2)
@@ -574,15 +648,56 @@ func _colore() -> void:
 	var prato := Orrore.trova(get_tree().root, "Prato") as Prato
 	var erba := (prato.get_node("Erba") as GeometryInstance3D).material_override as ShaderMaterial
 	var davanti := -_camera.global_basis.z
+	# LA PIETRA ARRIVA, ED È LA STESSA: al primo secondo è alta davanti a chi guarda, poi scende
+	# lungo la strada senza salti, accende il paesaggio, e quella che resta nel prato è lei
+	_avanti(o, 1.0)
 	var testa := o.testa_del_bolide()
 	var alto := rad_to_deg(asin(testa.y))
 	var di_lato := rad_to_deg(absf(Vector2(testa.x, testa.z).angle_to(Vector2(davanti.x, davanti.z))))
-	_avanti(o, OrroreColore.BOLIDE_DURA * 0.93)
-	var lampo := (o.get_node("Lampo") as DirectionalLight3D).light_energy
-	_avanti(o, OrroreColore.BOLIDE_DURA * 0.07 + OrroreColore.VOLO + 0.1)
+	var lampo := 0.0
+	var luce := 0.0
+	var salto := 0.0
+	var prima := o.pietra().global_position
+	var volo := 1.0
+	while o.fase() == "CADE" and volo < OrroreColore.ARRIVO + 1.0:
+		o.passo(PASSO)
+		volo += PASSO
+		var ora := o.pietra().global_position
+		# quanto si è spostata in un passo, oltre quello che la sua velocità le consente
+		salto = maxf(salto, ora.distance_to(prima) - OrroreColore.velocita_partenza() * PASSO * 1.05)
+		prima = ora
+		lampo = maxf(lampo, (o.get_node("Lampo") as DirectionalLight3D).light_energy)
+		luce = maxf(luce, (o.get_node("Luce") as OmniLight3D).light_energy)
+	var ultimo_passo := o.pietra().global_position.distance_to(prima)
+	o.passo(PASSO)
+	var arrivo_salto := o.pietra().global_position.distance_to(prima)
 	var fase_caduta := o.fase()
 	var buca := float(erba.get_shader_parameter("colore_buca"))
-	var pietra := (o.get_node("Pietra") as Node3D).visible
+	var pietra := o.pietra().visible
+	var nel_prato := Vector2(o.pietra().global_position.x, o.pietra().global_position.z).distance_to(OrroreColore.DOVE)
+	var cratere := o.cratere().visible
+	print("[orrori] colore: la pietra al primo secondo sta a %.0f° d'altezza e %.0f° di lato, scende senza salti (%.1f m oltre la sua velocità), il paesaggio si accende a %.1f e la luce vicina a %.1f; arriva in %.1f s spostandosi di %.1f m nell'ultimo passo, e resta a %.2f m dalla buca (%s, visibile %s, cratere %s, buca %.1f m)" % [
+		alto, di_lato, salto, lampo, luce, volo, arrivo_salto, nel_prato, fase_caduta, pietra, cratere, buca])
+	if alto < 15.0 or di_lato > 45.0:
+		_guasto("colore: la pietra non arriva alta davanti a chi guarda")
+	if salto > 1.0 or arrivo_salto > OrroreColore.VELOCITA_ARRIVO * PASSO * 1.5 + 1.0:
+		_guasto("colore: la pietra salta invece di scendere")
+	if lampo < 1.0 or luce < 5.0:
+		_guasto("colore: scendendo la pietra non accende il paesaggio")
+	if fase_caduta != "BRILLA" or not pietra or not cratere or buca <= 0.0 or nel_prato > 0.5:
+		_guasto("colore: la pietra non è caduta nel prato")
+	# E LA PIETRA È UN SOLIDO: un raggio che scende da sopra si ferma su di lei, non sull'erba
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var sopra := o.pietra().global_position + Vector3.UP * 3.0
+	var giu := PhysicsRayQueryParameters3D.create(sopra, sopra + Vector3.DOWN * 6.0)
+	giu.collision_mask = Interactable.LAYER_WORLD
+	var colpo := o.get_world_3d().direct_space_state.intersect_ray(giu)
+	var sul_solido: bool = not colpo.is_empty() and colpo["collider"] == o.solido()
+	var dal_suolo: float = (colpo["position"] as Vector3).y - o.dove().y if not colpo.is_empty() else 0.0
+	print("[orrori] colore: un raggio dall'alto si ferma sulla pietra: %s, %.2f m sopra la buca" % [sul_solido, dal_suolo])
+	if not sul_solido or dal_suolo < 0.1:
+		_guasto("colore: la pietra non ha un solido, ci si passa attraverso")
 	_avanti(o, 30.0)
 	var raggio := float(erba.get_shader_parameter("colore_raggio"))
 	var forza := float(erba.get_shader_parameter("colore_forza"))
@@ -593,14 +708,8 @@ func _colore() -> void:
 		var q := OrroreColore.DOVE + Vector2.from_angle(TAU * k / 72.0) * raggio * 0.8
 		if OrroreColore.fronte(q, OrroreColore.DOVE, raggio) > 0.5:
 			dentro += 1
-	print("[orrori] colore: il bolide passa a %.0f° d'altezza e %.0f° di lato, il lampo arriva a %.1f; la pietra cade a %.1f m dalla porta (%s, pietra %s, buca %.1f m); dopo 30 s l'erba brilla fino a %.1f m, forza %.2f, e a quattro quinti del raggio è presa in %d direzioni su 72" % [
-		alto, di_lato, lampo, dalla_porta, fase_caduta, pietra, buca, raggio, forza, dentro])
-	if alto < 15.0 or di_lato > 45.0:
-		_guasto("colore: il bolide non passa alto davanti a chi guarda")
-	if lampo < 1.0:
-		_guasto("colore: il lampo non accende il prato")
-	if fase_caduta != "BRILLA" or not pietra or buca <= 0.0:
-		_guasto("colore: la pietra non è caduta nel prato")
+	print("[orrori] colore: la buca sta a %.1f m dalla porta; dopo 30 s l'erba brilla fino a %.1f m, forza %.2f, e a quattro quinti del raggio è presa in %d direzioni su 72" % [
+		dalla_porta, raggio, forza, dentro])
 	if raggio < 5.0 or forza < 0.99:
 		_guasto("colore: l'erba non si è accesa")
 	if dentro == 0 or dentro == 72:

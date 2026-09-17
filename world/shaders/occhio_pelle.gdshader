@@ -19,6 +19,13 @@
 //     fasi — nel cielo c'era una riga di puntini. E fra i puntini la pelle si fa SCURA:
 //     sparisce nel buio prima di sgranarsi, che è come sparisce una cosa di notte.
 //
+// E LA PELLE NON SI RIPETE. Una piastrella di foto ripetuta su un chilometro di pelle si
+// conta: da sotto erano file di squame tutte uguali, «i pattern sono un po' troppo uguali
+// tutti». Si campiona a PIASTRELLE ESAGONALI (Mikkelsen, «Practical Real-Time Hex-Tiling»,
+// JCGT 2022, `esagoni.gdshaderinc`): ogni esagono prende un pezzo della foto spostato e girato a caso, e fra un
+// esagono e l'altro si passa per la trama più chiara, così la cucitura non si vede. Sopra,
+// una variazione larga di chiaro e scuro, perché una pelle vera non è uguale dappertutto.
+//
 // IL RETINATO È PER PIXEL, come il `DISTANCE_FADE_PIXEL_DITHER` del tentacolo: sulla
 // risoluzione bassa del gioco è lo stesso retinato della PlayStation, e scrive la
 // profondità come un materiale opaco - niente ordinamento di trasparenze su una cosa
@@ -37,6 +44,10 @@ uniform float sfuma_da = 0.45;
 // Quanto è largo il fronte che avanza comparendo.
 uniform float fronte_largo = 0.25;
 
+// Quanto gira a caso ogni esagono (1 = qualunque angolo), e quanto conta la variazione larga.
+uniform float giro_esagoni = 1.0;
+uniform float variazione = 0.35;
+
 varying float raggio;
 varying vec2 piano;
 
@@ -45,6 +56,19 @@ float soglia(vec2 f) {
 	int y = int(mod(f.y, 4.0));
 	int m[16] = int[](0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5);
 	return (float(m[y * 4 + x]) + 0.5) / 16.0;
+}
+
+#include "res://world/shaders/esagoni.gdshaderinc"
+
+float rumore_largo(vec2 x) {
+	vec2 i = floor(x);
+	vec2 f = fract(x);
+	f = f * f * (3.0 - 2.0 * f);
+	float a = esagono_caso(i).x;
+	float b = esagono_caso(i + vec2(1.0, 0.0)).x;
+	float c = esagono_caso(i + vec2(0.0, 1.0)).x;
+	float d = esagono_caso(i + vec2(1.0, 1.0)).x;
+	return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
 }
 
 void vertex() {
@@ -74,8 +98,41 @@ void fragment() {
 	if (c <= soglia(FRAGCOORD.xy)) {
 		discard;
 	}
-	ALBEDO = texture(colore, UV).rgb * mix(0.2, 1.0, 1.0 - smoothstep(0.2, 0.85, r));
-	NORMAL_MAP = texture(normale, UV).rgb;
+	vec3 w;
+	vec2 v1;
+	vec2 v2;
+	vec2 v3;
+	esagoni(UV, w, v1, v2, v3);
+	vec2 dx = dFdx(UV);
+	vec2 dy = dFdy(UV);
+	vec2 u1 = esagono_uv(UV, v1, giro_esagoni);
+	vec2 u2 = esagono_uv(UV, v2, giro_esagoni);
+	vec2 u3 = esagono_uv(UV, v3, giro_esagoni);
+	float a1 = esagono_angolo(v1, giro_esagoni);
+	float a2 = esagono_angolo(v2, giro_esagoni);
+	float a3 = esagono_angolo(v3, giro_esagoni);
+	vec3 c1 = textureGrad(colore, u1, gira(dx, a1), gira(dy, a1)).rgb;
+	vec3 c2 = textureGrad(colore, u2, gira(dx, a2), gira(dy, a2)).rgb;
+	vec3 c3 = textureGrad(colore, u3, gira(dx, a3), gira(dy, a3)).rgb;
+	// si passa per la trama più chiara
+	vec3 pesi = esagoni_pesi(w, c1, c2, c3);
+	vec3 pelle = pesi.x * c1 + pesi.y * c2 + pesi.z * c3;
+	// la normale gira con il suo esagono
+	vec3 n1 = textureGrad(normale, u1, gira(dx, a1), gira(dy, a1)).rgb * 2.0 - 1.0;
+	vec3 n2 = textureGrad(normale, u2, gira(dx, a2), gira(dy, a2)).rgb * 2.0 - 1.0;
+	vec3 n3 = textureGrad(normale, u3, gira(dx, a3), gira(dy, a3)).rgb * 2.0 - 1.0;
+	n1.xy = gira(n1.xy, -a1);
+	n2.xy = gira(n2.xy, -a2);
+	n3.xy = gira(n3.xy, -a3);
+	vec3 n = normalize(pesi.x * n1 + pesi.y * n2 + pesi.z * n3);
+	float ruvida = pesi.x * textureGrad(ruvidita, u1, dx, dy).r + pesi.y * textureGrad(ruvidita, u2, dx, dy).r
+			+ pesi.z * textureGrad(ruvidita, u3, dx, dy).r;
+	// la variazione larga: chiazze di qualche piastrella, più chiare e più scure
+	float chiazza = rumore_largo(UV * 0.31) * 0.65 + rumore_largo(UV * 0.83 + vec2(7.0, 2.0)) * 0.35;
+	pelle *= mix(1.0 - variazione, 1.0 + variazione * 0.6, chiazza);
+
+	ALBEDO = pelle * mix(0.2, 1.0, 1.0 - smoothstep(0.2, 0.85, r));
+	NORMAL_MAP = n * 0.5 + 0.5;
 	NORMAL_MAP_DEPTH = rilievo;
-	ROUGHNESS = texture(ruvidita, UV).r;
+	ROUGHNESS = ruvida;
 }

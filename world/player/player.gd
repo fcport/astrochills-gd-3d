@@ -629,7 +629,8 @@ func _physics_process(delta: float) -> void:
 ## verso il basso a margine zero rispondeva «nessun urto», e la correzione non
 ## scattava mai. Quarantacinque scossoni con la cura, quarantasette senza.
 ##
-## SOLO SUL PRATO, e con un tetto di tre centimetri. Dentro la casa il difetto non
+## SOLO SUL PRATO E SUL TERRENO DI FUORI (`Panorama`, D-273), e con un tetto di tre
+## centimetri. Dentro la casa il difetto non
 ## c'è, e un raggio dal centro della capsula su un gradino o su una soglia trova il
 ## piano sbagliato: tirare giù il corpo lì vorrebbe dire staccarlo dallo spigolo su
 ## cui poggia davvero. Il tetto è la stessa ragione detta in metri — la sega da
@@ -643,7 +644,7 @@ func _resta_a_margine() -> void:
 	domanda.collision_mask = collision_mask
 	domanda.exclude = [get_rid()]
 	var colpo := spazio.intersect_ray(domanda)
-	if colpo.is_empty() or not (colpo["collider"] is Prato):
+	if colpo.is_empty() or not (colpo["collider"] is Prato or colpo["collider"] is Panorama):
 		return
 	var voluta: float = (colpo["position"] as Vector3).y + safe_margin
 	if absf(voluta - global_position.y) < RESTA_A_MARGINE_MAX:

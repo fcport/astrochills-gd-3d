@@ -74,6 +74,19 @@ const MARGINE := 0.34
 ## ci mette in più è il tempo di accorgersi che ci si sta spostando.
 const SPINTA_MASSIMA := 1.1
 
+## LA MANIGLIA SI ABBASSA. Quaranta gradi è la corsa di una leva vera: meno non
+## sgancia lo scrocco, e chi la preme la porta fino in fondo. Giù in fretta, un
+## attimo ferma mentre l'anta si stacca dallo stipite, su con la molla: poco più di
+## mezzo secondo, lo stesso tempo della porta.
+##
+## Si muove solo se il modello dell'anta ha dei nodi `Leva*` - li stacca
+## `porte_legno_blender.py`, con l'origine sull'asse del quadro. Le ante fatte di
+## scatole non ne hanno, e per loro non cambia niente.
+const LEVA_GRADI := 40.0
+const LEVA_GIU := 0.12
+const LEVA_FERMA := 0.15
+const LEVA_SU := 0.25
+
 ## Emesso a movimento concluso, con lo stato raggiunto. Serve a chi vorrà
 ## appenderci un suono o una reazione senza sapere come è fatta la rotazione.
 signal moved(open: bool)
@@ -96,6 +109,14 @@ var _chi: CharacterBody3D = null
 ## sposta il doppio che a mezzo metro.
 var _contatto := 0.0
 
+## Le leve della maniglia, la loro rotazione a riposo attorno all'asse del quadro, e
+## da che parte girano per scendere: una leva che punta verso il cardine scende
+## ruotando in un verso, una che punta verso il bordo libero nell'altro.
+var _leve: Array[Node3D] = []
+var _leve_riposo: Array[float] = []
+var _leve_verso: Array[float] = []
+var _leva_tween: Tween = null
+
 
 func _ready() -> void:
 	# La rotazione con cui la porta nasce È la posizione di battente chiuso: la
@@ -108,6 +129,18 @@ func _ready() -> void:
 	# `interact()` non va sovrascritta — lo dice il contratto — così un domani la
 	# porta può avere più di un ascoltatore senza che nessuno chiami `super()`.
 	interacted.connect(_on_interacted)
+	# `owned = false`: le leve stanno dentro il .glb istanziato, e il loro padrone è
+	# quella scena, non la porta
+	for n in find_children("Leva*", "Node3D", true, false):
+		var leva := n as Node3D
+		_leve.append(leva)
+		_leve_riposo.append(leva.rotation.z)
+		# il braccio sta dalla parte del cardine (-X) o del bordo libero (+X), e per
+		# scendere gira nel verso che porta la sua punta verso -Y
+		var punta := 0.0
+		if leva is MeshInstance3D:
+			punta = (leva as MeshInstance3D).get_aabb().get_center().x
+		_leve_verso.append(1.0 if punta <= 0.0 else -1.0)
 
 
 ## Il prompt cambia con lo stato, e il player rilegge il testo a ogni sguardo:
@@ -137,10 +170,41 @@ func set_open(open: bool, immediata: bool = false) -> void:
 func _on_interacted(by: Node3D) -> void:
 	_chi = by as CharacterBody3D
 	set_open(not _aperta)
+	_abbassa_leve()
 
 
 func _applica() -> void:
 	rotation.y = _chiusa_y + deg_to_rad(_angolo) * signf(verso)
+
+
+## Il gesto della mano sulla maniglia, a ogni `E`: sia aprendo sia chiudendo, perché
+## una porta con lo scrocco si chiude come si apre. Non in `set_open`: quella la usa
+## anche chi allestisce una scena, e lì nessuno sta toccando la maniglia.
+func _abbassa_leve() -> void:
+	if _leve.is_empty():
+		return
+	# premuta di nuovo a metà corsa, ripartirebbe da dov'è invece che da capo
+	if _leva_tween != null and _leva_tween.is_valid():
+		_leva_tween.kill()
+	_leva_tween = create_tween()
+	_leva_tween.tween_method(_posa_leve, _corsa_leve(), 1.0, LEVA_GIU) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_leva_tween.tween_interval(LEVA_FERMA)
+	_leva_tween.tween_method(_posa_leve, 1.0, 0.0, LEVA_SU) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+## Quanto sono abbassate le leve adesso, da 0 (a riposo) a 1 (in fondo).
+func _corsa_leve() -> float:
+	if _leve.is_empty():
+		return 0.0
+	return clampf((_leve[0].rotation.z - _leve_riposo[0]) * _leve_verso[0]
+			/ deg_to_rad(LEVA_GRADI), 0.0, 1.0)
+
+
+func _posa_leve(quanto: float) -> void:
+	for i in _leve.size():
+		_leve[i].rotation.z = _leve_riposo[i] + deg_to_rad(LEVA_GRADI) * quanto * _leve_verso[i]
 
 
 ## Un fotogramma di rotazione: si prova ad avvicinarsi alla meta, e chi è nel giro

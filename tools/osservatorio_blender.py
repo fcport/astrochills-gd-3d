@@ -56,6 +56,12 @@ PARTI = [
     # PRIMA di "Telaio": parte_di() confronta con startswith, e "TelaioMet"
     # comincia per "Telaio" - messo dopo non verrebbe mai raggiunto.
     (("TelaioMet",), "TelaiMetallo", (0.50, 0.54, 0.50)),
+    # Anche questo PRIMA di "Telaio", per la stessa ragione. La tinta non e' a
+    # occhio: e' il rapporto, in LINEARE, fra la media della mappa dell'anta
+    # tamburata (solo la zona di legno dell'atlante) e quella di Wood049. Senza,
+    # il battente color mogano stava in una mostra color miele - lo stesso difetto
+    # gia' visto una volta con l'anta a 0,38, e si vedeva da tutto il corridoio.
+    (("TelaioPorta",), "TelaiPorte", (0.326, 0.181, 0.221)),
     (("Telaio",), "Telai", (0.30, 0.22, 0.15)),
     (("Anta",), "Ante", (0.38, 0.28, 0.19)),
     # La soglia della porta e' della pietra dei davanzali, come in una casa vera.
@@ -79,7 +85,7 @@ def parte_di(nome):
 # senza tinta il telaio del magazzino usciva color alluminio mentre l'anta - che in
 # scena e' tinta da Godot - usciva verde scuro. Stesso colore dichiarato, due
 # risultati diversi, e la causa non era in nessuno dei due posti dove l'ho cercata.
-TINTI_QUI = ("AnteMetallo", "TelaiMetallo")
+TINTI_QUI = ("AnteMetallo", "TelaiMetallo", "TelaiPorte")
 
 
 def materiale(nome, colore):

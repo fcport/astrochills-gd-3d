@@ -247,6 +247,7 @@ TEXTURE = {
     "LegnoBagno":   ("legno-porte", 0.80),
     "Ante":         ("legno-porte", 0.80),
     "Telai":        ("legno-porte", 0.80),
+    "TelaiPorte":   ("legno-porte", 0.80),   # tinto verso il mogano in osservatorio_blender
     # La porta del magazzino e il suo controtelaio: lamiera verniciata, non legno.
     # 0,60 per ripetizione e non 1,20 come la carpenteria - su un'anta larga
     # settantaquattro centimetri la scala grande ci starebbe mezza volta, e mezza

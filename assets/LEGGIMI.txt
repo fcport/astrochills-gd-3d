@@ -37,6 +37,11 @@ quest'ordine, e ci vogliono un paio di minuti.
        "D:/programs/blender5/blender.exe" --background --python tools/cucina_blender.py
        "D:/programs/blender5/blender.exe" --background --python tools/divulgazione_blender.py
        "D:/programs/blender5/blender.exe" --background --python tools/impianti_blender.py
+       "D:/programs/blender5/blender.exe" --background --python tools/porte_legno_blender.py
+
+   L'ultima fa il battente delle porte interne di legno (assets/models/porta_legno.glb)
+   dal pacchetto di Sketchfab che prendi_modello.py chiama `porte_legno`: anche
+   quello va scaricato a mano, come il telescopio.
 
 4. La scena navigabile, che li mette insieme:
 

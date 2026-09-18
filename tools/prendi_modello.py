@@ -350,6 +350,26 @@ A_MANO = {
         " disegna Blender dai vani, e quello che serve e' il solo BATTENTE con"
         " l'origine sul cardine. Con tutto fuso in una mesh sola non si sarebbe"
         " potuto separare senza tagliare a mano."),
+    # LE PORTE DI LEGNO. Scelte fra trentasei su Sketchfab: via quelle col pomolo
+    # tondo e le sei bugne, che sono porte americane, e via quelle con la lamiera
+    # paracolpi in basso, che sono inglesi. Una porta interna italiana di fine anni
+    # Novanta in un edificio pubblico e' TAMBURATA E LISCIA, finta noce, con la
+    # maniglia a leva e la bocchetta per la chiave: e' questa. L'ha scaricata
+    # Federico, che fra le tre proposte ha preso lei.
+    "porte_legno": (
+        ("porte_legno.zip", "interior_wood_doors_pack_1.zip"),
+        "https://sketchfab.com/3d-models/interior-wood-doors-pack-1-32707dcfa6304f49bf99148d0211f5f7",
+        "Toni García Vilche (zul_gv)", "CC-BY-4.0",
+        'This work is based on "Interior Wood Doors Pack 1" '
+        "(https://sketchfab.com/3d-models/interior-wood-doors-pack-1-32707dcfa6304f49bf99148d0211f5f7) "
+        "by Toni García Vilche (https://sketchfab.com/zul_gv) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "Due porte interne lisce finto legno, con maniglia a leva e bocchetta, circa"
+        " milleottocento vertici l'una. Le nostre erano una lastra con la texture del"
+        " legno e NESSUNA maniglia: si premeva E davanti a una tavola."
+        "\n\nNel pacchetto ogni porta ha il suo telaio a parte, e si butta: il"
+        " telaio lo disegna osservatorio_blender.py dai vani. La maniglia invece e'"
+        " fusa nella mesh dell'anta, e resta con lei."),
     "termosifone_bagno": (
         ("termosifone_bagno.zip", "old_radiator.zip"),
         "https://sketchfab.com/3d-models/old-radiator-8a1a2e0263aa401591c1e87d824a79ef",

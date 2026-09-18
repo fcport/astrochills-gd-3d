@@ -9550,3 +9550,52 @@ ferma sulla pietra, 57 cm sopra la buca, e non sull'erba.
   `prova_desktop`.
 
 **Da verificare giocando:** se le mani, così lente, si capisce che si muovono.
+
+## D-282 Le porte interne sono porte vere: tamburate, finto mogano, con la maniglia
+
+**18 settembre 2026.** Federico: «mi trovi dei modelli per delle porte normali italiane?». Le
+cinque porte interne di legno - cucina, corridoio-spazio, pc-corridoio, bagno, disimpegno -
+erano la stessa `BoxMesh` con la venatura `legno-porte` e **nessuna maniglia**: si premeva E
+davanti a una tavola.
+
+- **LA SCELTA.** Trentasei porte guardate su Sketchfab (API di ricerca, anteprime affiancate).
+  Via quelle col pomolo tondo e le sei bugne, che sono americane, e quelle con la lamiera
+  paracolpi, che sono inglesi. Proposte tre; Federico ha scaricato **Interior Wood Doors Pack 1**
+  (Toni García Vilche, CC-BY 4.0, credito in `CREDITI.md`): tamburata liscia, maniglia a leva su
+  rosetta, serratura sul bordo. Del pacchetto si tiene **la D2, finto mogano** - la D1 è wengé,
+  che in un edificio pubblico del 1999 non c'era ancora.
+- **UN .glb PER TUTTE E CINQUE** (`tools/porte_legno_blender.py` → `porta_legno.glb`). Hanno lo
+  stesso vano, e con la maniglia su tutte e due le facce l'anta va bene a qualunque mano: il
+  `Door` la gira dal cardine come prima. Quali porte la usano sta in `PORTE_TAMBURATE`
+  (`geometria.py`); il generatore le monta come il magazzino, con `ANTE_DAL_MODELLO`.
+- **IL MODELLO È SPESSO IL DOPPIO DEL NOSTRO** (8 cm contro 4,5). Il pannello si porta al vano con
+  tre fattori diversi; la ferramenta con uno solo (quello dell'altezza, 0,40), attorno al suo
+  punto d'appoggio sulla faccia, così la leva resta tonda. La serratura si schiaccia nello
+  spessore come il pannello: scalata come la maniglia, i ritagli di legno attorno al frontale
+  uscivano dalle facce (visto nel primo render).
+- **I CARDINI SI BUTTANO.** Un cardine anuba sporge dalla faccia verso cui la porta si apre, e le
+  cinque porte non si aprono tutte dalla stessa parte: con un .glb solo, su metà starebbe sulla
+  faccia sbagliata.
+- **IL TELAIO PRENDE LA TINTA DELL'ANTA.** Nuovo materiale `TelaiPorte` (prefisso `TelaioPorta`),
+  la stessa `legno-porte` moltiplicata per (0,326 0,181 0,221): il rapporto in lineare fra la
+  media della zona di legno della mappa dell'anta e quella di Wood049. Le finestre e l'ingresso
+  restano `Telai`, color miele.
+
+**Misurato:** anta 0,900 × 2,020 × 0,045, cardine nell'origine; maniglia a 1,06 m da terra,
+sporge 7,2 cm dalle facce; lo scrocco oltre il bordo libero di 2,2 cm; 1,0 MB. Nessuna faccia
+con l'avvolgimento contro la sua normale, nessuna lastra del pannello rivolta dentro (sonda sul
+.glb). `tools/prova_porte.gd`: 10 porte, 0 guasti. Guardato in gioco con il nuovo
+`tools/scatta_porte.tscn`: le due facce di ogni porta chiusa, e ognuna aperta attraverso il vano.
+
+**Restano di legno a scatola** l'ingresso (1,04 di luce, maniglione antipanico) e le ante dei
+mobili: sono altre porte, e non erano nella domanda.
+
+**E LA MANIGLIA SI ABBASSA** (Federico: «hai fatto che la maniglia si abbassa?» - no, poi sì).
+`porte_legno_blender.py` stacca il **braccio** di ogni leva in un nodo `Leva_piu` / `Leva_meno`
+con l'origine sull'asse del quadro (il centro della rosetta); rosetta, collo e bottone sono tondi
+e restano con l'anta. `door.gd` cerca i nodi `Leva*` e a ogni `E` - aprendo e chiudendo, non in
+`set_open` - li gira di 40° attorno al loro Z: giù in 0,12 s, ferma 0,15, su in 0,25. Il verso
+lo legge dal lato su cui sta il braccio, così una leva montata al contrario scende lo stesso.
+Le ante senza nodi `Leva*` (ingresso, magazzino, mobili) non cambiano. **Misurato**
+(`scatta_porte.tscn`): 2 leve per porta, la punta scende di 9,8 cm su tutte e dieci; guardato il
+primo piano a riposo e premuta. `prova_porte.gd`: 10 porte, 0 guasti.

@@ -112,6 +112,16 @@ MANIGLIONE = ("ingresso",)   # maniglione antipanico, sul lato INTERNO dell'anta
 # porta di legno dipinta di grigio.
 PORTE_METALLO = ("magazzino",)
 
+# LE PORTE INTERNE SONO TAMBURATE, cioe' un modello e non una lastra. Fino al
+# 18/9 erano la stessa BoxMesh con la mappa del legno e NESSUNA maniglia: si
+# premeva E davanti a una tavola. Adesso le disegna `porte_legno_blender.py` da un
+# modello vero - finto mogano, maniglia a leva, serratura sul bordo - e il loro
+# telaio prende la tinta dell'anta, perche' in una porta vera la mostra e il
+# battente escono dalla stessa fabbrica. Restano fuori l'INGRESSO, che e' un'altra
+# porta (esterna, 1,04 di luce, maniglione), e il MAGAZZINO, che e' di lamiera.
+PORTE_TAMBURATE = ("cucina", "corridoio -> spazio", "pc -> corridoio",
+                   "bagno", "disimpegno")
+
 APERTURA_PORTE = {
     "ingresso":            ("a", +1),   # verso il prato
     "cucina":              ("a", -1),   # dentro la cucina
@@ -717,7 +727,9 @@ def blocchi_infissi():
 
         # montanti verticali, traversa in alto, e in basso solo per le finestre
         # un'anta di lamiera non sta in un telaio di legno: il controtelaio segue l'anta
-        tel = "TelaioMet" if nome in PORTE_METALLO else "Telaio"
+        # e un'anta tamburata ha la mostra del suo stesso legno, non di quello delle finestre
+        tel = ("TelaioMet" if nome in PORTE_METALLO
+               else "TelaioPorta" if nome in PORTE_TAMBURATE else "Telaio")
         posa(px_ + TS / 2 if o == "h" else pz + TS / 2, y0 + h / 2, TS, h, tel)
         posa((px_ + w - TS / 2) if o == "h" else (pz + w - TS / 2), y0 + h / 2, TS, h, tel)
         posa(m, y1 - TS / 2, w - 2 * TS, TS, tel)

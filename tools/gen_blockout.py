@@ -9,7 +9,7 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        blocchi_edificio, collisioni_infissi,
                        DISL_RAMPA, R_PASS, W_PASS, H_PASS, SP_PASS,
                        R_PIENO, H_PIENO,
-                       ante_porte, verifica_ante, verifica_trappole,
+                       ante_porte, verifica_ante, verifica_trappole, PORTE_TAMBURATE,
                        pezzi_anta, arredi, verifica_arredi,
                        ante_mobili, pezzi_anta_mobile,
                        scalati, verifica_aperture, verifica_copertura,
@@ -269,6 +269,10 @@ def _base(rot_x, rot_z, cx, cy, cz, rot_y=0.0):
 # portalucchetto - e i pezzi erano quelli giusti; solo che erano scatole, e da un
 # metro si vedeva. Una porta di lamiera la fa la VERNICE, cioe' la texture.
 ANTE_DAL_MODELLO = {"magazzino": "23_pmag"}
+# Le interne di legno erano la stessa lastra con la venatura e NESSUNA maniglia: si
+# premeva E davanti a una tavola. Adesso sono tutte lo stesso battente tamburato,
+# che con la maniglia su tutte e due le facce va bene a qualunque mano.
+ANTE_DAL_MODELLO.update({nome: "20_pleg" for nome in PORTE_TAMBURATE})
 
 
 SEGNAPOSTO_LUMINOSE = "@LUMINOSE@"
@@ -342,6 +346,8 @@ def tscn():
              # gira ha bisogno di un nodo con l'origine sul cardine, e dentro
              # osservatorio.glb girerebbe l'edificio.
              '[ext_resource type="PackedScene" path="res://assets/models/porta_magazzino.glb" id="23_pmag"]',
+             # e per la stessa ragione il battente delle porte interne di legno
+             '[ext_resource type="PackedScene" path="res://assets/models/porta_legno.glb" id="20_pleg"]',
              # LA POSTAZIONE AL MONITOR. Il tubo e' arredo e sta dentro
              # controllo_pc.glb; quello che sta qui e' cio' che l'arredo non puo'
              # essere: la collisione che il raggio dell'interazione cerca, il vetro
@@ -2461,6 +2467,7 @@ SCRIVONO = {
     "divulgazione_blender.py": "divulgazione.glb",
     "impianti_blender.py": "impianti.glb",
     "porta_magazzino_blender.py": "porta_magazzino.glb",
+    "porte_legno_blender.py": "porta_legno.glb",
 }
 
 

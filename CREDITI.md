@@ -123,6 +123,22 @@ Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuz
 > by tboiston (https://sketchfab.com/tboiston) licensed under CC-BY-4.0
 > (http://creativecommons.org/licenses/by/4.0/)
 
+**Interior Wood Doors Pack 1** — il battente delle cinque porte interne di legno.
+Porta tamburata liscia finto mogano, con maniglia a leva su rosetta e serratura sul
+bordo: è la porta interna di un edificio pubblico italiano di fine anni Novanta. Le
+nostre erano una lastra con la venatura e nessuna maniglia. Del pacchetto si tiene
+**una porta sola** (la D2, il mogano; la D1 è wengé) e **solo il battente**, senza
+telaio né cardini: `tools/porte_legno_blender.py` lo porta allo spessore del nostro
+vano e ne fa un .glb unico per tutte e cinque.
+Autore: [Toni García Vilche](https://sketchfab.com/zul_gv).
+Fonte: <https://sketchfab.com/3d-models/interior-wood-doors-pack-1-32707dcfa6304f49bf99148d0211f5f7>
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> This work is based on "Interior Wood Doors Pack 1"
+> (https://sketchfab.com/3d-models/interior-wood-doors-pack-1-32707dcfa6304f49bf99148d0211f5f7)
+> by Toni García Vilche (https://sketchfab.com/zul_gv) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
 **Small Fuse Box** — il quadro elettrico in facciata, accanto all'ingresso. È il
 contatore che il GDD mette lì: governa le luci di tutto l'edificio e si arma a mano,
 di notte, uscendo. Del modello contano **due mesh separate**, cassa e anta — un

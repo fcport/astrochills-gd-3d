@@ -1187,7 +1187,7 @@ func _install_debug_tools() -> void:
 	occhio.configure(_world)
 	add_child(occhio)
 
-	# `Ctrl+F1`…`Ctrl+F8`: gli altri orrori cosmici. Stessa divisione: vivono in
+	# `Ctrl+F1`…`Ctrl+F9`: gli altri orrori cosmici. Stessa divisione: vivono in
 	# `world/orrori/`, e allo strumento serve solo sapere dentro cosa metterli.
 	var orrori: Node = (load(ORRORI_PATH) as GDScript).new()
 	orrori.name = "Orrori"

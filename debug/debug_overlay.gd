@@ -99,6 +99,7 @@ func _lines() -> PackedStringArray:
 	out.append("F6  apre/chiude l'occhio nel cielo")
 	out.append("Ctrl+F1 nubi · F2 inchiostro · F3 ventose · F4 braccia")
 	out.append("Ctrl+F5 oculare (guardaci dentro) · F6 posa · F7 montatura · F8 il colore")
+	out.append("Ctrl+F9 la visione del pianeta (ti prende per mezzo minuto)")
 	out.append("Shift+F1/F2 risoluzione · Shift+F3 filtro")
 	out.append("Shift+F5/F6 jitter · Shift+F7 spegnilo")
 	out.append("Shift+F8/F9 passo · Shift+F10/F11 scatto")

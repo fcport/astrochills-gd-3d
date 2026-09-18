@@ -1,4 +1,4 @@
-## GLI ORRORI COSMICI, a chiamata — `Ctrl+F1`…`Ctrl+F8`. Esiste solo nelle build di
+## GLI ORRORI COSMICI, a chiamata — `Ctrl+F1`…`Ctrl+F9`. Esiste solo nelle build di
 ## sviluppo.
 ##
 ## Stessa divisione del tentacolo (`F5`) e dell'occhio (`F6`): quello che succede sta in
@@ -15,6 +15,11 @@
 ##   Ctrl+F7  la montatura che ti segue            `world/orrori/montatura.gd`
 ##   Ctrl+F8  il colore venuto dallo spazio        `world/orrori/colore.gd`
 ##
+## C'È CHI SE NE VA DA SOLO. Il tasto apre e il tasto manda via, ma un orrore può anche
+## finire per conto suo — la visione di `Ctrl+F9` dura mezzo minuto e poi non c'è più. Il
+## tasto non ha bisogno di saperlo: si sta dietro a `finito`, che arriva comunque, e il
+## tasto ripremuto nel frattempo la manda via prima.
+##
 ## PERCHÉ CTRL. Le F senza niente sono prese — tempo, tentacolo, occhio, bugie, partite,
 ## overlay — e con `Shift` c'è la taratura del rendering. Ctrl era libero, e gli strumenti
 ## sulle F nude adesso lo ignorano: prima rispondevano a qualunque F senza `Shift`, e
@@ -30,6 +35,7 @@ const ORRORI := {
 	KEY_F6: ["res://world/orrori/posa.gd", "l'occhio nella posa"],
 	KEY_F7: ["res://world/orrori/montatura.gd", "la montatura che ti segue"],
 	KEY_F8: ["res://world/orrori/colore.gd", "il colore venuto dallo spazio"],
+	KEY_F9: ["res://world/orrori/pianeta.gd", "la visione del pianeta"],
 }
 
 var _mondo: Node

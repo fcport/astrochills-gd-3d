@@ -52,7 +52,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not (event is InputEventKey):
 		return
 	var key := event as InputEventKey
-	if key.pressed and not key.echo and key.keycode == KEY_F9 and not key.shift_pressed:
+	# `Ctrl` NON È SUO: con Ctrl le F sono gli orrori cosmici (`debug/orrori.gd`), e
+	# `Ctrl+F9` avrebbe iniettato anche la sorgente bugiarda nella fase in corso. È la
+	# stessa correzione fatta a tempo, tentacolo e occhio quando gli orrori hanno preso
+	# Ctrl (D-270): questo strumento era l'unico rimasto sulla F nuda a rispondere lo stesso.
+	if key.pressed and not key.echo and key.keycode == KEY_F9 			and not key.shift_pressed and not key.ctrl_pressed:
 		_toggle()
 
 

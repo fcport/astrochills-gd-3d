@@ -100,6 +100,8 @@ func _scatta() -> void:
 		await _oculare()
 	if _vuole("F7"):
 		await _montatura()
+	if _vuole("F9"):
+		await _pianeta()
 	get_tree().quit()
 
 
@@ -334,6 +336,32 @@ func _montatura() -> void:
 	_orrori.premi(KEY_F7)
 	pazienza = 0
 	while is_instance_valid(o) and pazienza < 3000:
+		pazienza += 1
+		await get_tree().process_frame
+
+
+## LA VISIONE DEL PIANETA: non serve guardare da nessuna parte, prende lo schermo. Gli
+## scatti cadono uno per pezzo del racconto, coi tempi di `OrrorePianeta`.
+func _pianeta() -> void:
+	_orrori.premi(KEY_F9)
+	var orologio := 0.0
+	# i tempi sono ASSOLUTI da quando si preme, così si cade dentro il pezzo che si vuole
+	# fotografare e non un secondo prima
+	for quando: Array in [
+		[OrrorePianeta.T_NERO + 0.4, "pianeta_nero"],
+		[OrrorePianeta.T_GUARDA + 2.0, "pianeta_sei_li"],
+		[OrrorePianeta.T_MANGIA + OrrorePianeta.MANGIA * 0.3, "pianeta_arrivano"],
+		[OrrorePianeta.T_MANGIA + OrrorePianeta.MANGIA * 0.6, "pianeta_lo_mangia"],
+		[OrrorePianeta.T_VOLTA - 0.3, "pianeta_mangiato"],
+		[OrrorePianeta.T_TROVA + 1.2, "pianeta_ti_guarda"],
+		[OrrorePianeta.T_VIA + OrrorePianeta.VIA * 0.55, "pianeta_via"],
+	]:
+
+		await _aspetta(maxf(float(quando[0]) - orologio, 0.05))
+		orologio = float(quando[0])
+		await _foto(String(quando[1]))
+	var pazienza := 0
+	while _orrori.aperto(KEY_F9) != null and pazienza < 3000:
 		pazienza += 1
 		await get_tree().process_frame
 

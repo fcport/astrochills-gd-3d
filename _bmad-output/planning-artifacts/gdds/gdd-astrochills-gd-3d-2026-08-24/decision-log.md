@@ -9551,6 +9551,194 @@ ferma sulla pietra, 57 cm sopra la buca, e non sull'erba.
 
 **Da verificare giocando:** se le mani, così lente, si capisce che si muovono.
 
+## D-279 Il nono orrore è una visione, e ti prende
+
+**18 settembre 2026.** Federico ha chiesto altri orrori cosmici, con un tetto dichiarato:
+«non arrivare a fare 800 orrori cosmici, ne abbiamo 8, magari arriviamo a 10». Fra le
+proposte ha scelto una **visione**, e la visione è arrivata in questa forma dopo tre
+correzioni sue, tutte e tre di principio.
+
+**1. NIENTE PIANETI NOSTRI.** La prima idea era un mostro che mangia Giove nell'oculare.
+«Giove è un po' assurdo, se ne accorgerebbero tutti nel mondo»: un pianeta che sparisce dal
+cielo è un fatto pubblico, e il pilastro 3 vuole anomalie **negabili**, cose che chi fa questo
+mestiere sa impossibili e non può dimostrare a nessuno. Le vie di mezzo — un satellite
+galileiano che manca, una cicatrice nella fascia come quelle di Shoemaker-Levy 9 nel 1994, una
+curva di luce che prova un passaggio — sono state scartate dopo: **una prova trasforma una
+visione in un indizio**, cioè in qualcosa da indagare, e questa non deve lasciare niente da
+indagare. Il pianeta quindi non è nostro. Nessuno può smentirti perché quel posto non è qui.
+
+**2. E POI SI TORNA NORMALI.** «Sì boh, è una visione... magari dopo si torna a vedere
+normale». Via ogni traccia: nessuna stampa, nessun registro, nessuna riga sulla BBS, niente
+spostato, e l'orologio non fa salti — passano i venticinque secondi che passano.
+
+**3. NON SI GUARDA: TI PRENDE.** La stesura implementata e fotografata era dentro l'oculare —
+il pianeta cresceva nel campo, le braccia lo tenevano, poi si allontanava e tornava il puntino
+che avevi puntato. Federico: «mi piacerebbe che il player chiude gli occhi, sviene, si ritrova
+in mezzo allo spazio davanti a questo pianeta, poi vede il pianeta che viene mangiato, e poi
+vede il mostro che ha mangiato il pianeta che mangia anche lui. E non può fare niente».
+Guardare da dentro uno strumento tiene la cosa a distanza di sicurezza: c'è un tubo fra te e
+lei. Questa non ha il tubo.
+
+**COM'È FATTA** (`world/orrori/pianeta.gd`, `Ctrl+F9`). Nove pezzi, venticinque secondi:
+gli occhi si chiudono (1,2 s), nero (0,9), si riaprono e sei lì (1,4), lo guardi (5), se lo
+mangia (7), si volta verso di te (4,5), viene addosso (4), buio (1,6), riapri gli occhi in
+cupola (1,6).
+- **NON SI SPOSTA NESSUNO.** La visione accende una camera sua che disegna **solo il layer
+  degli orrori** (`OrroreNellOculare.STRATO`): l'osservatorio resta dov'è e non viene
+  disegnato. Il cielo invece sì, perché le stelle non sono oggetti ma lo sfondo
+  dell'ambiente — e un fondo di stelle senza niente davanti è lo spazio. Il cambio si fa da
+  nero a nero, e la camera nuova parte guardando dove si stava guardando, o le stelle
+  ruoterebbero di scatto. Alla fine torna corrente **la camera di prima**, non «quella del
+  giocatore»: chi stava all'oculare deve ritrovarsi all'oculare.
+- **IL CONTROLLO SI TOGLIE SUBITO**, e si rimette **com'era** (`Player.is_enabled()`): chi
+  stava al monitor o all'oculare non ce l'aveva già. È l'unica cosa che questo orrore toglie:
+  non c'è danno, non c'è fallimento, non si muore.
+- **IL PIANETA NON È FOTOGRAFATO** (`orrore_pianeta.gdshader`): una mappa vera è la mappa di
+  un posto che esiste. Si copia come si vede un mondo con l'atmosfera — fasce zonali che
+  scorrono in versi alternati, nuvole stirate in longitudine, terminatore sfumato dall'arco
+  del crepuscolo, un filo chiaro di atmosfera sul bordo del giorno, e la notte non nera del
+  tutto.
+- **COME MANGIA** (`orrore_membrana.gdshader`): non addenta. Fra le braccia c'è l'ombrello,
+  e un polpo ci chiude sotto la preda — è il «web-over» dell'*Octopus cyanea*, lo stesso polpo
+  delle nubi di `Ctrl+F1`. La pelle sale dal dietro del globo e si chiude sopra, con l'orlo a
+  festoni: avanti dove c'è un braccio, indietro fra un braccio e l'altro.
+- **LA BOCCA STA IN MEZZO ALLA CORONA**, dove le braccia si uniscono, e si vede solo quando
+  la cosa si volta: non una faccia, non due occhi, una bocca sola.
+- **LE BRACCIA SONO CINQUE** e un polpo ne ha otto: le altre tre stanno dall'altra parte del
+  globo, dove sta il corpo, che non si vede mai. Le ventose neanche, e non è una rinuncia: chi
+  tiene una cosa la avvolge con la faccia orale all'interno. La punta si arrotola in **spirale
+  logaritmica** — curvatura che cresce in progressione geometrica — e parte dalla curvatura del
+  globo, così il pezzo avvolto e la punta si attaccano senza spigolo.
+- **FINISCE DA SOLA**, ed è il primo orrore che lo fa: gli altri otto restano finché non gli si
+  chiede di andarsene. Il contratto di `Orrore` la reggeva già, perché `finito` lo può emettere
+  chiunque. Il tasto ripremuto la taglia nell'unico modo onesto: buio, e si torna in cupola.
+- **`Ctrl+F9` NON È DELL'INIETTORE DI BUGIE.** L'iniettore sta sulla F9 nuda e rispondeva a
+  qualunque F9: `Ctrl+F9` avrebbe aperto la visione **e** sostituito la sorgente della fase in
+  corso. È l'ultima delle correzioni di D-270, e mancava questa.
+
+**Quattro difetti trovati guardando, e la ragione di ognuno.**
+1. **Delle braccia si vedevano solo cinque nocche al bordo.** Un materiale con l'alpha non
+   scrive la profondità, quindi chi disegna dopo lo copre: il pianeta è più grande e finiva
+   quasi sempre dopo. `depth_prepass_alpha` su pianeta, braccia e membrana. L'alpha serve solo
+   negli ultimi istanti, e per tutto il resto del tempo vale uno.
+2. **Due radici spuntavano dal bordo del globo.** Un braccio grosso sta fuori dalla buccia di
+   quanto è grosso, e il bordo lo scopre molto prima dei novanta gradi. Radici strette attorno
+   al polo di dietro (8°-26°) e asse del giro inclinato di 22 gradi e non 32.
+3. **Col sole di taglio metà globo era in ombra**, e con lui le braccia che ci stavano sopra:
+   il difetto di D-271 in persona. Il sole adesso viene da sinistra e un po' da dietro le
+   spalle: il terminatore resta dentro la faccia, verso il bordo.
+4. **A metà della mangiata non era successo niente.** La membrana parte da dietro, e finché
+   non arriva al bordo del globo chi guarda non vede. Adesso arriva al bordo in tre decimi del
+   tempo e usa gli altri sette per chiudersi sulla faccia che si vede.
+
+**Misurato** (`tools/prova_orrori.tscn`, tutto a posto). Il tasto toglie il controllo e si
+segna la camera da rimettere; prima del nero non c'è ancora niente; da lì il globo prende 21°
+di raggio in un campo di 65, sta in mezzo all'inquadratura (0,00° dall'asse), le radici delle
+braccia non arrivano mai a meno di 155° dal fronte e le punte arrivano a 10°; la membrana
+chiude a 3,44 rad, cioè tutto; voltata al 100% la corona sta a 3° dal fronte con la bocca
+aperta all'80%; arriva a 0,45 raggi e lo schermo è nero; **finisce da sola dopo 27 s** e
+rimette camera, controllo e velo com'erano; ripremuto il tasto, se ne va in 3,2 s. E
+l'iniettore di bugie, interrogato con una spia al posto del main, non si sveglia con Ctrl.
+`tools/scatta_orrori.tscn` la fotografa in sei momenti (`SOLO=F9`).
+
+**Da verificare giocando:** se venticinque secondi senza controllo, in un gioco che non ne
+toglie mai, sono la cosa giusta o sono troppi.
+
+## D-280 La visione rifatta: non ci si avvicina, e quando si volta c'è l'occhio
+
+**18 settembre 2026.** Federico ha provato la visione di D-279 in partita. «La base di partenza
+ha anche un senso, però è una realizzazione abbastanza brutta»: il mostro che se lo assorbe va
+bene, il resto no. Tre correzioni, e tutte e tre valgono oltre questo orrore.
+
+**1. NON CI SI AVVICINA A UN PIANETA.** «È evidente che quello è un pianeta super pezzotto,
+super piccolo in realtà: non mi ci posso avvicinare così, e quando arriva attaccato è grande
+quanto un asteroide». La stesura di D-279 finiva con la cosa che arriva addosso, fino a mezzo
+raggio. Da mezzo raggio si vede la BUCCIA, e la buccia di un pianeta non si vede mai: quello
+che si vede da vicino è sempre un sasso. Adesso la distanza è FISSA a tre raggi e mezzo per
+tutta la visione — quella da cui un pianeta è un pianeta — e non scende mai.
+
+**2. E ALLA FINE CI SI ALLONTANA.** «Fai sì che io mi allontani, non che io vada dentro il
+pianeta». L'ultimo pezzo è un arretramento che accelera, da tre raggi e mezzo a venti, e
+mentre si va indietro la cosa scivola anche di lato: una cosa che rimpicciolisce e basta
+potrebbe essersi sgonfiata, una che intanto scorre vuol dire che sei tu che ti stai allontanando.
+Alla fine è un pallino di tre gradi fra le stelle, e il nero arriva addosso a quello. **È il
+movimento che dice quanto era grande**, che è la cosa che l'avvicinamento non poteva dire.
+
+**3. QUANDO SI VOLTA C'È L'OCCHIO.** «Voglio che si veda l'occhio dal quale poi sono partiti i
+tentacoli, che sarebbe molto figo». Al posto della bocca in mezzo alla corona c'è **l'occhio
+del cielo** (`world/occhio.gd`), lo stesso di `F6`, dell'oculare e della stampa: stessa
+creatura, stessa iride. Guarda da un'altra parte per quattro quinti della voltata e **scatta su
+di te** quando ormai ti ha davanti; poi la pupilla si stringe (da 0,36 a 0,12). Gli si toglie
+la sua macchia di pelle — lassù è la testa che non si vede dove finisce, qui la testa c'è già
+ed è la membrana, e la macchia le si appoggiava sopra come una frittella retinata: restano
+bulbo e palpebre, cioè un occhio incassato nella pelle.
+
+**4. LE TEXTURE.** «Migliora molto le texture perché fanno totalmente cagare». Erano la
+fotografia della pelle ripetuta sugli UV, senza rilievo e senza lucentezza, con un lambert
+scritto a mano: da vicino, salsicce di gomma a macchie. Adesso braccia e membrana usano lo
+stesso campionamento della pelle attorno all'occhio del cielo — **piastrelle esagonali**
+(Mikkelsen 2022) con colore, normale e ruvidità, in un include nuovo
+(`world/shaders/pelle_polpo.gdshaderinc`) che quel codice lo raccoglie invece di ricopiarlo —
+e sono materiali **illuminati**, non unshaded. La pelle si misura in METRI: gli UV delle braccia
+portano la lunghezza percorsa, così le piastrelle vengono della stessa taglia su un braccio
+lungo e su uno corto. Il pianeta ha una terza scala di rumore, quella che si vede solo da
+vicino, perché con due sole a tre raggi era una palla sfumata.
+
+**LA MASCHERA DELLA CAMERA TAGLIA ANCHE LE LUCI.** Passando a materiali illuminati, braccia,
+membrana e occhio sono venuti neri: la camera della visione disegna solo il layer della
+visione, e una luce sta su un layer come una mesh. Ne servono due, e non sono la stessa cosa:
+`layers` è dove sta la luce — e deve stare dove guarda la camera — mentre `light_cull_mask` è
+cosa illumina. È anche il motivo per cui la Luna di stanotte non va più tolta a mano: sta sul
+layer del mondo, che quella camera non guarda.
+
+**Misurato** (`tools/prova_orrori.tscn`, tutto a posto): il globo prende 17,1° di raggio in un
+campo di 65 e non si avvicina mai; la membrana chiude a 3,44 rad; voltata al 100% la corona sta
+a 5° dal fronte, e l'occhio che a metà voltata guardava a 145° da chi guarda finisce a 0,1°,
+con la pupilla da 0,36 a 0,12; alla fine sta a venti raggi, cioè 2,9° di raggio apparente, e lo
+schermo è nero; finisce da sola dopo 32 s e rimette camera, controllo e velo com'erano.
+
+**Da verificare giocando:** se adesso si legge come un pianeta, e se trentadue secondi non sono
+troppi.
+
+## D-281 Se lo mangiano i tentacoli, uno sopra l'altro, sotto le cinque braccia
+
+**18 settembre 2026.** Su uno scatto della visione rifatta (D-280): «un tentacolo sembra un
+po' scollegato, poi il fatto che ci siano solo cinque macro tentacoli non mi piace, vorrei che
+ce ne fossero una marea in più ma molto più piccoli che prendono il pianeta». La prima lettura
+è stata sbagliata: quaranta tentacoli sottili **al posto** delle cinque braccia. Federico: «lascia
+i cinque tentacoli giganti, andavano bene. E invece che farlo ricoprire da sta patina, fai che
+quella patina sono tanti tentacoli che si sommano uno sopra l'altro e si mangiano in questo
+modo il pianeta». **In più** delle braccia, e al posto della membrana.
+
+- **LE CINQUE BRACCIA TORNANO COM'ERANO** (stesso seme, stesse radici fra 8° e 26° dal polo di
+  dietro, stessa grossezza) e tengono il pianeta dal primo all'ultimo secondo.
+- **LA MEMBRANA NON C'È PIÙ** (via `orrore_membrana.gdshader`). Al suo posto, durante la
+  mangiata, **centosettanta tentacoli** grossi fra un quarto e metà di un braccio spuntano da un
+  anello attorno all'occhio (27°-45° dal polo di dietro, fuori dalle palpebre) e **crescono dalla
+  radice alla punta** uno dopo l'altro, in un secondo e mezzo - due ciascuno.
+- **CHI ARRIVA DOPO STA SOPRA.** La quota di un tentacolo è il suo ordine d'arrivo: il primo sulla
+  buccia, l'ultimo quattro centesimi di raggio più in alto. Restano tutti **sotto le braccia
+  grandi**, che si vedono ancora. Chi resta sotto si scurisce man mano che gli altri gli
+  passano sopra (fino a -65%), e sotto il mucchio si spegne anche il pianeta: fra un tentacolo e
+  l'altro c'è buio, non nuvole.
+- **CRESCONO NELLO SHADER.** Ogni vertice porta in `CUSTOM0` il suo punto sulla linea di mezzo e
+  quanta parte del braccio gli sta prima; lo shader schiaccia sulla linea tutto quello che sta
+  oltre `cresce` (un `instance uniform`), con la punta che avanza arrotondata. Nessuna mesh si
+  ricostruisce durante la visione: si costruiscono tutte nel nero, in un terzo di secondo.
+- **SERPEGGIANO.** Dritti lungo i cerchi massimi passavano tutti a meno di 35° dal centro della
+  faccia: ne coprivano metà, e sembravano un gomitolo di vimini. Adesso partono di sbieco, svoltano
+  di lato e ondeggiano, e restano grossi fin quasi in punta.
+
+**Misurato** (`tools/prova_orrori.tscn`, tutto a posto): prima della mangiata non si vede nessun
+tentacolo; a metà ne sono spuntati 121 su 170; ognuno sta sopra quelli arrivati prima; alla
+fine sono cresciuti tutti e coprono il **95%** della faccia entro 60° dal punto che si ha davanti
+(la sonda lo misura: la linea di mezzo di ogni tentacolo riportata sulla sfera contro 900 punti
+di Fibonacci). Il resto come in D-280.
+
+**Da verificare giocando:** l'occhio. «Si muoveva come se non fosse attaccato al pianeta»: lo
+sguardo di `Occhio` è una direzione nel mondo, e mentre la cosa si volta il bulbo resta a
+guardare dove guardava invece di girare con lei. Rimandato su richiesta.
+
 ## D-282 Le porte interne sono porte vere: tamburate, finto mogano, con la maniglia
 
 **18 settembre 2026.** Federico: «mi trovi dei modelli per delle porte normali italiane?». Le

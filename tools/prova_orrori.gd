@@ -2,7 +2,7 @@
 ##
 ##     Godot_v4.7.2-stable_win64.exe --headless --path . tools/prova_orrori.tscn
 ##
-## Per ognuno degli otto tasti `Ctrl+F1`…`Ctrl+F8` (`debug/orrori.gd`) la sonda preme il
+## Per ognuno dei nove tasti `Ctrl+F1`…`Ctrl+F9` (`debug/orrori.gd`) la sonda preme il
 ## tasto per davvero, guarda che l'orrore sia entrato nel mondo e che nessun altro
 ## strumento abbia risposto allo stesso tasto — `Ctrl+F1` non deve rimettere il tempo a
 ## velocità reale, `Ctrl+F5` non deve calare il tentacolo — poi fa passare il tempo a mano,
@@ -32,7 +32,25 @@
 ##      prato, illumina attorno con bagliore e foschia, se ne va in una colonna che arriva al
 ##      cielo, lascia la cenere — nell'erba e per terra — e alla fine restituisce il prato e
 ##      l'ambiente com'erano.
+##   F9 LA VISIONE DEL PIANETA toglie il controllo, va al nero, accende una camera sua che
+##      disegna SOLO il layer della visione — l'osservatorio non c'è più — ci mette davanti il
+##      pianeta con le braccia (radici dietro il bordo, punte sulla faccia che si vede), lo fa
+##      seppellire dai tentacoli che crescono uno sopra l'altro fino a coprire la faccia, lo
+##      volta con l'occhio che ti trova e ti tira indietro; poi FINISCE DA SOLA e rimette
+##      tutto com'era: la camera di prima corrente, il controllo com'era, niente velo, nodo
+##      liberato. Il tasto con Ctrl non sveglia l'iniettore di bugie, che sta sulla F9 nuda.
 extends Node
+
+
+## Una spia al posto del main dell'iniettore di bugie: dice se qualcuno gli ha chiesto la
+## fase in corso, cioè se ha creduto che il tasto fosse suo.
+class SpiaFase extends Node:
+	var chiamate := 0
+
+	func current_phase() -> Object:
+		chiamate += 1
+		return null
+
 
 const PASSO := 1.0 / 30.0
 ## Da dove si guarda: fuori dalla porta, verso nord.
@@ -91,6 +109,7 @@ func _prova() -> void:
 	await _posa()
 	await _montatura()
 	await _colore()
+	await _pianeta()
 
 	print("[orrori] %s" % ("TUTTO A POSTO" if _guasti == 0 else "%d GUASTI" % _guasti))
 	get_tree().quit(1 if _guasti > 0 else 0)
@@ -396,6 +415,262 @@ func _mano(b: BraccioUmano) -> Dictionary:
 		sul_palmo += (punte[k] - nocche[k]).normalized().dot(palmo) / 4.0
 	var ventaglio := rad_to_deg((punte[0] - nocche[0]).angle_to(punte[3] - nocche[3]))
 	return {"lontane": lontane, "palmo": sul_palmo, "ventaglio": ventaglio}
+
+
+# --- F9 ------------------------------------------------------------------------------
+
+func _pianeta() -> void:
+	_iniettore_ignora_ctrl()
+	var g := Player.find_in(get_tree())
+	# la camera di prima è quella del giocatore, e si chiede a lui: `get_viewport()` da qui
+	# dà la finestra della sonda, non il `SubViewport` in cui vive il mondo
+	var prima := _camera
+	var o := (await _arriva(KEY_F9, "pianeta")) as OrrorePianeta
+	if o == null:
+		return
+	# IL CONTROLLO SE NE VA SUBITO, che è la sola cosa che questa visione toglie
+	if g != null and g.is_enabled():
+		_guasto("pianeta: comincia e il giocatore comanda ancora")
+	if o.camera_prima() != prima:
+		_guasto("pianeta: non si è segnata la camera da rimettere")
+
+	# NEL NERO SI CAMBIA POSTO: prima del nero non c'è ancora niente
+	_avanti(o, OrrorePianeta.SPEGNE * 0.5)
+	if o.sistema() != null:
+		_guasto("pianeta: la visione è accesa prima che lo schermo sia nero")
+	if o.velo() < 0.2:
+		_guasto("pianeta: lo schermo non si sta scurendo")
+
+	# SEI LÌ
+	_avanti(o, OrrorePianeta.T_GUARDA + OrrorePianeta.GUARDA * 0.5 - o.da_quando())
+	var cam := o.camera()
+	if cam == null or not cam.current:
+		_guasto("pianeta: non c'è nessuna camera della visione, o non è corrente")
+		return
+	if cam.cull_mask != OrrorePianeta.STRATO:
+		_guasto("pianeta: la camera della visione disegna anche il mondo (%d)" % cam.cull_mask)
+	if o.velo() > 0.01:
+		_guasto("pianeta: sei lì e lo schermo è ancora nero")
+	var pezzi := _mesh_di(o.sistema())
+	if pezzi.size() < OrrorePianeta.BRACCIA + OrrorePianeta.TENTACOLI + 1:
+		_guasto("pianeta: mancano globo, braccia o tentacoli (%d pezzi)" % pezzi.size())
+	# i tentacoli crescono nello shader, e per crescere il vertice deve sapere dove sta lungo il
+	# braccio: senza `CUSTOM0` spunterebbero interi
+	var primo := o.tentacoli()[0]
+	if (primo.mesh.surface_get_format(0) & Mesh.ARRAY_FORMAT_CUSTOM0) == 0:
+		_guasto("pianeta: i tentacoli non sanno dove stanno lungo il braccio (manca CUSTOM0)")
+	if o.tentacoli().any(func(m: MeshInstance3D) -> bool: return m.visible):
+		_guasto("pianeta: prima che se lo mangi, si vede già un tentacolo")
+	for m in pezzi:
+		if m.layers != OrrorePianeta.STRATO:
+			_guasto("pianeta: un pezzo della visione sta su un layer che il mondo vede")
+			break
+	var fronte := cam.global_basis.z
+	var centro := rad_to_deg((o.sistema().global_position - cam.global_position)
+		.normalized().angle_to(-cam.global_basis.z))
+	var grande := o.raggio_apparente()
+	var radice_piu_avanti := 180.0
+	var punta_piu_avanti := 180.0
+	for _i in int(OrrorePianeta.GUARDA / PASSO):
+		o.passo(PASSO)
+		for r in o.radici():
+			radice_piu_avanti = minf(radice_piu_avanti, rad_to_deg(r.angle_to(fronte)))
+		for t in o.punte():
+			punta_piu_avanti = minf(punta_piu_avanti, rad_to_deg(t.angle_to(fronte)))
+	print(("[orrori] pianeta: il globo prende %.1f° di raggio in un campo di %.0f, " +
+		"centro a %.2f° dall'asse; radici non oltre %.0f° dal fronte, punte fino a %.0f°") % [
+		grande, OrrorePianeta.CAMPO, centro, radice_piu_avanti, punta_piu_avanti])
+	if grande < 14.0 or grande > OrrorePianeta.CAMPO * 0.5:
+		_guasto("pianeta: il globo non è grande come deve (%.1f°)" % grande)
+	if centro > 0.3:
+		_guasto("pianeta: non sta in mezzo all'inquadratura")
+	# i tentacoli sono sottili e dal bordo sporgono poco: da centoventi gradi in là non si vedono
+	if radice_piu_avanti < 120.0:
+		_guasto("pianeta: una radice delle braccia arriva in vista del bordo")
+	if punta_piu_avanti > 60.0:
+		_guasto("pianeta: le punte non arrivano sulla faccia che si vede")
+
+	# SE LO MANGIA: i tentacoli arrivano uno dopo l'altro, e chi arriva dopo sta sopra
+	_avanti(o, OrrorePianeta.T_MANGIA + OrrorePianeta.MANGIA * 0.5 - o.da_quando())
+	var a_meta := 0
+	for i in o.tentacoli().size():
+		if o.cresce(i) > 0.0:
+			a_meta += 1
+	var n := o.tentacoli().size()
+	if a_meta < n / 4 or a_meta > n * 3 / 4:
+		_guasto("pianeta: a metà mangiata i tentacoli non arrivano uno dopo l'altro (%d su %d)"
+			% [a_meta, n])
+	for i in range(1, n):
+		if o.nascita(i) < o.nascita(i - 1) or _quota(o, i) < _quota(o, i - 1) - 1e-4:
+			_guasto("pianeta: il tentacolo %d arriva dopo ma non sta sopra" % i)
+			break
+	_avanti(o, OrrorePianeta.T_VOLTA - o.da_quando())
+	var cresciuti := 0
+	for i in n:
+		if o.cresce(i) >= 0.999:
+			cresciuti += 1
+	# E DELLA FACCIA NON RESTA NIENTE DI SCOPERTO: si guarda dove chi guarda vede, cioè attorno
+	# al punto del globo che ha davanti
+	var coperta := _copertura(o, cam, 60.0)
+	print(("[orrori] pianeta: mangiato, %d tentacoli su %d cresciuti (a metà erano %d); " +
+		"coprono il %d%% della faccia") % [cresciuti, n, a_meta, int(coperta * 100.0)])
+	if cresciuti < n:
+		_guasto("pianeta: finita la mangiata, qualche tentacolo non è cresciuto del tutto")
+	if coperta < 0.95:
+		_guasto("pianeta: finita la mangiata, la faccia è scoperta (%d%%)" % int(coperta * 100.0))
+	if o.copre() < PI:
+		_guasto("pianeta: sotto il mucchio il pianeta è ancora acceso")
+
+	# SI VOLTA: la corona delle braccia, con l'occhio in mezzo, viene verso di te — e a metà
+	# della voltata l'occhio è aperto ma guarda ancora da un'altra parte
+	_avanti(o, OrrorePianeta.VOLTA * 0.5)
+	var occhio := o.occhio()
+	if occhio == null:
+		_guasto("pianeta: non c'è nessun occhio in mezzo alla corona")
+		return
+	var verso_te := func() -> float:
+		return rad_to_deg(occhio.sguardo().angle_to(
+			(cam.global_position - occhio.global_position).normalized()))
+	var largo := occhio.pupilla().y
+	var lontano: float = verso_te.call()
+	_avanti(o, OrrorePianeta.VOLTA * 0.5 + 0.1)
+	var corona := 180.0
+	for r in o.radici():
+		corona = minf(corona, rad_to_deg(r.angle_to(fronte)))
+	if o.voltata() < 0.99:
+		_guasto("pianeta: non si è voltata del tutto")
+	if corona > 60.0:
+		_guasto("pianeta: voltata, la corona delle braccia non è di fronte")
+	if o.luce() == null or o.luce().light_cull_mask != OrrorePianeta.STRATO:
+		_guasto("pianeta: la luce della visione illumina anche il mondo")
+
+	# L'OCCHIO TI TROVA, e la pupilla si stringe
+	_avanti(o, OrrorePianeta.TROVA * 0.9)
+	var addosso: float = verso_te.call()
+	var stretta := occhio.pupilla().y
+	print(("[orrori] pianeta: voltata al %d%%, la corona sta a %.0f° dal fronte; l'occhio " +
+		"guardava a %.0f° da te, poi a %.1f°; pupilla da %.2f a %.2f") % [
+		int(o.voltata() * 100.0), corona, lontano, addosso, largo, stretta])
+	if lontano < 10.0:
+		_guasto("pianeta: a metà della voltata l'occhio ti guarda già")
+	if addosso > 3.0:
+		_guasto("pianeta: l'occhio non ti trova")
+	if stretta > largo * 0.6:
+		_guasto("pianeta: trovato, la pupilla non si stringe")
+	if o.distanza() > OrrorePianeta.LONTANO + 0.01:
+		_guasto("pianeta: si è avvicinata (%.2f raggi)" % o.distanza())
+
+	# E TI TIRA INDIETRO, fino a diventare un punto
+	_avanti(o, OrrorePianeta.TROVA * 0.1 + OrrorePianeta.VIA)
+	print("[orrori] pianeta: alla fine sta a %.1f raggi, cioè %.1f° di raggio apparente" % [
+		o.distanza(), o.raggio_apparente()])
+	if o.distanza() < OrrorePianeta.LONTANISSIMO - 0.01:
+		_guasto("pianeta: non si è allontanata")
+	if o.velo() < 0.99:
+		_guasto("pianeta: allontanata, lo schermo non è nero")
+
+	# FINISCE DA SOLA e rimette tutto com'era
+	var t := 0.0
+	while o.attivo() and t < OrrorePianeta.BUIO + OrrorePianeta.TORNA + 5.0:
+		o.passo(PASSO)
+		t += PASSO
+	if o.attivo():
+		_guasto("pianeta: non finisce da sola")
+	else:
+		print("[orrori] pianeta: finisce da sola dopo %.0f s" % o.da_quando())
+	for _f in 3:
+		await get_tree().process_frame
+	if is_instance_valid(o):
+		_guasto("pianeta: finita da sola, il nodo è ancora in scena")
+	if prima != null and not prima.current:
+		_guasto("pianeta: finita, non è tornata corrente la camera di prima")
+	if g != null and not g.is_enabled():
+		_guasto("pianeta: finita, il giocatore non ha riavuto il controllo")
+	if _orrori.aperto(KEY_F9) != null:
+		_guasto("pianeta: finita da sola, il tasto la crede ancora aperta")
+
+	# E IL TASTO LA TAGLIA: ripremuto, va al buio e torna
+	var b := (await _arriva(KEY_F9, "pianeta")) as OrrorePianeta
+	if b != null:
+		_avanti(b, OrrorePianeta.T_GUARDA + 1.0)
+		await _se_ne_va(KEY_F9, b, "pianeta",
+			OrrorePianeta.BUIO + OrrorePianeta.TORNA + 3.0)
+		if g != null and not g.is_enabled():
+			_guasto("pianeta: tagliata col tasto, il giocatore non ha riavuto il controllo")
+
+
+## `Ctrl+F9` È DEGLI ORRORI, e la F9 nuda è dell'iniettore di bugie: gli si mette davanti una
+## spia al posto del main e si guarda se il tasto col Ctrl lo sveglia lo stesso. Gli eventi
+## si danno a lui e basta: passare da `Input` aprirebbe e richiuderebbe la visione.
+func _iniettore_ignora_ctrl() -> void:
+	var iniettore := _orrori.get_parent().get_node_or_null("LieInjector")
+	if iniettore == null:
+		_guasto("pianeta: in scena non c'è l'iniettore di bugie")
+		return
+	var spia := SpiaFase.new()
+	var prima: Variant = iniettore.get("_main")
+	iniettore.set("_main", spia)
+	var e := InputEventKey.new()
+	e.keycode = KEY_F9
+	e.pressed = true
+	e.ctrl_pressed = true
+	iniettore.call("_unhandled_input", e)
+	if spia.chiamate != 0:
+		_guasto("pianeta: Ctrl+F9 sveglia anche l'iniettore di bugie")
+	e.ctrl_pressed = false
+	iniettore.call("_unhandled_input", e)
+	if spia.chiamate == 0:
+		_guasto("pianeta: la prova non prova niente — la F9 nuda non sveglia l'iniettore")
+	iniettore.set("_main", prima)
+	spia.free()
+
+
+## Quanto sta sopra la buccia il tentacolo `i`: il centro della sezione a metà del pezzo
+## avvolto, meno la parte che viene dalla grossezza.
+func _quota(o: OrrorePianeta, i: int) -> float:
+	var linea := o.linea(i)
+	var g := o.grossezze(i)
+	# a metà del pezzo avvolto: la punta arrotolata sono gli ultimi ventidue passi
+	var k := (linea.size() - 23) / 2
+	return linea[k].length() - 1.0 - g[k] * 0.80
+
+
+## Che parte della faccia che si vede è sotto un tentacolo, da zero a uno: punti sparsi in
+## modo uniforme sulla calotta entro `entro` gradi dal punto del globo più vicino a chi
+## guarda, e per ognuno si chiede se c'è un tentacolo che gli passa sopra — cioè se la sua
+## linea di mezzo, riportata sulla sfera, gli passa più vicino della sua grossezza.
+func _copertura(o: OrrorePianeta, cam: Camera3D, entro: float) -> float:
+	var verso := (o.sistema().global_transform.affine_inverse() * cam.global_position).normalized()
+	var limite := cos(deg_to_rad(entro))
+	var campioni := 900
+	var dentro := 0
+	var coperti := 0
+	for c in campioni:
+		# i punti di Fibonacci: uniformi sulla sfera senza addensarsi ai poli
+		var y := 1.0 - 2.0 * (float(c) + 0.5) / float(campioni)
+		var r := sqrt(1.0 - y * y)
+		var fi := float(c) * PI * (3.0 - sqrt(5.0))
+		var p := Vector3(r * cos(fi), y, r * sin(fi))
+		if p.dot(verso) < limite:
+			continue
+		dentro += 1
+		if _sotto_un_tentacolo(o, p):
+			coperti += 1
+	return float(coperti) / float(maxi(dentro, 1))
+
+
+func _sotto_un_tentacolo(o: OrrorePianeta, p: Vector3) -> bool:
+	for i in o.tentacoli().size():
+		var linea := o.linea(i)
+		var g := o.grossezze(i)
+		for k in range(1, linea.size()):
+			var a := linea[k - 1].normalized()
+			var b := linea[k].normalized()
+			var ab := b - a
+			var u := clampf((p - a).dot(ab) / maxf(ab.length_squared(), 1e-9), 0.0, 1.0)
+			if p.distance_to(a + ab * u) < g[k]:
+				return true
+	return false
 
 
 func _mesh_di(n: Node) -> Array[MeshInstance3D]:

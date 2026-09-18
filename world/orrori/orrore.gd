@@ -1,11 +1,14 @@
 ## UN ORRORE COSMICO: la forma comune di tutto quello che sta in `world/orrori/`.
 ##
 ## Sono cose della storia che la storia non ha ancora: non si sa in che notte arrivino,
-## né cosa le chiami. Adesso le apre `debug/orrori.gd` con `Ctrl+F1`…`Ctrl+F8`, per
+## né cosa le chiami. Adesso le apre `debug/orrori.gd` con `Ctrl+F1`…`Ctrl+F9`, per
 ## guardarle; quando la storia ci sarà, le aprirà lei, e questi file restano.
 ##
 ## IL CONTRATTO È QUELLO DEL TENTACOLO E DELL'OCCHIO: `inizia()` la fa cominciare,
-## `finisci()` le chiede di andarsene — e una cosa grande quanto il cielo non sparisce in
+## `finisci()` le chiede di andarsene — e c'è chi finisce anche da solo, senza che nessuno
+## glielo chieda: la visione di `Ctrl+F9` dura mezzo minuto e poi non c'è più. `finito` lo
+## può emettere chiunque, non solo chi è stato congedato, e chi apre un orrore sta dietro a
+## quel segnale e non al proprio tasto — e una cosa grande quanto il cielo non sparisce in
 ## un fotogramma, quindi se ne va a modo suo e alla fine emette `finito`. Chi l'ha
 ## aperta libera il nodo lì, non prima.
 ##

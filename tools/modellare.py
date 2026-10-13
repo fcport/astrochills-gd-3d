@@ -180,8 +180,17 @@ COLORI = {
     # vorrebbe dire tagliare una mesh in Godot.
     "SerigrafiaApre":   (0.88, 0.87, 0.83),
     "SerigrafiaChiude": (0.88, 0.87, 0.83),
+    # IL PIANO COTTURA SMEG S64S (D-285). L'inox satinato non e' `Inox`, per la
+    # ragione del `Cromo`: fra i METALLICI, in una cucina chiusa, rifletteva il buio e
+    # il vecchio piano usciva grigio fango. Satinato vuol dire che la luce la sparge,
+    # e la ruvidezza lo dice senza bisogno di niente da riflettere. Lo spartifiamma e'
+    # alluminio pressofuso, opaco; cappellotti e griglie sono smalto nero.
+    "InoxSatinato":   (0.40, 0.41, 0.42),
+    "Alluminio":      (0.58, 0.58, 0.56),
+    "SmaltoNero":     (0.028, 0.028, 0.030),
 }
-RUVIDEZZA = {"Metallo": 0.45, "Inox": 0.28, "Rame": 0.35, "Schermo": 0.12,
+RUVIDEZZA = {"InoxSatinato": 0.40, "Alluminio": 0.55, "SmaltoNero": 0.42,
+             "Metallo": 0.45, "Inox": 0.28, "Rame": 0.35, "Schermo": 0.12,
              "Acceso": 0.20, "Gomma": 0.75, "Ceramica": 0.25, "Smalto": 0.30,
              # la ceramica smaltata di un rivestimento e' LUCIDA, ed e' cosi' che si
              # riconosce un bagno: 0,12 a muro contro 0,45 del gres a terra, che e'
@@ -1002,7 +1011,7 @@ def opacizza_il_pieno(posati, soglia=0.90, lato=256):
 
 
 def posa_modello(percorso, impronta, gradi=0.0, riempi=1.0, appoggio=0.0,
-                 appeso=False, tieni=None, piede=False):
+                 appeso=False, tieni=None, piede=False, ritaglia=None):
     """Importa un modello esterno e lo POSA DENTRO la sua impronta.
 
     Un modello preso da fuori non conosce ne' la scala ne' l'orientamento di
@@ -1032,6 +1041,13 @@ def posa_modello(percorso, impronta, gradi=0.0, riempi=1.0, appoggio=0.0,
     Con `piede` si appoggia sulla BASE invece che sul punto piu' basso: serve ai
     modelli che hanno un'appendice sotto - il filo di un telefono - e va
     DICHIARATO, non dedotto. Vedi `_piede`, che spiega perche'.
+
+
+    `ritaglia` e' `tieni` quando il nome non basta: una funzione che riceve i pezzi
+    appena importati, butta quello che non serve e restituisce quelli rimasti, PRIMA
+    di scalare. La cappa della cucina sta nello stesso oggetto della cucina
+    elettrica sotto, e la si separa per quota; il contatore del gas sta in un set
+    dove tutte le mesh si chiamano `Object_N`, e lo si riconosce dal genitore.
     """
     x0, z0, x1, z1, alt = impronta
     prima = set(bpy.data.objects)
@@ -1054,6 +1070,8 @@ def posa_modello(percorso, impronta, gradi=0.0, riempi=1.0, appoggio=0.0,
             if o.type == "MESH" and tieni not in o.name:
                 bpy.data.objects.remove(o, do_unlink=True)
                 nuovi.remove(o)
+    if ritaglia is not None:
+        nuovi = ritaglia(nuovi)
     _collega_texture_vicine(percorso, nuovi)
     radici = [o for o in nuovi if o.parent is None]
     perno = bpy.data.objects.new(os.path.basename(os.path.dirname(percorso)), None)

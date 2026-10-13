@@ -4,15 +4,16 @@
 ## caffè a caso». Prima bastava guardarla e premere E, e il caffè si faceva da solo. Adesso
 ## lo fa il fuoco, e il fuoco lo accende una manopola.
 ##
-## IL NODO È LA MANOPOLA. Sta sul frontale del mobile, ed è lì che si guarda e si preme E;
-## il bruciatore che accende sta più in là, sulla griglia, a `fuoco` di distanza. Uno per
+## IL NODO È LA MANOPOLA. Sta sulla striscia a destra del piano, ed è lì che si guarda e si
+## preme E; il bruciatore che accende sta più in là, sulla griglia, a `fuoco` di distanza. Uno per
 ## fuoco e non un piano cottura con quattro manopole: ogni manopola si mira da sola, e un
 ## nodo che le avesse tutte dovrebbe capire quale si sta guardando.
 ##
-## LA MANOPOLA SI GIRA, e per questo non è più disegnata dentro la cucina: un pezzo del
-## modello della stanza non può ruotare. Ha la forma che aveva lì — un cilindro di plastica
-## da 44 mm per 30 — più una tacca, perché una manopola girata di un quarto senza tacca non
-## si distingue da una chiusa.
+## LA MANOPOLA SI GIRA, e per questo non è disegnata dentro la cucina: un pezzo del modello
+## della stanza non può ruotare. È quella dello Smeg S64S (D-285): argento, rotonda, con la
+## presa a barretta, e l'asse IN VERTICALE perché sta sul piano e non sul frontale. La tacca
+## sulla barretta c'è perché una manopola girata di un quarto senza tacca non si distingue da
+## una chiusa.
 ##
 ## NON SA COSA CI SIA SOPRA. È la moka a chiedere se sta su un fuoco acceso (`sotto_a`); il
 ## fuoco non tiene nessuna pentola, e non c'è niente da tenere allineato fra i due.
@@ -35,18 +36,19 @@ const ALTO_SOPRA := 0.03
 ## sotto la griglia, o sulla griglia stessa; più in là di una spanna si sta guardando altro.
 const ALTO_SGUARDO := 0.15
 
-## Un quarto di giro: aperta, la tacca va da mezzogiorno alle nove, cioè in senso
-## antiorario per chi guarda — il verso in cui si apre il gas.
+## Un quarto di giro: aperta, la tacca va da mezzogiorno alle nove — dal muro verso i
+## fuochi — cioè in senso antiorario per chi guarda dall'alto: il verso in cui si apre il gas.
 const GIRO_APERTA := PI / 2.0
 
-## La manopola com'era disegnata in `cucina_blender.py`.
-const RAGGIO_MANOPOLA := 0.022
-const LUNGA_MANOPOLA := 0.03
+## La manopola dello S64S: una base tonda da 40 mm alta 6, e sopra la presa a barretta,
+## lunga quanto la base, larga un centimetro e alta quattordici millimetri.
+const RAGGIO_MANOPOLA := 0.020
+const ALTA_BASE := 0.006
+const BARRETTA := Vector3(0.010, 0.014, 0.036)
 
-## La corona di fiamme. Il bruciatore disegnato ha la base a 45-55 mm di raggio e il
-## cappello a 28: le lingue escono fra i due, di lato, e piegano verso l'alto.
+## La corona di fiamme: le lingue escono fra spartifiamma e cappellotto, di lato, e piegano
+## verso l'alto.
 const LINGUE := 18
-const RAGGIO_CORONA := 0.042
 const LUNGA_LINGUA := 0.016
 const PIEGA_LINGUA := deg_to_rad(55.0)
 
@@ -56,6 +58,13 @@ signal cambiato
 ## Dove sta il centro del bruciatore, alla quota della griglia, rispetto alla manopola.
 ## Lo scrive `gen_blockout.py` da `geometria.FUOCHI`.
 @export var fuoco := Vector3.ZERO
+
+## Il raggio della corona e di quanto le fiamme nascono sotto la griglia. I fuochi non
+## sono uguali - ausiliario, semirapido, rapido - e una corona sola, larga quanto il
+## rapido, sull'ausiliario brucerebbe nel vuoto. Li scrive `gen_blockout.py` da
+## `geometria.CAPPELLI` e `geometria.H_FIAMME`.
+@export var corona := 0.042
+@export var radice := -0.0275
 
 var acceso := false
 
@@ -141,7 +150,7 @@ func torna_come_ricordato(voce: Dictionary) -> void:
 
 
 func _applica() -> void:
-	_manopola.rotation.z = GIRO_APERTA if acceso else 0.0
+	_manopola.rotation.y = GIRO_APERTA if acceso else 0.0
 	_fiamma.visible = acceso
 	_luce.visible = acceso
 
@@ -151,36 +160,46 @@ func _costruisci_manopola() -> void:
 	_manopola.name = "Manopola"
 	add_child(_manopola)
 
+	var argento := _materiale(Color(0.72, 0.73, 0.74), 0.35)
 	var cilindro := CylinderMesh.new()
 	cilindro.top_radius = RAGGIO_MANOPOLA
 	cilindro.bottom_radius = RAGGIO_MANOPOLA
-	cilindro.height = LUNGA_MANOPOLA
-	cilindro.radial_segments = 12
+	cilindro.height = ALTA_BASE
+	cilindro.radial_segments = 16
 	cilindro.rings = 1
-	var corpo := MeshInstance3D.new()
-	corpo.mesh = cilindro
-	# L'asse del cilindro lungo z, cioè verso chi sta davanti al mobile.
-	corpo.rotation.x = PI / 2.0
-	corpo.material_override = _materiale(Color(0.78, 0.74, 0.62), 0.35)
-	_manopola.add_child(corpo)
+	var base := MeshInstance3D.new()
+	base.mesh = cilindro
+	base.position = Vector3(0.0, ALTA_BASE / 2.0, 0.0)
+	base.material_override = argento
+	_manopola.add_child(base)
+
+	# LA BARRETTA, lunga verso il muro: chiusa, la manopola punta a mezzogiorno.
+	var presa := BoxMesh.new()
+	presa.size = BARRETTA
+	var barretta := MeshInstance3D.new()
+	barretta.mesh = presa
+	barretta.position = Vector3(0.0, ALTA_BASE + BARRETTA.y / 2.0, 0.0)
+	barretta.material_override = argento
+	_manopola.add_child(barretta)
 
 	var scatola := BoxMesh.new()
-	scatola.size = Vector3(0.004, 0.016, 0.003)
+	scatola.size = Vector3(0.003, 0.0015, 0.010)
 	var tacca := MeshInstance3D.new()
 	tacca.mesh = scatola
-	tacca.position = Vector3(0.0, 0.010, LUNGA_MANOPOLA / 2.0 + 0.0015)
+	tacca.position = Vector3(0.0, ALTA_BASE + BARRETTA.y + 0.0007, -BARRETTA.z / 2.0 + 0.007)
 	tacca.material_override = _materiale(Color(0.045, 0.055, 0.06), 0.5)
 	_manopola.add_child(tacca)
 
-	# IL VOLUME DA MIRARE È PIÙ LARGO DELLA MANOPOLA, cinque centimetri per una da quattro e
-	# mezzo: a 640×360 una manopola da un metro è una decina di pixel, e mancarla di uno
-	# vorrebbe dire mirare il mobile.
+	# IL VOLUME DA MIRARE È PIÙ LARGO DELLA MANOPOLA, cinque centimetri per una da quattro:
+	# a 640×360 una manopola da un metro è una decina di pixel, e mancarla di uno vorrebbe
+	# dire mirare il piano. In profondità si ferma a sei centimetri e mezzo, cioè il passo
+	# fra due manopole: più lungo, il volume di una coprirebbe quella accanto.
 	var forma := BoxShape3D.new()
-	forma.size = Vector3(0.05, 0.05, 0.045)
+	forma.size = Vector3(0.05, 0.04, 0.065)
 	var col := CollisionShape3D.new()
 	col.name = "Col"
 	col.shape = forma
-	col.position = Vector3(0.0, 0.0, 0.008)
+	col.position = Vector3(0.0, 0.015, 0.0)
 	add_child(col)
 
 
@@ -201,9 +220,9 @@ func _costruisci_fiamma() -> void:
 		# Girare l'alto attorno a `alto × fuori` lo porta verso `fuori`: la lingua piega
 		# verso l'esterno.
 		var piega := Basis(Vector3.UP.cross(fuori).normalized(), PIEGA_LINGUA)
-		var radice := fuori * RAGGIO_CORONA + Vector3(0.0, -0.008, 0.0)
+		var piede := fuori * corona + Vector3(0.0, radice, 0.0)
 		mm.set_instance_transform(i,
-			Transform3D(piega, radice + piega * Vector3(0.0, LUNGA_LINGUA / 2.0, 0.0)))
+			Transform3D(piega, piede + piega * Vector3(0.0, LUNGA_LINGUA / 2.0, 0.0)))
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://world/shaders/fiamma.gdshader") as Shader
 	mat.set_shader_parameter(&"lunga", LUNGA_LINGUA)

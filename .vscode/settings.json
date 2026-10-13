@@ -25,7 +25,8 @@
         "titleBar.inactiveBackground": "#ccffcc99",
         "titleBar.inactiveForeground": "#15202b99",
         "activityBar.activeBorder": "#15202b",
-        "activityBarTop.activeBorder": "#15202b"
+        "activityBarTop.activeBorder": "#15202b",
+        "statusBar.inactiveBackground": "#ccffcc"
     },
     "peacock.color": "#CCFFCC",
     "godotTools.editorPath.godot4": "e:\\GIT\\astrochills-gd-3d\\Godot_v4.7.2-stable_win64.exe"

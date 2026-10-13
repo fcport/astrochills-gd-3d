@@ -22,7 +22,7 @@ from geometria import (K, SP, H, H_TETTO, PERIMETRO, MURI, H_ARCH, W_SILL, W_TOP
                        H_INTERRUTTORE, L_PLACCA, A_PLACCA, SP_PLACCA,
                        ATTIVITA_CUPOLA, CUPOLA, SALA_TELESCOPIO,
                        AR_RIPOSO_GRADI, DEC_RIPOSO_GRADI, LATITUDINE, NORD, MOKA, QUADERNO,
-                       FUOCHI, H_GRIGLIA, MANOPOLE, MANOPOLA_FUOCO,
+                       FUOCHI, H_GRIGLIA, MANOPOLE, MANOPOLA_FUOCO, CAPPELLI, H_FIAMME,
                        CASSA_MONITOR, VETRO_MONITOR, SEDILE_MONITOR,
                        BOMBATURA_MONITOR, FRANCO_VETRO,
                        PULSANTIERA_STAFFA, PULSANTIERA_TASTI,
@@ -2030,6 +2030,10 @@ def tscn():
                       FUOCHI[MANOPOLA_FUOCO[_k]][0] - MANOPOLE[_k][0],
                       H_GRIGLIA - MANOPOLE[_k][1],
                       FUOCHI[MANOPOLA_FUOCO[_k]][1] - MANOPOLE[_k][2]),
+                  # la corona e' larga quanto lo spartifiamma del SUO fuoco: il
+                  # cappellotto piu' mezzo centimetro per parte (D-285)
+                  'corona = %.4f' % (CAPPELLI[MANOPOLA_FUOCO[_k]] / 2.0 + 0.005),
+                  'radice = %.4f' % (H_FIAMME - H_GRIGLIA),
                   '')],
               # --- LA STAMPANTE, cioe' la fessura da cui escono le foto ---------
               #

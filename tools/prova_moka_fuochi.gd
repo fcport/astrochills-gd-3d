@@ -59,8 +59,19 @@ func _prova() -> void:
 func _prova_fuoco(giocatore: Player, moka: Moka, f: Fornello, scala: float) -> void:
 	_tempo.accelera(1.0)
 	# In piedi davanti al fuoco, a filo del bancone, guardando il centro del bruciatore.
+	#
+	# IL FRONTE DEL BANCONE SI CERCA, non si deduce dalla manopola. Finché le manopole
+	# stavano sul frontale del mobile la loro z ERA il fronte; da quando stanno sul piano
+	# (D-285) sono trenta centimetri più indietro, e la sonda metteva il giocatore dentro
+	# il mobile. Un raggio orizzontale a mezzo metro, dalla stanza verso il muro, trova
+	# l'ingombro del bancone dov'è.
 	var c := f.centro()
-	var piedi := Vector3(c.x, 0.0, f.global_position.z + DAL_FRONTE)
+	var raggio := PhysicsRayQueryParameters3D.create(Vector3(c.x, 0.5, c.z + 1.5),
+		Vector3(c.x, 0.5, c.z))
+	raggio.collision_mask = 1
+	var colpo := giocatore.get_world_3d().direct_space_state.intersect_ray(raggio)
+	var fronte := (colpo["position"] as Vector3).z if not colpo.is_empty() else c.z + 0.2
+	var piedi := Vector3(c.x, 0.0, fronte + DAL_FRONTE)
 	giocatore.velocity = Vector3.ZERO
 	giocatore.global_position = piedi
 	giocatore.look_at(Vector3(c.x, 0.0, c.z), Vector3.UP)

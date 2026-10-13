@@ -281,75 +281,54 @@ def filo_anta(nome):
 
 
 def pensile():
-    """Appeso al muro nord: noce scuro. L'ANTA NON STA QUI.
+    """Appeso al muro nord accanto alla porta: noce scuro, con l'anta a specchio.
+    L'ANTA E' DISEGNATA QUI, E NON SI APRE.
 
-    Un pezzo che ruota non puo' stare nel modello: il .glb e' una mesh sola, e
-    l'anta ha bisogno di un nodo suo con l'origine sul cardine. Sta in
-    `ANTE_MOBILI` di geometria.py insieme a quelle delle porte, e in gioco diventa
-    un nodo `Door` come tutti gli altri.
+    Federico: «l'armadietto del bagno quello piccolo di fianco alla porta non farlo
+    apribile» (D-286). Prima l'anta era un nodo a parte - un pezzo che ruota non puo'
+    stare in un .glb, che e' una mesh sola - e il mobile veniva disegnato VUOTO,
+    perche' aprendolo si sarebbe visto il pieno. Adesso che non si apre, l'anta torna
+    a essere un pezzo del mobile e il dentro non serve piu' a nessuno: resta la cassa,
+    che da fuori e' quello che si vede.
 
-    E TOLTA L'ANTA, IL MOBILE VA SVUOTATO. Finche' l'anta era incollata davanti, la
-    cassa poteva essere un blocco pieno e non se ne accorgeva nessuno; aprendola si
-    vedrebbe il pieno. Fianchi, schiena, cielo, fondo e un ripiano - che e' anche
-    l'unica cosa che rende l'apertura interessante.
+    L'ANTA HA LE MISURE CHE AVEVA QUANDO GIRAVA, prese da `pezzi_anta_mobile` per il
+    tipo «specchio»: pannello da 18 mm a filo del fronte, lo specchio piu' piccolo di
+    cinque centimetri per lato, la cornice che gli sporge attorno - senza, lo specchio
+    sembra dipinto sull'anta - e il pomello vicino al bordo libero.
 
-    IL MURO NON E' NE' A z0 NE' A x0: li' c'e' la piastrella - ma quell'arretramento
-    non si fa piu' qui. Lo fa `geometria.impronta_utile()`, su ogni lato che tocchi
-    un muro, perche' fatto a mano e' stato dimenticato tre volte di fila: prima la
-    schiena, poi il fianco ovest, poi il fianco sud dell'armadio.
+    LO SPECCHIO DEL BAGNO E' QUESTO. Sopra il lavabo non ce n'e' (vedi
+    `sopra_il_lavabo`), e togliendo l'anta si sarebbe tolto l'unico specchio della
+    stanza.
 
-    FUORI IL LEGNO, DENTRO IL BIANCO. Aperto, il pensile mostrava un buco nero con
-    dentro un ripiano nero, e la colpa non era della luce: la cassa era di
-    `LegnoTeche`, la mappa piu' scura del progetto (65 su 255), e dentro un pensile
-    la luce non entra comunque. Un mobile di quegli anni e' impiallacciato fuori e
-    melamminico bianco dentro - e quella verita' e' anche quello che rende
-    l'apertura leggibile.
+    IL MURO NON E' NE' A z0 NE' A x0: li' c'e' la piastrella, e l'arretramento lo fa
+    `geometria.impronta_utile()` su ogni lato che tocchi un muro.
     """
     x0, z0, x1, z1, alto = impronta_utile("Pensile")
     basso, cima = 1.45, alto
-    zf = filo_anta("pensile bagno")[1]
-    S, L = 0.018, 0.004       # spessore della cassa, e del rivestimento interno
-    M, D = "LegnoBagno", "InternoMobile"
+    S, T = 0.018, 0.018       # spessore della cassa e dell'anta
+    zf = z1 - T               # dove comincia l'anta: a filo del fronte
+    M = "LegnoBagno"
     for (a, b) in ((x0, x0 + S), (x1 - S, x1)):          # fianchi
         scatola(M, a, b, basso, cima, z0, zf)
     for (a, b) in ((basso, basso + S), (cima - S, cima)):  # fondo e cielo
         scatola(M, x0, x1, a, b, z0, zf)
-    scatola(M, x0, x1, basso, cima, z0, z0 + 0.010)      # schiena, di fuori
-    # e il vano dentro, foderato: schiena, fianchi, cielo e fondo
-    ix0, ix1, iy0, iy1 = x0 + S, x1 - S, basso + S, cima - S
-    scatola(D, ix0, ix1, iy0, iy1, z0 + 0.010, z0 + 0.010 + L)
-    for (a, b) in ((ix0, ix0 + L), (ix1 - L, ix1)):
-        scatola(D, a, b, iy0, iy1, z0 + 0.014, zf)
-    for (a, b) in ((iy0, iy0 + L), (iy1 - L, iy1)):
-        scatola(D, ix0, ix1, a, b, z0 + 0.014, zf)
-    mezzo = (basso + cima) / 2
-    scatola(D, ix0, ix1, mezzo - 0.008, mezzo + 0.008, z0 + 0.014, zf - 0.004)
-    dentro_il_pensile(ix0, ix1, iy0 + L, mezzo + 0.008, z0 + 0.014, zf - 0.004)
-
-
-def dentro_il_pensile(x0, x1, ripiano_basso, ripiano_alto, z0, z1):
-    """Quello che ci sta dentro: e' un bagno di servizio, non una vetrina.
-
-    UN PENSILE VUOTO E' UN PENSILE CHE NON VALE LA PENA APRIRE. Il meccanismo puo'
-    essere perfetto - e lo e', il banco lo misura - ma se dietro l'anta non c'e'
-    niente, aprirla e' una cosa che si fa una volta. Quattro oggetti bastano, e
-    devono essere QUATTRO OGGETTI DI QUEL POSTO: in un osservatorio, nel pensile
-    del bagno, ci stanno l'alcol, una scatola di garze, il sapone di scorta e i
-    rotoli. Non un set da toeletta.
-    """
-    zc = (z0 + z1) / 2
-    # sul ripiano basso: la bottiglia di alcol e il flacone del sapone
-    cilindro("Alcol", x0 + 0.07, zc, ripiano_basso, ripiano_basso + 0.19, 0.032, seg=12)
-    cilindro("Flacone", x0 + 0.07, zc, ripiano_basso + 0.19, ripiano_basso + 0.215, 0.014, seg=8)
-    scatola("Flacone", x0 + 0.15, x0 + 0.21, ripiano_basso, ripiano_basso + 0.14,
-            zc - 0.028, zc + 0.028)
-    # la scatola di garze, coricata
-    scatola("Cartone", x0 + 0.26, x0 + 0.40, ripiano_basso, ripiano_basso + 0.075,
-            zc - 0.045, zc + 0.045)
-    # sul ripiano alto: due rotoli in piedi
-    for k in (0, 1):
-        cilindro("Rotolo", x0 + 0.09 + k * 0.13, zc, ripiano_alto + 0.008,
-                 ripiano_alto + 0.108, 0.055, seg=14)
+    scatola(M, x0, x1, basso, cima, z0, z0 + 0.010)      # schiena
+    # L'ANTA E' DELLO STESSO LEGNO DELLA CASSA, e prima era di un altro. Da nodo in
+    # gioco usava `LegnoTeche`, la noce delle teche della sala: portata dentro il .glb
+    # si tirava dietro il suo set di mappe e il modello del bagno passava da 19 a 21,3
+    # MB, oltre il limite che il controllo tiene a venti. Un'anta dello stesso legno
+    # del mobile a cui e' attaccata non e' un ripiego: e' come sono fatti i mobili.
+    scatola(M, x0, x1, basso, cima, zf, z1)
+    scatola("Specchio", x0 + 0.05, x1 - 0.05, basso + 0.05, cima - 0.05, z1, z1 + 0.006)
+    for (a, b, c, d) in ((x0, x1, basso, basso + 0.05), (x0, x1, cima - 0.05, cima),
+                         (x0, x0 + 0.05, basso, cima), (x1 - 0.05, x1, basso, cima)):
+        scatola(M, a, b, c, d, z1, z1 + 0.010)
+    # IL POMELLO E' CROMO E NON `Metallo`: sesta volta che la trappola si presenta
+    # (vedi `modellare.COLORI`). `Metallo` sta fra i METALLICI, e un metallo liscio in
+    # un bagno chiuso riflette il nero - guardato in gioco, il pomello era un
+    # quadratino nero sull'anta chiara.
+    px, py = x1 - 0.075, (basso + cima) / 2
+    scatola("Cromo", px - 0.015, px + 0.015, py - 0.015, py + 0.015, z1 + 0.013, z1 + 0.051)
 
 
 def sopra_il_lavabo():

@@ -9787,3 +9787,119 @@ lo legge dal lato su cui sta il braccio, così una leva montata al contrario sce
 Le ante senza nodi `Leva*` (ingresso, magazzino, mobili) non cambiano. **Misurato**
 (`scatta_porte.tscn`): 2 leve per porta, la punta scende di 9,8 cm su tutte e dieci; guardato il
 primo piano a riposo e premuta. `prova_porte.gd`: 10 porte, 0 guasti.
+
+## D-283 Il frigorifero è un frigorifero vecchio, e senza adesivi
+
+**18 settembre 2026.** Federico: «ora trova un modello per il frigorifero». Quello della cucina
+era di scatole: un parallelepipedo bianco con due sportelli disegnati e due fogli attaccati.
+
+- **LA SCELTA.** Quarantadue frigoriferi guardati su Sketchfab. Via i retrò anni Cinquanta alla
+  Smeg, i side-by-side americani, e quello da 46 mila facce con le porte aperte e fuse nel corpo
+  (non si chiude). Proposti due doppia porta: uno bianco pulito, scaricabile da Objaverse, e
+  uno vecchio con la vernice consumata, la ruggine e dodici adesivi. Federico: «del secondo si
+  possono rimuovere gli adesivi?» - sì, e l'ha scaricato: **Refrigerator (low-poly)** di
+  Vladimir_kizx, CC-BY 4.0 (`CREDITI.md`).
+- **GLI ADESIVI ERANO DIPINTI**, non geometria: un materiale solo, quattro mappe da Substance.
+  Li toglie `tools/ritocca_texture.py`, chiamato da `prendi_modello.py` appena spacchettato lo
+  zip: l'elenco (`ADESIVI`, quattordici voci con il disegno a gesso e i foglietti) sta accanto
+  alla voce del modello. Si ridipinge su **colore, rugosità e rilievo**, o l'adesivo resterebbe
+  come una lucentezza o un bordo in rilievo senza colore.
+- **COME, e tre strade scartate guardando.** L'inpainting liscio lascia una toppa pulita sulla
+  vernice sporca; la fusione di Poisson si porta dentro l'alone colorato dell'adesivo (toppe
+  rosa e azzurre); correggere il tono con Telea fa spicchi e croci. Quella tenuta: si ricopia un
+  pezzo di vernice pulita lì vicino - **pulito in tutte e tre le mappe**, perché scelto sul solo
+  colore si è portato dentro due volte la costa smussata di un'anta nella normal map - e se ne
+  corregge il tono con una membrana armonica tesa sul bordo pulito. I pixel di un'altra isola
+  della mappa e la ruggine non la tirano e non vengono toccati.
+- **LA SCRITTA SULLA FASCIA RESTA.** Nell'anteprima sembrava una marca in cirillico; da vicino
+  è «SG-772», un codice di modello inventato, con il fiocco di neve e le due spie: è quello che
+  un frigo vero ha lì.
+- **L'IMPRONTA SI ALLARGA** (`geometria.py`): 0,74 × 0,76 × 1,50 invece di 0,60 × 0,65 × 1,55.
+  Il modello ha le proporzioni di un doppia porta vero; nella vecchia impronta, scalato senza
+  stirarlo, sarebbe venuto alto un metro e trenta. Restano tre centimetri per parte fra basi e
+  dispensa, e davanti al tavolo passa un metro. I due fogli con la calamita non ci sono più: sono
+  la stessa cosa di un adesivo.
+
+**Misurato:** quattordici adesivi tolti su tre mappe, guardati uno per uno prima e dopo in colore
+e rilievo; `cucina_blender.py` passa il controllo delle impronte e della luce; il frigo sta con
+lo sportello verso la stanza (render `cucina.png`, `cucina-linea.png`).
+
+## D-284 La cappa è quella piatta di una volta, e in cucina c'è il contatore del gas
+
+**18 settembre 2026.** Federico: «c'è una cappa più vecchia da trovare?». Quella della cucina era
+di scatole: un camino d'acciaio inox, troppo nuovo per la cucina di servizio di un osservatorio
+nel 1999. Proposte tre: la cappa «classica» bianca con la cornice in abete, una piatta da muro
+già consumata, e un set di elettrodomestici senza cappa ma con un contatore del gas. Federico ha
+scaricato la seconda **e** il set, «per mettere il contatore del gas».
+
+- **LA CAPPA** è **Stove with Hood** di HippoStance, CC-BY 4.0 (`CREDITI.md`). Nel file sta
+  sopra una cucina elettrica americana, nello stesso oggetto; fra le due c'è un vuoto netto (nessun
+  vertice fra 1,1 e 1,48 m), quindi si taglia a 1,30 e resta la cappa con le levette di luce e
+  ventola. Larga 76 cm, centrata sui fuochi, a **80 cm dal piano**. Era a 70, il minimo sopra
+  un fuoco a gas; vista in gioco, Federico: «alza un po' il cappotto dei fornelli».
+- **IL CONTATORE** viene da **Kitchen Appliances** di Nicolai Kilstrup, CC-BY 4.0. Del set si
+  tiene solo il gruppo `Pipes_Kitchen_A_6`: contatore a membrana, montante e discesa. Va sul
+  **muro est**, nel tratto libero fra la dispensa e la sedia, con il quadrante verso la stanza.
+- **A 0,68 DELLA SUA MISURA.** A grandezza piena il contatore era largo 54 cm: un contatore da
+  condominio. A 0,68 viene largo 37, come quello di una casa. Così il montante, alto 3,52 m nel
+  modello, finiva a 2,40: un tubo del gas fermo a sessanta centimetri dal soffitto. Si alzano
+  i vertici sopra i 2,10 m, dove c'è solo il montante, e lo si taglia al soffitto: entra nel
+  solaio come uno vero. La discesa entra nel pavimento, e va bene così: il tubo corre sotto.
+- **`posa_modello` HA UN `ritaglia`** (`modellare.py`): una funzione che butta la parte che non
+  serve prima di scalare. Il solo `tieni` qui non bastava: la cappa sta nella stessa mesh della
+  cucina elettrica, e nel set del contatore tutte le mesh si chiamano `Object_N`.
+- **SMALTO, NON METALLO.** Tutti e due con `metallico=0.0`: sono lamiera verniciata, e con il
+  metallico preso dalle mappe in una cucina chiusa verrebbero neri.
+
+**Misurato:** `cucina_blender.py` passa il controllo delle impronte (l'impronta `Contatore` è
+0,17 × 0,74 × 3,00) e quello della luce; la cappa e il contatore si vedono in `cucina.png`.
+
+## D-285 Il piano cottura è uno Smeg S64S, e le manopole stanno sul piano
+
+**19 settembre 2026.** Federico, in gioco: «i fornelli sono molto brutti». Erano un piano da 86 cm
+inventato, grigio piatto, con quattro fuochi uguali e due griglie a scala.
+
+- **PRIMA SI È CERCATO, e non c'era.** Piani cottura e cucine a gas su Sketchfab e Poly Haven,
+  anche per marca (Smeg, Ariston, Indesit, Zoppas, Candy). Proposti un Electrolux smaltato e un inox;
+  poi, alla richiesta «qualcosa di più vecchiotto anni 90», tre cucine a gas intere. Federico:
+  «nessuna di queste è molto italiana». Di fornelli italiani anni Novanta scaricabili con
+  licenza libera non ce n'è. Si è scelto di copiarne uno vero invece di prenderne uno sbagliato.
+- **IL RIFERIMENTO È LO SMEG S64S**, l'inox da 60 cm che sta nelle cucine italiane da decenni.
+  Quote dalla scheda Smeg: 585 × 500, griglie in piattina, cima delle griglie a 48,5 mm sul
+  piano di lavoro, fuochi rapido 3,1 kW davanti a sinistra, semirapidi 1,8 dietro, ausiliario 1,1
+  davanti a destra, quattro manopole argento sulla striscia laterale. Posizioni di fuochi,
+  griglie e manopole misurate sulla foto dall'alto, a 1,66 pixel per millimetro. I bruciatori
+  sono i tre formati Sabaf dei ricambi (cappellotti da 55, 75 e 100 mm, smaltati neri).
+- **LE MANOPOLE SALGONO SUL PIANO** (`fornello.gd`). Prima stavano sul frontale del mobile, che è
+  dove le mettono i piani abbinati a un forno, cioè un altro oggetto. Sono argento, con la presa
+  a barretta, e girano in pianta: chiuse puntano al muro, aperte verso i fuochi. Quale fuoco
+  accende ogni manopola la serigrafia della foto non lo dice: si segue la pianta, colonna
+  sinistra e poi destra, da dietro in avanti.
+- **OGNI FUOCO HA LA SUA CORONA.** La fiamma era una sola, larga quanto un rapido; adesso
+  `gen_blockout.py` scrive a ogni fornello il raggio del suo spartifiamma e la quota da cui
+  escono le fiamme, e l'ausiliario brucia stretto.
+- **IL FORNO DIVENTA DA 60**, come il piano sopra, e fra forno e frigo resta un'anta da trenta:
+  il fuoco non sta attaccato al fianco del frigorifero. Piano e forno sono `InoxSatinato`, non
+  `Inox`: fra i metallici, in una cucina chiusa, riflettevano il buio (la trappola del `Cromo`).
+  La cappa segue il centro del piano, e con lei i fuochi dove la moka cuoce.
+
+## D-286 Il pensile del bagno non si apre più
+
+**12 ottobre 2026.** Federico: «l'armadietto del bagno quello piccolo di fianco alla porta non
+farlo apribile». È il pensile a specchio sul muro nord, accanto allo stipite.
+
+- **L'ANTA TORNA DENTRO IL MOBILE.** Era un nodo `Door` generato da `MOBILI_CON_ANTE` — un pezzo
+  che ruota non può stare in un `.glb`, che è una mesh sola. Adesso la disegna
+  `bagno_blender.pensile()` con le misure che aveva quando girava (`pezzi_anta_mobile`, tipo
+  «specchio»): pannello da 18 mm a filo del fronte, specchio più piccolo di cinque centimetri
+  per lato, cornice attorno e pomello sul bordo libero. In `MOBILI_CON_ANTE` resta il solo
+  armadio di lamiera, che si apre davvero.
+- **LO SPECCHIO DEL BAGNO È QUELLA FACCIA.** Sopra il lavabo non ce n'è (tolto a suo tempo su
+  richiesta): togliere l'anta avrebbe tolto l'unico specchio della stanza. Fissa, resta.
+- **E IL DENTRO SPARISCE.** La cassa era vuota e foderata di bianco, con un ripiano, l'alcol, le
+  garze, il sapone e due rotoli: serviva perché aprendola si vedesse qualcosa. Dietro un'anta che
+  non si apre non lo vede nessuno, e pesava.
+- **L'ANTA È DELLO STESSO LEGNO DELLA CASSA.** Da nodo in gioco usava `LegnoTeche`, la noce delle
+  teche; dentro il `.glb` si tirava dietro il suo set di mappe e il bagno passava a 21,3 MB,
+  oltre il limite di venti che il modellatore controlla. Con il legno del mobile il modello pesa
+  17,9 MB — meno di prima, perché se ne va anche la fodera interna.

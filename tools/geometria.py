@@ -989,18 +989,11 @@ def pezzi_anta(a):
 #  per l'anta singola), tipo, quota della base, cima, spessore, quanto si lascia
 #  davanti alle maniglie, apertura in gradi
 MOBILI_CON_ANTE = [
-    # IL CARDINE STA A OVEST, ED E' IL PENSILE CHE SI E' SPOSTATO. Incernierato a
-    # ovest con il mobile addossato al muro, il battente ruotava DENTRO il piano di
-    # quel muro: a novanta gradi stava nel rivestimento, e si vedeva attraversare il
-    # listello. La prima cura e' stata mettere il cardine dall'altro capo, e non era
-    # la cura giusta - risolveva il taglio ma dava un mobile che si apre al
-    # contrario di come lo aprirebbe chiunque ci stia davanti.
-    #
-    # Il cardine e' quello di prima; e' il pensile che ha smesso di stare
-    # nell'angolo. Ventotto centimetri a est bastano perche' l'anta giri nel vuoto -
-    # e non trenta, che l'attaccherebbero allo stipite della porta del bagno (il
-    # vano comincia a 5,92).
-    ("Pensile", "sud",   1, "a", "specchio", 1.450, 2.050, 0.018, 0.000, 90.0),
+    # IL PENSILE DEL BAGNO NON C'E' PIU' IN QUESTA TABELLA (D-286). Federico:
+    # «l'armadietto del bagno quello piccolo di fianco alla porta non farlo apribile».
+    # La sua anta a specchio adesso e' disegnata dentro `bagno_blender.pensile()`, come
+    # parte del mobile: qui ci sta solo quello che in gioco diventa un nodo che gira.
+    # Lo specchio del bagno resta dov'era - e' la faccia di quell'anta.
     ("Armadio", "ovest", 2, "a", "lamiera",  0.125, 1.825, 0.018, 0.070, 90.0),
 ]
 
@@ -1174,8 +1167,19 @@ ARREDI_PC = [
 # faceva parte di quello che era chiesto.
 ARREDI_CUCINA = [
     ("CucinaBase",  8.35, 1.60, 11.60, 2.20, 0.90),   # lavello, cottura, pensili sopra
-    ("Frigo",      11.70, 1.60, 12.30, 2.25, 1.55),
+    # IL FRIGO E' UN MODELLO PRESO DA FUORI, e l'impronta e' quella che gli serve
+    # per stare in piedi senza stirarlo: le sue proporzioni sono quelle di un doppia
+    # porta vero, un metro e mezzo per settanta, e con le maniglie fa settantacinque
+    # di profondita'. In un'impronta da 60 x 65 sarebbe venuto alto un metro e trenta.
+    # C'e' posto: fra le basi e la dispensa restano tre centimetri per parte, e
+    # davanti al tavolo passa un metro.
+    ("Frigo",      11.63, 1.60, 12.37, 2.36, 1.50),
     ("Dispensa",   12.40, 1.60, 13.30, 2.20, 2.00),
+    # IL CONTATORE DEL GAS, col montante che va da terra al soffitto: sul muro est,
+    # nel pezzo libero fra la dispensa e la sedia. La pianta la comanda il modello
+    # a 0,68 della sua misura, perche' cosi' il contatore viene largo 37 cm, come uno
+    # di casa: a grandezza piena ne misurava 54, che e' un contatore da condominio.
+    ("Contatore",  13.126, 2.43, 13.30, 3.174, 3.00),
     # LE SEDIE STANNO AI CAPI DEL TAVOLO, non sul lato lungo. Messe davanti, fra
     # loro e il bancone restavano 65 cm: sopra i 60 del giocatore per cinque
     # centimetri, cioe' un passaggio che il controllo accetta e le gambe no.
@@ -1286,6 +1290,9 @@ ARREDI_BAGNO = [
     # muro nord, a OVEST della porta e non a est: il vano va da 5,80 a 7,10 e il
     # perno sta a 7,02, quindi l'anta spazza il quadrante verso ovest fino a 1,14 m.
     # Messo a est era addosso al cardine e il controllo l'ha preso in pieno.
+    # L'ANTA ADESSO E' FISSA (D-286), ma il posto resta quello: era stato scelto
+    # misurando dove l'anta poteva girare, ed e' comunque il tratto di muro libero
+    # fra l'angolo e lo stipite.
     ("Pensile",     5.28, 6.60, 5.88, 6.92, 2.05),
     # sotto la finestra, e piu' basso del davanzale: un termosifone davanti a un
     # vetro e' normale, un mobile no. Allineato al vano vero, che va da 6,20 a 7,20.
@@ -1738,25 +1745,48 @@ MOKA = (_BANCONE[1] + 0.50, _BANCONE[5], (_BANCONE[2] + _BANCONE[4]) / 2.0)
 # `cucina_blender.py` ci disegna i fuochi e le griglie; `gen_blockout.py` ci posa le
 # manopole che si girano e i punti su cui la moka cuoce. Finche' i fuochi erano un
 # calcolo dentro il disegno, il gioco non poteva sapere dove fossero: si vedevano e
-# basta. Le quote sono quelle che il disegno usava da sempre, portate qui senza
-# cambiarle.
+# basta.
 #
-# x0, z0, x1, z1 del piano in acciaio, verso la fine del bancone
-COTTURA = (_BANCONE[3] - 0.90, _BANCONE[2] + 0.06, _BANCONE[3] - 0.04, _BANCONE[4] - 0.06)
-# i centri dei quattro fuochi, nell'ordine in cui il disegno li costruisce:
-# dietro a sinistra, davanti a sinistra, dietro a destra, davanti a destra
-FUOCHI = [(COTTURA[0] + 0.24 + _i * 0.42, COTTURA[1] + 0.13 + _j * 0.22)
-          for _i in range(2) for _j in range(2)]
-# dove si posa una pentola: la cima delle griglie
-H_GRIGLIA = _BANCONE[5] + 0.040
-# le manopole sul frontale del mobile, da sinistra a destra: il centro della manopola
-MANOPOLE = [(COTTURA[0] + 0.16 + _k * 0.18, _BANCONE[5] - 0.02, _BANCONE[4] + 0.02)
-            for _k in range(4)]
-# QUALE FUOCO ACCENDE OGNI MANOPOLA, come indice in `FUOCHI`. Le due di sinistra
-# accendono i fuochi di sinistra e le due di destra quelli di destra, e in ogni coppia
-# l'esterna comanda il fuoco di dietro: la manopola sta sotto il fuoco che accende, e
-# chi guarda il piano non deve imparare niente.
-MANOPOLA_FUOCO = [0, 1, 3, 2]
+# E' UNO SMEG S64S (D-285), il piano inox da 60 cm delle cucine italiane da decenni:
+# quote dalla scheda del costruttore (585 x 500, alto 40, griglie in piattina), la
+# disposizione dei fuochi e delle manopole dalla sua foto dall'alto, misurata a 1,66
+# pixel per millimetro. Prima era un piano da 86 cm inventato, con quattro fuochi
+# uguali e due griglie a scala: «i fornelli sono molto brutti».
+#
+# STA SUL FORNO, e il forno e' da 60 come il piano: dopo la cassettiera, lasciando
+# fra lui e il frigo un'anta da trenta - un fuoco attaccato al fianco del frigorifero
+# in una cucina vera non si mette.
+FORNO = (_BANCONE[1] + 2.32, _BANCONE[1] + 2.92)
+_CX_PIANO = (FORNO[0] + FORNO[1]) / 2.0
+# x0, z0, x1, z1 del piano in acciaio: 585 x 500, a cinque centimetri dal muro come
+# vuole il disegno d'incasso («min. 50»)
+COTTURA = (_CX_PIANO - 0.2925, _BANCONE[2] + 0.05, _CX_PIANO + 0.2925, _BANCONE[2] + 0.55)
+# i centri dei quattro fuochi, dietro a sinistra, davanti a sinistra, dietro a destra,
+# davanti a destra: a 125 e 363 mm dal bordo sinistro, a 120 e 360 da quello dietro
+FUOCHI = [(COTTURA[0] + _dx, COTTURA[1] + _dz)
+          for _dx in (0.125, 0.363) for _dz in (0.120, 0.360)]
+# IL DIAMETRO DEL CAPPELLOTTO di ogni fuoco, nello stesso ordine. Sono i tre formati
+# Sabaf di tutti i piani italiani - ausiliario 55, semirapido 75, rapido 100 - messi
+# dove li mette la scheda: rapido davanti a sinistra (3,1 kW), ausiliario davanti a
+# destra (1,1), i due semirapidi dietro (1,8).
+CAPPELLI = [0.075, 0.100, 0.075, 0.055]
+# dove si posa una pentola: la cima delle griglie, 48,5 mm sopra il piano di lavoro
+H_GRIGLIA = _BANCONE[5] + 0.0485
+# DA DOVE ESCONO LE FIAMME: fra lo spartifiamma e il cappellotto, 21 mm sopra il
+# piano di lavoro. La corona e' larga quanto lo spartifiamma, cioe' il cappellotto
+# piu' mezzo centimetro per parte.
+H_FIAMME = _BANCONE[5] + 0.021
+# LE MANOPOLE SONO SUL PIANO, sulla striscia a destra, in colonna: e' li' che le ha
+# lo S64S. Prima stavano sul frontale del mobile, che e' dove le mettono i piani
+# «abbinati» a un forno - un altro oggetto. Il centro della base della manopola, sulla
+# striscia rialzata: a 542 mm dal bordo sinistro, a 236, 302, 368 e 437 da quello dietro.
+MANOPOLE = [(COTTURA[0] + 0.542, _BANCONE[5] + 0.009, COTTURA[1] + _dz)
+            for _dz in (0.236, 0.302, 0.368, 0.437)]
+# QUALE FUOCO ACCENDE OGNI MANOPOLA, come indice in `FUOCHI`, dalla prima dietro
+# all'ultima davanti. La serigrafia che lo dice non si legge nella foto: si segue la
+# pianta, prima la colonna di sinistra e poi quella di destra, ognuna da dietro in
+# avanti - l'ordine in cui si leggono i fuochi guardandoli.
+MANOPOLA_FUOCO = [0, 1, 2, 3]
 
 # IL QUADERNO DELLE PROCEDURE, sulla consolle a SINISTRA del monitor. Sinistra per
 # chi siede vuol dire z CRESCENTE: chi si siede guarda la vetrata, verso -X, e la

@@ -139,6 +139,44 @@ Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuz
 > by Toni García Vilche (https://sketchfab.com/zul_gv) licensed under CC-BY-4.0
 > (http://creativecommons.org/licenses/by/4.0/)
 
+**Refrigerator (low-poly)** — il frigorifero della cucina. Doppia porta col
+congelatore in alto, vernice consumata e ruggine, 2.448 facce. Il modello porta
+dodici adesivi e un disegno a gesso **dipinti nelle mappe**: li toglie
+`tools/ritocca_texture.py` quando `prendi_modello.py` spacchetta lo zip, ricopiando
+sopra la vernice pulita accanto su colore, rugosità e rilievo. È una modifica, e la
+licenza la permette.
+Autore: [Vladimir_kizx](https://sketchfab.com/kizx3d).
+Fonte: <https://sketchfab.com/3d-models/refrigerator-low-poly-1b0d689a926244e9a72b50e25c7e2a45>
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> This work is based on "Refrigerator (low-poly)"
+> (https://sketchfab.com/3d-models/refrigerator-low-poly-1b0d689a926244e9a72b50e25c7e2a45)
+> by Vladimir_kizx (https://sketchfab.com/kizx3d) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
+**Stove with Hood** — la cappa della cucina. Nel file sta sopra una cucina elettrica:
+se ne usa solo la cappa, piatta, da 76 cm, con le levette di luce e ventola.
+Autore: [HippoStance](https://sketchfab.com/hippostance).
+Fonte: <https://sketchfab.com/3d-models/stove-with-hood-ce6f590e7cb848e398c80208ee3b6fdf>
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> This work is based on "Stove with Hood"
+> (https://sketchfab.com/3d-models/stove-with-hood-ce6f590e7cb848e398c80208ee3b6fdf)
+> by HippoStance (https://sketchfab.com/hippostance) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
+**Kitchen Appliances** — il contatore del gas della cucina. Del set si usa solo il
+contatore a membrana con il montante e la discesa, ridotto a 0,68 e col montante
+allungato fino al soffitto.
+Autore: [Nicolai Kilstrup](https://sketchfab.com/nkilstrup).
+Fonte: <https://sketchfab.com/3d-models/kitchen-appliances-0b01a398fe1649aaacd6ebdf85bf5d6c>
+Licenza: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) — **attribuzione obbligatoria**.
+
+> This work is based on "Kitchen Appliances"
+> (https://sketchfab.com/3d-models/kitchen-appliances-0b01a398fe1649aaacd6ebdf85bf5d6c)
+> by Nicolai Kilstrup (https://sketchfab.com/nkilstrup) licensed under CC-BY-4.0
+> (http://creativecommons.org/licenses/by/4.0/)
+
 **Small Fuse Box** — il quadro elettrico in facciata, accanto all'ingresso. È il
 contatore che il GDD mette lì: governa le luci di tutto l'edificio e si arma a mano,
 di notte, uscendo. Del modello contano **due mesh separate**, cassa e anta — un

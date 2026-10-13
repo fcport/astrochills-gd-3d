@@ -370,6 +370,52 @@ A_MANO = {
         "\n\nNel pacchetto ogni porta ha il suo telaio a parte, e si butta: il"
         " telaio lo disegna osservatorio_blender.py dai vani. La maniglia invece e'"
         " fusa nella mesh dell'anta, e resta con lei."),
+    # IL FRIGORIFERO. Quello di scatole era un parallelepipedo bianco con due
+    # sportelli disegnati. Fra quarantadue su Sketchfab: via i retro' anni Cinquanta
+    # alla Smeg, i side-by-side americani e quello da quarantaseimila facce con le
+    # porte aperte e fuse nel corpo. Restavano un doppia porta bianco pulito e
+    # questo, vecchio, con la vernice consumata e la ruggine; Federico ha preso
+    # questo, a patto di togliergli gli adesivi - vedi ADESIVI qui sotto.
+    "frigo": (
+        ("frigo.zip", "refrigerator_low-poly.zip"),
+        "https://sketchfab.com/3d-models/refrigerator-low-poly-1b0d689a926244e9a72b50e25c7e2a45",
+        "Vladimir_kizx", "CC-BY-4.0",
+        'This work is based on "Refrigerator (low-poly)" '
+        "(https://sketchfab.com/3d-models/refrigerator-low-poly-1b0d689a926244e9a72b50e25c7e2a45) "
+        "by Vladimir_kizx (https://sketchfab.com/kizx3d) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "Frigorifero doppia porta col congelatore in alto, vernice consumata e"
+        " ruggine, 2.448 facce. Il modello porta dodici adesivi e un disegno a"
+        " gesso dipinti nella mappa: li toglie ritocca_texture.py allo"
+        " spacchettamento, su colore, rugosita' e rilievo."),
+    # LA CAPPA, che prima era un camino d'acciaio: troppo nuova per una cucina di
+    # servizio del 1999. Federico ha scelto una cappa piatta sottopensile, gia'
+    # consumata; il modello la porta sopra una cucina elettrica americana, che
+    # `cucina_blender.py` butta tagliando sotto la cappa.
+    "cappa": (
+        ("cappa.zip", "stove_with_hood.zip"),
+        "https://sketchfab.com/3d-models/stove-with-hood-ce6f590e7cb848e398c80208ee3b6fdf",
+        "HippoStance", "CC-BY-4.0",
+        'This work is based on "Stove with Hood" '
+        "(https://sketchfab.com/3d-models/stove-with-hood-ce6f590e7cb848e398c80208ee3b6fdf) "
+        "by HippoStance (https://sketchfab.com/hippostance) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "Cappa piatta da 76 cm con le due levette di luce e ventola. Nel file sta"
+        " sopra una cucina elettrica: se ne usa solo la cappa."),
+    # IL CONTATORE DEL GAS, voluto da Federico: nelle case e negli edifici vecchi
+    # stava in cucina, a vista, col montante che attraversa il solaio. Il set ne
+    # porta molto altro - frigo, forno, lavello, bollitore - e si tiene solo il
+    # gruppo dei tubi col contatore (`Pipes_Kitchen_A_6`).
+    "contatore_gas": (
+        ("contatore_gas.zip", "kitchen_appliances.zip"),
+        "https://sketchfab.com/3d-models/kitchen-appliances-0b01a398fe1649aaacd6ebdf85bf5d6c",
+        "Nicolai Kilstrup", "CC-BY-4.0",
+        'This work is based on "Kitchen Appliances" '
+        "(https://sketchfab.com/3d-models/kitchen-appliances-0b01a398fe1649aaacd6ebdf85bf5d6c) "
+        "by Nicolai Kilstrup (https://sketchfab.com/nkilstrup) licensed under CC-BY-4.0 "
+        "(http://creativecommons.org/licenses/by/4.0/)",
+        "Contatore a membrana col montante e la discesa verso la cucina. Del set"
+        " si usa solo questo gruppo."),
     "termosifone_bagno": (
         ("termosifone_bagno.zip", "old_radiator.zip"),
         "https://sketchfab.com/3d-models/old-radiator-8a1a2e0263aa401591c1e87d824a79ef",
@@ -600,6 +646,34 @@ A_MANO = {
 LATO_RIDOTTO = 1024
 
 
+# QUELLO CHE L'AUTORE CI HA DIPINTO SOPRA E NON VOGLIAMO. Si toglie appena
+# spacchettato lo zip e prima di ridurre le mappe, con `ritocca_texture.py`.
+# (x, y, larghezza, altezza, tipo, margine) in pixel della mappa originale a
+# 4096: il riquadro del colore pieno di ogni adesivo, trovato cercando la
+# saturazione e guardato uno per uno. "c" = adesivo, "r" = rettangolo (i piccoli
+# su fondo sporco, e i due foglietti sul grigio con la scritta che ne esce), "g" =
+# il disegno a gesso sull'anta di sotto. Cambiare questa lista vuol dire buttare
+# la cartella del modello e rifarla: il ritocco si fa una volta sola, sugli originali.
+ADESIVI = {
+    "frigo": (4096, [
+        (1774, 1266, 115, 116, "c", 0),   # fiammiferi "Superior Matches"
+        (3377, 2585, 106, 106, "c", 0),   # foglietto rosso scarabocchiato
+        (3381, 2337, 106, 106, "c", 0),   # foglietto giallo scarabocchiato
+        (821, 1156, 132, 95, "c", 0),     # ovale dell'automobile
+        (138, 2997, 103, 94, "c", 0),     # tondo giallo e rosso
+        (3408, 1877, 82, 82, "r", 16),    # foglietto rosso con la scritta, sul grigio
+        (3413, 1631, 79, 79, "r", 48),    # foglietto giallo con la scritta, sul grigio
+        (3526, 2694, 85, 83, "c", 0),     # tondo dell'uccello
+        (261, 2970, 90, 88, "c", 0),      # tondo arancio
+        (3638, 2502, 100, 87, "c", 0),    # maschera antigas col simbolo radioattivo
+        (515, 2945, 110, 110, "r", 8),    # tondo della bandiera, accanto a un'isola grigia
+        (2497, 1257, 50, 50, "r", 40),    # quadratino rosso con le scritte attorno
+        (2253, 1256, 43, 43, "r", 40),    # quadratino giallo con le scritte attorno
+        (1520, 3220, 220, 200, "g", 0),   # l'omino a gesso
+    ]),
+}
+
+
 def prendi_a_mano(cartella):
     zip_atteso, pagina, autore, licenza, credito, perche = A_MANO[cartella]
     fuori = os.path.join(DEST, cartella)
@@ -639,6 +713,10 @@ def prendi_a_mano(cartella):
         os.makedirs(fuori, exist_ok=True)
         with zipfile.ZipFile(archivio) as z:
             z.extractall(fuori)
+        if cartella in ADESIVI:
+            from ritocca_texture import togli_adesivi
+            lato, elenco = ADESIVI[cartella]
+            togli_adesivi(os.path.join(fuori, "textures"), elenco, lato_atteso=lato)
     riduci(os.path.join(fuori, "textures"))
     righe = ["%s da Sketchfab (%s)" % (cartella, pagina),
              "Autore: %s. Licenza: %s - L'ATTRIBUZIONE E' OBBLIGATORIA." % (autore, licenza),

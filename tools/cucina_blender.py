@@ -29,7 +29,8 @@ import importlib   # noqa: E402
 for _m in ("geometria", "modellare"):
     if _m in sys.modules:
         importlib.reload(sys.modules[_m])
-from geometria import ARREDI_CUCINA, COTTURA, FUOCHI, verifica_arredi, W_SILL   # noqa: E402
+from geometria import (ARREDI_CUCINA, CAPPELLI, COTTURA, FORNO, FUOCHI, H,   # noqa: E402
+                       H_GRIGLIA, MANOPOLE, verifica_arredi, W_SILL)
 from modellare import (bm_di, cilindro, cilindro_orizz, esporta, finisci,   # noqa: E402
                        lampada, materiale, prepara_render, prisma, pulisci, scatola,
                        posa_modello, scatola_inclinata, usa_le_ridotte,
@@ -56,6 +57,14 @@ SEDIA = os.path.join(RADICE, "assets", "models", "esterni",
 LAVELLO_GLTF = os.path.join(RADICE, "assets", "models", "esterni", "lavello_cucina",
                             "scene.gltf")
 PIATTO_GLTF = os.path.join(RADICE, "assets", "models", "esterni", "piatto", "scene.gltf")
+# E IL FRIGORIFERO, anche lui scelto da Federico su Sketchfab (CC-BY, CREDITI.md):
+# vecchio, con la vernice consumata. Arriva senza gli adesivi che l'autore ci aveva
+# dipinto sopra - li toglie `prendi_modello.py` spacchettandolo.
+FRIGO_GLTF = os.path.join(RADICE, "assets", "models", "esterni", "frigo", "scene.gltf")
+# La cappa piatta, che nel suo file sta sopra una cucina elettrica, e il contatore del
+# gas, che sta in un set di elettrodomestici: di tutti e due si tiene un pezzo solo.
+CAPPA_GLTF = os.path.join(RADICE, "assets", "models", "esterni", "cappa", "scene.gltf")
+GAS_GLTF = os.path.join(RADICE, "assets", "models", "esterni", "contatore_gas", "scene.gltf")
 
 # La cucina e' addossata al muro NORD: il fronte dei mobili guarda +z, cioe' verso
 # chi entra. Tutte le maniglie, le ante e i rubinetti nascono da questo.
@@ -133,7 +142,8 @@ def basi():
     scatola("Smalto", fx1, X_B, H_TOP, 1.45, Z_MURO, Z_MURO + 0.015)
     scatola("Smalto", fx0, fx1, H_TOP, W_SILL, Z_MURO, Z_MURO + 0.015)
 
-    # ante e cassetti, in ordine da ovest: base a due ante, lavello, cassettiera, forno
+    # ante e cassetti, in ordine da ovest: base a due ante, lavello, cassettiera, forno,
+    # anta da trenta
     for a, b in ((X_A + 0.02, X_A + 0.38), (X_A + 0.40, X_A + 0.76)):
         anta(a, b, 0.14, H_TOP - 0.08, Z_FRONTE)
     # SOTTO IL LAVELLO NON CI VANNO CASSETTI. Sotto un lavello c'e' il sifone, e
@@ -146,20 +156,24 @@ def basi():
         y = 0.16 + k * 0.33
         scatola("LegnoCucina", X_A + 1.72, X_A + 2.28, y, y + 0.31, Z_FRONTE, Z_FRONTE + 0.018)
         maniglia(X_A + 1.88, X_A + 2.12, y + 0.155, Z_FRONTE + 0.018)
-    # forno sotto il piano cottura: sportello a vetro e manigliona
-    scatola("Inox", X_A + 2.32, X_B - 0.02, 0.14, 0.72, Z_FRONTE, Z_FRONTE + 0.02)
-    scatola("Schermo", X_A + 2.40, X_B - 0.10, 0.26, 0.62, Z_FRONTE + 0.02, Z_FRONTE + 0.026)
+    # IL FORNO SOTTO IL PIANO COTTURA, da sessanta come il piano (D-285): prima era largo
+    # novanta, sotto un piano da ottantasei inventato. Sportello a vetro, manigliona e
+    # il pannello dei comandi in alto, satinato come il piano che gli sta sopra.
+    f0, f1 = FORNO
+    scatola("InoxSatinato", f0, f1, 0.14, 0.83, Z_FRONTE, Z_FRONTE + 0.02)
+    scatola("Schermo", f0 + 0.08, f1 - 0.08, 0.26, 0.62, Z_FRONTE + 0.02, Z_FRONTE + 0.026)
     # la manigliona del forno sporge, ma non piu' di quanto l'impronta tolleri:
     # a sette centimetri il controllo l'ha bocciata, ed e' il suo mestiere
-    cilindro_orizz("Metallo", (X_A + 2.32 + X_B) / 2, 0.66, Z_FRONTE + 0.045,
-                   "x", X_B - X_A - 2.50, 0.011)
-    # UNA SOLA FILA DI MANOPOLE. Il forno ne aveva quattro sue, dieci centimetri
-    # sotto le quattro del piano: due file identiche a mezzo palmo di distanza, che
-    # da vicino leggevano come un errore. Al forno restano termostato e timer.
-    cilindro_orizz("Plastica", X_A + 2.48, 0.78, Z_FRONTE + 0.02, "z", 0.03, 0.021, 12)
-    cilindro("Schermo", X_A + 2.66, Z_FRONTE + 0.021, 0.765, 0.795, 0.026, 12)
+    cilindro_orizz("Metallo", (f0 + f1) / 2, 0.68, Z_FRONTE + 0.045, "x", f1 - f0 - 0.18, 0.011)
+    # AL FORNO LE SUE DUE, termostato e timer. Le quattro del piano stanno sul piano,
+    # sulla sua striscia a destra: le posa il gioco (`fornello.gd`).
+    cilindro_orizz("Plastica", f0 + 0.10, 0.775, Z_FRONTE + 0.02, "z", 0.03, 0.021, 12)
+    cilindro_orizz("Schermo", f1 - 0.10, 0.775, Z_FRONTE + 0.02, "z", 0.03, 0.021, 12)
     # lo strofinaccio appeso alla manigliona
-    scatola("Bianco", X_A + 2.62, X_A + 2.86, 0.40, 0.655, Z_FRONTE + 0.048, Z_FRONTE + 0.056)
+    scatola("Bianco", f0 + 0.30, f0 + 0.54, 0.40, 0.675, Z_FRONTE + 0.048, Z_FRONTE + 0.056)
+    # FRA IL FORNO E IL FRIGO un'anta da trenta: il fuoco non sta attaccato al fianco del
+    # frigorifero, e trenta centimetri sono il modulo stretto delle cucine vere
+    anta(f1 + 0.02, X_B - 0.02, 0.14, H_TOP - 0.08, Z_FRONTE)
 
 
 def lavello():
@@ -226,35 +240,60 @@ def piatto(x, base, z):
 
 
 def cottura():
-    """Quattro fuochi e le griglie. Niente manopole, e niente moka.
+    """Il piano cottura: uno Smeg S64S, fuochi e griglie. Niente manopole, e niente moka.
 
-    LA MOKA DISEGNATA SUL FUOCO NON C'E' PIU' (D-244). Federico: «ci sono due moke,
-    una e' sui fornelli, una e' a sinistra, ed e' quella che si deve acquistare».
-    Quella sul fuoco era un rilievo del piano - si vedeva e non si toccava - e
-    accanto alla moka vera diceva che il caffe' si fa da solo. La moka adesso e'
-    una, `moka.tscn`, compare comprandola, e sul fuoco ce la si mette.
+    E' UNO S64S (D-285) perche' Federico ha bocciato il piano di prima - «i fornelli
+    sono molto brutti» - e poi tutti i modelli scaricabili - «nessuna di queste e'
+    molto italiana». Lo S64S e' il piano inox da 60 cm che sta nelle cucine italiane
+    da decenni: le quote vengono dalla scheda del costruttore (585 x 500, griglie alte
+    48,5 mm sul piano di lavoro), la disposizione dalla sua foto dall'alto, e stanno in
+    `geometria.py` perche' il gioco le deve sapere.
 
-    LE MANOPOLE NON SI DISEGNANO PIU' QUI: si girano, e una cosa che si gira non
-    puo' essere un pezzo della stanza. Le fa `world/interactables/fornello.gd`,
-    con la stessa forma che avevano qui, nei punti di `geometria.MANOPOLE`.
+    COM'E' FATTO, dalla foto. Il piano satinato con la striscia rialzata dei comandi a
+    destra; attorno a ogni fuoco la coppetta stampata nella lamiera; i bruciatori Sabaf
+    nei tre formati - spartifiamma d'alluminio e cappellotto smaltato nero - e due
+    griglie di piattina nera, una per colonna, con le traverse che si incrociano sopra
+    i fuochi.
 
-    Dove stanno piano e fuochi lo dice `geometria.py`, perche' lo deve sapere anche
-    il gioco: e' li' che una moka cuoce.
+    LA MOKA DISEGNATA SUL FUOCO NON C'E' PIU' (D-244): la moka e' una, `moka.tscn`,
+    compare comprandola, e sul fuoco ce la si mette.
+
+    LE MANOPOLE NON SI DISEGNANO QUI: si girano, e una cosa che si gira non puo'
+    essere un pezzo della stanza. Le fa `world/interactables/fornello.gd`, nei punti
+    di `geometria.MANOPOLE`; qui si disegnano solo le tacche serigrafate accanto.
     """
     x0, z0, x1, z1 = COTTURA
-    scatola("Inox", x0, x1, H_TOP - 0.005, H_TOP + 0.010, z0, z1)
-    for fx, fz in FUOCHI:
-        cilindro("Metallo", fx, fz, H_TOP + 0.010, H_TOP + 0.030, 0.055, 16, r2=0.045)
-        cilindro("Schermo", fx, fz, H_TOP + 0.030, H_TOP + 0.042, 0.028, 12)
-    # griglie: due telai rettangolari con le traverse
-    for i in range(2):
-        gx = x0 + 0.24 + i * 0.42
-        for dz in (-0.13, 0.13):
-            scatola("Metallo", gx - 0.18, gx + 0.18, H_TOP + 0.028, H_TOP + 0.040,
-                    z0 + 0.13 + 0.11 + dz - 0.006, z0 + 0.13 + 0.11 + dz + 0.006)
-        for dx in (-0.17, 0.0, 0.17):
-            scatola("Metallo", gx + dx - 0.006, gx + dx + 0.006, H_TOP + 0.028, H_TOP + 0.040,
-                    z0 + 0.02, z0 + 0.42)
+    piano = H_TOP + 0.006
+    # la lamiera: appoggiata sul top, sei millimetri di bordo
+    scatola("InoxSatinato", x0, x1, H_TOP - 0.002, piano, z0, z1)
+    # la striscia dei comandi, rialzata di tre millimetri, da 488 a 578 mm
+    scatola("InoxSatinato", x0 + 0.488, x0 + 0.578, piano, piano + 0.003, z0 + 0.014, z1 - 0.012)
+    # le tacche della serigrafia, a sinistra di ogni manopola
+    for (mx, my, mz) in MANOPOLE:
+        scatola("SmaltoNero", mx - 0.036, mx - 0.030, my, my + 0.0006, mz - 0.002, mz + 0.002)
+    for (fx, fz), cappello in zip(FUOCHI, CAPPELLI):
+        r = cappello / 2.0
+        # la coppetta stampata attorno al fuoco: un gradino di un millimetro e mezzo
+        cilindro("InoxSatinato", fx, fz, piano, piano + 0.0015, r * 1.9, 32)
+        # la tazza del bruciatore, poi lo spartifiamma fino a 21 mm dal piano di
+        # lavoro, e sopra il cappellotto nero, con la cima appena bombata
+        cilindro("Alluminio", fx, fz, piano, piano + 0.004, r + 0.012, 24)
+        cilindro("Alluminio", fx, fz, piano + 0.004, H_TOP + 0.024, r + 0.005, 24)
+        cilindro("SmaltoNero", fx, fz, H_TOP + 0.024, H_TOP + 0.030, r, 24, r2=r * 0.92)
+    # LE GRIGLIE: due, una per colonna di fuochi, di piattina da 5 x 9 mm. Il telaio e,
+    # dentro, una traversa lungo la colonna e tre attraverso: due passano sopra i fuochi
+    # e una a meta'. Stanno su quattro piedi, agli angoli.
+    alto, basso, mezza = H_GRIGLIA, H_GRIGLIA - 0.009, 0.0025
+    for g0, g1, gx in ((x0 + 0.018, x0 + 0.244, FUOCHI[0][0]),
+                       (x0 + 0.250, x0 + 0.476, FUOCHI[2][0])):
+        a, b = z0 + 0.020, z1 - 0.021
+        for zz in (a, b, FUOCHI[0][1], (a + b) / 2, FUOCHI[1][1]):
+            scatola("SmaltoNero", g0, g1, basso, alto, zz - mezza, zz + mezza)
+        for xx in (g0, g1, gx):
+            scatola("SmaltoNero", xx - mezza, xx + mezza, basso, alto, a, b)
+        for xx in (g0, g1):
+            for zz in (a, b):
+                scatola("SmaltoNero", xx - mezza, xx + mezza, piano, basso, zz - mezza, zz + mezza)
 
 
 def sul_piano():
@@ -297,16 +336,92 @@ def bacheca():
                 y + h - 0.02, y + h - 0.008, z1 - 0.045, z1 - 0.041)
 
 
+def _sopra(quota):
+    """Un `ritaglia` per `posa_modello`: butta tutto quello che sta sotto `quota`,
+    nelle misure del modello come arriva."""
+    def ritaglia(nuovi):
+        bpy.context.view_layer.update()
+        for o in [o for o in nuovi if o.type == "MESH"]:
+            bm = bmesh.new()
+            bm.from_mesh(o.data)
+            mw = o.matrix_world
+            bmesh.ops.delete(bm, geom=[v for v in bm.verts if (mw @ v.co).z < quota],
+                             context="VERTS")
+            vuota = not bm.verts
+            bm.to_mesh(o.data)
+            bm.free()
+            if vuota:
+                nuovi.remove(o)
+                bpy.data.objects.remove(o, do_unlink=True)
+        return nuovi
+    return ritaglia
+
+
 def cappa():
-    """La cappa sopra il piano cottura: tronco di piramide e canna fino al pensile."""
-    x0, x1 = X_B - 0.92, X_B - 0.02
-    z0, z1 = Z_MURO, Z_MURO + 0.48
-    prisma("Inox",
-           [(x0, 1.52, z0), (x1, 1.52, z0), (x1, 1.52, z1), (x0, 1.52, z1)],
-           [(x0 + 0.31, 1.84, z0), (x1 - 0.31, 1.84, z0),
-            (x1 - 0.31, 1.84, z0 + 0.20), (x0 + 0.31, 1.84, z0 + 0.20)])
-    scatola("Inox", x0 + 0.31, x1 - 0.31, 1.84, 2.14, z0, z0 + 0.20)
-    scatola("Schermo", x0 + 0.04, x1 - 0.04, 1.505, 1.52, z0 + 0.04, z1 - 0.04)
+    """La cappa sopra i fuochi: piatta, di quelle che si appendono al muro.
+
+    Nel modello sta sopra una cucina elettrica americana, e fra le due c'e' un
+    vuoto netto: niente fra 1,1 e 1,48 m. Si taglia a 1,30 e resta solo la cappa,
+    con le due levette di luce e ventola. Sta a ottanta centimetri dal piano,
+    centrata sui fuochi. Era a settanta, il minimo sopra un fuoco a gas: in gioco
+    Federico l'ha voluta piu' alta, e dieci centimetri in piu' la tolgono dalla
+    linea degli occhi di chi sta davanti ai fuochi.
+    """
+    cx = (COTTURA[0] + COTTURA[2]) / 2
+    pezzi = posa_modello(CAPPA_GLTF, (cx - 0.40, Z_MURO, cx + 0.40, Z_MURO + 0.534, 0.184),
+                         gradi=90.0, appoggio=H_TOP + 0.80, ritaglia=_sopra(1.30))
+    mesh = [o for o in pezzi if o.type == "MESH"]
+    # smalto, non acciaio: col metallico della mappa in una cucina chiusa verrebbe nera
+    usa_le_ridotte(mesh, os.path.dirname(CAPPA_GLTF), metallico=0.0)
+    return pezzi
+
+
+def _solo(genitore):
+    """Un `ritaglia` che tiene le mesh figlie di `genitore` e butta il resto."""
+    def ritaglia(nuovi):
+        for o in [o for o in nuovi if o.type == "MESH"]:
+            if o.parent is None or o.parent.name != genitore:
+                nuovi.remove(o)
+                bpy.data.objects.remove(o, do_unlink=True)
+        return nuovi
+    return ritaglia
+
+
+def contatore():
+    """Il contatore del gas sul muro est, col montante da terra al soffitto.
+
+    Nel modello il montante e' alto 3,52 m, cioe' 2,40 alla scala a cui il
+    contatore viene giusto: finirebbe a sessanta centimetri dal soffitto, un tubo
+    del gas che si ferma nel vuoto. Allora lo si ALLUNGA - si alzano i vertici
+    sopra i 2,10, dove c'e' solo il montante - e lo si taglia al soffitto, cosi'
+    entra nel solaio come uno vero. La discesa verso la cucina entra nel
+    pavimento, e va bene: il tubo corre sotto.
+    """
+    pezzi = posa_modello(GAS_GLTF, IMPRONTE["Contatore"], gradi=90.0,
+                         ritaglia=_solo("Pipes_Kitchen_A_6"))
+    mesh = [o for o in pezzi if o.type == "MESH"]
+    bpy.context.view_layer.update()
+    cima = max((o.matrix_world @ v.co).z for o in mesh for v in o.data.vertices)
+    alza = H + 0.05 - cima
+    for o in mesh:
+        mw = o.matrix_world
+        inv = mw.inverted()
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        for v in bm.verts:
+            w = mw @ v.co
+            if w.z > 2.10:
+                w.z += alza
+                v.co = inv @ w
+        bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:],
+                               plane_co=inv @ Vector((0.0, 0.0, H)),
+                               plane_no=(inv.to_3x3() @ Vector((0.0, 0.0, 1.0))).normalized(),
+                               clear_outer=True)
+        bm.to_mesh(o.data)
+        bm.free()
+    # vernice grigia, non ferro nudo: stesso discorso della cappa
+    usa_le_ridotte(mesh, os.path.dirname(GAS_GLTF), metallico=0.0)
+    return pezzi
 
 
 def pensili():
@@ -334,17 +449,20 @@ def pensili():
 
 
 def frigo():
-    x0, z0, x1, z1, alt = IMPRONTE["Frigo"]
-    scatola("Bianco", x0, x1, 0.02, alt, z0, z1 - 0.02)
-    scatola("Metallo", x0 + 0.04, x1 - 0.04, 0.0, 0.02, z0 + 0.04, z1 - 0.06)
-    # due sportelli: il congelatore in alto
-    scatola("Bianco", x0 + 0.01, x1 - 0.01, alt - 0.40, alt - 0.01, z1 - 0.02, z1)
-    scatola("Bianco", x0 + 0.01, x1 - 0.01, 0.05, alt - 0.44, z1 - 0.02, z1)
-    for y in (alt - 0.20, alt - 0.60):
-        scatola("Plastica", x1 - 0.10, x1 - 0.03, y - 0.07, y + 0.07, z1, z1 + 0.032)
-    # qualche foglio attaccato con le calamite: e' quello che dice che qualcuno ci vive
-    scatola("Carta", x0 + 0.10, x0 + 0.28, alt - 0.75, alt - 0.50, z1 + 0.001, z1 + 0.004)
-    scatola("Carta", x0 + 0.32, x0 + 0.44, alt - 0.70, alt - 0.56, z1 + 0.001, z1 + 0.004)
+    """Il frigorifero preso da fuori, in piedi nella sua impronta, con lo sportello
+    verso la stanza.
+
+    Prima era di scatole: un parallelepipedo bianco con due sportelli e due fogli
+    attaccati. I fogli non ci sono piu' - Federico ha voluto il frigo senza niente
+    attaccato sopra, e un foglio di carta con la calamita e' la stessa cosa di un
+    adesivo.
+    """
+    pezzi = posa_modello(FRIGO_GLTF, IMPRONTE["Frigo"])
+    mesh = [o for o in pezzi if o.type == "MESH"]
+    # la vernice di un frigorifero non e' uno specchio, e il metallico preso dalla
+    # mappa in una cucina chiusa lo farebbe nero (vedi `usa_le_ridotte`)
+    usa_le_ridotte(mesh, os.path.dirname(FRIGO_GLTF), metallico=0.0)
+    return pezzi
 
 
 def dispensa():
@@ -395,9 +513,10 @@ _lavello = lavello()
 cottura()
 _piatti = sul_piano()
 bacheca()
-cappa()
+_cappa = cappa()
 pensili()
-frigo()
+_frigo = frigo()
+_contatore = contatore()
 dispensa()
 _sedie = tavolo_e_sedie()
 pattumiera()
@@ -430,7 +549,7 @@ for _n in sorted(_intrusi):
 problemi += verifica_luce(oggetti, [FINESTRA])
 # anche i modelli presi da fuori devono stare nella loro impronta: e' il patto
 problemi += verifica_impronte(
-    oggetti + _sedie + _lavello + _piatti,
+    oggetti + _sedie + _lavello + _piatti + _frigo + _cappa + _contatore,
     [(x0, z0, x1, z1) for (x0, z0, x1, z1, _h) in IMPRONTE.values()])
 
 # niente deve superare l'altezza della stanza: la dispensa e i suoi scatoloni ci

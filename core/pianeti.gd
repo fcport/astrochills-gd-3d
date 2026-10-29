@@ -19,14 +19,14 @@
 ## sta in cielo solo nel crepuscolo — nelle nove ore di questo gioco non si vede
 ## MAI — Venere è la stella della sera o quella del mattino e non è mai in
 ## mezzo, Marte, Giove e Saturno sorgono e tramontano come le stelle ma si
-## spostano di mese in mese. Nel mese di lavoro del gioco (16 novembre 1999 in
-## poi) il conto dà, misurato sulla prima notte: Giove e Saturno già alti a
-## sud-est quando comincia il turno — erano all'opposizione da poche settimane —
-## che tramontano alle 4:50 e alle 6:08; Venere che sorge alle 3:07 e diventa la
-## cosa più luminosa del cielo; Marte che tramonta alle 20:32, cioè mezz'ora
-## PRIMA che la notte cominci, e quindi non si vede mai; Mercurio mai. Cinque
-## pianeti, e ogni ora della notte ne mostra un sottoinsieme diverso. Non è
-## programmato da nessuna parte: esce dal calendario, come la fase della Luna.
+## spostano di mese in mese. Nel mese di lavoro del gioco (16 novembre 2000 in
+## poi) il conto dà, misurato sulla prima notte: Giove e Saturno già alti a est-sud-est
+## quando comincia il turno, e su per tutta la notte — vanno all'opposizione nel mese
+## stesso, Saturno il 19 novembre (notte 4) e Giove il 28 (notte 13), uno accanto
+## all'altro nel Toro; Marte che sorge alle 3:04 e sale nel mattino; Venere, la stella
+## della sera, già tramontata alle 21; Mercurio che spunta alle 5:28, basso nel
+## chiarore, e non si vede. Cinque pianeti, e ogni ora della notte ne mostra un sottoinsieme diverso.
+## Non è programmato da nessuna parte: esce dal calendario, come la fase della Luna.
 ##
 ## L'ASTRONOMIA È VERA E SI VERIFICA. Gli elementi orbitali sono quelli
 ## pubblicati dal Jet Propulsion Laboratory per le posizioni approssimate dei
@@ -67,7 +67,7 @@
 ##   - i satelliti di Giove e l'anello di Saturno COME OGGETTI: l'anello c'è
 ##     solo come luminosità (vedi `_magnitudine`), perché a occhio nudo è quello
 ##     che se ne vede — Saturno con gli anelli aperti è mezza magnitudine più
-##     luminoso, e nel 1999 erano ben aperti.
+##     luminoso, e nel 2000 erano ben aperti.
 ##
 ## `core/` NON DIPENDE DA NIENTE DI FUORI, ma `core/luna.gd` è dentro: da lì
 ## arrivano la latitudine, l'ora del cielo e le due rotazioni che portano una
@@ -156,8 +156,8 @@ const AU_KM := 149597870.7
 ## IL POLO NORD DI SATURNO, in coordinate equatoriali J2000 (IAU). Serve a
 ## sapere quanto sono INCLINATI GLI ANELLI verso di noi, che è mezza magnitudine
 ## di luminosità: ad anelli di taglio Saturno cala quasi di una magnitudine, ad
-## anelli spalancati riflettono più del globo. Nel 1999 erano aperti di una
-## ventina di gradi e si stavano aprendo ancora, verso il massimo del 2003.
+## anelli spalancati riflettono più del globo. Nel 2000 erano aperti di più di
+## venti gradi e si stavano aprendo ancora, verso il massimo del 2003.
 const POLO_SATURNO_AR := 40.589
 const POLO_SATURNO_DEC := 83.537
 

@@ -8,17 +8,17 @@ script = ExtResource("2_pagina")
 titolo = "Procedure del turno di notte"
 testo = "Osservatorio di Monte Grimano
 
-Questo quaderno si trova accanto al computer. Lascialo lì.
+Questo quaderno sta accanto al computer. Lascialo lì.
 
-È la tua prima notte, quindi probabilmente non sai ancora come funziona tutto. Non preoccuparti: qui trovi le procedure necessarie per portare a termine il turno.
+Se è la tua prima notte non sai ancora come funziona niente, ed è normale. Qui c'è quello che serve per arrivare in fondo al turno.
 
-Il turno inizia alle 21:00 e termina alle 06:00. Il tempo passa anche quando non stai facendo nulla. Puoi controllare l'ora nell'angolo in basso a destra dello schermo del computer."
+Il turno va dalle 21:00 alle 06:00, e il tempo passa anche se stai fermo. L'ora è in basso a destra sullo schermo del computer."
 fase = &""
 
 [sub_resource type="Resource" id="pagina_indice"]
 script = ExtResource("2_pagina")
 titolo = "Indice"
-testo = "Le procedure sono elencate nell'ordine in cui devono essere eseguite. Ogni pagina spiega passo dopo passo come completare una delle operazioni."
+testo = "Le procedure sono nell'ordine in cui vanno fatte. Ogni pagina spiega un'operazione, un passo alla volta."
 fase = &""
 indice = true
 
@@ -36,25 +36,25 @@ Tasto sinistro  Tieni premuto / lancia
 Tasto destro    Bevi / tieni, pulisci
 ESC             Libera il mouse
 
-Quando ti avvicini a un oggetto interattivo, nella parte inferiore dello schermo vengono mostrati i comandi disponibili."
+Quando sei vicino a qualcosa che si può usare, in basso sullo schermo compare il tasto da premere."
 fase = &""
 
 [sub_resource type="Resource" id="pagina_02_segue"]
 script = ExtResource("2_pagina")
 titolo = ""
-testo = "Al computer puoi usare E per sederti e alzarti. Il mouse controlla il cursore, mentre tenendo premuto ALT puoi guardarti intorno.
+testo = "Al computer, E ti fa sedere e alzare. Da seduto il mouse muove il cursore; per guardarti intorno tieni premuto ALT.
 
 Nei programmi del computer:
 
-  W / S   seleziona una voce
-  A / D   modifica il valore
-  INVIO   conferma"
+  W / S   scegli una voce
+  A / D   cambi il valore
+  INVIO   confermi"
 fase = &""
 
 [sub_resource type="Resource" id="pagina_03"]
 script = ExtResource("2_pagina")
 titolo = "L'ordine delle operazioni"
-testo = "All'inizio del turno devi eseguire queste quattro operazioni UNA SOLA VOLTA:
+testo = "All'inizio del turno fai queste quattro operazioni, UNA VOLTA SOLA:
 
 1. DOME    aprire la cupola
 2. BOOT    accendere e collegare
@@ -66,26 +66,26 @@ fase = &""
 [sub_resource type="Resource" id="pagina_03_segue"]
 script = ExtResource("2_pagina")
 titolo = ""
-testo = "Per ogni fotografia, invece, dovrai eseguire:
+testo = "Poi, per ogni fotografia:
 
 5. TARGET  scegliere il soggetto
 6. GOTO    puntare il telescopio
 7. FOCUS   mettere a fuoco
 8. SEQ     avviare la posa
 
-Tutte le operazioni al computer vengono eseguite tramite MaxIm DL. Le schede nella parte superiore dello schermo indicano la fase in cui ti trovi."
+Al computer si lavora tutto in MaxIm DL. Le schede in cima allo schermo dicono a che punto sei."
 fase = &""
 
 [sub_resource type="Resource" id="pagina_04"]
 script = ExtResource("2_pagina")
 titolo = "1. Aprire la cupola"
-testo = "Non si fa al computer, ma in cupola.
+testo = "Questa si fa in cupola, non al computer.
 
-Sul muro ovest della sala del telescopio c'è la pulsantiera. Guarda il pulsante «Apri la cupola», premi E e tieni premuto (vale anche il tasto sinistro del mouse): il motore gira solo finché tieni giù il dito.
+Sul muro ovest della sala del telescopio c'è la pulsantiera. Guarda il pulsante «Apri la cupola» e tieni premuto E (o il tasto sinistro del mouse). Il motore gira solo finché tieni premuto.
 
-Bastano pochi secondi. A fessura tutta aperta il passaggio è fatto da solo.
+Bastano pochi secondi. Quando la fessura è aperta del tutto, il passaggio è fatto: non c'è niente da confermare.
 
-La cupola poi gira da sola dietro al telescopio, e all'alba si richiude."
+Da lì la cupola ruota da sola per stare dietro al telescopio, e all'alba si richiude."
 fase = &"dome"
 
 [sub_resource type="Resource" id="pagina_05"]
@@ -93,16 +93,16 @@ script = ExtResource("2_pagina")
 titolo = "2. Accendere gli strumenti"
 testo = "Al computer, scheda BOOT.
 
-W e S scelgono la riga, INVIO esegue: su un apparecchio spento lo accende, su uno acceso lo collega.
+W e S scelgono la riga. INVIO accende l'apparecchio se è spento, e lo collega se è acceso.
 
-L'ordine:
-  MOUNT    INVIO, INVIO
-  CAMERA   INVIO, INVIO
+In quest'ordine:
+  MOUNT    INVIO, poi INVIO
+  CAMERA   INVIO, poi INVIO
   FILTER   INVIO
 
-La ruota dei filtri prende corrente dalla camera. Collegata prima di accendere la camera resta NONE: selezionala, R libera la porta, e riprova.
+La ruota dei filtri prende corrente dalla camera: se la colleghi a camera spenta resta su NONE. Selezionala, R libera la porta, e riprova.
 
-Con tutto OK, INVIO per andare avanti."
+Quando è tutto OK, INVIO per andare avanti."
 fase = &"startup"
 
 [sub_resource type="Resource" id="pagina_06"]
@@ -110,13 +110,13 @@ script = ExtResource("2_pagina")
 titolo = "3. Raffreddare la camera"
 testo = "Al computer, scheda COOL.
 
-Il sensore freddo fa foto pulite. S abbassa la temperatura voluta (SET), W la alza.
+Più il sensore è freddo, più la foto è pulita. S abbassa la temperatura da raggiungere (SET), W la alza.
 
-La cella può raffreddare il sensore fino a 38 °C sotto la temperatura dell'aria nella cupola. Non impostare valori inferiori a -32 °C: la camera non riuscirà a raggiungerli e la temperatura continuerà a oscillare.
+La camera scende al massimo di 38 °C sotto l'aria della cupola. Non chiederle meno di -32 °C: non ci arriva, e la temperatura continua a oscillare.
 
-Un buon valore sta fra -25 e -32. Poi aspetta che si calmi: SWING dice quanto oscilla. Sotto 0,15, INVIO.
+Un buon valore è fra -25 e -32. Poi aspetta che si fermi: SWING dice quanto oscilla ancora. Quando è sotto 0,15, INVIO.
 
-Mentre scende puoi alzarti."
+Mentre si raffredda puoi alzarti."
 fase = &"cooling"
 
 [sub_resource type="Resource" id="pagina_07"]
@@ -124,13 +124,13 @@ script = ExtResource("2_pagina")
 titolo = "4. Sincronizzare"
 testo = "Al computer, scheda SOLVE.
 
-Il telescopio va da solo su una stella nota, il nome è in alto. Aspetta che si fermi.
+Il telescopio va da solo su una stella conosciuta, il cui nome è scritto in alto. Aspetta che si fermi.
 
-Sa solo più o meno dove sta guardando. Con W A S D porta la stella dentro il cerchietto al centro: la stella va dalla parte opposta al tasto.
+Il telescopio sa solo più o meno dove guarda. Con W A S D porta la stella dentro il cerchietto al centro. Attento: la stella si sposta dalla parte opposta al tasto che premi.
 
 Quando il cerchietto si accende l'errore è piccolo: INVIO.
 
-Fatto male, stanotte ogni puntamento arriverà storto."
+Se lo fai male, stanotte tutti i puntamenti arriveranno storti."
 fase = &"sync"
 
 [sub_resource type="Resource" id="pagina_08"]
@@ -138,16 +138,16 @@ script = ExtResource("2_pagina")
 titolo = "5. Scegliere il soggetto"
 testo = "Al computer, scheda TARGET.
 
-W e S scorrono i soggetti, INVIO sceglie. L'asterisco segna quello che vuole il cliente di stanotte.
+W e S fanno scorrere i soggetti, INVIO sceglie. L'asterisco segna quello che ha chiesto il cliente di stanotte.
 
-Leggi la riga sotto il nome:
-  visible now   si può fare
+La riga sotto il nome dice se si può fare:
+  visible now   sì, adesso
   not visible   non è la sua ora
   too low       lo copre la cupola
 
-Sotto la cupola il telescopio vede il muro, non il cielo: scegli un soggetto visibile adesso.
+Scegline uno visibile adesso: sotto la cupola il telescopio vede il muro, non il cielo.
 
-MIN è la posa minima che vuole."
+MIN è la posa minima che serve a quel soggetto, in minuti."
 fase = &"targeting"
 
 [sub_resource type="Resource" id="pagina_09"]
@@ -155,11 +155,11 @@ script = ExtResource("2_pagina")
 titolo = "6. Puntare il telescopio"
 testo = "Al computer, scheda GOTO.
 
-Il telescopio va sul soggetto. Il rettangolo al centro è quello che vede la camera, il puntino è il soggetto.
+Il telescopio si muove da solo verso il soggetto. Il rettangolo al centro è quello che inquadra la camera, il puntino è il soggetto.
 
-Aspetta che si fermi. Con W A S D porta il puntino dentro il rettangolo, poi INVIO.
+Aspetta che si fermi, poi con W A S D porta il puntino dentro il rettangolo e premi INVIO.
 
-Se compare BELOW DOME HORIZON il soggetto è troppo basso per stanotte: INVIO per rinunciare, e dal menu scegline un altro."
+Se compare BELOW DOME HORIZON, stanotte il soggetto è troppo basso: INVIO per lasciarlo perdere, poi scegline un altro dal menu."
 fase = &"goto"
 
 [sub_resource type="Resource" id="pagina_10"]
@@ -167,11 +167,11 @@ script = ExtResource("2_pagina")
 titolo = "7. Mettere a fuoco"
 testo = "Al computer, scheda FOCUS.
 
-Si parte sempre sfocati. Tieni premuto A o D per muovere il focheggiatore, e guarda HFD: quanto è grossa la stella. Più è basso, meglio è.
+Si parte sempre fuori fuoco. Tieni premuto A o D per muovere il focheggiatore e guarda HFD, che misura quanto è grossa la stella: più è basso, meglio è.
 
-Il grafico disegna una V, e il fuoco sta in fondo. Passalo, torna indietro e fermati dove HFD è più basso: sotto 2,7 è perfetto.
+Il grafico disegna una V, e il fuoco è in fondo alla V. Superalo, torna indietro e fermati dove HFD è più basso. Sotto 2,7 è perfetto. Poi INVIO.
 
-STEP non dice dove sia il fuoco. Poi INVIO."
+STEP è solo la posizione del focheggiatore: non dice dov'è il fuoco."
 fase = &"focus"
 
 [sub_resource type="Resource" id="pagina_11"]
@@ -179,51 +179,51 @@ script = ExtResource("2_pagina")
 titolo = "8. La posa"
 testo = "Al computer, scheda SEQ. La camera deve essere avvitata al telescopio.
 
-W e S scelgono il campo, A e D il valore:
+Con W e S scegli il campo, con A e D cambi il valore:
   EXPOSURE   secondi di ogni scatto
-  FRAMES     quanti scatti
+  FRAMES     quanti scatti fare
 
-Il totale deve arrivare almeno a MIN del soggetto; il doppio dà il massimo. Più è lunga, più notte si mangia.
+Il tempo totale deve arrivare almeno al MIN del soggetto. Al doppio del MIN la posa vale il massimo. Più è lunga, più ore della notte si prende.
 
-INVIO avvia, e da lì lavora da sola: puoi andartene. Non svitare la camera finché lavora."
+INVIO la avvia, e da lì va avanti da sola: puoi andartene. Non svitare la camera finché non ha finito."
 fase = &"imaging"
 
 [sub_resource type="Resource" id="pagina_12"]
 script = ExtResource("2_pagina")
 titolo = "Dopo la foto"
-testo = "Seduto al computer vedi la foto uscire dal rumore, con la sua qualità.
+testo = "Al computer vedi la foto uscire dal rumore, e quanto è venuta bene.
 
-Poi si vende: FULFILL la dà al cliente che l'aveva chiesta, e paga di più; SELL la vende a chi capita.
+Poi la vendi. FULFILL la consegna al cliente che l'aveva chiesta, e paga di più. SELL la vende a un compratore qualsiasi.
 
-Poi si sceglie:
+Poi scegli:
   SHOOT AGAIN      stesso soggetto
   CHANGE TARGET    un altro soggetto
   REDO SETUP       tutto da capo
   CLOSE & EXPLORE  ti alzi
 
-La qualità è la media di tutti i passaggi della notte: anche la preparazione conta."
+La qualità è la media di tutti i passaggi della notte, quindi conta anche come hai preparato gli strumenti."
 fase = &""
 
 [sub_resource type="Resource" id="pagina_13"]
 script = ExtResource("2_pagina")
 titolo = "Mentre la posa lavora"
-testo = "Non c'è bisogno di guardarla.
+testo = "Non serve stare a guardarla. Intanto:
 
-  in cucina    la moka, se c'è
+  in cucina    la moka, se l'hai
   in cupola    stare a guardare
   al computer  B apre la BBS
                T apre il terminale
-               Photos, le foto fatte
+               Photos: le foto fatte
 
-Col terminale si compra quello che manca, moka compresa, con i soldi delle foto.
+Dal terminale compri quello che manca, moka compresa, con i soldi delle foto.
 
-Per sapere quanto manca, torna al computer: la scheda SEQ lo dice."
+Per sapere quanto manca alla fine della posa, torna al computer: lo dice la scheda SEQ."
 fase = &""
 
 [sub_resource type="Resource" id="pagina_14"]
 script = ExtResource("2_pagina")
 titolo = "Alla fine del turno"
-testo = "Alle 06:00 il turno finisce, anche a metà di una posa, e quella posa è persa: guarda l'ora prima di avviarne una lunga.
+testo = "Alle 06:00 il turno finisce, anche con una posa a metà, e quella posa va persa. Prima di avviarne una lunga, guarda l'ora.
 
 La cupola si chiude da sola. Sullo schermo resta il conto della notte, e i soldi vanno in cassa.
 

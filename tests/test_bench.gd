@@ -34,6 +34,7 @@ const ROSTER_PATH := "res://data/clients/roster.tres"
 const ITEM_CATALOG_PATH := "res://data/catalog/catalog.tres"
 const FORUM_PATH := "res://data/forum/forum.tres"
 const QUADERNO_PATH := "res://data/quaderno/quaderno.tres"
+const GIRO_PATH := "res://data/gerardo/giro.tres"
 ## La telemetria (3.6): le sue funzioni pure sono STATICHE sullo script. Si preloada lo
 ## script — non l'autoload `Telemetry`, che ha stato per-notte e un `_ready()` che tocca
 ## il disco — per collaudare `merge_intervals`/`idle_segments`/`build_report` senza
@@ -125,6 +126,8 @@ func _ready() -> void:
 	print("")
 	_check_quaderno()
 	print("")
+	_check_gerardo()
+	print("")
 	_check_prato()
 	print("")
 	_check_panorama()
@@ -157,6 +160,22 @@ func _ready() -> void:
 ## (o fra le due resterebbe un anello di cielo), il recinto deve essere lo stesso del prato.
 func _check_panorama() -> void:
 	print("-- Panorama: le misure in tre file coincidono, e le quote vere toccano il gioco (D-273)")
+	# IL CONFINE (D-288) STA DENTRO LA COLLISIONE ANCHE DOVE IL BORDO RIENTRA DI PIU'. Le
+	# caselle ci sono se il loro centro sta nel cerchio: il bordo a gradini rientra al piu' di
+	# mezza diagonale. Il confine, piu' il raggio di chi ci sbatte contro, deve stare prima.
+	var dati_pan := load("res://assets/panorama/panorama.tres") as PanoramaDati
+	var r_col := 790.0
+	var stato_pan := (load("res://world/blockout.tscn") as PackedScene).get_state()
+	for i in stato_pan.get_node_count():
+		if stato_pan.get_node_name(i) == "Panorama":
+			for k in stato_pan.get_node_property_count(i):
+				if stato_pan.get_node_property_name(i, k) == "raggio_collisione":
+					r_col = stato_pan.get_node_property_value(i, k)
+	if dati_pan != null:
+		var r_conf := Panorama.raggio_confine(r_col)
+		var sicuro := r_col - dati_pan.vicino_passo * sqrt(2.0) / 2.0
+		print("   confine a %.1f m, collisione sicura fino a %.1f%s" % [r_conf, sicuro,
+			"" if r_conf + 0.3 < sicuro else "   <-- ATTESO: confine dentro la collisione"])
 	var stato := (load("res://world/blockout.tscn") as PackedScene).get_state()
 	var recinto_prato := PackedVector2Array()
 	var recinto_rete := PackedVector2Array()
@@ -302,6 +321,19 @@ func _check_honest_shutter() -> void:
 		resta = clampf(resta + src.sample(fermo, passo) * passo, 0.0, 1.0)
 	print("   un secondo a comando lasciato: %.4f (partiva da 0,5)%s"
 		% [resta, "" if is_equal_approx(resta, 0.5) else "   <-- ATTESO: fermo dov'era"])
+
+	# LA NOTTE CHE COMINCIA CON LA CUPOLA APERTA (D-293): la fase parte da dove il ctx
+	# dice, e senza la chiave — un REDO SETUP — da chiusa.
+	var gia_aperta: PhaseDome = load("res://phases/dome/phase_dome.tscn").instantiate()
+	gia_aperta.setup(null, {Phase.CTX_DOME_APERTURE: 1.0})
+	var da_capo: PhaseDome = load("res://phases/dome/phase_dome.tscn").instantiate()
+	da_capo.setup(null, {})
+	print("   setup con la cupola aperta: %.3f, senza chiave: %.3f%s"
+		% [gia_aperta.aperture(), da_capo.aperture(),
+		"" if gia_aperta.is_open() and is_zero_approx(da_capo.aperture())
+		else "   <-- ATTESO: 1,000 e 0,000"])
+	gia_aperta.free()
+	da_capo.free()
 
 	# LA CHIUSURA, che è l'altra metà del quadro. Va provata a parte e non dedotta
 	# dal segno: una sorgente che restituisse la stessa velocità POSITIVA con il
@@ -558,7 +590,8 @@ func _check_honest_catalog() -> void:
 		print("   <-- ATTESO: 20 target, quelli dell'osservatorio e quelli dei cataloghi (D-261)")
 
 	# I SET ATTESI SONO PINNATI, e vengono dal cielo vero della prima notte (16
-	# novembre 1999, 43,9 N): calcolati a parte, con le stesse formule di `Luna`, prima
+	# novembre 2000, 43,9 N; un anno dopo il 16 novembre 1999 su cui erano stati calcolati,
+	# e le stelle stanno dove stavano: D-290): calcolati a parte, con le stesse formule di `Luna`, prima
 	# di scriverli qui. Un conto dell'angolo orario che si rompe li sposta tutti.
 	var nascosti := src.nascosti()
 	var attesi_nascosti := PackedStringArray(["M42", "M13", "M57", "M8", "M22", "M104", "M16", "M27", "NGC 7000"])
@@ -580,13 +613,15 @@ func _check_honest_catalog() -> void:
 	_assert_availability(src, 450.0, "04:30", [], PackedStringArray(["M1"]))
 
 	# La finestra scritta sul vetro: M1 la prima notte sorge sopra la gronda alle
-	# 23:10 e ci resta fino alle 04:55.
+	# 23:05 e ci resta fino alle 04:50. Erano 23:10 e 04:55 la notte del 16 novembre 1999:
+	# un anno e un 29 febbraio dopo, il cielo alla stessa ora e' girato di cinque minuti
+	# (D-290).
 	var finestra_m1 := ""
 	for entry in _campione(src, 30.0, []):
 		if entry.get(&"short", "") == "M1":
 			finestra_m1 = entry.get(&"window", "")
 	print("   finestra di M1 la prima notte: %s%s" % [finestra_m1,
-		"" if finestra_m1 == "23:10-04:55" else "   <-- ATTESO: 23:10-04:55"])
+		"" if finestra_m1 == "23:05-04:50" else "   <-- ATTESO: 23:05-04:50"])
 
 	# LA MASCHERA DELL'ORIZZONTE (D-191): `available` e' esattamente «sopra la cupola»,
 	# e un soggetto non disponibile dice o quando tornare o che e' troppo basso.
@@ -2355,7 +2390,7 @@ func _check_honest_peltier() -> void:
 ## è quello dove il planetario cerca le stelle — e ciascuno dei due file
 ## continuerebbe ad avere ragione da solo.
 func _check_luna() -> void:
-	print("-- Luna: il calendario, le copie e l'almanacco del 1999")
+	print("-- Luna: il calendario, le copie e l'almanacco del 2000")
 	print("   ora d'inizio: Luna %d, NightClock %d%s"
 		% [Luna.ORA_INIZIO, CLOCK.NIGHT_START_HOUR,
 			"" if Luna.ORA_INIZIO == CLOCK.NIGHT_START_HOUR
@@ -2378,16 +2413,18 @@ func _check_luna() -> void:
 	# IL CALENDARIO: una notte, un giorno. La prima e la trentesima.
 	print("   notte 1 = %s, notte 30 = %s"
 		% [Luna.data_scritta(1), Luna.data_scritta(30)])
-	if Luna.data(1) != Vector3i(1999, 11, 16):
-		print("   la prima notte non e' il 16 novembre 1999  <-- il calendario e' scivolato")
-	if Luna.data(30) != Vector3i(1999, 12, 15):
+	if Luna.data(1) != Vector3i(2000, 11, 16):
+		print("   la prima notte non e' il 16 novembre 2000  <-- il calendario e' scivolato")
+	if Luna.data(30) != Vector3i(2000, 12, 15):
 		print("   trenta notti non fanno ventinove giorni  <-- l'aritmetica giuliana e' rotta")
 
 	# L'ALMANACCO, due date su sei: la sonda le fa tutte, qui bastano gli estremi
 	# del ciclo. Sono valori PUBBLICATI, non prodotti da questo codice — ed e' la
 	# sola differenza fra collaudare un modello e ammirarlo.
-	_report_luna("novilunio  8 nov 1999 03:53 UT", 1999, 11, 8, 3.88, 180.0)
-	_report_luna("plenilunio 23 nov 1999 07:04 UT", 1999, 11, 23, 7.07, 0.0)
+	# Del mese di lavoro del 2000 (D-290): calendar-12.com e theskylive.com, concordi al
+	# minuto o due.
+	_report_luna("plenilunio 11 nov 2000 21:15 UT", 2000, 11, 11, 21.25, 0.0)
+	_report_luna("novilunio  25 nov 2000 23:11 UT", 2000, 11, 25, 23.18, 180.0)
 
 	# LA FACCIA GIRATA DALLA PARTE DELLA LUCE. È un invariante fisico che non
 	# dipende da come sono orientati gli assi del mondo: finché la Luna cresce, sul
@@ -2396,8 +2433,9 @@ func _check_luna() -> void:
 	# cala, sta a ovest. Se il segno della cornice fosse sbagliato, la faccia
 	# uscirebbe girata al contrario della propria luce e i crateri illuminati
 	# sarebbero quelli sbagliati, con la fase perfettamente giusta.
-	var cresce := Luna.effemeridi(Luna.istante(1, 0.0))
-	var cala := Luna.effemeridi(Luna.istante(13, 480.0))
+	# Nel mese del 2000 la Luna cala dalla notte 1 al novilunio della 10, poi cresce.
+	var cresce := Luna.effemeridi(Luna.istante(18, 0.0))
+	var cala := Luna.effemeridi(Luna.istante(1, 480.0))
 	var d_cresce := Vector3(cresce[&"luna_est"]).dot(Vector3(cresce[&"sole_dir"]))
 	var d_cala := Vector3(cala[&"luna_est"]).dot(Vector3(cala[&"sole_dir"]))
 	print("   il Sole sull'est della Luna: crescente %+.2f, calante %+.2f%s"
@@ -2437,7 +2475,7 @@ func _report_luna(label: String, anno: int, mese: int, giorno: int,
 ## ragione da solo — che è lo stesso guasto delle copie della Luna, scoperto con
 ## lo stesso metodo.
 func _check_pianeti() -> void:
-	print("-- Pianeti: il Sole due volte, l'almanacco del 1999, chi si vede")
+	print("-- Pianeti: il Sole due volte, l'almanacco del 2000, chi si vede")
 
 	# I DUE SOLI, su quattro istanti del mese di lavoro.
 	var peggio := 0.0
@@ -2450,10 +2488,11 @@ func _check_pianeti() -> void:
 		% [peggio, "" if peggio < 0.05
 			else "   <-- ATTESO: sotto il ventesimo di grado, e' lo stesso Sole"])
 
-	# L'ALMANACCO: le due opposizioni del 1999, cercate come massimo
-	# dell'elongazione in una finestra di cinque giorni. Sono date PUBBLICATE.
-	_report_opposizione("Giove all'opposizione, 23 ottobre 1999", &"giove", 1999, 10, 23)
-	_report_opposizione("Saturno all'opposizione, 6 novembre 1999", &"saturno", 1999, 11, 6)
+	# L'ALMANACCO: le due opposizioni del mese di lavoro (D-290), cercate come massimo
+	# dell'elongazione in una finestra di cinque giorni. Sono date PUBBLICATE (BAA, Journal
+	# 126-4, e il calendario di hemel.waarnemen.com).
+	_report_opposizione("Saturno all'opposizione, 19 novembre 2000", &"saturno", 2000, 11, 19)
+	_report_opposizione("Giove all'opposizione, 28 novembre 2000", &"giove", 2000, 11, 28)
 
 	# GLI INVARIANTI DEI DUE INTERNI: quanto si staccano dal Sole. Cinque anni
 	# sono venti congiunzioni di Mercurio, abbastanza perché il massimo ci capiti
@@ -2873,3 +2912,56 @@ func _check_prato() -> void:
 	var foto := FileAccess.file_exists(Prato.TEXTURE_CIUFFI)
 	print("   texture dei ciuffi: %s%s" % ["c'è" if foto else "manca",
 		"" if foto else "   <-- ATTESO: lancia tools/erba_blender.py"])
+
+
+## Gerardo (D-287): le battute stanno nei sottotitoli, il giro finisce all'auto, e lo
+## sprite sceglie la faccia giusta per chi guarda.
+##
+## LE BATTUTE SI MISURANO IN COLONNE come le pagine del quaderno: `righe_battuta()` è la
+## stessa funzione con cui il sottotitolo va a capo. Che il PERCORSO non urti niente non si
+## controlla qui — è una domanda alla fisica, e l'ha fatta una sonda (vedi `giro.tres`).
+func _check_gerardo() -> void:
+	print("-- Gerardo: battute nei sottotitoli, giro fino all'auto, otto facce (D-287)")
+
+	# LA RIGA DELL'ATLANTE. Guarda verso -z; la camera davanti, dietro, alla sua sinistra
+	# (-x) e alla sua destra (+x). Riga 0 è la faccia, e si gira in senso antiorario visto
+	# dall'alto, come la camera di `gerardo_blender.py`: la sinistra è la riga 2.
+	var casi := [[Vector2(0, -3), 0, "davanti"], [Vector2(0, 3), 4, "dietro"],
+		[Vector2(-2, 0), 2, "alla sua sinistra"], [Vector2(2, 0), 6, "alla sua destra"],
+		[Vector2(-2, -2), 1, "davanti a sinistra"]]
+	for caso in casi:
+		var riga := Gerardo.riga_atlante(Vector2(0, -1), caso[0])
+		print("   camera %s: riga %d%s" % [caso[2], riga,
+			"" if riga == caso[1] else "   <-- ATTESO: %d" % caso[1]])
+
+	# LA STRADA DELL'AUTO: un punto a tanti metri dall'inizio della polilinea, e oltre la
+	# fine l'ultimo punto, non un'estrapolazione.
+	var strada := PackedVector2Array([Vector2(0, 0), Vector2(10, 0), Vector2(10, 10)])
+	for caso in [[5.0, Vector2(5, 0)], [15.0, Vector2(10, 5)], [99.0, Vector2(10, 10)]]:
+		var p := AutoDiGerardo.lungo(strada, caso[0])
+		print("   strada a %.0f m: %s%s" % [caso[0], p,
+			"" if p.is_equal_approx(caso[1]) else "   <-- ATTESO: %s" % caso[1]])
+
+	var giro := _load_source(GIRO_PATH) as GiroGerardo
+	if giro == null:
+		return
+	print("   dal .tres: %d tappe, sottotitoli da %d colonne per %d righe" % [
+		giro.tappe.size(), GiroGerardo.COLONNE, GiroGerardo.RIGHE])
+	var lunghe := giro.battute_lunghe()
+	for b in lunghe:
+		print("   %s...   <-- ATTESO: al massimo %d righe" % [b, GiroGerardo.RIGHE])
+	if lunghe.is_empty():
+		print("   tutte le battute stanno nei sottotitoli")
+	# Ogni tappa in cui aspetta ha qualcosa da dire, e l'ultima non aspetta e finisce
+	# accanto alla portiera: due metri al massimo dal centro dell'auto.
+	for tappa in giro.tappe:
+		if tappa.aspetta and tappa.battute.is_empty():
+			print("   tappa «%s»: aspetta e non dice niente   <-- ATTESO: almeno una battuta" % tappa.nome)
+	var ultima: TappaGiro = giro.tappe.back() if not giro.tappe.is_empty() else null
+	var auto := Vector2(giro.auto.x, giro.auto.z)
+	var alla_portiera := ultima != null and not ultima.aspetta and not ultima.percorso.is_empty() 			and ultima.percorso[ultima.percorso.size() - 1].distance_to(auto) <= 2.0
+	print("   l'ultima tappa finisce alla portiera senza aspettarti: %s%s" % [alla_portiera,
+		"" if alla_portiera else "   <-- ATTESO: true"])
+	var parte_dall_auto := giro.strada.size() >= 2 and giro.strada[0].is_equal_approx(auto)
+	print("   la strada parte dal parcheggio: %s%s" % [parte_dall_auto,
+		"" if parte_dall_auto else "   <-- ATTESO: true"])

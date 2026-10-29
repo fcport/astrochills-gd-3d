@@ -170,7 +170,7 @@ sempre da `call_deferred`.
 ### Estetica PS1 — quello che sembra un difetto e non lo è
 
 **L'istinto di «migliorare la resa» è l'errore più frequente su questo progetto.** Il gioco
-è ambientato nel 1999 e imita deliberatamente la grafica di quell'anno.
+è ambientato nel 2000 e imita deliberatamente la grafica di quell'anno.
 
 | Non fare | Perché |
 |---|---|
@@ -235,7 +235,7 @@ nearest, non da un `CompositorEffect`.
 
 ---
 
-### Lingua e ambientazione — 1999, Montegrimano
+### Lingua e ambientazione — novembre 2000, Montegrimano (D-290)
 
 **IT è la lingua del giocatore, EN è la lingua delle macchine.**
 
@@ -245,14 +245,15 @@ nearest, non da un `CompositorEffect`.
 | commenti nel codice | identificatori nel codice |
 
 ```gdscript
-# SÌ — l'esito diegetico è inglese: lo scrive una macchina del 1999
+# SÌ — l'esito diegetico è inglese: lo scrive una macchina del 2000
 return PhaseResult.new(false, "guide star lost", 41)
 
 # NO
 return PhaseResult.new(false, "stella guida persa", 41)
 ```
 
-**Coerenza storica:** siamo a sei mesi dall'euro — i prezzi sono in **lire**. Il software
+**Coerenza storica:** novembre 2000 — l'euro esiste come moneta di conto, ma in tasca e sui
+prezzi ci sono ancora le **lire**, fino al gennaio 2002. Il software
 citato è quello che esisteva davvero: *Cartes du Ciel*, *CCDOPS*, *MaxIm DL*, *Giotto*.
 Nessun anacronismo tecnico: niente USB, niente Wi-Fi, niente cloud. Seriale e modem 56k.
 

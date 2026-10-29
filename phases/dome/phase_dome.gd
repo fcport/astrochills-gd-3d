@@ -77,6 +77,14 @@ func key() -> StringName:
 	return &"dome"
 
 
+## SI PARTE DA DOVE IL MONDO HA LASCIATO IL BATTENTE (D-293): la prima notte la cupola l'hai
+## già aperta col giro di Gerardo, e la fase finisce da sé al primo fotogramma. Senza la
+## chiave — un REDO SETUP — si riparte da chiusa.
+func setup(_run: NightRun, ctx: Dictionary) -> void:
+	_aperture = clampf(float(ctx.get(Phase.CTX_DOME_APERTURE, 0.0)), 0.0, 1.0)
+	_truth_input.aperture = _aperture
+
+
 func _ready() -> void:
 	if truth == null:
 		# Canale 1: è un errore di programma, non un esito. Il giocatore non lo

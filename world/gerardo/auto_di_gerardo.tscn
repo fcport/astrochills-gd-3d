@@ -1,0 +1,23 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://world/gerardo/auto_di_gerardo.gd" id="1_auto"]
+[ext_resource type="PackedScene" path="res://assets/models/cinquecento.glb" id="2_cinquecento"]
+[ext_resource type="PackedScene" path="res://world/gerardo/fari.tscn" id="3_fari"]
+
+; L'ingombro della 500 del giocatore (`gen_blockout.py`, AUTO_QUANTO), alzato di mezza
+; altezza: qui l'origine sta sotto le gomme, come nel modello.
+[sub_resource type="BoxShape3D" id="ingombro"]
+size = Vector3(2.97, 1.3, 1.32)
+
+[node name="AutoDiGerardo" type="StaticBody3D"]
+collision_mask = 0
+script = ExtResource("1_auto")
+
+[node name="Modello" parent="." instance=ExtResource("2_cinquecento")]
+
+[node name="Col" type="CollisionShape3D" parent="."]
+position = Vector3(0, 0.65, 0)
+shape = SubResource("ingombro")
+
+[node name="Fari" parent="." instance=ExtResource("3_fari")]
+visible = false

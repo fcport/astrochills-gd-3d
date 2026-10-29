@@ -154,6 +154,31 @@ func is_open() -> bool:
 	return _aperta
 
 
+## Il centro del vano, a terra, qualunque sia lo stato dell'anta: lo si misura dal
+## battente chiuso, perché il vano non si sposta quando la porta si apre. Serve a chi
+## cammina da solo (Gerardo, D-287) per sapere se il suo tratto passa di qui.
+func centro_vano() -> Vector3:
+	var chiusa := Transform3D(Basis(Vector3.UP, _chiusa_y), global_position)
+	return chiusa * Vector3(_lunghezza_anta() / 2.0, 0.0, 0.0)
+
+
+## Se è aperta e l'anta è arrivata in fondo. `is_open()` dice dove la porta VA: un'anta
+## fermata a metà da qualcuno nel suo giro è aperta, ma non lascia ancora passare.
+func del_tutto_aperta() -> bool:
+	return _aperta and is_equal_approx(_angolo, apertura_gradi)
+
+
+## Da che parte gira l'anta aprendosi, come direzione orizzontale nel mondo: chi sta da
+## questa parte, a meno di un'anta dal cardine, se la trova addosso.
+func lato_apertura() -> Vector3:
+	return Basis(Vector3.UP, _chiusa_y) * Vector3(0.0, 0.0, -signf(verso))
+
+
+## Quanto è lunga l'anta. Vedi `_lunghezza_anta()`.
+func lunghezza_anta() -> float:
+	return _lunghezza_anta()
+
+
 ## Porta la porta nello stato voluto. `immediata` salta l'animazione — serve a
 ## chi allestisce una scena già aperta senza vederla sbattere all'avvio.
 func set_open(open: bool, immediata: bool = false) -> void:

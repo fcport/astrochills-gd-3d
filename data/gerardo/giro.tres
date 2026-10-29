@@ -1,0 +1,308 @@
+[gd_resource type="Resource" script_class="GiroGerardo" load_steps=63 format=3]
+
+[ext_resource type="Script" path="res://data/gerardo/giro_gerardo.gd" id="1_giro"]
+[ext_resource type="Script" path="res://data/gerardo/tappa_giro.gd" id="2_tappa"]
+[ext_resource type="Script" path="res://data/gerardo/battuta_giro.gd" id="3_battuta"]
+[ext_resource type="Script" path="res://data/gerardo/ramo_giro.gd" id="4_ramo"]
+
+; IL COPIONE È DI FEDERICO (D-289), tutto, tranne due cose ancora da rivedere insieme: le
+; istruzioni della stanza del PC (da «Tu qui devi solo» a «stiamo in piedi») sono una bozza
+; scritta sulle fasi della notte, e il sollecito della cupola (`se_non_apri`) è aggiunto.
+
+[sub_resource type="Resource" id="b01"]
+script = ExtResource("3_battuta")
+testo = "Ciao! Sei tu quello nuovo? Ti dico la verità, mi sono scordato... come ti chiami, già?"
+chiede_nome = true
+
+[sub_resource type="Resource" id="b02"]
+script = ExtResource("3_battuta")
+testo = "Ah, ok. (Boh, non ho capito un cazzo.)"
+
+[sub_resource type="Resource" id="b03"]
+script = ExtResource("3_battuta")
+testo = "Ok, mister. Allora ti faccio vedere un po' le cose base, e il motivo per cui abbiamo bisogno di uno come te."
+
+[sub_resource type="Resource" id="tappa_cancello"]
+script = ExtResource("2_tappa")
+nome = "cancello"
+battute = Array[ExtResource("3_battuta")]([SubResource("b01"), SubResource("b02"), SubResource("b03")])
+
+[sub_resource type="Resource" id="b04"]
+script = ExtResource("3_battuta")
+testo = "Allora: questo osservatorio nasce dal gruppo del Dopolavoro Ferroviario, creato nel buon vecchio '84."
+
+[sub_resource type="Resource" id="b05"]
+script = ExtResource("3_battuta")
+testo = "Andavamo insieme coi nostri telescopi a osservare il cielo."
+
+[sub_resource type="Resource" id="b06"]
+script = ExtResource("3_battuta")
+testo = "Quest'anno, dopo circa due anni di lavoro e con lo sforzo di tutti, siamo riusciti ad aprire questa struttura."
+
+[sub_resource type="Resource" id="b07"]
+script = ExtResource("3_battuta")
+testo = "Mica male, eh?"
+
+[sub_resource type="Resource" id="b08"]
+script = ExtResource("3_battuta")
+testo = "Vabbè, comunque. Per rendere questo posto anche economicamente indipendente..."
+
+[sub_resource type="Resource" id="b09"]
+script = ExtResource("3_battuta")
+testo = "...abbiamo cominciato a vendere le nostre immagini di astrofotografia."
+
+[sub_resource type="Resource" id="b10"]
+script = ExtResource("3_battuta")
+testo = "Solo che il nostro socio che se ne occupava è ormai un mese che non sta bene, e abbiamo bisogno di un sostituto."
+
+[sub_resource type="Resource" id="b11"]
+script = ExtResource("3_battuta")
+testo = "Ed ecco che entri in campo tu, mister."
+
+[sub_resource type="Resource" id="b12"]
+script = ExtResource("3_battuta")
+testo = "Non è che ci aspettiamo che tu sia in grado di fare subito roba incredibile."
+
+[sub_resource type="Resource" id="b13"]
+script = ExtResource("3_battuta")
+testo = "Impari con calma, segui le istruzioni, eccetera."
+
+[sub_resource type="Resource" id="r01"]
+script = ExtResource("4_ramo")
+risposta = "Sì."
+battute = PackedStringArray("Ah, ecco. Allora sai che, se fai tutto bene, dovrai aspettare un po' le pose e tutto, eh.", "Ma abbiamo quasi tutto automatizzato. Poi vedrai dentro.")
+
+[sub_resource type="Resource" id="r02"]
+script = ExtResource("4_ramo")
+risposta = "No."
+battute = PackedStringArray("Eh, ha senso: non lo fanno in molti.", "Comunque devi sapere che, una volta impostato tutto, devi solo controllare che non ci siano errori.", "Qui abbiamo già automatizzato molte cose.")
+
+[sub_resource type="Resource" id="b14"]
+script = ExtResource("3_battuta")
+testo = "Senti, ma hai mai fatto astrofotografia per conto tuo?"
+rami = Array[ExtResource("4_ramo")]([SubResource("r01"), SubResource("r02")])
+
+[sub_resource type="Resource" id="b15"]
+script = ExtResource("3_battuta")
+testo = "Ora ti faccio vedere bene."
+
+[sub_resource type="Resource" id="tappa_spiazzo"]
+script = ExtResource("2_tappa")
+nome = "spiazzo davanti alla porta"
+percorso = PackedVector2Array(-2.88, 21.99, 2, 17.5, 9, 12.3)
+battute = Array[ExtResource("3_battuta")]([SubResource("b04"), SubResource("b05"), SubResource("b06"), SubResource("b07"), SubResource("b08"), SubResource("b09"), SubResource("b10"), SubResource("b11"), SubResource("b12"), SubResource("b13"), SubResource("b14"), SubResource("b15")])
+
+[sub_resource type="Resource" id="b16"]
+script = ExtResource("3_battuta")
+testo = "Questo è il quadro elettrico. Se salta la luce, puoi riavviare tutto da qui."
+
+[sub_resource type="Resource" id="b17"]
+script = ExtResource("3_battuta")
+testo = "L'unica cosa che non si spegnerà mai è la luce rossa del telescopio, che è collegata a parte."
+
+[sub_resource type="Resource" id="r03"]
+script = ExtResource("4_ramo")
+risposta = "Quale luce rossa?"
+battute = PackedStringArray("Ora ti faccio vedere, calma. ('Sti giovani con l'ansia...)")
+
+[sub_resource type="Resource" id="b18"]
+script = ExtResource("3_battuta")
+testo = "Per motivi che sinceramente non so: mica sono elettricista."
+rami = Array[ExtResource("4_ramo")]([SubResource("r03")])
+
+[sub_resource type="Resource" id="tappa_quadro"]
+script = ExtResource("2_tappa")
+nome = "quadro elettrico"
+percorso = PackedVector2Array(11.6, 10.8)
+battute = Array[ExtResource("3_battuta")]([SubResource("b16"), SubResource("b17"), SubResource("b18")])
+
+[sub_resource type="Resource" id="b19"]
+script = ExtResource("3_battuta")
+testo = "Questa è la sala per il pubblico. A volte capita che vengano delle scolaresche, o gli scout."
+
+[sub_resource type="Resource" id="b20"]
+script = ExtResource("3_battuta")
+testo = "Ma a quello ci penso io. A t'al dégh: è in regola, eh!"
+
+[sub_resource type="Resource" id="b_proiettore"]
+script = ExtResource("3_battuta")
+testo = "Il proiettore è staccato. Cavetti e tutto sono lì, ma non credo che ti servano."
+indica = true
+dove = Vector2(16.5, 7.1)
+
+[sub_resource type="Resource" id="tappa_divulgazione"]
+script = ExtResource("2_tappa")
+nome = "spazio divulgazione"
+percorso = PackedVector2Array(10.7, 10.9, 10.7, 8.5, 11.8, 7.2)
+battute = Array[ExtResource("3_battuta")]([SubResource("b19"), SubResource("b20"), SubResource("b_proiettore")])
+
+[sub_resource type="Resource" id="b21"]
+script = ExtResource("3_battuta")
+testo = "La cucina ha tutto quello che serve, se vuoi cucinarti qualcosa."
+
+[sub_resource type="Resource" id="b22"]
+script = ExtResource("3_battuta")
+testo = "Ti offrirei un caffè, ma qualcuno si è portato via la moka."
+
+[sub_resource type="Resource" id="b22b"]
+script = ExtResource("3_battuta")
+testo = "Noi puliamo la mattina, ma se sporchi per terra magari dagli un giro di straccio."
+
+[sub_resource type="Resource" id="tappa_cucina"]
+script = ExtResource("2_tappa")
+nome = "cucina"
+percorso = PackedVector2Array(9.5, 5.3, 9.5, 3.3)
+battute = Array[ExtResource("3_battuta")]([SubResource("b21"), SubResource("b22"), SubResource("b22b")])
+
+[sub_resource type="Resource" id="c01"]
+script = ExtResource("3_battuta")
+testo = "Ma è qui che ci si diverte."
+
+[sub_resource type="Resource" id="tappa_corridoio"]
+script = ExtResource("2_tappa")
+nome = "corridoio"
+percorso = PackedVector2Array(9.5, 5.45, 7.4, 5.5)
+battute = Array[ExtResource("3_battuta")]([SubResource("c01")])
+
+[sub_resource type="Resource" id="c02"]
+script = ExtResource("3_battuta")
+testo = "Da questa pulsantiera si apre la cupola."
+indica = true
+dove = Vector2(0.15, 4.8)
+
+[sub_resource type="Resource" id="c03"]
+script = ExtResource("3_battuta")
+testo = "Tieni premuto il pulsante verde per aprirla, e quello rosso per chiuderla. Dai, prova subito."
+aspetta = 1
+
+[sub_resource type="Resource" id="c04"]
+script = ExtResource("3_battuta")
+testo = "Facile, no? Ricordati di chiuderla ogni sera, perché altrimenti entra un sacco di umidità..."
+
+[sub_resource type="Resource" id="c05"]
+script = ExtResource("3_battuta")
+testo = "...e poi tocca pulire il vetro del telescopio, che fa la condensa."
+
+[sub_resource type="Resource" id="tappa_pulsantiera"]
+script = ExtResource("2_tappa")
+nome = "pulsantiera della cupola"
+percorso = PackedVector2Array(4.6, 5.9, 1.4, 6)
+battute = Array[ExtResource("3_battuta")]([SubResource("c02"), SubResource("c03"), SubResource("c04"), SubResource("c05")])
+
+[sub_resource type="Resource" id="c06"]
+script = ExtResource("3_battuta")
+testo = "Accendila un po'."
+indica = true
+dove = Vector2(5.08, 4.1)
+aspetta = 2
+
+[sub_resource type="Resource" id="tappa_luce_rossa"]
+script = ExtResource("2_tappa")
+nome = "luce rossa"
+percorso = PackedVector2Array(4, 5.9, 4.3, 5)
+battute = Array[ExtResource("3_battuta")]([SubResource("c06")])
+
+[sub_resource type="Resource" id="p01"]
+script = ExtResource("3_battuta")
+testo = "Visto che sei un giovane, mi aspetto che tu sia già bravo col compiuter."
+
+[sub_resource type="Resource" id="p02"]
+script = ExtResource("3_battuta")
+testo = "Comunque abbiamo Windows installato, con anche l'accesso a internets."
+
+[sub_resource type="Resource" id="p03"]
+script = ExtResource("3_battuta")
+testo = "Per fare le foto ti basta usare MaxIm DL."
+
+[sub_resource type="Resource" id="p04"]
+script = ExtResource("3_battuta")
+testo = "Non è difficile. Comunque abbiamo preso tutti gli appunti da Claudio, e sono in quel taccuino lì, di fianco al PC."
+indica = true
+dove = Vector2(5.82, 2.42)
+
+[sub_resource type="Resource" id="r04"]
+script = ExtResource("4_ramo")
+risposta = "Cos'è l'allineamento polare?"
+battute = PackedStringArray("È quando l'asse della montatura punta dritto al polo del cielo, lì vicino alla Stella Polare.", "Così il telescopio gira insieme al cielo, e nelle pose lunghe le stelle restano dei puntini.")
+
+[sub_resource type="Resource" id="r05"]
+script = ExtResource("4_ramo")
+risposta = "Benissimo."
+battute = PackedStringArray()
+
+[sub_resource type="Resource" id="p05"]
+script = ExtResource("3_battuta")
+testo = "L'allineamento polare è già fatto."
+rami = Array[ExtResource("4_ramo")]([SubResource("r04"), SubResource("r05")])
+
+[sub_resource type="Resource" id="p06"]
+script = ExtResource("3_battuta")
+testo = "Tu qui devi solo: aprire la cupola, accendere tutto, e controllare che MaxIm veda gli strumenti."
+
+[sub_resource type="Resource" id="p07"]
+script = ExtResource("3_battuta")
+testo = "Poi raffreddi la camera, e sincronizzi il telescopio su una stella."
+
+[sub_resource type="Resource" id="p08"]
+script = ExtResource("3_battuta")
+testo = "Scegli cosa fotografare, ci vai col GOTO, metti a fuoco e fai partire le pose."
+
+[sub_resource type="Resource" id="r06"]
+script = ExtResource("4_ramo")
+risposta = "Non ho capito nulla."
+battute = PackedStringArray("Capito un cazzo? Vabbè che non spiego benissimo 'ste cose...", "Leggi il taccuino: qui c'è tutto, e sicuramente più chiaro.")
+
+[sub_resource type="Resource" id="r07"]
+script = ExtResource("4_ramo")
+risposta = "Tutto chiarissimo."
+battute = PackedStringArray("Ci credo pochissimo, ma ok.")
+
+[sub_resource type="Resource" id="p09"]
+script = ExtResource("3_battuta")
+testo = "Mentre posa, aspetti. Le foto buone poi le vendi: è con quelle che stiamo in piedi."
+rami = Array[ExtResource("4_ramo")]([SubResource("r06"), SubResource("r07")])
+
+[sub_resource type="Resource" id="p10"]
+script = ExtResource("3_battuta")
+testo = "Bene, io vado. Le chiavi adesso le tieni tu."
+
+[sub_resource type="Resource" id="p11"]
+script = ExtResource("3_battuta")
+testo = "Copriti, che qua su alle quattro fa freddo. Buon lavoro, mister!"
+
+[sub_resource type="Resource" id="tappa_pc"]
+script = ExtResource("2_tappa")
+nome = "stanza del PC"
+percorso = PackedVector2Array(4.6, 5.9, 7.1, 5.5, 7.2, 3.5, 7.6, 2.9)
+battute = Array[ExtResource("3_battuta")]([SubResource("p01"), SubResource("p02"), SubResource("p03"), SubResource("p04"), SubResource("p05"), SubResource("p06"), SubResource("p07"), SubResource("p08"), SubResource("p09"), SubResource("p10"), SubResource("p11")])
+
+[sub_resource type="Resource" id="tappa_auto"]
+script = ExtResource("2_tappa")
+nome = "all'auto"
+percorso = PackedVector2Array(7.2, 3.5, 7.1, 5.5, 8, 5.45, 9.6, 6.2, 10.7, 8.5, 10.7, 10.9, 2, 17.5, -2.88, 21.99, -5.8, 22.6, -2, 26.8, -2.3, 30.1, -4.3, 30.1)
+battute = Array[ExtResource("3_battuta")]([])
+aspetta = false
+
+; IL PERCORSO È COLLAUDATO, non disegnato a occhio: una capsula larga quanto Gerardo
+; (raggio 0,28, da 28 cm a 1,73 m sopra il pavimento) è stata fatta scorrere ogni dieci
+; centimetri lungo tutti i tratti, porte escluse, e non ha toccato niente (D-287). Chi
+; sposta un punto rifaccia la prova: il primo tracciato usciva dal cancello passando sul
+; pilastro.
+;
+; Ogni punto prima di una porta sta fuori dal giro dell'anta, a più di novanta centimetri
+; dal cardine: è da lì che la apre.
+;
+; LA STRADA è la sterrata di OpenStreetMap che passa dallo slargo, verso ovest: è il verso
+; in cui scende (quote 2,2 → 1,4 m in centottanta metri; verso est sale a 24). Il primo
+; punto è il parcheggio, il secondo lo porta fuori dallo slargo lungo la fila, a novanta
+; centimetri dalla fiancata dell'auto del giocatore.
+[resource]
+script = ExtResource("1_giro")
+se_chiudi_la_porta = "Oh, ma che fai?"
+se_lo_blocchi = "Ehm... sì, se ti sposti un attimo..."
+se_non_apri = "Il pulsante verde, eh. Tienilo premuto finché non è aperta del tutto."
+arrivo = Vector2(-8.9, 25.6)
+partenza = Vector2(-5.6, 26.75)
+auto = Vector3(-4.6, 180, 28.9)
+tappe = Array[ExtResource("2_tappa")]([SubResource("tappa_cancello"), SubResource("tappa_spiazzo"), SubResource("tappa_quadro"), SubResource("tappa_divulgazione"), SubResource("tappa_cucina"), SubResource("tappa_corridoio"), SubResource("tappa_pulsantiera"), SubResource("tappa_luce_rossa"), SubResource("tappa_pc"), SubResource("tappa_auto")])
+strada = PackedVector2Array(-4.6, 28.9, -13, 28.6, -28, 27.2, -65.8, 22.5, -114, 19, -179.1, 20.8)

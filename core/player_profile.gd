@@ -49,6 +49,11 @@ const CURRENT_VERSION := 1
 ## ricava il proprio `night_index`, e quindi la rotazione dei committenti.
 @export var nights_completed: int = 0
 
+## Come si chiama, per come l'ha detto a Gerardo la prima notte (D-289). Vuoto finché non
+## l'ha detto. LA VERSIONE NON CAMBIA: un salvataggio di prima non ha il campo, e leggerlo
+## vuoto vuol dire «non l'ha mai detto», che è esattamente com'era.
+@export var nome: String = ""
+
 ## Ciò che il giocatore ha comprato al terminale, e che si porta dietro fra le
 ## notti. STA QUI PER LA STESSA RAGIONE DEL PORTAFOGLIO (C1): un acquisto è del
 ## GIOCATORE, non della notte — la moka comprata stanotte c'è ancora domani, mentre

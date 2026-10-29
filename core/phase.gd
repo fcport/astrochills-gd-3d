@@ -55,6 +55,12 @@ const CTX_COMMISSION_TARGET := &"commission_target"
 ## quali cataloghi sono stati comprati.
 const CTX_OWNED_ITEMS := &"owned_items"
 
+## QUANTO È APERTA LA CUPOLA quando la notte comincia, 0-1 (D-293): la prima notte la apri
+## durante il giro di Gerardo. La fase 1 non vede il mondo: l'orchestratore ascolta il bus
+## e la passa qui. Assente vuol dire chiusa — ed è assente dopo un REDO SETUP, che svuota
+## il `ctx` e richiude la cupola come ha sempre fatto.
+const CTX_DOME_APERTURE := &"dome_aperture"
+
 
 ## Chiamato dall'orchestratore prima di aggiungere il nodo all'albero.
 func setup(_run: NightRun, _ctx: Dictionary) -> void:

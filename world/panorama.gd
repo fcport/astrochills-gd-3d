@@ -73,6 +73,24 @@ const MARGINE_RECINTO := 2.0
 ## Fin dove ci si cammina sopra, in metri dall'osservatorio: tutta la griglia. Con 250 m,
 ## tre minuti a piedi, si arrivava dove il terreno si vede e non regge, e si cadeva.
 @export var raggio_collisione := 790.0
+## IL CONFINE (D-288): un muro invisibile ad anello, poco dentro il bordo della collisione.
+## Oltre `raggio_collisione` il terreno si vede ma non regge, e chi ci arrivava a piedi
+## cadeva nel vuoto. Federico: «prima della fine della mappa, dove si cadrebbe nel vuoto,
+## metti un muro invisibile».
+##
+## DIECI METRI DENTRO, E NON UNO. La collisione e' fatta di caselle intere — una casella c'e'
+## se il suo CENTRO sta nel cerchio — quindi il suo bordo e' a gradini, e dove rientra di
+## piu' sta mezza diagonale (3,5 m) dentro il cerchio. Il confine sta prima del gradino
+## peggiore, con margine: lo controlla il banco.
+##
+## SEGUE IL TERRENO: va da dieci metri sotto la quota a trenta sopra, lato per lato. A
+## ottocento metri ci sono pendii, e un muro a quota fissa lascerebbe passare sopra o sotto.
+const CONFINE_DENTRO := 10.0
+const CONFINE_SOTTO := 10.0
+const CONFINE_SOPRA := 30.0
+## 720 lati: sette metri l'uno a quel raggio, e il terreno fra due vertici non sale di trenta.
+const CONFINE_LATI := 720
+
 ## Quanti metri copre un quadro di ogni trama: li scrive `gen_blockout.py` dai FONTE.txt,
 ## come per il materiale del prato.
 @export var righello_prato := 2.0
@@ -93,6 +111,7 @@ func _ready() -> void:
 		return
 	_q = dati.vicino_quote
 	_griglia(_q)
+	_confine()
 	_anelli()
 	_alberi()
 	_luci()
@@ -212,6 +231,42 @@ func _griglia(q: PackedFloat32Array) -> void:
 	col.name = "Col"
 	col.shape = forma
 	add_child(col)
+
+
+## Il raggio del confine, in metri dall'ancora. PURA e STATICA, per il banco.
+static func raggio_confine(raggio_collisione: float) -> float:
+	return raggio_collisione - CONFINE_DENTRO
+
+
+## Il muro invisibile ad anello: vedi CONFINE_DENTRO. Una forma sola a triangoli, che
+## risponde da tutte e due le facce, su un corpo suo (`Confine`) e non sul panorama: chi
+## chiede «sto sul terreno?» (`player.gd`, il raggio sotto i piedi) non deve trovarci un muro.
+func _confine() -> void:
+	var r := raggio_confine(raggio_collisione)
+	var facce := PackedVector3Array()
+	for t in CONFINE_LATI:
+		var a0 := TAU * t / CONFINE_LATI
+		var a1 := TAU * (t + 1) / CONFINE_LATI
+		var p0 := dati.ancora + Vector2(sin(a0), cos(a0)) * r
+		var p1 := dati.ancora + Vector2(sin(a1), cos(a1)) * r
+		var h0 := dati.quota_griglia(p0)
+		var h1 := dati.quota_griglia(p1)
+		var giu0 := Vector3(p0.x, h0 - CONFINE_SOTTO, p0.y)
+		var giu1 := Vector3(p1.x, h1 - CONFINE_SOTTO, p1.y)
+		var su0 := Vector3(p0.x, h0 + CONFINE_SOPRA, p0.y)
+		var su1 := Vector3(p1.x, h1 + CONFINE_SOPRA, p1.y)
+		facce.append_array([giu0, giu1, su1, giu0, su1, su0])
+	var forma := ConcavePolygonShape3D.new()
+	forma.backface_collision = true
+	forma.set_faces(facce)
+	var corpo := StaticBody3D.new()
+	corpo.name = "Confine"
+	corpo.collision_layer = Interactable.LAYER_WORLD
+	corpo.collision_mask = 0
+	var col := CollisionShape3D.new()
+	col.shape = forma
+	corpo.add_child(col)
+	add_child(corpo)
 
 
 ## Il rettangolo delle caselle della griglia che il prato copre, allargato di un

@@ -40,5 +40,8 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "humanizer-blader@anthropic-plugin-directory": true
   }
 }

@@ -13,6 +13,14 @@ Chi aggiunge un asset non CC0 aggiunge una riga qui, nello stesso momento.
 
 ## Modelli 3D
 
+**Gerardo** — il capo dei soci del DLF che ti accoglie la prima notte (D-287).
+È una persona vera, del Gruppo Astrofili DLF Rimini, ritratta **con il suo consenso**. Da
+una sua foto di fronte il modello 3D l'ha ricostruito
+[TRELLIS](https://github.com/microsoft/TRELLIS) (Microsoft, licenza MIT): il dietro e i
+fianchi sono **generati**, ed è la parte da dichiarare come contenuto generato con l'AI.
+Lo sprite a otto lati lo renderizza `tools/gerardo_blender.py`. La foto e il modello non
+sono nel repository: solo l'atlante, che è il gioco.
+
 **Reflector telescope** — il telescopio della cupola.
 Autore: [GhInko](https://sketchfab.com/GhInko).
 Fonte: <https://sketchfab.com/3d-models/reflector-telescope-62549e8c60d24ee5adb2a01a2c226a03>

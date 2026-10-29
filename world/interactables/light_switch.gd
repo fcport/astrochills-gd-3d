@@ -74,6 +74,11 @@ func _accesa() -> bool:
 	return accesa
 
 
+## Se le lampade sono accese adesso. Per chi aspetta che qualcuno le accenda (D-293).
+func accesa_ora() -> bool:
+	return _accesa()
+
+
 ## Il prompt dice cosa succederà, non cosa si sta guardando. «Accendi» davanti a
 ## una stanza al buio è un'informazione; «Interruttore» non è niente.
 func prompt() -> String:

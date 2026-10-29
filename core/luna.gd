@@ -47,27 +47,31 @@
 class_name Luna
 
 
-## LA PRIMA NOTTE DI LAVORO. Il gioco è ambientato nel 1999 (docs/idea/idea.md) e
-## fin qui non aveva un giorno: `night_index` contava e basta. Adesso conta dei
-## GIORNI, e il primo va scelto — quindi va motivato.
+## LA PRIMA NOTTE DI LAVORO. Il gioco è ambientato nel 2000, perché l'osservatorio
+## vero — quello del Gruppo Astrofili DLF di Rimini sul Monte San Lorenzo — è stato
+## inaugurato quell'anno, dopo circa due anni di lavori (D-290). Era il 1999
+## (docs/idea/idea.md), e la prima notte cadeva in un osservatorio che non c'era ancora.
+## `night_index` conta dei GIORNI, e il primo va scelto — quindi va motivato.
 ##
 ## PERCHÉ NOVEMBRE. Perché la notte di questo gioco va dalle 21:00 alle 06:00
 ## (`NightClock`, nove ore di buio) e nove ore di buio a 43,9 gradi di latitudine
 ## esistono solo in inverno: a giugno alle 21:00 c'è ancora il crepuscolo. La
 ## stagione non è un gusto, è il vincolo che l'orologio del gioco ha già scelto.
 ##
-## PERCHÉ IL SEDICI. Perché è il giorno dopo il primo quarto: la notte 1 si apre
-## con una mezza luna alta ventiquattro gradi a sud-ovest, che si vede dalla
-## vetrata subito e senza dover sapere niente, e tramonta poco dopo mezzanotte —
-## quindi la prima notte mostra tutte e due le cose che questo file serve a
-## produrre, la luna che c'è e la luna che se ne va. Un inizio al novilunio
-## avrebbe fatto sembrare rotta la funzione appena scritta.
+## PERCHÉ IL SEDICI, e non il giorno dopo un primo quarto come si era pensato. I venti
+## target del gioco (D-261) sono stati scelti sul cielo di metà novembre: quali salgono
+## sopra la cupola, a che ora, per quante notti. Un anno dopo, alla stessa data e alla
+## stessa ora, le stelle stanno dove stavano — tre minuti di scarto — e tutto quel
+## lavoro resta vero. Il 5 novembre 2000, che avrebbe dato una prima notte con la mezza
+## luna, spostava il cielo di quaranta minuti, e M51 — un target che si compra col
+## catalogo — non saliva mai sopra la cupola in venti notti (D-290).
 ##
-## E IL RESTO DEL MESE VIENE DIETRO, che è il punto: notte 7-8 luna piena tutta
-## la notte (e il cielo profondo non si fotografa), notte 13 in poi la luna sorge
-## sempre più tardi, notte 22 novilunio — buio pieno, la notte buona. Il ciclo
-## non è programmato da nessuna parte: esce dal calendario.
-const PRIMA_NOTTE_ANNO := 1999
+## LA LUNA, ALLORA, È QUELLA DEL 2000, e sta bene lo stesso: la notte 1 sorge alle 21:14,
+## illuminata per sette decimi, mentre arrivi; poi cala, e la notte 10 (25 novembre) è
+## novilunio — dalla 5 alla 15 le notti più buie del mese, le buone. Poi cresce, e alle
+## notti 25-26 è piena tutta la notte. Il ciclo non è programmato da nessuna parte:
+## esce dal calendario.
+const PRIMA_NOTTE_ANNO := 2000
 const PRIMA_NOTTE_MESE := 11
 const PRIMA_NOTTE_GIORNO := 16
 
@@ -75,8 +79,8 @@ const PRIMA_NOTTE_GIORNO := 16
 ## banco le confronta: vedi l'intestazione.
 const ORA_INIZIO := 21
 
-## Il fuso dell'Italia in novembre, in ore su UT. L'ora legale del 1999 è finita
-## il 31 ottobre, quindi per tutto l'arco di notti che il calendario può coprire
+## Il fuso dell'Italia in novembre, in ore su UT. L'ora legale del 2000 è finita
+## il 29 ottobre, quindi per tutto l'arco di notti che il calendario può coprire
 ## qui è CET e basta: nessuna regola di cambio da scrivere, e nessuna da
 ## sbagliare. Se un giorno il calendario arrivasse ad aprile, questa riga
 ## diventerebbe una funzione — e fino ad allora sarebbe stata codice non provato.
@@ -107,7 +111,7 @@ const RAGGIO_KM := 1737.4
 ## Il mese sinodico medio, in giorni: da un novilunio al successivo. NON SERVE AL
 ## CONTO — la fase esce dalla geometria di Sole e Luna, non da un contatore — e
 ## sta qui solo per l'ETÀ in giorni, che è il numero con cui un almanacco del
-## 1999 avrebbe descritto la Luna di stasera.
+## 2000 avrebbe descritto la Luna di stasera.
 const SINODICO := 29.530588853
 
 ## Il novilunio dell'eclissi totale dell'11 agosto 1999, in giorno giuliano UT.
@@ -146,7 +150,7 @@ static func data_scritta(night_index: int) -> String:
 ## L'ISTANTE, in giorno giuliano UT, della notte `n` dopo `minuti` di gioco.
 ##
 ## IL TEMPO DI GIOCO È IL TEMPO DEL MONDO, ed è la stessa regola di
-## `TempoSiderale`: `elapsed_min` sono minuti dell'orologio del 1999, non secondi
+## `TempoSiderale`: `elapsed_min` sono minuti dell'orologio del 2000, non secondi
 ## reali. Chi passa qui `Game.run.elapsed_min` ottiene l'ora vera della notte.
 static func istante(night_index: int, minuti: float) -> float:
 	var d := data(night_index)

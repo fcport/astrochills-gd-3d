@@ -68,7 +68,7 @@ esterna e calibrazione economica sono fuori scopo.
 ### Game Overview
 
 **Astrochill** — creepy-cozy work simulator in prima persona. Osservatorio astronomico
-sul Monte San Lorenzo, Montegrimano (PU), 1999. Il giocatore esegue la procedura reale
+sul Monte San Lorenzo, Montegrimano (PU), 2000. Il giocatore esegue la procedura reale
 dell'astrofotografia CCD amatoriale, vende le foto — e aspetta.
 
 ### Technical Scope
@@ -506,7 +506,7 @@ Questi pattern valgono per **tutti** i sistemi e ogni implementazione deve rispe
 **Strategia: due canali che non si toccano mai.**
 
 Astrochill ha una categoria di eventi che quasi nessun progetto ha: il **fallimento
-diegetico**. Quando il software del 1999 dice `DEVICE NOT RESPONDING`, o il plate solve
+diegetico**. Quando il software del 2000 dice `DEVICE NOT RESPONDING`, o il plate solve
 non trova nulla, quello non è un errore — è contenuto. E più avanti diventerà una
 *bugia*. Se viaggia sullo stesso canale di un errore vero, quando arriveranno le rotture
 non sarà più possibile distinguere un bug da una feature.

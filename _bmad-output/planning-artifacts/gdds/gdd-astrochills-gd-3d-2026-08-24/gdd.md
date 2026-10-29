@@ -21,7 +21,7 @@ needs_narrative: true
 ### Concetto centrale
 
 Hai perso il lavoro in albergo e ne hai trovato uno strano: gestore notturno di un
-osservatorio astronomico appena aperto sull'Appennino marchigiano, nel 1999. Non sai niente
+osservatorio astronomico appena aperto sull'Appennino marchigiano, nel 2000. Non sai niente
 di astronomia. Impari sul campo, una notte alla volta: apri la cupola, accendi e colleghi,
 sincronizzi il puntamento, scegli cosa fotografare, avvii la sequenza. Le foto le vendi; coi soldi compri
 attrezzatura che automatizza pezzi della routine, e il tempo che ne ricavi lo passi lì
@@ -60,13 +60,13 @@ perché era stato promesso altro. Un `Horror` in fondo alla lista, messo dalla c
 ### Punti di forza distintivi (USP)
 
 1. **Un mestiere tecnico reale e verificabile**, non inventato: la procedura
-   dell'astrofotografia CCD amatoriale del 1999, nell'ordine giusto, coi software che
+   dell'astrofotografia CCD amatoriale del 2000, nell'ordine giusto, coi software che
    esistevano davvero.
 2. **Un orrore che non ha corpo, non minaccia e non si vede.** Arriva dai dati — dark frame
    che non sono neri, autoguida che insegue una stella che non hai scelto, stack che
    contengono qualcosa che non era in nessun frame.
-3. **L'ambientazione italiana del 1999 come contesto tecnico, non come colore locale.** Lire,
-   56k che occupa la linea, newsgroup, riviste di astrofili. Nel 1999 l'elaborazione
+3. **L'ambientazione italiana del 2000 come contesto tecnico, non come colore locale.** Lire,
+   56k che occupa la linea, newsgroup, riviste di astrofili. Nel 2000 l'elaborazione
    *normale* era già fatta di sottrazione dark, flat fielding e unsharp mask: la linea fra
    elaborazione e falsificazione era genuinamente contestata, e **ogni anomalia del gioco è
    quindi storicamente negabile senza inventare niente**.
@@ -141,7 +141,7 @@ che non risponde a nessuno è scope creep travestito.
 
 **1. Il lavoro è vero.**
 Le fasi non sono minigiochi a tema astronomico: sono la procedura reale
-dell'astrofotografia CCD amatoriale del 1999, nell'ordine giusto, coi software che
+dell'astrofotografia CCD amatoriale del 2000, nell'ordine giusto, coi software che
 esistevano davvero (Cartes du Ciel, CCDOPS, MaxIm DL, Giotto).
 *Steerizza:* ogni fase va progettata a partire dalla procedura storica, non
 dall'ergonomia; il testo delle interfacce è in inglese perché le macchine parlano
@@ -225,6 +225,10 @@ ARRIVI, 21:00    scendi dalla macchina, il posto è al buio
 manuali, la posa, camminare, leggere, uscire. A `game_min_per_sec = 0,15` sono **60 minuti
 reali**. Le venti notti di storia fanno quindi circa **20 ore**, più il free play.
 
+**La prima notte comincia con qualcuno.** Al cancello ti aspetta Gerardo, che ti fa fare
+il giro dell'osservatorio e poi se ne va in macchina: il turno, e l'orologio, partono quando
+lui è sparito giù per la sterrata (D-287). Dalla seconda notte si arriva da soli.
+
 **La notte finisce quando te ne vai.** Non ci abiti: sei il gestore notturno, arrivi in
 macchina alle nove di sera e all'alba torni a casa. Chiudere il turno è un gesto fisico
 — attraversare l'osservatorio, uscire, raggiungere l'auto — non una voce di menù.
@@ -249,7 +253,7 @@ importante che ha.
 polso e l'ora compare per qualche secondo, poi il braccio scende. Resta diegetico al cento
 per cento — nessun numero in sovrimpressione, coerente con la regola che ogni interfaccia
 di questo gioco vive nel mondo — e funziona in ogni punto raggiungibile, bosco compreso,
-dove nessuna sveglia a parete arriverebbe. Un digitale del 1999 al polso di chi lavora di
+dove nessuna sveglia a parete arriverebbe. Un digitale del 2000 al polso di chi lavora di
 notte è, per giunta, esattamente ciò che ci sarebbe stato.
 
 > **[NOTE FOR DESIGNER]** Il costo di questa scelta è la **scopribilità**, ed è un rischio
@@ -349,7 +353,7 @@ tornano. Le lire no: restano disponibili per sempre.
 #### La forma di una fase
 
 Una notte si svolge in **undici fasi fisse, nell'ordine**, più due code (stacking e vendita)
-che chiudono ogni foto. Ogni fase è una procedura reale dell'astrofotografia CCD del 1999,
+che chiudono ogni foto. Ogni fase è una procedura reale dell'astrofotografia CCD del 2000,
 resa come schermata CRT o come gesto sulla strumentazione, e produce un **punteggio di
 qualità 0-100** che concorre al valore della foto.
 
@@ -522,7 +526,7 @@ del piacere.
 ### Controlli e input
 
 Tastiera e mouse, prima persona. Il gamepad non è un target: il gioco è fatto di schermate
-con campi e cursori, e la fedeltà al 1999 vuole quel tipo di interazione.
+con campi e cursori, e la fedeltà al 2000 vuole quel tipo di interazione.
 
 #### La regola che governa tutto: pochi tasti globali, tutto il resto nel mondo
 
@@ -548,7 +552,7 @@ La regola che ne discende: **i tasti globali sono cinque e si insegnano; ogni al
 **Terminale e BBS smettono di essere tasti globali.** Oggi `terminal_open` è `T` e
 `bbs_open` è `B`: due tasti che nessuno ha trovato. Diventano invece **programmi del PC**
 nella stanza computer — ci si avvicina, si preme `E`, e si sceglie cosa aprire fra il
-software di controllo, il negozio online e la BBS. È più scopribile *e* più vero: nel 1999
+software di controllo, il negozio online e la BBS. È più scopribile *e* più vero: nel 2000
 si aprivano programmi diversi sullo stesso computer.
 
 Dentro le schermate CRT valgono i controlli della schermata (`W` `A` `S` `D` per muoversi fra i
@@ -577,18 +581,19 @@ sinistra del monitor, con i fogli battuti a macchina: l'ordine della notte, una 
 ogni fase e come si fa, i tasti, cosa fare mentre la posa lavora e come finisce il turno.
 Si apre con `E` e si sfoglia. Insegna **la sequenza** — cosa viene dopo cosa, e perché
 quell'ordine — che è ciò che i prompt non possono spiegare. Diegetico e storicamente
-esatto: nel 1999 le procedure di un posto stavano in un raccoglitore accanto al computer.
+esatto: nel 2000 le procedure di un posto stavano in un raccoglitore accanto al computer.
 
 Il quaderno ha una seconda vita: **è un oggetto del mondo che invecchia**. Annotazioni a
 penna, correzioni, una pagina aggiunta a mano. È un canale narrativo già in posizione.
 
-**3. I biglietti della prima notte.** Chi ti ha assunto ti lascia istruzioni scritte: dove
+**3. I biglietti della prima notte.** Gerardo (D-287), che ti ha assunto, ti lascia istruzioni scritte: dove
 sono le cose, come si accende, cosa si fa. Introducono **una cosa alla volta** invece di
 tutte insieme, e insegnano i cinque tasti globali — compreso `Q`, che nessun prompt
 contestuale potrebbe mai annunciare, perché l'orologio non è un oggetto da avvicinare.
 
-Coprono la prima notte e poi tacciono, e la loro presenza è anche la prima voce umana del
-gioco in un posto dove non c'è nessun altro.
+Coprono la prima notte e poi tacciono. Sono la sua voce dopo che se n'è andato: il giro ti
+mostra i posti, i biglietti restano dove servono, in un posto dove da quel momento non c'è
+nessun altro.
 
 #### Perché non c'è un elenco delle azioni disponibili
 
@@ -643,7 +648,28 @@ conoscere il posto per averlo percorso è metà del punto.
 
 ### Interazione con i personaggi
 
-<!-- DA SCRIVERE -->
+**C'è una persona sola, e la si incontra una volta** (D-287). È **Gerardo**, il capo dei
+soci del DLF — il circolo del Dopolavoro Ferroviario a cui appartiene l'osservatorio, e che
+ti ha preso come gestore notturno. La prima notte ti aspetta al cancello, accanto alla sua
+macchina, e ti fa fare il giro: il quadro elettrico in facciata, lo spazio divulgazione, la
+cucina, il controllo PC con il quaderno, la cupola. Poi torna all'auto, ti lascia le chiavi
+e scende per la sterrata. **Il turno comincia quando i suoi fanali spariscono**: fino a lì
+l'orologio è fermo alle 21:00, perché il giro è un'accoglienza e non un costo.
+
+- **Lo si vede in faccia, ed è uno sprite.** Alla maniera di Doom: un modello vero
+  renderizzato da otto angolazioni, e in gioco una figura piatta che si gira sempre verso chi
+  guarda. Sta nell'estetica PS1 senza chiedere un personaggio animato in 3D, che a 640 × 360
+  costerebbe molto e si leggerebbe meno.
+- **Parla in sottotitoli**, senza voce: niente audio segnaposto (la regola dei suoni). Le
+  battute sono un dato (`data/gerardo/giro.tres`), e si spostano senza toccare il codice.
+- **Il giocatore non perde mai il controllo.** Gerardo va avanti e aspetta chi resta
+  indietro; `E` guardandolo fa passare alla battuta dopo. Le porte le apre lui.
+- **Gli si risponde** (D-289). Ti chiede come ti chiami, e lo scrivi; ti fa domande, e
+  scegli la risposta con `W`/`S` ed `E`; a volte sei tu a chiedere («Quale luce rossa?»).
+  Mentre rispondi i piedi sono fermi e la testa no. Il nome resta nel profilo: Gerardo non
+  l'ha capito e ti chiama «mister», ma il gioco lo sa.
+- **Dopo non torna.** La solitudine del pilastro resta intera: è solo spostata di dieci
+  minuti. Quello che non ha fatto in tempo a dire lo dicono i biglietti.
 
 ### Inventario e oggetti
 
@@ -733,11 +759,11 @@ di ciò che sta succedendo.
 
 Tutto è in lire. **I prezzi di `economia.md §3` sono confermati come rapporto e moltiplicati
 per dieci in valore assoluto**: il bilanciamento resta identico, ma le cifre diventano
-credibili per il 1999 su entrambi i lati del banco.
+credibili per il 2000 su entrambi i lati del banco.
 
 > **I prezzi della spesa quotidiana sono quelli veri; quelli dell'attrezzatura no, ed e' una
 > scelta dichiarata** (D-170). Una moka a 25.000 lire, una stufetta a 40.000, un catalogo su
-> CD-ROM a 180.000, un abbonamento a *Coelum* a 60.000: sono i prezzi del 1999, e restano.
+> CD-ROM a 180.000, un abbonamento a *Coelum* a 60.000: sono i prezzi del 2000, e restano.
 > L'attrezzatura grossa invece nella realta' costava dieci volte tanto — una SBIG ST-7
 > stava sui cinque milioni di lire — e le foto astronomiche amatoriali, in Italia, non le
 > pagava quasi nessuno: le riviste pubblicavano quelle dei lettori gratis. Ai prezzi veri
@@ -766,7 +792,7 @@ dura una posa sensata.
 |---|---|---|
 | **Telescopio** | Newton **30 cm f/5**, focale 1500 mm | il classico degli osservatori comunali italiani degli anni '80. E il tubo del modello 3D e' **lungo 1,50 m**: un 40 cm f/4,5 ne vorrebbe due, e non passerebbe nel pozzo della passerella (raggio 0,87 m) |
 | **Montatura** | equatoriale **alla tedesca**, su pilastro di cemento | e' quella del modello, ed e' quella che a meta' notte obbliga al **meridian flip** |
-| **Camera** | **SBIG ST-8**, chip KAF-1600 da 1530x1020 pixel di 9 micron, raffreddata a Peltier | la camera dell'astrofotografo europeo del '99. Ha il **chip di guida integrato**: per questo la fase 9 non ha bisogno di una seconda camera |
+| **Camera** | **SBIG ST-8**, chip KAF-1600 da 1530x1020 pixel di 9 micron, raffreddata a Peltier | la camera dell'astrofotografo europeo del 2000. Ha il **chip di guida integrato**: per questo la fase 9 non ha bisogno di una seconda camera |
 | **Ruota filtri** | **SBIG CFW-8**, cinque posizioni | si attacca alla camera e prende corrente da lei. E' il fatto su cui gira la fase 2 |
 | **PC** | un 486 dedicato al telescopio, monitor monocromatico | vedi *Le licenze dichiarate*, piu' avanti |
 
@@ -983,7 +1009,7 @@ dimensionamento di D-022 sopravvive al dimezzamento, con ampio margine.
 
 | Elemento | Dove | Perché esiste |
 |---|---|---|
-| **Contatore della corrente** | in facciata, lato sud | governa le luci e lo schermo del monitor, e basta: PC e montatura restano accesi (D-238). Nel 1999 si riarma a mano, **e per farlo bisogna uscire al buio**. Si aggancia alla fase 4, ed è un canale già pronto per il pilastro 3: la corrente che salta durante una posa è la cosa più banale e più credibile del mondo |
+| **Contatore della corrente** | in facciata, lato sud | governa le luci e lo schermo del monitor, e basta: PC e montatura restano accesi (D-238). Nel 2000 si riarma a mano, **e per farlo bisogna uscire al buio**. Si aggancia alla fase 4, ed è un canale già pronto per il pilastro 3: la corrente che salta durante una posa è la cosa più banale e più credibile del mondo |
 | **Rampa d'accesso** | davanti alla porta | edificio pubblico a norma che nessuno ha mai visitato: dice l'isolamento senza raccontarlo, e costa un asset |
 | **Piazzola dell'auto** | dentro il recinto, oltre il cancello | ~20 m dall'ingresso. Il turno si apre e si chiude attraversando il prato al buio, quaranta volte in venti notti |
 | **Cancello** | dove arriva la sterrata | si apre dalla macchina all'arrivo. Che una notte sia già aperto è una possibilità che la disposizione lascia lì, gratis |
@@ -1020,7 +1046,7 @@ sblocca a pezzi produce curiosità; un posto percorso venti volte produce **fami
 
 **3D low-poly, estetica PS1.** Geometrie semplici, texture piccole con filtering nearest,
 vertex snapping, nebbia a chiudere le distanze. Non è un ripiego travestito da scelta: il
-gioco è ambientato nel 1999 e imita la grafica del periodo che racconta, il che lavora a
+gioco è ambientato nel 2000 e imita la grafica del periodo che racconta, il che lavora a
 favore della metanarrazione. È anche la fedeltà 3D più abbordabile per chi non è
 modellatore.
 
@@ -1094,7 +1120,7 @@ costruiti è competenza del documento di architettura.
 - **Engine: Godot 4.7.2, renderer Compatibility.** La scelta del renderer è vincolante per
   l'estetica (nearest filtering, vertex snapping) ed è già in produzione.
 - **Input: tastiera e mouse.** Il gamepad non è un target: il gioco è fatto di schermi con
-  campi e cursori, e la fedeltà al 1999 vuole quel tipo di interazione.
+  campi e cursori, e la fedeltà al 2000 vuole quel tipo di interazione.
 - **Distribuzione: Steam.**
 
 ### Lingue e localizzazione
@@ -1114,7 +1140,7 @@ livello, e per una ragione che non è di traduzione.
 colore — non può giocare. E un'impostazione su «Italiano» che lascia in inglese metà di ciò
 che si deve leggere è un'impostazione rotta.
 
-**Come si traducono: alla maniera di un astrofilo italiano del 1999.** Non è una traduzione
+**Come si traducono: alla maniera di un astrofilo italiano del 2000.** Non è una traduzione
 d'ufficio. Il gergo tecnico che si usava in inglese *dentro* la frase italiana resta in
 inglese, perché è così che si parlava davvero: **dark, flat, stacking, seeing, guiding,
 plate solving, tracking**. Un italiano diceva «ho fatto i dark» e «lo stacking è venuto
@@ -1205,9 +1231,9 @@ esplicitamente incluso finora è stato tolto da qui.
 | Cosa | Perché |
 |---|---|
 | Console e piattaforme diverse da PC Windows | target unico dichiarato; nessuna certificazione da rispettare |
-| Supporto gamepad | il gioco è fatto di schermi con campi e cursori; la fedeltà al 1999 vuole tastiera e mouse |
+| Supporto gamepad | il gioco è fatto di schermi con campi e cursori; la fedeltà al 2000 vuole tastiera e mouse |
 | Multiplayer di qualsiasi forma | il protagonista è sempre solo, ed è il punto |
-| NPC visibili o animati | non esistono personaggi in scena: tutta la presenza umana passa da testo, terminale e BBS |
+| NPC oltre Gerardo | la sola persona in scena è Gerardo, la prima notte, e se ne va prima che cominci il turno (D-287). Da lì in poi tutta la presenza umana passa da testo, terminale e BBS |
 | Combattimento, morte, fallimento, game over | vietati dal pilastro 2 |
 | Minaccia fisica o inseguimento | vietati dal pilastro 3: l'orrore è informativo, mai spaziale |
 | Esplorazione oltre il perimetro dell'osservatorio | prato, sterrata e bosco sono il limite; non ci si allontana mai davvero |

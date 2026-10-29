@@ -90,6 +90,13 @@ const TERMINAL := preload("res://terminal/terminal.tscn")
 ## `bbs/`, e viceversa.
 const BBS := preload("res://bbs/bbs.tscn")
 
+## Gerardo e la sua auto (D-287): la prima notte ti fanno il giro e se ne vanno. Le
+## SCENE si preload come il terminale: appartengono al gioco. Il giro è un dato.
+const GERARDO := preload("res://world/gerardo/gerardo.tscn")
+const AUTO_DI_GERARDO := preload("res://world/gerardo/auto_di_gerardo.tscn")
+const FARI := preload("res://world/gerardo/fari.tscn")
+const GIRO_PATH := "res://data/gerardo/giro.tres"
+
 ## Percorsi, NON preload. `const ... preload` risolve al caricamento dello script,
 ## in ogni build: con un preload gli strumenti di debug — e con l'iniettore anche
 ## `wandering_drift.tres` — finirebbero comunque dentro l'export di release, che
@@ -144,6 +151,10 @@ var _monitor: CrtMonitor
 ## merita un prompt. Era un letto nel magazzino: vedi `macchina.gd` per il perché
 ## se n'è andato.
 var _macchina: Macchina
+
+## I fari accesi della tua auto all'arrivo della prima notte (D-287), finché non vi
+## incamminate. `null` il resto del tempo.
+var _fari_arrivo: FariCinquecento
 
 ## Il velo nero delle dissolvenze. Sta sopra il mondo ma SOTTO gli strumenti di
 ## debug, che entrano in albero dopo: chi sviluppa deve poter leggere l'overlay
@@ -302,7 +313,91 @@ func _begin_night() -> void:
 	# Il desktop nasce con la finestra di lavoro chiusa: la notte deve saperlo prima di
 	# montare la prima fase, o quella ascolterebbe i tasti da dietro un vetro vuoto.
 	_night.set_screen_focused(_crt.desktop().is_work_focused())
-	_start_new_night()
+	# LA PRIMA NOTTE COMINCIA CON QUALCUNO (D-287). Il turno — e con lui l'orologio — parte
+	# quando Gerardo se n'è andato: fino a lì sono le 21:00 e il monitor non ha niente da
+	# fare. «Prima» vuol dire senza notti alle spalle, e non un campo nel profilo: chi chiude
+	# a metà ricomincia dalle 21:00 (D-243), e Gerardo lo riaccoglie.
+	if Game.profile.nights_completed == 0:
+		_accogli()
+	else:
+		_start_new_night()
+
+
+## Monta Gerardo e la sua auto, mette il giocatore accanto alla propria, e rimanda
+## l'inizio del turno a quando l'auto di Gerardo è sparita giù per la sterrata.
+##
+## Sta qui per la stessa ragione del monitor e dell'auto: `world/` sa camminare e parlare,
+## ma che cosa faccia cominciare la notte lo sa solo il punto d'ingresso.
+func _accogli() -> void:
+	var giro := load(GIRO_PATH) as GiroGerardo
+	var player := Player.find_in(get_tree())
+	if giro == null or player == null:
+		# Canale 1: senza giro la notte comincia lo stesso, come le altre.
+		push_error("[main] giro di Gerardo assente o illeggibile: %s" % GIRO_PATH)
+		_start_new_night()
+		return
+	# PRIMA SI ASPETTA IL TERRENO. La collisione dello slargo la costruisce `Corazza` in
+	# differita, ed entra nello spazio fisico solo al passo di fisica dopo: i raggi che
+	# posano l'auto, Gerardo e il giocatore, sparati subito, non trovavano niente. L'auto
+	# restava a trenta metri d'altezza — sullo slargo se ne vedeva solo l'ombra, e Gerardo ci
+	# saliva dentro sparendo nel vuoto (Federico, D-293) — e il giocatore nasceva sotto terra.
+	for _i in 300:
+		if _c_e_terra(player, giro.arrivo):
+			break
+		await get_tree().physics_frame
+	var mondo := player.get_parent()
+	var auto := AUTO_DI_GERARDO.instantiate() as AutoDiGerardo
+	mondo.add_child(auto)
+	auto.posa(Vector2(giro.auto.x, giro.auto.z), giro.auto.y)
+	var gerardo := GERARDO.instantiate() as Gerardo
+	gerardo.giro = giro
+	mondo.add_child(gerardo)
+	_metti_all_arrivo(player, giro)
+	# SEI APPENA ARRIVATO, E HAI I FARI ACCESI. Sullo slargo non c'è un'altra luce, e senza
+	# Gerardo sarebbe una sagoma nera a tre metri: ti aspetta dentro il fascio, e la luce
+	# gli arriva dalla tua parte, cioè sulla faccia. Si spengono quando vi incamminate.
+	if _macchina != null:
+		_fari_arrivo = FARI.instantiate() as FariCinquecento
+		_macchina.add_child(_fari_arrivo)
+		_fari_arrivo.accendi(true)
+		gerardo.tappa_cominciata.connect(_on_tappa_cominciata)
+	gerardo.andato_via.connect(_start_new_night, CONNECT_ONE_SHOT)
+	gerardo.comincia(auto)
+	_refresh_affordances()
+
+
+## Gerardo si incammina verso la tappa `indice`: alla seconda lasciate lo slargo, e i
+## fari della tua auto si spengono.
+func _on_tappa_cominciata(indice: int) -> void:
+	if indice == 1 and _fari_arrivo != null:
+		_fari_arrivo.queue_free()
+		_fari_arrivo = null
+
+
+## Il giocatore accanto alla portiera della sua auto, con lo sguardo su Gerardo. La
+## quota è quella dello slargo, letta con un raggio: lo slargo sta un metro e mezzo sopra
+## il pavimento dell'edificio, e posato a quota zero il corpo nascerebbe sotto terra.
+## Se sotto un punto della pianta c'è già un terreno che i raggi vedono.
+func _c_e_terra(player: Player, p: Vector2) -> bool:
+	var domanda := PhysicsRayQueryParameters3D.create(Vector3(p.x, 30.0, p.y), Vector3(p.x, -30.0, p.y))
+	domanda.collision_mask = Interactable.LAYER_WORLD
+	domanda.exclude = [player.get_rid()]
+	return not player.get_world_3d().direct_space_state.intersect_ray(domanda).is_empty()
+
+
+func _metti_all_arrivo(player: Player, giro: GiroGerardo) -> void:
+	var a := giro.arrivo
+	var domanda := PhysicsRayQueryParameters3D.create(Vector3(a.x, 30.0, a.y), Vector3(a.x, -30.0, a.y))
+	domanda.collision_mask = Interactable.LAYER_WORLD
+	domanda.exclude = [player.get_rid()]
+	var colpo := player.get_world_3d().direct_space_state.intersect_ray(domanda)
+	var y: float = (colpo["position"] as Vector3).y if not colpo.is_empty() else player.global_position.y
+	var verso := giro.partenza - a
+	player.velocity = Vector3.ZERO
+	player.global_transform = Transform3D(Basis(Vector3.UP, atan2(-verso.x, -verso.y)), Vector3(a.x, y, a.y))
+	var cam := player.camera()
+	if cam != null:
+		cam.rotation.x = 0.0
 
 
 ## Fa cominciare una notte sull'orchestratore già montato.

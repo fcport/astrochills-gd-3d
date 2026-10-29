@@ -1,0 +1,100 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://world/gerardo/gerardo.gd" id="1_gerardo"]
+[ext_resource type="Texture2D" path="res://assets/sprites/gerardo.png" id="2_atlante"]
+[ext_resource type="Shader" path="res://world/gerardo/figura.gdshader" id="3_figura"]
+
+[sub_resource type="ShaderMaterial" id="luce_alla_doom"]
+render_priority = 0
+shader = ExtResource("3_figura")
+shader_parameter/atlante = ExtResource("2_atlante")
+
+; IL RIQUADRO DEL DIALOGO: scuro, quasi opaco, con un filo color carta. Angoli vivi, come
+; tutto quello che sta sopra il mondo a 640 x 360.
+[sub_resource type="StyleBoxFlat" id="riquadro"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+bg_color = Color(0.035, 0.035, 0.045, 0.86)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.98, 0.88, 0.62, 0.6)
+
+[sub_resource type="CapsuleShape3D" id="capsula"]
+radius = 0.28
+height = 1.75
+
+[node name="Gerardo" type="StaticBody3D"]
+script = ExtResource("1_gerardo")
+
+[node name="Col" type="CollisionShape3D" parent="."]
+position = Vector3(0, 0.875, 0)
+shape = SubResource("capsula")
+
+; LA FIGURA. Il fotogramma è alto 128 pixel per 2,10 m: i piedi stanno sul bordo basso
+; (`tools/gerardo_blender.py` inquadra così), quindi il centro sta a 1,05. Si gira solo
+; attorno all'asse verticale, come i nemici di Doom, e prende la luce della scena: al buio
+; lo si vede solo dove lo illumina qualcosa — i fari della tua auto, le luci di fuori, la tua
+; lampada. LA TORCIA NON C'È PIÙ: era una luce che partiva dal centro dello sprite, che in
+; mano non ha niente, e da dove venisse non si capiva (D-287).
+; La luce la conta `figura.gdshader`, alla maniera di Doom: con quella di serie, sotto le
+; plafoniere della sala diventava nero.
+[node name="Figura" type="Sprite3D" parent="."]
+unique_name_in_owner = true
+position = Vector3(0, 1.05, 0)
+material_override = SubResource("luce_alla_doom")
+pixel_size = 0.0164
+billboard = 2
+shaded = true
+alpha_cut = 1
+texture_filter = 0
+texture = ExtResource("2_atlante")
+hframes = 7
+vframes = 8
+
+[node name="Sottotitoli" type="CanvasLayer" parent="."]
+unique_name_in_owner = true
+
+; LA FINESTRA DI DIALOGO (D-293, Federico: «delle dialog box, non il testo fluttuante»).
+; Sta sopra il prompt (che sta fra -48 e -24) e cresce verso l'alto: la battuta prende una
+; o due righe, e quando si risponde le risposte compaiono sotto, dentro lo stesso riquadro.
+; Largo sessanta colonne a 14 punti e il margine.
+[node name="Riquadro" type="PanelContainer" parent="Sottotitoli"]
+unique_name_in_owner = true
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -250.0
+offset_top = -54.0
+offset_right = 250.0
+offset_bottom = -54.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("riquadro")
+
+[node name="Dentro" type="VBoxContainer" parent="Sottotitoli/Riquadro"]
+theme_override_constants/separation = 4
+
+; Chi parla, in piccolo e in giallo carta.
+[node name="Chi" type="Label" parent="Sottotitoli/Riquadro/Dentro"]
+unique_name_in_owner = true
+theme_override_colors/font_color = Color(0.98, 0.88, 0.62, 1)
+theme_override_font_sizes/font_size = 12
+text = "GERARDO"
+
+[node name="Riga" type="Label" parent="Sottotitoli/Riquadro/Dentro"]
+unique_name_in_owner = true
+theme_override_colors/font_color = Color(0.95, 0.93, 0.88, 1)
+theme_override_font_sizes/font_size = 14
+
+; LE RISPOSTE (D-289): la lista sotto la domanda, o il nome che si sta scrivendo. In verde
+; chiaro, che è la tua voce e non la sua; il segno di scelta sta in colonna.
+[node name="Scelte" type="Label" parent="Sottotitoli/Riquadro/Dentro"]
+unique_name_in_owner = true
+theme_override_colors/font_color = Color(0.75, 0.9, 0.75, 1)
+theme_override_font_sizes/font_size = 14

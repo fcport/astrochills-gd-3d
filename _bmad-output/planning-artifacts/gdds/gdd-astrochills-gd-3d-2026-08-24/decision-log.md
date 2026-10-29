@@ -9903,3 +9903,307 @@ farlo apribile». È il pensile a specchio sul muro nord, accanto allo stipite.
   teche; dentro il `.glb` si tirava dietro il suo set di mappe e il bagno passava a 21,3 MB,
   oltre il limite di venti che il modellatore controlla. Con il legno del mobile il modello pesa
   17,9 MB — meno di prima, perché se ne va anche la fodera interna.
+
+## D-287 La prima notte c'è Gerardo, che ti fa fare il giro e se ne va
+
+**28 ottobre 2026.** Federico: «mi piacerebbe creare all'inizio del gioco un npc che ti fa vedere
+l'osservatorio e poi va via». Il GDD lo vietava, in *Fuori ambito*: «NPC
+visibili o animati — non esistono personaggi in scena». La riga cambia, e la ragione per cui
+c'era resta: il protagonista è solo. Lo diventa dieci minuti dopo.
+
+- **CHI È.** Il capo dei soci del **DLF**, il circolo del Dopolavoro Ferroviario a cui appartiene
+  l'osservatorio: tiene le chiavi, e ti ha assunto come gestore notturno. Deciso da Federico.
+  Non è «G.» della busta di `economia.md`, che resta uno che il protagonista non conosce.
+- **LO SI VEDE IN FACCIA, ED È UNO SPRITE ALLA DOOM.** Federico: «se facessimo una crasi di
+  stili e lo facessimo in 2D? stile Doom». I modelli realistici di anziani su Sketchfab sono
+  pochi e quelli scaricabili senza account quasi tutti cartoon; un umano animato in 3D a
+  640 × 360 costa tanto e si legge poco. Lo sprite si fa come lo faceva id Software coi
+  modellini di plastilina: un modello vero, **renderizzato da otto angolazioni**, e in gioco
+  una figura piatta che sceglie il fotogramma dall'angolo fra il suo sguardo e la camera. Il
+  modello sorgente è **OldMan Ernest** (sgrosjean, CC-BY-SA): coppola, maglione, pantaloni
+  scuri, bastone, cioè un pensionato italiano. Lo zip lo scarica Federico.
+- **IL GIRO È UN DATO** (`data/gerardo/giro.tres`): le tappe con il percorso per arrivarci e
+  le battute. Spostare una tappa o riscrivere una battuta non tocca il codice, come il
+  quaderno. Le tappe sono quelle che servono alla prima notte: il quadro elettrico in
+  facciata (si riarma da fuori, D-238), lo spazio divulgazione, la cucina, il controllo PC con
+  il quaderno, la cupola. Il banco controlla che ogni battuta stia in due righe di sottotitolo.
+- **L'OROLOGIO PARTE QUANDO LUI SE NE VA.** Il giro dura qualche minuto vero, che al ritmo della
+  notte sarebbero un'ora e mezza di gioco: un'accoglienza che si mangia il budget è una
+  punizione. `main.gd` rimanda l'inizio del turno finché l'auto di Gerardo non è sparita;
+  fino a lì sono le 21:00 e il monitor non ha niente da fare.
+- **NON SI PERDE IL CONTROLLO.** Lui cammina avanti e si ferma se resti indietro; le battute
+  passano da sole, e `E` guardandolo fa passare alla dopo. Le porte le apre lui, da un passo
+  indietro perché l'anta non gli passi attraverso, e le lascia aperte.
+- **PARLA IN SOTTOTITOLI**, senza voce: niente audio sintetizzato al posto di una voce vera.
+- **SE NE VA IN MACCHINA**, giù per la sterrata. La strada è quella di OpenStreetMap che passa
+  dallo slargo (la stessa che `prendi_panorama.py` dipinge sul terreno), verso ovest, e
+  l'auto è la 500 con un'altra vernice finché non ce n'è una sua.
+- **LA PRIMA NOTTE È QUELLA SENZA NOTTI ALLE SPALLE** (`nights_completed == 0`), senza un campo
+  nuovo nel profilo: chi chiude il gioco a metà ricomincia dalle 21:00, e Gerardo lo
+  riaccoglie. È coerente con D-243 — la notte non si salva a metà.
+- **I BIGLIETTI RESTANO**, e diventano suoi: il GDD diceva «chi ti ha assunto», e chi ti ha
+  assunto adesso ha un nome. Il giro mostra i posti; i biglietti dicono quello che lui non ha
+  fatto in tempo a dire.
+- **TI ASPETTA NEI TUOI FARI.** Al primo scatto sullo slargo era una sagoma nera a tre metri:
+  lì non c'è luce, e la lampada del giocatore arriva a tre metri. Sei appena arrivato, quindi
+  la tua 500 ha i fari accesi (`world/gerardo/fari.tscn`, la stessa scena dell'auto di
+  Gerardo), e lui sta dentro il fascio a due metri e mezzo dal muso: la luce gli arriva
+  dalla tua parte, sulla faccia. Si spengono quando vi incamminate. Uno sprite illuminato
+  da dietro è nero, e i suoi fari lo avrebbero fatto controluce.
+- **I FANALINI BRILLANO, NON ILLUMINANO.** Una luce rossa da 0,6 faceva sul prato una pozza
+  larga quanto i fari; adesso si accende l'emissione dei vetri del modello, con una luce
+  minima per il terreno sotto il paraurti.
+
+**Misurato.** Il percorso: capsula da 0,28 m ogni dieci centimetri, porte escluse — zero
+urti, dopo aver spostato il tratto che usciva dal cancello passando sul pilastro. Il giro
+intero, con una sonda che fa seguire Gerardo al giocatore lungo la sua scia: sette
+tappe, quindici battute, le porte di ingresso, cucina, corridoio e controllo aperte da lui;
+l'auto parte, sparisce, e solo allora `Game.run` nasce e l'orologio va (21:00, poi 21:01).
+Due difetti visti solo negli scatti: Gerardo e la sua auto nascevano **sepolti** — lo
+slargo sta due metri sopra il pavimento, e il primo raggio partiva da sotto terra — e la
+pozza rossa dei fanalini. Il banco controlla le otto facce, la strada e le battute.
+
+**Lo sprite di adesso è un atlante diagnostico**, con riga e posa scritte su ogni
+fotogramma: serve a vedere che la faccia giusta guardi la camera. Lo sostituiscono i render
+di Ernest quando lo zip è in `assets/models/_da_scaricare/`.
+
+**IL MODELLO NON È PIÙ ERNEST: È UNA PERSONA VERA.** Federico ha chiesto di usare la persona
+vera a cui il personaggio è ispirato, con una sua foto davanti all'osservatorio — polo blu del Gruppo Astrofili DLF,
+pantaloncini, sandali. Pixelato a 128 pixel resta riconoscibile, quindi serve il suo
+consenso. C'è una foto sola, di fronte: il dietro e i fianchi li ricostruisce un modello
+image-to-3D (TRELLIS, licenza MIT; Hunyuan3D no, la sua licenza esclude l'UE), la camminata
+Mixamo, e il render a otto lati resta quello previsto. La foto scontornata
+(`rembg`, `u2net_human_seg`) e il modello stanno in `assets/models/_da_scaricare/gerardo/`,
+che git esclude: la faccia di una persona vera non va nel repository pubblico come sorgente.
+Se il gioco esce su Steam, la parte generata va dichiarata.
+
+**LO SPRITE C'È** (`tools/gerardo_blender.py`). TRELLIS ha dato un modello buono da una
+foto sola — polo, pantaloncini, sandali, lo stemma sulla manica, la pancia di profilo — con
+due difetti, e il provino li ha mostrati tutti e due:
+- **capelli neri sulla nuca** di un uomo calvo con i lati grigi: si ridipingono nella
+  texture i pixel scuri della testa che non guarda avanti, pelle sopra e grigio ai lati;
+- **la mano fusa col fianco dei pantaloncini**: ogni gesto della mano strappava un lembo di
+  stoffa, con due regole di pesi diverse. Le braccia allora non si muovono: cammina con le
+  mani lungo i fianchi e, parlando, annuisce.
+Niente armatura: le ossa sono perni misurati sulla sagoma, i vertici si deformano con lo
+skinning lineare e ogni posa è una shape key. Render piatto (Workbench), a quattro volte
+e ridotto con la media premoltiplicata, alfa tagliata a metà come in gioco. In gioco lo
+sprite è senza compressione VRAM (`detect_3d/compress_to=0`), o i pixel si sporcano.
+**Guardato in gioco:** nel fascio dei fari all'arrivo, da vicino, camminando di fianco
+sullo slargo e sulla porta della cucina, parlando in sala.
+
+**IL MODELLO SI RIFÀ DA QUATTRO VISTE.** Federico ha portato un fianco, un dietro e un tre
+quarti (fatti con Gemini dalla foto di fronte: parte generata anche loro). TRELLIS in modalità
+*Multiple Images* li ha usati tutti: la nuca adesso ha i capelli grigi veri, e la ridipintura
+tocca solo i pixel neri (nove, sul modello nuovo). Le mani restano fuse coi pantaloncini, quindi
+le braccia restano ferme. Le articolazioni si sono spostate di qualche millimetro e sono state
+rimisurate sulla sagoma. Il primo modello è `gerardo_trellis_v1.glb`, accanto.
+
+**DUE DIFETTI VISTI GIOCANDO** (Federico, 28 ottobre).
+- **«Passa attraverso la porta quando deve andare via, come se fosse incorporeo».** Gerardo
+  non è un corpo fisico, e le porte le guardava solo all'inizio di ogni tratto: una porta
+  chiusa dopo, o un'anta fermata a metà da chi ci sta davanti, la attraversava. Adesso,
+  prima di ogni passo, una capsula grande quanto lui guarda dove sta per mettere i piedi:
+  una porta chiusa la apre (e se l'anta gli girerebbe addosso arretra prima di un passo),
+  un'anta che sta ancora girando la aspetta, il giocatore in mezzo lo aspetta. Muri e
+  mobili no: il percorso li evita già, e fermarsi contro uno spigolo sfiorato vorrebbe dire
+  restare lì. **Misurato** con una sonda che chiude tutte le porte del giro ogni due secondi
+  (quelle a più di due metri e mezzo da lui): zero passi di fisica dentro un'anta ferma e
+  chiusa, e il giro arriva all'auto.
+- **«Sotto la luce, nella sala, diventa tutto nero, e fa paura nel modo sbagliato».** Uno
+  sprite ha la normale orizzontale, e una plafoniera sopra la testa lo prende di taglio.
+  `figura.gdshader` lo illumina alla maniera di Doom: ogni luce che lo raggiunge (ombre
+  comprese) lo accende per almeno sei decimi, il resto dipende dal verso — piena da davanti,
+  due decimi da dietro. Guardato sotto la plafoniera della sala, prima e dopo.
+
+## D-288 Al bordo della mappa c'è un muro invisibile
+
+**28 ottobre 2026.** Federico: «quando possibile, prima della fine della mappa dove si
+cadrebbe nel vuoto, metti un muro invisibile». Il terreno calpestabile è la griglia vicina
+del panorama fino a `raggio_collisione` (790 m dall'osservatorio); oltre si vede ma non
+regge, e ci si cadeva.
+
+- **UN ANELLO A 780 M** (`Panorama._confine()`), una forma sola a triangoli su un corpo suo
+  (`Confine`), che segue la quota del terreno da dieci metri sotto a trenta sopra. Dieci metri
+  dentro e non uno: la collisione è fatta di caselle da cinque metri, e il suo bordo a
+  gradini rientra fino a mezza diagonale — il banco controlla che il confine stia prima.
+- **NON SUL PANORAMA**: il giocatore chiede al raggio sotto i piedi se sta sul terreno del
+  panorama (`_resta_a_margine`), e non deve trovarci un muro.
+- **Misurato**: il giocatore messo a 772 m e fatto correre verso fuori in otto direzioni si
+  ferma a 779,7 m, coi piedi sul terreno, in tutte e otto.
+
+Il GDD dice che il bosco «ha un limite dichiarato» e che non ci si allontana mai davvero:
+questo confine è quello fisico, a ottocento metri. Un limite più vicino, se servirà, è
+un'altra decisione.
+
+**LA TORCIA DI GERARDO NON C'È PIÙ.** Federico: «la luce che proietta è terribile».
+Era uno spot che partiva dal centro dello sprite, che in mano non tiene niente: una luce
+senza sorgente visibile, con l'ombra di un foglio piatto. Al buio lo illuminano i fari
+della tua auto, le luci della facciata e quelle dentro, ed è abbastanza.
+
+**IL PERSONAGGIO SI CHIAMA GERARDO.** Federico: «gli cambiamo nome per evitare che sia lui
+per forza». Il primo nome era quello della persona vera da cui è fatto lo sprite: è stato
+tolto da battute, codice, file, GDD, crediti e da questo registro (le sue citazioni sono
+riscritte senza il nome). Le classi sono `Gerardo`, `AutoDiGerardo`, `GiroGerardo`; i
+file in `world/gerardo/`, `data/gerardo/`, `tools/gerardo_blender.py`.
+
+## D-289 A Gerardo si risponde, e il copione è di Federico
+
+**28 ottobre 2026.** Federico: «servirebbe darmi la possibilità di rispondere o dare input», con
+il copione dal cancello all'ingresso.
+
+- **TRE MODI DI RISPONDERE**, e una battuta ne usa al più uno (`BattutaGiro`): scrivere il
+  proprio nome (`chiede_nome`), scegliere fra più risposte, o dire l'unica risposta che c'è —
+  che è il giocatore che fa una domanda («Quale luce rossa?»). Ogni risposta (`RamoGiro`) ha le
+  sue battute di seguito. La domanda resta a schermo mentre si risponde, e sale per fare posto
+  alla lista; la risposta scelta si legge in bianco, Gerardo in giallo.
+- **I PIEDI SI FERMANO, LA TESTA NO.** Mentre si risponde `set_movement_locked` toglie camminare
+  e saltare, e i tasti li prende Gerardo prima del giocatore: W e S scelgono invece di
+  camminare, le lettere scrivono, `E` risponde invece di usare quello che si guarda. **Misurato**
+  con una sonda che scrive un nome con W, A, S e uno spazio: zero millimetri di spostamento.
+- **IL NOME VA NEL PROFILO** (`PlayerProfile.nome`), senza cambiare versione: un salvataggio di
+  prima lo legge vuoto. Gerardo non l'ha capito — «Boh, non ho capito un cazzo» — e ti chiama
+  «mister».
+- **IL COPIONE.** Cancello (il nome), poi lo **spiazzo davanti alla porta**, tappa nuova (percorso
+  collaudato con la capsula: zero urti): la storia del gruppo del DLF nato nell'84, le foto
+  vendute, il socio che da un mese non sta bene, la domanda sull'astrofotografia con due rami.
+  Poi il quadro elettrico e la luce rossa che non si spegne mai — vero anche in gioco, le rosse
+  della cupola non passano dal quadro (D-259). Refusi e accenti corretti, le frasi più lunghe di
+  due righe spezzate. Dalla sala in poi restano le battute di prima, passate al tu: il «vent'anni»
+  del telescopio è diventato «dal primo giorno», e in cupola Gerardo mostra la luce rossa che
+  aveva promesso.
+- **«NEL 2000» È DIVENTATO «QUEST'ANNO»**, deciso da Federico: il gioco è nel 1999, e l'osservatorio
+  ha aperto da poco. Spostare il gioco al 2000 era l'alternativa, e costava il cielo — Luna e
+  pianeti sono calcolati e collaudati sul 16 novembre 1999 contro le effemeridi vere di
+  quell'anno (`core/luna.gd`, `core/pianeti.gd`) — più BBS, forum e GDD. Il gioco resta nel 1999.
+- **LA RISPOSTA SCELTA NON SI RIPETE.** Federico: «quando uno seleziona un'opzione non c'è
+  bisogno che la fai ripetere». La prima stesura la rimetteva a schermo in bianco per un
+  secondo e mezzo prima che Gerardo riprendesse: un'attesa per rileggere quello che si è
+  appena scelto. Adesso dopo la scelta parla subito lui.
+
+## D-290 Il gioco è nel novembre 2000: l'osservatorio vero ha aperto quell'anno
+
+**28 ottobre 2026.** Federico: «la storia dell'osservatorio è fondamentale che sia giusta». Il
+copione di Gerardo dice che il gruppo è nato nell'84 e che l'osservatorio ha aperto nel 2000
+dopo due anni di lavori; il gioco era nel 1999, cioè in un osservatorio che non c'era ancora.
+«Quest'anno» al posto di «nel 2000» (D-289) aggiustava la frase e lasciava sbagliata la storia.
+
+- **LE FONTI.** Il sito dell'osservatorio (osservatorioastronomico.org, *Storia*): il progetto del
+  Gruppo Astrofili DLF di Rimini, approvato e finanziato dal Consiglio Direttivo; «i lavori di
+  costruzione sono durati circa 2 anni»; la cupola in acciaio inox da 5 m, il sostegno del
+  telescopio e gli impianti fatti dai soci; 536 m sul versante sud del Monte San Lorenzo; una
+  sala riunioni da più di 30 posti e «una saletta riservata al controllo del telescopio»;
+  «fin dalla inaugurazione nell'anno 2000» gestito dal gruppo «in regime di indipendenza
+  economica». Il DLF Magazine: gruppo «fondato da alcuni ferrovieri nel 1984», nell'UAI dal
+  1986. Il mese dell'inaugurazione non lo dice nessuno.
+- **IL 16 NOVEMBRE 2000**, un anno esatto dopo la data di prima. Si era provato il 5 novembre,
+  il giorno dopo il primo quarto come nella motivazione del 1999: il banco ha mostrato che il
+  cielo, quaranta minuti girato, toglieva M51 — un target che si compra — da tutte e venti le
+  notti. Alla stessa data dell'anno dopo le stelle stanno dove stavano, a cinque minuti, e i
+  venti target di D-261 restano veri. Cambiano Luna e pianeti, e stanno bene: la Luna sorge alle
+  21:14 la prima notte, novilunio alla notte 10, piena alle 25-26; Saturno e Giove alti tutta la
+  notte, in opposizione alle notti 4 e 13.
+- **COLLAUDATO SU DATE PUBBLICATE DEL 2000**: plenilunio 11 novembre 21:15 UT e novilunio 25
+  novembre 23:11 UT ritrovati entro mezzo grado; opposizioni di Saturno (19 novembre) e Giove
+  (28 novembre) entro poche ore. La finestra di M1 la prima notte passa da 23:10-04:55 a
+  23:05-04:50. `prova_luna` e `prova_pianeti` restano sulle date del 1999: collaudano il modello,
+  che vale in qualunque anno.
+- **LE LIRE RESTANO**: l'euro in contanti arriva nel gennaio 2002. Modem, software (MaxIm DL,
+  CCDOPS, Cartes du Ciel) e la SBIG ST-8 sono dell'epoca anche nel 2000.
+- **DOVE È CAMBIATO**: `core/luna.gd` (la data e la sua motivazione), i commenti di
+  `core/pianeti.gd`, il banco, il GDD, `project-context.md`, `game-architecture.md`. I commenti
+  del codice che dicono «del '99» parlano dell'epoca e restano; i semi casuali (`1999`,
+  `19991116`) non sono date e restano, o cambierebbero le forme generate. `docs/idea/` resta
+  com'era: è il documento d'origine, e il GDD lo supera.
+
+## D-291 Gerardo si accorge di te: la porta chiusa e la strada sbarrata
+
+**28 ottobre 2026.** Federico: «se chiudi una porta dalla quale lui deve passare si gira e ti
+chiede "oh ma che fai?"; se gli blocchi il movimento deve dire "ehm... sì, se ti sposti un
+attimo..."». Le due frasi stanno nel giro (`se_chiudi_la_porta`, `se_lo_blocchi`), accanto
+alle altre battute, e il banco le misura come loro.
+
+- **LA PORTA.** Gerardo ascolta tutte le porte: quando una la chiude il giocatore, se la segna,
+  e quando deve riaprirla si gira, lo dice, e la riapre. Le porte chiuse dall'inizio, o
+  richiuse da lui, non le commenta.
+- **LA STRADA SBARRATA.** Fermo davanti al giocatore, aspetta un secondo e due decimi e poi lo
+  dice; se quello non si sposta, lo ridice ogni dodici secondi.
+- **SOLO A CHI LO SENTE**: oltre nove metri sta zitto e fa quello che deve. Una battuta che
+  aspetta chi non torna lo fermerebbe lì.
+
+**Misurato** con una sonda: bloccato per quattro secondi si è mosso di undici centimetri e ha
+chiesto di spostarsi; la porta della cucina aperta e richiusa dal giocatore lo ha fatto
+fermare, dire «Oh, ma che fai?», riaprire e andare avanti col giro.
+- **LA SALA, COL COPIONE DI FEDERICO.** «Questa è la sala per il pubblico. A volte capita che
+  vengano delle scolaresche, o gli scout. Ma a quello ci penso io. A t'al dégh: è in regola,
+  eh!» Via «non è mai venuto nessuno», che il gruppo vero, con le sue serate pubbliche,
+  smentiva. «A t'al dégh» (te lo dico) è in romagnolo, scritto nella grafia più diffusa nel
+  riminese: il romagnolo cambia da un paese all'altro, e se Gerardo vero lo dice diverso si
+  scrive come lo dice lui.
+
+## D-292 Gerardo indica: il proiettore
+
+**28 ottobre 2026.** Federico: «fagli dire anche "il proiettore è staccato, cavetti e tutto sono
+lì, ma non credo che ti servano", e qui vorrei che indicasse il proiettore». La battuta è la
+terza della sala; mentre la dice Gerardo si gira verso il carrello del proiettore, in fondo
+alla sala (16,5; 7,1, da `geometria.py`), e alza la mano. Una battuta che indica è un dato
+(`BattutaGiro.indica`, `dove`): la vetrata, la cupola, la luce rossa possono averla uguale.
+
+- **L'OTTAVA COLONNA DELL'ATLANTE** (512 × 1024): l'avambraccio destro alzato in orizzontale,
+  il gomito al fianco. Tre prove, guardate nel provino:
+  1. **il braccio intero alzato** si tirava dietro un ventaglio di polo: TRELLIS l'ha fuso col
+     fianco per tutta la lunghezza, non solo la mano coi pantaloncini;
+  2. **il solo avambraccio** lasciava un lembo scuro dal polso al fianco: i vertici di passaggio,
+     coi pesi a metà, restavano attaccati a tutti e due;
+  3. **l'avambraccio staccato su una copia del modello**, con i pesi netti sotto il gomito e le
+     facce del confine tagliate (`staccato`, `_netto`): pulito da tutti gli otto lati.
+  Il buco che resta sul fianco sta dietro l'avambraccio e a sessantaquattro pixel non si vede.
+- **Guardato in gioco**: in sala, mentre parla, girato verso est con la mano verso la sala
+  proiezioni, visto da dove arriva il giocatore.
+- **LA MANO NON SI ALZA PIÙ.** Federico, in gioco: «è fatto malissimo, si rompe tutto». Pulito
+  nel provino, in movimento e da vicino il braccio staccato da una copia del modello non
+  reggeva. L'ottava colonna e la copia staccata sono tolte; quando indica, Gerardo si gira
+  verso la cosa e parla guardandola. Un gesto vero vuole un modello con le braccia staccate
+  dal corpo (una posa ad A): è da rifare il modello, non da rattoppare questo.
+
+## D-293 Gerardo ti fa aprire la cupola, e la notte comincia con la cupola aperta
+
+**29 ottobre 2026.** Federico ha riscritto il giro dalla cucina in poi: corridoio («Ma è qui
+che ci si diverte»), pulsantiera della cupola («dai, prova subito», e aspetta che tu la apra),
+stanza del PC (MaxIm DL, il taccuino di Claudio, l'allineamento polare già fatto con la
+domanda «Cos'è?» spiegata in due righe). Le tappe vecchie del PC e della cupola non ci sono più.
+
+- **ASPETTA CHE TU LA APRA**: `BattutaGiro.aspetta_cupola`. Dopo la battuta Gerardo non va
+  avanti finché `DomeShutter.aperture()` non è in fondo (0,999, la soglia della fase 1); ogni
+  venti secondi te lo ricorda (`GiroGerardo.se_non_apri`, battuta aggiunta, da rivedere).
+- **LA NOTTE COMINCIA DA DOVE LA CUPOLA È.** La fase 1 partiva sempre da chiusa e lo annunciava
+  al mondo: finito il giro, la cupola che avevi appena aperto si sarebbe richiusa da sola.
+  Adesso `NightSession` ascolta il bus (`dome_aperture_changed`), a inizio notte mette il valore
+  in `ctx` (`Phase.CTX_DOME_APERTURE`), e `PhaseDome.setup()` parte da lì: aperta, la fase si
+  chiude al primo fotogramma. REDO SETUP svuota il `ctx` e richiude come prima; all'alba il
+  valore torna a zero, perché all'alba la cupola si chiude.
+- **IL PERCORSO NEL CORRIDOIO STA A z = 6,0**, contro il muro sud: la scala della passerella
+  scende nel corridoio fino a z ≈ 5,4 fra x = 2 e 3,4, e il tracciato a 5,7 la urtava.
+  Ricollaudato con la capsula (porte aperte, zero urti) e con il giro intero automatico: la
+  cupola si apre alla pulsantiera, la fase 1 parte e finisce in un decimo di secondo.
+- **IN BOZZA**: le istruzioni («Tu qui devi solo: …», quattro battute scritte sulle fasi della
+  notte) e il sollecito. La luce rossa resta nella tappa della cupola: la promette il quadro
+  elettrico («Ora ti faccio vedere, calma»).
+- **LA LUCE ROSSA SI ACCENDE TU** (Federico: «deve avvicinarsi e guardarla e dire "Accendila
+  un po'"»). Tappa sua dopo la pulsantiera: Gerardo va accanto alla placca delle rosse (4,3; 5,0) e la guarda,
+  e aspetta che tu la accenda dalla placca (`BattutaGiro.aspetta`, che adesso è un elenco:
+  cupola aperta, luce rossa; `LightSwitch.accesa_ora()`). La battuta «la luce rossa è quella
+  lì» non c'è più. «Compiuter» è voluto, come «internets».
+- **DOPO LE ISTRUZIONI SI RISPONDE**: «Non ho capito nulla.» → «Capito un cazzo? Vabbè…» e il
+  taccuino; «Tutto chiarissimo.» → «Ci credo pochissimo, ma ok.»
+- **L'AUTO DI GERARDO STAVA A TRENTA METRI** (Federico: «quando entra nella macchina sparisce
+  nel void»). La collisione dello slargo la costruisce `Corazza` in differita, e i raggi che
+  posavano auto, Gerardo e giocatore partivano prima: l'auto restava in aria (se ne vedeva
+  l'ombra), Gerardo aspettava sospeso finché non si muoveva, il giocatore poteva nascere
+  sotto terra. `main._accogli()` adesso aspetta che sotto l'arrivo ci sia terreno, poi posa
+  tutto. Guardato in gioco: auto sullo slargo, lui accanto alla portiera, fari accesi.
+- **UNA FINESTRA DI DIALOGO, NON PIÙ IL TESTO FLUTTUANTE** (Federico). In basso, sopra il
+  prompt: riquadro scuro col filo color carta, «GERARDO» in cima, la battuta sotto, e quando
+  si risponde le risposte (in verde chiaro, la tua voce) dentro lo stesso riquadro, che
+  cresce verso l'alto. Sparisce la domanda che saliva per far posto alla lista (`SALITA`).
+  Guardato in gioco: battuta, nome da scrivere, scelta Sì/No.

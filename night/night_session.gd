@@ -189,9 +189,14 @@ var _in_setup := true
 var _player_present := false
 var _ended := false
 
+## Quanto è aperta la cupola, l'ultima volta che il bus l'ha detto: serve solo a far
+## cominciare la notte da lì (D-293). All'alba torna a zero, perché all'alba si chiude.
+var _cupola := 0.0
+
 
 func _ready() -> void:
 	_clock.dawn.connect(_on_dawn)
+	Events.dome_aperture_changed.connect(func(f: float) -> void: _cupola = f)
 
 
 ## Dice all'orchestratore su quale schermo lavora. Torna `false` se non può.
@@ -225,6 +230,9 @@ func begin() -> void:
 	# esista una fase. Il riepilogo lo libera chi lo ha creato: il CRT non libera
 	# mai ciò che mostra, e nessun altro lo possiede.
 	_ctx.clear()
+	# LA CUPOLA PUÒ ESSERE GIÀ APERTA (D-293): la prima notte la apri col giro di Gerardo,
+	# e la fase 1 che la richiudesse da sola sotto i tuoi occhi direbbe una bugia.
+	_ctx[Phase.CTX_DOME_APERTURE] = _cupola
 	_photo_pending = false
 	if _summary != null:
 		_summary.queue_free()
@@ -1014,6 +1022,8 @@ func _dispose(phase: Phase, clear_screen: bool) -> void:
 func _on_dawn() -> void:
 	if _ended:
 		return
+	# all'alba la cupola si chiude (`DomeShutter._on_dawn`), e la notte dopo comincia chiusa
+	_cupola = 0.0
 	# La notte è chiusa DA SUBITO — `_enter_next()` non deve poter montare
 	# un'altra fase nella finestra che si apre qui sotto — ma lo smontaggio no.
 	_ended = true
